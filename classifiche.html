@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Risultati e Classifiche - Circolo Velico Italia VSK5</title>
+  <title>Classifiche - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -42,13 +42,13 @@
     
     <section class="hero-section" style="padding-bottom: 1.5rem;">
       <div class="hero-badge">Stagione 2026</div>
-      <h1>Risultati e <em>Classifiche</em></h1>
-      <p>Le classifiche e i risultati ufficiali prelevati direttamente dal database.</p>
+      <h1>Risultati & <em>Classifiche</em></h1>
+      <p>I dati ufficiali estratti dalla tabella <code>risultati_gara</code> del database.</p>
     </section>
 
     <!-- LISTA DINAMICA DEI RISULTATI -->
     <section class="card-box" style="max-width: 800px; margin: 0 auto;">
-      <h2 style="margin-bottom: 1.5rem;">Storico Risultati Gara</h2>
+      <h2 style="margin-bottom: 1.5rem;">Storico Risultati</h2>
       
       <div id="lista-risultati" style="display: flex; flex-direction: column; gap: 1rem;">
         <p style="color: var(--text-muted); text-align: center;">Caricamento risultati da Supabase...</p>
@@ -57,24 +57,24 @@
 
   </main>
 
-  <!-- SCRIPT SUPABASE PER LA TABELLA risultati_gara -->
+  <!-- SCRIPT SUPABASE COLLEGATO ALLA TABELLA risultati_gara -->
   <script>
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function caricaRisultati() {
+    async function caricaRisultatiGara() {
       const container = document.getElementById('lista-risultati');
       
       try {
-        // Interroga la tabella 'risultati_gara'
+        // Interroga esattamente la tabella risultati_gara
         const { data, error } = await supabaseClient
           .from('risultati_gara')
           .select('*');
 
         if (error) {
-          console.error("Errore nel recupero dei risultati:", error);
-          container.innerHTML = `<p style="color: #ef4444; text-align: center;">Errore durante il caricamento dei risultati.</p>`;
+          console.error("Errore nel recupero dei risultati dalla tabella risultati_gara:", error);
+          container.innerHTML = `<p style="color: #ef4444; text-align: center;">Errore durante il caricamento dei dati.</p>`;
           return;
         }
 
@@ -85,27 +85,27 @@
             const card = document.createElement('div');
             card.style.cssText = "background: #1f2937; border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem; border-radius: 8px;";
             
-            // Mostriamo i campi dinamici (modificali se i nomi delle colonne nella tabella risultati_gara sono diversi, es. item.titolo, item.descrizione)
+            // Stampa i campi principali (modificali se hai colonne con nomi specifici nella tabella risultati_gara)
             card.innerHTML = `
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                 <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 600;">${item.titolo || item.nome || 'Risultato Gara'}</h3>
                 <span style="font-size: 0.85rem; color: var(--accent-color); font-weight: 500;">🏆 Ufficiale</span>
               </div>
-              <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">${item.descrizione || item.dettagli || 'Nessun dettaglio disponibile.'}</p>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">${item.descrizione || item.dettagli || 'Nessun dettaglio inserito.'}</p>
             `;
             
             container.appendChild(card);
           });
         } else {
-          container.innerHTML = `<p style="color: var(--text-muted); text-align: center;">Nessun risultato registrato nella tabella risultati_gara.</p>`;
+          container.innerHTML = `<p style="color: var(--text-muted); text-align: center;">Nessun record trovato nella tabella risultati_gara.</p>`;
         }
       } catch (err) {
-        console.error("Errore di connessione:", err);
+        console.error("Errore di connessione a Supabase:", err);
         container.innerHTML = `<p style="color: #ef4444; text-align: center;">Impossibile connettersi al database.</p>`;
       }
     }
 
-    caricaRisultati();
+    caricaRisultatiGara();
   </script>
 </body>
 </html>
