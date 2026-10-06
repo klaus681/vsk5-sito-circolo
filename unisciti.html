@@ -7,22 +7,9 @@
   <link rel="stylesheet" href="style.css">
   <style>
     .page-content {
-      padding: 120px 2rem 4rem 2rem;
-      max-width: 600px;
+      padding: 130px 2rem 4rem 2rem;
+      max-width: 500px;
       margin: 0 auto;
-      text-align: center;
-    }
-    .page-content h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      color: #38bdf8;
-    }
-    .page-content p {
-      color: #9ca3af;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin-bottom: 2rem;
     }
     .join-box {
       background: rgba(255, 255, 255, 0.03);
@@ -30,17 +17,75 @@
       padding: 2.5rem;
       border-radius: 8px;
     }
-    .btn-join {
-      display: inline-block;
+    .join-box h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+      text-align: center;
+    }
+    .join-box > p {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+    .form-group label {
+      display: block;
+      color: #d1d5db;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .btn-submit {
+      width: 100%;
       background-color: #0099ff;
       color: #fff;
-      padding: 0.9rem 2rem;
+      padding: 0.8rem;
+      border: none;
       border-radius: 4px;
-      text-decoration: none;
+      font-size: 1rem;
       font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
       margin-top: 1rem;
     }
+    .btn-submit:hover {
+      background-color: #0077cc;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+    .auth-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
   </style>
+
+  <!-- Libreria JavaScript di Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -73,10 +118,74 @@
   <main class="page-content">
     <div class="join-box">
       <h1>Unisciti al Circolo</h1>
-      <p>Entra a far parte della nostra community di Virtual Skipper 5. Compila la richiesta di tesseramento per partecipare alle regate ufficiali.</p>
-      <a href="accedi.html" class="btn-join">Registrati Ora</a>
+      <p>Registrati per entrare nella community di Virtual Skipper 5 e partecipare alle regate ufficiali.</p>
+      
+      <form id="register-form">
+        <div class="form-group">
+          <label for="username">Nome Skipper</label>
+          <input type="text" id="username" required placeholder="Es. Skipper_Alfa">
+        </div>
+
+        <div class="form-group">
+          <label for="boat">Nome Barca (Opzionale)</label>
+          <input type="text" id="boat" placeholder="Es. Vindicator">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="tuamail@example.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        
+        <button type="submit" class="btn-submit">Registrati</button>
+      </form>
+
+      <div class="auth-footer">
+        Hai già un account? <a href="accedi.html">Accedi qui</a>
+      </div>
     </div>
   </main>
+
+  <script>
+    // Configurazione Supabase (Sostituisci con i tuoi dati reali)
+    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co/rest/v1/';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const registerForm = document.getElementById('register-form');
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const username = document.getElementById('username').value;
+      const boat = document.getElementById('boat').value;
+
+      // 1. Registrazione dell'utente con Supabase Auth
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            username: username,
+            boat: boat
+          }
+        }
+      });
+
+      if (error) {
+        alert("Errore durante la registrazione: " + error.message);
+      } else {
+        alert("Registrazione completata con successo! Controlla la tua email (se richiesta) oppure effettua il login.");
+        window.location.href = "accedi.html";
+      }
+    });
+  </script>
 
 </body>
 </html>
