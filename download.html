@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download - Circolo Velico Italia VSK5</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-content {
+      padding: 130px 2rem 5rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .page-content h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+    .page-content > p {
+      color: #9ca3af;
+      font-size: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+    .download-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .download-card h3 {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    .download-card p {
+      color: #9ca3af;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .btn-download {
+      background-color: #0099ff;
+      color: #fff;
+      padding: 0.7rem 1.2rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .btn-download:hover {
+      background-color: #0077cc;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
+    </a>
+    
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li class="dropdown">
+          <a href="#">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="classifiche.html">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
+        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="download.html" class="active">Download</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="page-content">
+    <h1>Area Download</h1>
+    <p>Scarica le skin ufficiali delle barche, i template delle divise e i file di installazione utili per partecipare alle regate.</p>
+    
+    <div class="download-grid">
+      <div class="download-card">
+        <div>
+          <h3>Skin Ufficiale CVI</h3>
+          <p>Pacchetto texture personalizzate con i colori e lo stemma del Circolo Velico Italia per Virtual Skipper 5.</p>
+        </div>
+        <a href="#" class="btn-download">Scarica (.zip)</a>
+      </div>
+
+      <div class="download-card">
+        <div>
+          <h3>Regolamento in PDF</h3>
+          <p>Documento completo stampabile contenente tutte le norme sportive e tecniche del circolo.</p>
+        </div>
+        <a href="#" class="btn-download">Scarica (PDF)</a>
+      </div>
+
+      <div class="download-card">
+        <div>
+          <h3>Pack VSK5 Utility</h3>
+          <p>Guide rapide e configurazioni consigliate per ottimizzare la connessione durante le regate online.</p>
+        </div>
+        <a href="#" class="btn-download">Scarica (.zip)</a>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>
