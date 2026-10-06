@@ -90,6 +90,16 @@
       padding: 3rem;
       font-style: italic;
     }
+    /* Stile per il selettore della lingua nel menu */
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
   </style>
 
   <!-- Libreria JavaScript di Supabase -->
@@ -103,22 +113,33 @@
     </a>
     
     <nav>
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="team.html">Team</a></li>
+      <ul id="nav-menu">
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="#">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="classifiche.html">Classifiche</a></li>
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
-        <li><a href="albo-doro.html">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
-        <li><a href="download.html" class="active">Download</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" class="active" data-i18n="nav_download">Download</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
+        
+        <!-- Selettore Lingua -->
+        <li>
+          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
+            <option value="it">🇮🇹 IT</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="es">🇪🇸 ES</option>
+          </select>
+        </li>
       </ul>
     </nav>
   </header>
@@ -127,34 +148,34 @@
   <main class="page-content" id="protected-content" style="display: none;">
     <div class="download-box">
       <div class="download-header">
-        <h1>Area Download</h1>
-        <button id="logout-btn" class="btn-logout">Disconnetti</button>
+        <h1 data-i18n="download_title">Area Download</h1>
+        <button id="logout-btn" class="btn-logout" data-i18n="btn_logout">Disconnetti</button>
       </div>
-      <p style="color: #9ca3af; margin-bottom: 1.5rem;">Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci del circolo.</p>
+      <p style="color: #9ca3af; margin-bottom: 1.5rem;" data-i18n="download_subtitle">Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci del circolo.</p>
       
       <div class="download-list">
         <!-- Esempio di file scaricabile -->
         <div class="download-item">
           <div class="download-info">
-            <h3>Regolamento Ufficiale di Circolo VSK5</h3>
-            <p>Documento PDF con tutte le direttive e specifiche di navigazione.</p>
+            <h3 data-i18n="file1_title">Regolamento Ufficiale di Circolo VSK5</h3>
+            <p data-i18n="file1_desc">Documento PDF con tutte le direttive e specifiche di navigazione.</p>
           </div>
-          <a href="files/regolamento.pdf" class="btn-download" download>Scarica PDF</a>
+          <a href="files/regolamento.pdf" class="btn-download" download data-i18n="btn_download_pdf">Scarica PDF</a>
         </div>
 
         <div class="download-item">
           <div class="download-info">
-            <h3>Skin e Livree Ufficiali CVI</h3>
-            <p>Pacchetto grafico personalizzato per le barche del team.</p>
+            <h3 data-i18n="file2_title">Skin e Livree Ufficiali CVI</h3>
+            <p data-i18n="file2_desc">Pacchetto grafico personalizzato per le barche del team.</p>
           </div>
-          <a href="files/skin-cvi.zip" class="btn-download" download>Scarica ZIP</a>
+          <a href="files/skin-cvi.zip" class="btn-download" download data-i18n="btn_download_zip">Scarica ZIP</a>
         </div>
       </div>
     </div>
   </main>
 
   <div id="loading-screen" class="page-content">
-    <p class="loading-text">Verifica autorizzazione in corso...</p>
+    <p class="loading-text" data-i18n="loading_verification">Verifica autorizzazione in corso...</p>
   </div>
 
   <script>
@@ -163,34 +184,12 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function checkDownloadAccess() {
-      // 1. Controlla se l'utente ha una sessione attiva
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
-
-      if (error || !session) {
-        // Se non è loggato, avvisa e reindirizza alla pagina di accesso
-        alert("Devi effettuare l'accesso per accedere all'area download.");
-        window.location.href = "accedi.html";
-        return;
-      }
-
-      // Se è loggato, nasconde la scritta di caricamento e mostra il contenuto protetto
-      document.getElementById('loading-screen').style.display = 'none';
-      document.getElementById('protected-content').style.display = 'block';
-
-      // 2. Gestione del pulsante di disconnessione
-      document.getElementById('logout-btn').addEventListener('click', async () => {
-        const { error: signOutError } = await supabaseClient.auth.signOut();
-        if (signOutError) {
-          alert("Errore durante la disconnessione: " + signOutError.message);
-        } else {
-          window.location.href = "accedi.html";
-        }
-      });
-    }
-
-    checkDownloadAccess();
-  </script>
-
-</body>
-</html>
+    // Dizionario delle traduzioni
+    const traduzioni = {
+      it: {
+        nav_home: "Home",
+        nav_team: "Team",
+        nav_gare: "Gare & Eventi ▾",
+        nav_gare_sub: "Gare",
+        nav_classifiche: "Classifiche",
+        nav_albo: "Albo d'Oro",
