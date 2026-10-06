@@ -103,7 +103,6 @@
       font-style: italic;
       grid-column: 1 / -1;
     }
-    /* Stile per il selettore della lingua nel menu */
     .lang-selector {
       background: #1e293b;
       color: #38bdf8;
@@ -172,7 +171,7 @@
 
   <script>
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24i lànOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -214,4 +213,189 @@
         nav_membri: "Members",
         nav_unisciti: "Join Us",
         nav_accedi: "Login",
-        nav_area_membri: "Member
+        nav_area_membri: "Member Area",
+        team_title: "Teams & Crews",
+        team_subtitle: "Official teams of Circolo Velico Italia and their respective crews.",
+        team_loading: "Loading teams...",
+        team_empty: "No teams registered at the moment.",
+        captain_label: "⚓ Captain: ",
+        members_label: "Members",
+        no_members: "No members registered in this team.",
+        no_desc: "No description available."
+      },
+      fr: {
+        nav_home: "Accueil",
+        nav_team: "Équipes",
+        nav_gare: "Courses & Événements ▾",
+        nav_gare_sub: "Courses",
+        nav_classifiche: "Classements",
+        nav_albo: "Temple de la Renommée",
+        nav_regolamento: "Règlement",
+        nav_download: "Téléchargements",
+        nav_contatti: "Contact",
+        nav_membri: "Membres",
+        nav_unisciti: "Rejoindre",
+        nav_accedi: "Connexion",
+        nav_area_membri: "Espace Membre",
+        team_title: "Équipes & Équipages",
+        team_subtitle: "Les équipes officielles du Circolo Velico Italia et leurs équipages.",
+        team_loading: "Chargement des équipes...",
+        team_empty: "Aucune équipe enregistrée pour le moment.",
+        captain_label: "⚓ Capitaine : ",
+        members_label: "Membres",
+        no_members: "Aucun membre inscrit dans cette équipe.",
+        no_desc: "Aucune description disponible."
+      },
+      es: {
+        nav_home: "Inicio",
+        nav_team: "Equipos",
+        nav_gare: "Regatas y Eventos ▾",
+        nav_gare_sub: "Regatas",
+        nav_classifiche: "Clasificación",
+        nav_albo: "Salón de la Fama",
+        nav_regolamento: "Reglamento",
+        nav_download: "Descargas",
+        nav_contatti: "Contacto",
+        nav_membri: "Miembros",
+        nav_unisciti: "Únete",
+        nav_accedi: "Acceder",
+        nav_area_membri: "Área de Miembros",
+        team_title: "Equipos y Tripulaciones",
+        team_subtitle: "Los equipos oficiales del Circolo Velico Italia y sus respectivas tripulaciones.",
+        team_loading: "Cargando equipos...",
+        team_empty: "No hay equipos registrados en este momento.",
+        captain_label: "⚓ Capitán: ",
+        members_label: "Miembros",
+        no_members: "No hay miembros inscritos en este equipo.",
+        no_desc: "No hay descripción disponible."
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
+
+    let cachedTeams = [];
+    let cachedProfiles = [];
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+
+      aggiornaTestoAuth();
+
+      if (cachedTeams.length > 0) {
+        renderizzaTeams(cachedTeams, cachedProfiles);
+      }
+    }
+
+    async function aggiornaTestoAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      }
+    }
+
+    async function loadTeamsWithMembers() {
+      const container = document.getElementById('teams-container');
+
+      // 1. Carica i team dalla tabella "teams" (mantenendo la logica originale esatta)
+      const { data: teams, error: teamError } = await supabaseClient
+        .from('teams')
+        .select('*');
+
+      if (teamError) {
+        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento dei team: ${teamError.message}</p>`;
+        return;
+      }
+
+      if (!teams || teams.length === 0) {
+        container.innerHTML = `<p class="empty-text">${traduzioni[currentLang]['team_empty']}</p>`;
+        return;
+      }
+
+      // 2. Carica i profili dalla tabella "profiles"
+      const { data: profiles, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('*');
+
+      cachedTeams = teams;
+      cachedProfiles = profileError ? [] : (profiles || []);
+
+      renderizzaTeams(cachedTeams, cachedProfiles);
+    }
+
+    function renderizzaTeams(teams, allProfiles) {
+      const container = document.getElementById('teams-container');
+      const t = traduzioni[currentLang];
+      let htmlContent = '';
+
+      teams.forEach(team => {
+        const teamName = team.nome_team || team.nome || '';
+        const captainName = team.capitano || team.skipper || '';
+        
+        const teamMembers = allProfiles.filter(p => p.team && p.team.trim().toLowerCase() === teamName.trim().toLowerCase());
+        const memberCount = teamMembers.length;
+
+        let membersHtml = '';
+        if (memberCount > 0) {
+          membersHtml += `<ul class="members-list">`;
+          teamMembers.forEach(member => {
+            let displayName = '';
+            if (member.nome) {
+              displayName = member.nome.trim();
+            }
+            if (member.nickname) {
+              displayName += displayName ? ` (${member.nickname.trim()})` : member.nickname.trim();
+            }
+            if (!displayName) {
+              displayName = member.email || 'Membro';
+            }
+
+            membersHtml += `<li>${displayName}</li>`;
+          });
+          membersHtml += `</ul>`;
+        } else {
+          membersHtml += `<span class="no-members">${t.no_members}</span>`;
+        }
+
+        const captainHtml = captainName ? `<span class="team-captain-badge">${t.captain_label}${captainName}</span>` : '';
+        const descrizione = team.descrizione || t.no_desc;
+
+        htmlContent += `
+          <div class="team-card">
+            <div>
+              <h3>${teamName}</h3>
+              ${captainHtml}
+              <p>${descrizione}</p>
+            </div>
+            <div class="team-members-section">
+              <div class="team-members-title">
+                <span>${t.members_label}</span>
+                <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${memberCount}</span>
+              </div>
+              ${membersHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = htmlContent;
+    }
+
+    aggiornaTestoAuth();
+    loadTeamsWithMembers();
+    cambiaLingua(currentLang);
+  </script>
+
+</body>
+</html>
