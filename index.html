@@ -1,69 +1,4 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circolo Velico Italia VSK5 - Home</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-
-  <!-- HEADER E NAVBAR -->
-  <header>
-    <a href="index.html" class="logo-container">
-      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
-    </a>
-    
-    <nav>
-      <ul id="nav-menu">
-        <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
-        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
-        <li class="dropdown">
-          <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
-          <ul class="dropdown-menu">
-           <li><a href="gare.html">Calendario Regate</a></li>
-            <li><a href="risultati.html">Risultati</a></li>
-          </ul>
-        </li>
-        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
-        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
-        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
-        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
-        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
-        
-        <li>
-          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
-            <option value="it">🇮🇹 IT</option>
-            <option value="en">🇬🇧 EN</option>
-            <option value="fr">🇫🇷 FR</option>
-            <option value="es">🇪🇸 ES</option>
-          </select>
-        </li>
-      </ul>
-    </nav>
-  </header>
-
-  <!-- CONTENUTO PRINCIPALE -->
-  <main class="page-content">
-    
-    <!-- SEZIONE HERO -->
-    <section class="hero-section">
-      <div class="hero-badge">Stagione 2026 · Virtual Skipper</div>
-      <h1 data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
-      <p data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Dal 2003 il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
-      <div class="hero-actions">
-        <a href="unisciti.html" class="btn-primary">Entra nel circolo</a>
-        <a href="gare.html" class="btn-secondary">Calendario regate</a>
-      </div>
-    </section>
-
-    <!-- SEZIONE STATISTICHE E PROSSIMA GARA -->
-    <section class="dashboard-grid">
-      <!-- Metriche rapide -->
-      <div class="stats-box">
+<div class="stats-box">
         <div class="stat-item">
           <span class="stat-number">18</span>
           <span class="stat-label">Soci</span>
@@ -83,7 +18,7 @@
       </div>
 
       <!-- Card Prossima Gara Dinamica collegata esattamente ai tuoi campi Supabase -->
-      <a href="regate.html" id="next-regata-card" class="next-regata-card">
+      <a href="gare.html" id="next-regata-card" class="next-regata-card">
         <div class="regata-content">
           <span class="badge-tag">Prossima gara</span>
           <h2 id="regata-titolo">Caricamento da database...</h2>
@@ -101,7 +36,8 @@
       <div class="card-box">
         <div class="card-header-flex">
           <h2>Classifica generale</h2>
-          <a href="classifica.html" class="link-more">Vedi tutto →</a>
+          <!-- CORRETTO QUI: puntava a classifica.html, ora punta a classifiche.html -->
+          <a href="classifiche.html" class="link-more">Vedi tutto →</a>
         </div>
         <ol class="ranking-list">
           <li>
@@ -130,9 +66,9 @@
         <h2>Ultime Regate & Highlights</h2>
         <div class="video-container">
           <iframe src="https://www.youtube.com/embed/GYKltIx2TLQ" 
-                  title="Circolo Velico Italia GP Spot" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowfullscreen>
+                title="Circolo Velico Italia GP Spot" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
           </iframe>
         </div>
       </div>
@@ -164,10 +100,8 @@
         if (data && data.length > 0) {
           const gara = data[0];
           
-          // Assegnazione dei campi reali
           document.getElementById('regata-titolo').textContent = gara.titolo || "Gara senza titolo";
           
-          // Formattazione della data se presente
           let dataFormattata = gara.data_gara ? new Date(gara.data_gara).toLocaleString('it-IT', { 
             dateStyle: 'full', 
             timeStyle: 'short' 
@@ -246,6 +180,16 @@
         authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
       }
     }
+
+    // Correttore automatico di sicurezza per i link del menu (Risultati -> classifiche.html)
+    document.addEventListener("DOMContentLoaded", function() {
+      document.querySelectorAll("nav a").forEach(link => {
+        const testo = link.textContent.trim().toLowerCase();
+        if (testo.includes("risultati") || testo.includes("classifiche")) {
+          link.setAttribute("href", "classifiche.html");
+        }
+      });
+    });
 
     aggiornaTestoAuth();
     cambiaLingua(currentLang);
