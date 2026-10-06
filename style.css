@@ -1,9 +1,9 @@
 /* --- STILI GLOBALI E VARIABILI --- */
 :root {
   --bg-color: #0b0f19;
-  --card-bg: rgba(255, 255, 255, 0.03);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --text-main: #f3f4f6;
+  --card-bg: #111827; /* Sfondo solido e scuro per garantire leggibilità */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --text-main: #ffffff;
   --text-muted: #9ca3af;
   --accent-color: #38bdf8;
 }
@@ -16,9 +16,7 @@
 }
 
 body {
-  background: linear-gradient(rgba(11, 15, 25, 0.85), rgba(11, 15, 25, 0.95)), 
-              url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-  background-size: cover;
+  background-color: var(--bg-color);
   color: var(--text-main);
   min-height: 100vh;
   line-height: 1.6;
@@ -31,9 +29,7 @@ header {
   left: 0;
   width: 100%;
   height: 90px;
-  background-color: rgba(11, 15, 25, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: #0b0f19; /* Sfondo solido per evitare trasparenze illeggibili */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -80,11 +76,6 @@ nav ul li a.active {
   padding: 0.5rem 1.2rem;
   border-radius: 6px;
   font-weight: 600;
-  transition: opacity 0.2s ease;
-}
-
-.btn-unisciti:hover {
-  opacity: 0.9;
 }
 
 .btn-accedi {
@@ -95,10 +86,6 @@ nav ul li a.active {
   font-weight: 500;
 }
 
-.btn-accedi:hover {
-  background: rgba(56, 189, 248, 0.1);
-}
-
 .lang-selector {
   background: #1e293b;
   color: var(--accent-color);
@@ -107,7 +94,6 @@ nav ul li a.active {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  outline: none;
 }
 
 /* Dropdown */
@@ -122,7 +108,7 @@ nav ul li a.active {
   left: 0;
   background-color: #0f172a;
   min-width: 160px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0.5rem 0;
@@ -146,7 +132,7 @@ nav ul li a.active {
 
 /* --- LAYOUT CONTENUTI --- */
 .page-content {
-  padding-top: 140px;
+  padding-top: 130px;
   max-width: 1100px;
   margin: 0 auto;
   padding-left: 2rem;
@@ -154,7 +140,7 @@ nav ul li a.active {
   padding-bottom: 4rem;
 }
 
-/* Sezione Hero Editoriale */
+/* Sezione Hero */
 .hero-section {
   text-align: center;
   padding: 2rem 0 3rem 0;
@@ -162,14 +148,14 @@ nav ul li a.active {
 
 .hero-badge {
   display: inline-block;
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(56, 189, 248, 0.15);
   color: var(--accent-color);
   padding: 0.35rem 0.9rem;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.3);
 }
 
 .hero-section h1 {
@@ -177,7 +163,7 @@ nav ul li a.active {
   font-weight: 700;
   line-height: 1.15;
   margin-bottom: 1rem;
-  letter-spacing: -1px;
+  color: #ffffff;
 }
 
 .hero-section h1 em {
@@ -205,25 +191,19 @@ nav ul li a.active {
   border-radius: 6px;
   font-weight: 600;
   text-decoration: none;
-  transition: opacity 0.2s;
 }
 
 .btn-secondary {
-  background: var(--card-bg);
+  background: #1e293b;
   color: var(--text-main);
   border: 1px solid var(--border-color);
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s;
 }
 
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Dashboard Grid (Metriche + Prossima Regata) */
+/* Dashboard Grid */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
@@ -243,7 +223,6 @@ nav ul li a.active {
   padding: 1.5rem;
   border-radius: 12px;
   text-align: center;
-  backdrop-filter: blur(8px);
 }
 
 .stat-number {
@@ -257,13 +236,11 @@ nav ul li a.active {
   font-size: 0.85rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* Card Prossima Regata */
 .next-regata-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8)), 
-              url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80') center/cover;
+  background: #111827;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
@@ -272,14 +249,6 @@ nav ul li a.active {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  transition: border-color 0.2s;
-}
-
-.next-regata-card:hover {
-  border-color: var(--accent-color);
 }
 
 .badge-tag {
@@ -295,6 +264,7 @@ nav ul li a.active {
 .next-regata-card h2 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
+  color: #ffffff;
 }
 
 .regata-meta {
@@ -307,17 +277,15 @@ nav ul li a.active {
 }
 
 .regata-progress-container {
-  background: rgba(255, 255, 255, 0.1);
+  background: #1f2937;
   height: 8px;
   border-radius: 4px;
-  position: relative;
   overflow: hidden;
 }
 
 .progress-bar {
   background: var(--accent-color);
   height: 100%;
-  border-radius: 4px;
 }
 
 .progress-text {
@@ -328,7 +296,7 @@ nav ul li a.active {
   text-align: right;
 }
 
-/* Sezione Righe Contenuti (Classifica / Video) */
+/* Sezione Righe Contenuti */
 .content-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -340,7 +308,6 @@ nav ul li a.active {
   border: 1px solid var(--border-color);
   padding: 2rem;
   border-radius: 12px;
-  backdrop-filter: blur(8px);
 }
 
 .card-header-flex {
@@ -353,6 +320,7 @@ nav ul li a.active {
 .card-box h2 {
   font-size: 1.2rem;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .link-more {
@@ -372,10 +340,10 @@ nav ul li a.active {
 .ranking-list li {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.02);
+  background: #1f2937;
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .rank-pos {
@@ -391,6 +359,7 @@ nav ul li a.active {
 .rank-info strong {
   display: block;
   font-size: 0.95rem;
+  color: #ffffff;
 }
 
 .rank-info span {
@@ -400,7 +369,7 @@ nav ul li a.active {
 
 .team-badge {
   font-size: 0.75rem;
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(56, 189, 248, 0.15);
   color: var(--accent-color);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
@@ -410,6 +379,7 @@ nav ul li a.active {
 .rank-points {
   font-weight: 700;
   font-size: 1.1rem;
+  color: #ffffff;
 }
 
 /* Video Responsive */
@@ -432,15 +402,8 @@ nav ul li a.active {
   border: 0;
 }
 
-/* Responsive per dispositivi mobili */
 @media (max-width: 900px) {
   .dashboard-grid, .content-row {
     grid-template-columns: 1fr;
-  }
-  .hero-section h1 {
-    font-size: 2.3rem;
-  }
-  header {
-    padding: 0 1.5rem;
   }
 }
