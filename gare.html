@@ -278,10 +278,11 @@
     async function initGarePage() {
       const container = document.getElementById('gare-container');
       
-      // Scarica i dati senza ordinamento rigido per evitare errori se la colonna data ha un nome diverso
+      // Scarica i dati ordinandoli correttamente usando la colonna data_gara
       const { data: gare, error } = await supabaseClient
         .from('gare')
-        .select('*');
+        .select('*')
+        .order('data_gara', { ascending: true });
 
       if (error) {
         container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento delle gare: ${error.message}</p>`;
@@ -302,9 +303,8 @@
       let html = '';
 
       gare.forEach(gara => {
-        // Prende in automatico la data indipendentemente da come si chiama la colonna nel database
-        const dataGara = gara.data || gara.data_gara || gara.date || '';
-        const titoloGara = gara.titolo || gara.nome || 'Gara';
+        const dataGara = gara.data_gara || '';
+        const titoloGara = gara.titolo || 'Gara';
         const descGara = gara.descrizione || '';
 
         html += `
