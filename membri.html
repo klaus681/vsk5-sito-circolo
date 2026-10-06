@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Membri - Circolo Velico Italia VSK5</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-content {
+      padding: 130px 2rem 5rem 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .page-content h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+    .page-content > p {
+      color: #9ca3af;
+      font-size: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+    .members-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    .member-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 1.8rem;
+      text-align: center;
+    }
+    .member-card h3 {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 0.4rem;
+    }
+    .member-card .role {
+      color: #38bdf8;
+      font-size: 0.9rem;
+      margin-bottom: 0.8rem;
+      font-weight: 600;
+    }
+    .member-card .boat {
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
+    </a>
+    
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li class="dropdown">
+          <a href="#">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="classifiche.html">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
+        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+        <li><a href="membri.html" class="active">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="page-content">
+    <h1>Elenco Membri</h1>
+    <p>Tutti gli skipper e i soci tesserati ufficialmente nel Circolo Velico Italia per la stagione in corso.</p>
+    
+    <div class="members-grid">
+      <div class="member-card">
+        <h3>Skipper_Alfa</h3>
+        <div class="role">Comodoro / Fondatore</div>
+        <div class="boat">Barca: ACC/V5 Vindicator</div>
+      </div>
+      <div class="member-card">
+        <h3>Beta_Sail</h3>
+        <div class="role">Skipper Tesserato</div>
+        <div class="boat">Barca: ACC/V5 Bora</div>
+      </div>
+      <div class="member-card">
+        <h3>Galeotto</h3>
+        <div class="role">Skipper Tesserato</div>
+        <div class="boat">Barca: ACC/V5 Libeccio</div>
+      </div>
+      <div class="member-card">
+        <h3>Delta_Wave</h3>
+        <div class="role">Skipper Tesserato</div>
+        <div class="boat">Barca: ACC/V5 Sirocco</div>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>
