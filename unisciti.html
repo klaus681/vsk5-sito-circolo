@@ -103,7 +103,6 @@
         nav_home: "Home",
         nav_team: "Team",
         nav_gare: "Gare & Eventi ▾",
-        nav_gare_sub: "Gare",
         nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro",
         nav_regolamento: "Regolamento",
@@ -136,7 +135,6 @@
         nav_home: "Home",
         nav_team: "Teams",
         nav_gare: "Races & Events ▾",
-        nav_gare_sub: "Races",
         nav_classifiche: "Standings",
         nav_albo: "Hall of Fame",
         nav_regolamento: "Rules",
@@ -169,7 +167,6 @@
         nav_home: "Accueil",
         nav_team: "Équipes",
         nav_gare: "Courses & Événements ▾",
-        nav_gare_sub: "Courses",
         nav_classifiche: "Classements",
         nav_albo: "Temple de la Renommée",
         nav_regolamento: "Règlement",
@@ -202,108 +199,9 @@
         nav_home: "Inicio",
         nav_team: "Equipos",
         nav_gare: "Regatas y Eventos ▾",
-        nav_gare_sub: "Regatas",
         nav_classifiche: "Clasificación",
         nav_albo: "Salón de la Fama",
         nav_regolamento: "Reglamento",
         nav_download: "Descargas",
         nav_contatti: "Contacto",
-        nav_membri: "Miembros",
-        nav_unisciti: "Únete",
-        nav_accedi: "Acceder",
-        nav_area_membri: "Área de Miembros",
-        join_title: "Únete al Club",
-        join_subtitle: "Rellena el formulario para registrarte y formar parte de la comunidad.",
-        label_nome: "Nombre",
-        label_cognome: "Apellido",
-        label_nickname: "Apodo",
-        label_team: "Equipo",
-        label_email: "Correo electrónico",
-        label_password: "Contraseña",
-        ph_nome: "Tu nombre",
-        ph_cognome: "Tu apellido",
-        ph_nickname: "Tu apodo de juego/skipper",
-        ph_team: "Nombre de tu equipo",
-        ph_email: "tumail@example.com",
-        btn_register: "Registrarse",
-        footer_has_account: "¿Ya tienes una cuenta?",
-        footer_login_link: "Inicia sesión aquí",
-        alert_success: "¡Registro completado con éxito! Ahora puedes iniciar sesión.",
-        alert_error: "Error durante el registro: "
-      }
-    };
-
-    let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) langSelect.value = currentLang;
-
-    function cambiaLingua(lang) {
-      currentLang = lang;
-      localStorage.setItem('cvi_lang', lang);
-      
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (traduzioni[lang][key]) {
-          el.textContent = traduzioni[lang][key];
-        }
-      });
-
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (traduzioni[lang][key]) {
-          el.placeholder = traduzioni[lang][key];
-        }
-      });
-
-      aggiornaTestoAuth();
-    }
-
-    async function aggiornaTestoAuth() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
-      }
-    }
-
-    const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-      registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const nome = document.getElementById('nome').value;
-        const cognome = document.getElementById('cognome').value;
-        const nickname = document.getElementById('nickname').value;
-        const team = document.getElementById('team').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        const { data, error } = await supabaseClient.auth.signUp({
-          email: email,
-          password: password,
-          options: {
-            data: {
-              nome: nome,
-              cognome: cognome,
-              nickname: nickname,
-              team: team
-            }
-          }
-        });
-
-        if (error) {
-          alert(traduzioni[currentLang]['alert_error'] + error.message);
-        } else {
-          alert(traduzioni[currentLang]['alert_success']);
-          window.location.href = "accedi.html";
-        }
-      });
-    }
-
-    aggiornaTestoAuth();
-    cambiaLingua(currentLang);
-  </script>
-
-</body>
-</html>
+        nav_membri: "Miembros
