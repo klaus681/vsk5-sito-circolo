@@ -3,53 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Membri - Circolo Velico Italia VSK5</title>
+  <title>Soci Iscritti - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .page-content {
-      padding: 130px 2rem 5rem 2rem;
-      max-width: 1000px;
+      padding: 130px 2rem 4rem 2rem;
+      max-width: 900px;
       margin: 0 auto;
     }
-    .page-content h1 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
+    .members-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2.5rem;
+      border-radius: 8px;
+    }
+    .members-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .members-box h1 {
+      font-size: 2rem;
       text-transform: uppercase;
       color: #38bdf8;
+      margin: 0;
     }
-    .page-content > p {
-      color: #9ca3af;
-      font-size: 1.1rem;
-      margin-bottom: 2.5rem;
-    }
-    .members-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-    .member-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 1.8rem;
-      text-align: center;
-    }
-    .member-card h3 {
+    .btn-logout {
+      background-color: #ef4444;
       color: #fff;
-      font-size: 1.2rem;
-      margin-bottom: 0.4rem;
-    }
-    .member-card .role {
-      color: #38bdf8;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 4px;
       font-size: 0.9rem;
-      margin-bottom: 0.8rem;
       font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    .member-card .boat {
-      color: #9ca3af;
+    .btn-logout:hover {
+      background-color: #dc2626;
+    }
+    table.members-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    table.members-table th, 
+    table.members-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      color: #d1d5db;
+    }
+    table.members-table th {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      text-transform: uppercase;
       font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+    table.members-table tr:last-child td {
+      border-bottom: none;
+    }
+    table.members-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+    }
+    .loading-text, .empty-text {
+      text-align: center;
+      color: #9ca3af;
+      padding: 2rem;
+      font-style: italic;
     }
   </style>
+
+  <!-- Libreria JavaScript di Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -72,7 +106,7 @@
         <li><a href="regolamento.html">Regolamento</a></li>
         <li><a href="download.html">Download</a></li>
         <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
+        <li><a href="membri.html" class="active">Membri</a></li>
         <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
         <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
       </ul>
@@ -80,32 +114,93 @@
   </header>
 
   <main class="page-content">
-    <h1>Elenco Membri</h1>
-    <p>Tutti gli skipper e i soci tesserati ufficialmente nel Circolo Velico Italia per la stagione in corso.</p>
-    
-    <div class="members-grid">
-      <div class="member-card">
-        <h3>Skipper_Alfa</h3>
-        <div class="role">Comodoro / Fondatore</div>
-        <div class="boat">Barca: ACC/V5 Vindicator</div>
+    <div class="members-box">
+      <div class="members-header">
+        <h1>Albo Soci Iscritti</h1>
+        <button id="logout-btn" class="btn-logout">Disconnetti</button>
       </div>
-      <div class="member-card">
-        <h3>Beta_Sail</h3>
-        <div class="role">Skipper Tesserato</div>
-        <div class="boat">Barca: ACC/V5 Bora</div>
-      </div>
-      <div class="member-card">
-        <h3>Galeotto</h3>
-        <div class="role">Skipper Tesserato</div>
-        <div class="boat">Barca: ACC/V5 Libeccio</div>
-      </div>
-      <div class="member-card">
-        <h3>Delta_Wave</h3>
-        <div class="role">Skipper Tesserato</div>
-        <div class="boat">Barca: ACC/V5 Sirocco</div>
+      <p style="color: #9ca3af; margin-bottom: 1.5rem;">Elenco ufficiale dei membri registrati al Circolo Velico.</p>
+      
+      <div id="members-container">
+        <p class="loading-text">Caricamento elenco soci in corso...</p>
       </div>
     </div>
   </main>
+
+  <script>
+    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function initMembersPage() {
+      // 1. Controllo di autenticazione: se non è loggato, via alla pagina di login
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+      if (sessionError || !session) {
+        alert("Devi effettuare l'accesso per visualizzare l'elenco dei soci.");
+        window.location.href = "accedi.html";
+        return;
+      }
+
+      // 2. Preleva tutti i profili dalla tabella "profiles"[cite: 1] ordinandoli per nome o data
+      const { data: profiles, error: profilesError } = await supabaseClient
+        .from('profiles')
+        .select('nome, cognome, nickname, team')
+        .order('nome', { ascending: true });
+
+      const container = document.getElementById('members-container');
+
+      if (profilesError) {
+        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento dei soci: ${profilesError.message}</p>`;
+      } else if (!profiles || profiles.length === 0) {
+        container.innerHTML = `<p class="empty-text">Nessun socio iscritto al momento.</p>`;
+      } else {
+        // 3. Costruisce la tabella con i dati dei soci
+        let tableHTML = `
+          <table class="members-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Nickname</th>
+                <th>Team</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        profiles.forEach(member => {
+          tableHTML += `
+            <tr>
+              <td>${member.nome || ''} ${member.cognome || ''}</td>
+              <td><strong>${member.nickname || '-'}</strong></td>
+              <td>${member.team || 'Nessun team'}</td>
+            </tr>
+          `;
+        });
+
+        tableHTML += `
+            </tbody>
+          </table>
+        `;
+
+        container.innerHTML = tableHTML;
+      }
+
+      // 4. Gestione del pulsante di disconnessione
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+          alert("Errore durante la disconnessione: " + error.message);
+        } else {
+          window.location.href = "accedi.html";
+        }
+      });
+    }
+
+    // Avvia il controllo e il caricamento
+    initMembersPage();
+  </script>
 
 </body>
 </html>
