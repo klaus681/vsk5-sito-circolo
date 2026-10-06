@@ -4,133 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circolo Velico Italia VSK5 - Home</title>
-  
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body {
-      /* Sfondo con immagine di vela e overlay scuro per leggibilità */
-      background: linear-gradient(rgba(11, 15, 25, 0.85), rgba(11, 15, 25, 0.95)), 
-                  url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      color: #f3f4f6;
-      min-height: 100vh;
-    }
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(11, 15, 25, 0.95);
-      backdrop-filter: blur(10px);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 1000;
-    }
-    .logo-container img.logo-img {
-      height: 45px;
-    }
-    nav ul {
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-    nav ul li a {
-      color: #d1d5db;
-      text-decoration: none;
-      font-size: 0.95rem;
-      transition: color 0.2s;
-    }
-    nav ul li a:hover, nav ul li a.active {
-      color: #38bdf8;
-    }
-    .btn-unisciti {
-      background: #38bdf8;
-      color: #0b0f19 !important;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-    .btn-accedi {
-      border: 1px solid #38bdf8;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-    }
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    
-    /* Contenuto principale Home */
-    .hero {
-      padding: 160px 2rem 4rem 2rem;
-      max-width: 1000px;
-      margin: 0 auto;
-      text-align: center;
-    }
-    .hero h1 {
-      font-size: 2.8rem;
-      color: #38bdf8;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .hero p {
-      color: #9ca3af;
-      font-size: 1.2rem;
-      max-width: 700px;
-      margin: 0 auto 3rem auto;
-    }
-
-    /* Sezione Video YouTube */
-    .video-section {
-      margin-top: 2rem;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    .video-section h2 {
-      color: #e5e7eb;
-      margin-bottom: 1.5rem;
-      font-size: 1.5rem;
-    }
-    .video-container {
-      position: relative;
-      width: 100%;
-      padding-bottom: 56.25%; /* Rapporto 16:9 */
-      height: 0;
-      overflow: hidden;
-      border-radius: 8px;
-    }
-    .video-container iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-  </style>
-
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+  <!-- HEADER E NAVBAR -->
   <header>
     <a href="index.html" class="logo-container">
       <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
@@ -142,6 +21,10 @@
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
           <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="regate.html">Calendario Regate</a></li>
+            <li><a href="risultati.html">Risultati</a></li>
+          </ul>
         </li>
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
@@ -163,23 +46,106 @@
     </nav>
   </header>
 
-  <main class="hero">
-    <h1 data-i18n="home_title">Benvenuti al Circolo Velico Italia VSK5</h1>
-    <p data-i18n="home_subtitle">Vivi la passione della vela virtuale e reale con la nostra community di skipper.</p>
-
-    <!-- Filmato di YouTube Integrato -->
-    <div class="video-section">
-      <h2 data-i18n="video_title">Ultime Regate & Highlights</h2>
-      <div class="video-container">
-        <iframe src="https://www.youtube.com/embed/GYKltIx2TLQ" 
-                title="Circolo Velico Italia GP Spot" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-        </iframe>
+  <!-- CONTENUTO PRINCIPALE -->
+  <main class="page-content">
+    
+    <!-- SEZIONE HERO -->
+    <section class="hero-section">
+      <div class="hero-badge">Stagione 2026 · Virtual Skipper</div>
+      <h1 data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
+      <p data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Dal 2003 il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
+      <div class="hero-actions">
+        <a href="unisciti.html" class="btn-primary">Entra nel circolo</a>
+        <a href="regate.html" class="btn-secondary">Calendario regate</a>
       </div>
-    </div>
+    </section>
+
+    <!-- SEZIONE STATISTICHE E PROSSIMA REGATA -->
+    <section class="dashboard-grid">
+      <!-- Metriche rapide -->
+      <div class="stats-box">
+        <div class="stat-item">
+          <span class="stat-number">18</span>
+          <span class="stat-label">Soci</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">5</span>
+          <span class="stat-label">Squadre</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">7</span>
+          <span class="stat-label">Regate 2026</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">2003</span>
+          <span class="stat-label">Dal</span>
+        </div>
+      </div>
+
+      <!-- Card Prossima Regata -->
+      <a href="regate.html" class="next-regata-card">
+        <div class="regata-content">
+          <span class="badge-tag">Prossima regata</span>
+          <h2>Coppa del Tirreno</h2>
+          <div class="regata-meta">
+            <span>📅 Domenica 18 ottobre · 21:00</span>
+            <span>📍 Golfo di Napoli</span>
+            <span>⛵ ACC V5</span>
+          </div>
+          <div class="regata-progress-container">
+            <div class="progress-bar" style="width: 70%;"></div>
+            <span class="progress-text">14/20 iscritti</span>
+          </div>
+        </div>
+      </a>
+    </section>
+
+    <!-- CLASSIFICA E ULTIMI RISULTATI -->
+    <section class="content-row">
+      <!-- Classifica Generale -->
+      <div class="card-box">
+        <div class="card-header-flex">
+          <h2>Classifica generale</h2>
+          <a href="classifica.html" class="link-more">Vedi tutto →</a>
+        </div>
+        <ol class="ranking-list">
+          <li>
+            <span class="rank-pos">1</span>
+            <div class="rank-info"><strong>ITA_Lupo</strong><span>Marco Bellini</span></div>
+            <span class="team-badge">TRR · Tirreno Racing</span>
+            <span class="rank-points">67</span>
+          </li>
+          <li>
+            <span class="rank-pos">2</span>
+            <div class="rank-info"><strong>LVV_Doge</strong><span>Paolo Zanetti</span></div>
+            <span class="team-badge">LVV · Laguna Veneta</span>
+            <span class="rank-points">61</span>
+          </li>
+          <li>
+            <span class="rank-pos">3</span>
+            <div class="rank-info"><strong>SCR_Etna</strong><span>Salvo Russo</span></div>
+            <span class="team-badge">SCR · Scirocco Sailing</span>
+            <span class="rank-points">59</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Video / Highlights -->
+      <div class="card-box">
+        <h2>Ultime Regate & Highlights</h2>
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/GYKltIx2TLQ" 
+                  title="Circolo Velico Italia GP Spot" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+    </section>
+
   </main>
 
+  <!-- SCRIPT MULTILINGUA E SUPABASE -->
   <script>
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
@@ -191,36 +157,32 @@
         nav_albo: "Albo d'Oro", nav_regolamento: "Regolamento", nav_download: "Download",
         nav_contatti: "Contatti", nav_membri: "Membri", nav_unisciti: "Unisciti",
         nav_accedi: "Accedi", nav_area_membri: "Area Membri",
-        home_title: "Benvenuti al Circolo Velico Italia VSK5",
-        home_subtitle: "Vivi la passione della vela virtuale e reale con la nostra community di skipper.",
-        video_title: "Ultime Regate & Highlights"
+        home_title: "Regate vere,<br><em>mari virtuali.</em>",
+        home_subtitle: "Squadre, regate settimanali e una classifica che conta. Dal 2003 il punto d'incontro degli skipper italiani di Virtual Skipper."
       },
       en: {
         nav_home: "Home", nav_team: "Teams", nav_gare: "Races & Events ▾", nav_classifiche: "Standings",
         nav_albo: "Hall of Fame", nav_regolamento: "Rules", nav_download: "Download",
         nav_contatti: "Contact", nav_membri: "Members", nav_unisciti: "Join Us",
         nav_accedi: "Login", nav_area_membri: "Member Area",
-        home_title: "Welcome to Circolo Velico Italia VSK5",
-        home_subtitle: "Experience the passion of virtual and real sailing with our community of skippers.",
-        video_title: "Latest Races & Highlights"
+        home_title: "Real races,<br><em>virtual seas.</em>",
+        home_subtitle: "Teams, weekly races and a ranking that counts. Since 2003, the meeting point for Italian Virtual Skipper skippers."
       },
       fr: {
         nav_home: "Accueil", nav_team: "Équipes", nav_gare: "Courses & Événements ▾", nav_classifiche: "Classements",
         nav_albo: "Temple de la Renommée", nav_regolamento: "Règlement", nav_download: "Téléchargements",
         nav_contatti: "Contact", nav_membri: "Membres", nav_unisciti: "Rejoindre",
         nav_accedi: "Connexion", nav_area_membri: "Espace Membre",
-        home_title: "Bienvenue au Circolo Velico Italia VSK5",
-        home_subtitle: "Vivez la passion de la voile virtuelle et réelle avec notre communauté de skippers.",
-        video_title: "Dernières Courses & Faits Marquants"
+        home_title: "Vraies courses,<br><em>mers virtuelles.</em>",
+        home_subtitle: "Équipes, courses hebdomadaires et classement. Depuis 2003, le point de rendez-vous des skippers italiens."
       },
       es: {
         nav_home: "Inicio", nav_team: "Equipos", nav_gare: "Regatas y Eventos ▾", nav_classifiche: "Clasificación",
         nav_albo: "Salón de la Fama", nav_regolamento: "Reglamento", nav_download: "Descargas",
         nav_contatti: "Contacto", nav_membri: "Miembros", nav_unisciti: "Únete",
         nav_accedi: "Acceder", nav_area_membri: "Área de Miembros",
-        home_title: "Bienvenido al Circolo Velico Italia VSK5",
-        home_subtitle: "Vive la pasión de la vela virtual y real con nuestra comunidad de patrones.",
-        video_title: "Últimas Regatas y Destacados"
+        home_title: "Regatas reales,<br><em>mares virtuales.</em>",
+        home_subtitle: "Equipos, regatas semanales y una clasificación que cuenta. Desde 2003 el punto de encuentro de los patrones."
       }
     };
 
@@ -234,7 +196,7 @@
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (traduzioni[lang][key]) {
-          el.textContent = traduzioni[lang][key];
+          el.innerHTML = traduzioni[lang][key];
         }
       });
       aggiornaTestoAuth();
