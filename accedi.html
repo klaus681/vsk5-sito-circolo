@@ -5,117 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Accedi - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .page-content {
-      padding: 130px 2rem 4rem 2rem;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-    .login-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 2.5rem;
-      border-radius: 8px;
-    }
-    .login-box h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-      color: #38bdf8;
-      text-align: center;
-    }
-    .login-box > p {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      margin-bottom: 2rem;
-      text-align: center;
-    }
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-    .form-group label {
-      display: block;
-      color: #d1d5db;
-      margin-bottom: 0.4rem;
-      font-size: 0.9rem;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 0.8rem;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-      color: #fff;
-      font-size: 1rem;
-    }
-    .form-group input:focus {
-      outline: none;
-      border-color: #38bdf8;
-    }
-    .btn-submit {
-      width: 100%;
-      background-color: #0099ff;
-      color: #fff;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 1rem;
-    }
-    .btn-submit:hover {
-      background-color: #0077cc;
-    }
-    .auth-footer {
-      text-align: center;
-      margin-top: 1.5rem;
-      color: #9ca3af;
-      font-size: 0.9rem;
-    }
-    .auth-footer a {
-      color: #38bdf8;
-      text-decoration: none;
-    }
-    .auth-footer a:hover {
-      text-decoration: underline;
-    }
-    .forgot-password {
-      display: block;
-      text-align: right;
-      margin-top: -0.5rem;
-      margin-bottom: 1rem;
-      font-size: 0.85rem;
-      color: #38bdf8;
-      text-decoration: none;
-    }
-    .forgot-password:hover {
-      text-decoration: underline;
-    }
-    .logged-in-container {
-      text-align: center;
-    }
-    .btn-logout {
-      background-color: #ef4444;
-      margin-top: 1.5rem;
-    }
-    .btn-logout:hover {
-      background-color: #dc2626;
-    }
-    /* Stile per il selettore della lingua nel menu */
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-  </style>
-
+  
+  <!-- Libreria Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -137,12 +28,13 @@
         </li>
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
-        <li><a href="download.html">Download</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
         <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="active btn-accedi" data-i18n="nav_accedi">Accedi</a></li>
+        <li><a href="accedi.html" class="active btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
         
+        <!-- Selettore Lingua -->
         <li>
           <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
             <option value="it">🇮🇹 IT</option>
@@ -156,28 +48,26 @@
   </header>
 
   <main class="page-content">
-    <div class="login-box" id="auth-box">
-      <h1 data-i18n="login_title">Accedi</h1>
-      <p data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
+    <div class="auth-box" style="max-width: 400px; margin: 0 auto; background: rgba(255,255,255,0.03); padding: 2.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+      <h1 style="color: #38bdf8; font-size: 1.8rem; margin-bottom: 0.5rem; text-transform: uppercase;" data-i18n="login_title">Accedi</h1>
+      <p style="color: #9ca3af; margin-bottom: 2rem;" data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
       
       <form id="login-form">
-        <div class="form-group">
-          <label for="email" data-i18n="label_email">Email</label>
-          <input type="email" id="email" required placeholder="tuamail@example.com">
+        <div style="margin-bottom: 1.2rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;" data-i18n="label_email">Email</label>
+          <input type="email" id="email" required placeholder="tuamail@example.com" style="width: 100%; padding: 0.8rem; background: #111827; border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
         </div>
         
-        <div class="form-group">
-          <label for="password" data-i18n="label_password">Password</label>
-          <input type="password" id="password" required placeholder="••••••••">
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;" data-i18n="label_password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••" style="width: 100%; padding: 0.8rem; background: #111827; border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
         </div>
         
-        <a href="#" id="forgot-btn" class="forgot-password" data-i18n="forgot_password">Password dimenticata?</a>
-        
-        <button type="submit" class="btn-submit" data-i18n="btn_login">Accedi</button>
+        <button type="submit" style="width: 100%; background: #0099ff; color: white; padding: 0.8rem; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;" data-i18n="btn_login">Accedi</button>
       </form>
 
-      <div class="auth-footer">
-        <span data-i18n="no_account">Non hai ancora un account?</span> <a href="unisciti.html" data-i18n="join_here">Unisciti qui</a>
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: #9ca3af;">
+        <span data-i18n="footer_no_account">Non hai un account?</span> <a href="unisciti.html" style="color: #38bdf8; text-decoration: none;" data-i18n="footer_register_link">Registrati qui</a>
       </div>
     </div>
   </main>
@@ -188,108 +78,156 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Dizionario multilingua
     const traduzioni = {
       it: {
         nav_home: "Home",
         nav_team: "Team",
         nav_gare: "Gare & Eventi ▾",
+        nav_gare_sub: "Gare",
         nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro",
         nav_regolamento: "Regolamento",
+        nav_download: "Download",
         nav_contatti: "Contatti",
         nav_membri: "Membri",
         nav_unisciti: "Unisciti",
         nav_accedi: "Accedi",
+        nav_area_membri: "Area Membri",
         login_title: "Accedi",
         login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.",
         label_email: "Email",
         label_password: "Password",
-        forgot_password: "Password dimenticata?",
         btn_login: "Accedi",
-        no_account: "Non hai ancora un account?",
-        join_here: "Unisciti qui",
-        reserved_area: "Area Riservata",
-        logged_as: "Sei attualmente connesso come:",
-        btn_logout: "Disconnetti",
-        msg_logout_success: "Disconnessione effettuata con successo!",
-        msg_login_success: "Accesso effettuato con successo!",
-        msg_reset_prompt: "Inserisci l'indirizzo email associato al tuo account per il recupero della password:",
-        msg_reset_success: "Ti è stata inviata un'email con le istruzioni per reimpostare la password."
+        footer_no_account: "Non hai un account?",
+        footer_register_link: "Registrati qui",
+        alert_success: "Login effettuato con successo!",
+        alert_error: "Errore durante il login: "
       },
       en: {
         nav_home: "Home",
         nav_team: "Teams",
         nav_gare: "Races & Events ▾",
+        nav_gare_sub: "Races",
         nav_classifiche: "Standings",
         nav_albo: "Hall of Fame",
         nav_regolamento: "Rules",
+        nav_download: "Download",
         nav_contatti: "Contact",
         nav_membri: "Members",
         nav_unisciti: "Join Us",
         nav_accedi: "Login",
+        nav_area_membri: "Member Area",
         login_title: "Login",
-        login_subtitle: "Enter your credentials to access the restricted area.",
+        login_subtitle: "Enter your credentials to access the member area.",
         label_email: "Email",
         label_password: "Password",
-        forgot_password: "Forgot password?",
         btn_login: "Login",
-        no_account: "Don't have an account yet?",
-        join_here: "Join here",
-        reserved_area: "Restricted Area",
-        logged_as: "You are currently logged in as:",
-        btn_logout: "Sign Out",
-        msg_logout_success: "Successfully signed out!",
-        msg_login_success: "Login successful!",
-        msg_reset_prompt: "Enter the email address associated with your account for password recovery:",
-        msg_reset_success: "An email with instructions to reset your password has been sent."
+        footer_no_account: "Don't have an account?",
+        footer_register_link: "Register here",
+        alert_success: "Login successful!",
+        alert_error: "Login error: "
       },
       fr: {
         nav_home: "Accueil",
         nav_team: "Équipes",
         nav_gare: "Courses & Événements ▾",
+        nav_gare_sub: "Courses",
         nav_classifiche: "Classements",
         nav_albo: "Temple de la Renommée",
         nav_regolamento: "Règlement",
+        nav_download: "Téléchargements",
         nav_contatti: "Contact",
         nav_membri: "Membres",
         nav_unisciti: "Rejoindre",
         nav_accedi: "Connexion",
+        nav_area_membri: "Espace Membre",
         login_title: "Connexion",
-        login_subtitle: "Entrez vos identifiants pour accéder à l'espace réservé.",
+        login_subtitle: "Entrez vos identifiants pour accéder à l'espace membre.",
         label_email: "E-mail",
         label_password: "Mot de passe",
-        forgot_password: "Mot de passe oublié ?",
         btn_login: "Se connecter",
-        no_account: "Vous n'avez pas encore de compte ?",
-        join_here: "Rejoignez-nous",
-        reserved_area: "Espace Réservé",
-        logged_as: "Vous êtes actuellement connecté en tant que :",
-        btn_logout: "Déconnexion",
-        msg_logout_success: "Déconnexion réussie !",
-        msg_login_success: "Connexion réussie !",
-        msg_reset_prompt: "Entrez l'adresse e-mail associée à votre compte pour récupérer votre mot de passe :",
-        msg_reset_success: "Un e-mail contenant les instructions pour réinitialiser votre mot de passe vous a été envoyé."
+        footer_no_account: "Vous n'avez pas de compte ?",
+        footer_register_link: "Inscrivez-vous ici",
+        alert_success: "Connexion réussie !",
+        alert_error: "Erreur de connexion : "
       },
       es: {
         nav_home: "Inicio",
         nav_team: "Equipos",
         nav_gare: "Regatas y Eventos ▾",
+        nav_gare_sub: "Regatas",
         nav_classifiche: "Clasificación",
         nav_albo: "Salón de la Fama",
         nav_regolamento: "Reglamento",
+        nav_download: "Descargas",
         nav_contatti: "Contacto",
         nav_membri: "Miembros",
         nav_unisciti: "Únete",
         nav_accedi: "Acceder",
+        nav_area_membri: "Área de Miembros",
         login_title: "Acceder",
-        login_subtitle: "Introduce tus credenciales para entrar en el área restringida.",
+        login_subtitle: "Introduce tus credenciales para acceder al área de miembros.",
         label_email: "Correo electrónico",
         label_password: "Contraseña",
-        forgot_password: "¿Has olvidado tu contraseña?",
         btn_login: "Acceder",
-        no_account: "¿Aún no tienes una cuenta?",
-        join_here: "Únete aquí",
-        reserved_area: "Área Restringida",
-        logged_as: "Estás conectado actualmente como:",
-        btn_logout: "Cerr
+        footer_no_account: "¿No tienes una cuenta?",
+        footer_register_link: "Regístrate aquí",
+        alert_success: "¡Inicio de sesión exitoso!",
+        alert_error: "Error de inicio de sesión: "
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+      aggiornaTestoAuth();
+    }
+
+    async function aggiornaTestoAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      }
+    }
+
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) {
+          alert(traduzioni[currentLang]['alert_error'] + error.message);
+        } else {
+          alert(traduzioni[currentLang]['alert_success']);
+          window.location.href = "membri.html";
+        }
+      });
+    }
+
+    aggiornaTestoAuth();
+    cambiaLingua(currentLang);
+  </script>
+
+</body>
+</html>
