@@ -5,314 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circolo Velico Italia - VSK5</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .hero-content {
-      padding-top: 5rem !important;
-    }
-    .next-race-preview {
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-left: 4px solid #38bdf8;
-      padding: 1.2rem 1.5rem;
-      border-radius: 8px;
-      margin-top: 2rem;
-      max-width: 650px;
-      text-align: left;
-      position: relative;
-    }
-    .next-race-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 0.5rem;
-    }
-    .next-race-preview h4 {
-      color: #38bdf8;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: 0;
-    }
-    .badge-data {
-      background: #1e293b;
-      color: #38bdf8;
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 4px;
-      border: 1px solid rgba(56, 189, 248, 0.2);
-    }
-    .next-race-preview h3 {
-      color: #fff;
-      font-size: 1.25rem;
-      margin: 0.3rem 0;
-    }
-    .next-race-preview p {
-      color: #9ca3af;
-      font-size: 0.9rem;
-      margin: 0;
-    }
-    /* Stile per il selettore della lingua nel menu */
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-  </style>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <div class="hero-section">
-    <header>
-      <a href="index.html" class="logo-container">
-        <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
-      </a>
-      
-      <nav>
-        <ul id="nav-menu">
-          <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
-          <li><a href="team.html" data-i18n="nav_team">Team</a></li>
-          
-          <li class="dropdown">
-            <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
-            <ul class="dropdown-menu">
-              <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
-              <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
-            </ul>
-          </li>
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-cvi.png" alt="Logo CVI" class="logo-img">
+    </a>
+    <nav>
+      <ul>
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html">Gare</a></li>
+            <li><a href="classifiche.html">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
+        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+      </ul>
+    </nav>
+  </header>
 
-          <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
-          <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
-          <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
-          <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
-          <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
-          
-          <li>
-            <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
-              <option value="it">🇮🇹 IT</option>
-              <option value="en">🇬🇧 EN</option>
-              <option value="fr">🇫🇷 FR</option>
-              <option value="es">🇪🇸 ES</option>
-            </select>
-          </li>
-        </ul>
-      </nav>
-    </header>
-
-    <div class="hero-content">
-      <span class="tag-active" data-i18n="tag_active">• VIRTUAL SKIPPER 5 — STAGIONE ATTIVA</span>
-      <h1>Circolo Velico<br><span>Italia</span><br>Vsk5</h1>
-      <p data-i18n="hero_desc">La community italiana dedicata alle regate virtuali su Virtual Skipper 5. Unisciti, forma il tuo equipaggio e gareggia per il titolo di campione.</p>
-      
-      <div class="hero-buttons">
-        <a href="unisciti.html" class="btn-primary" data-i18n="btn_join">Unisciti al Circolo</a>
-        <a href="gare.html" class="btn-outline" data-i18n="btn_calendar">Calendario Gare</a>
-      </div>
-
-      <div id="next-race-box" class="next-race-preview" style="display: none;">
-        <div class="next-race-header">
-          <h4 data-i18n="next_race_title">🏆 Prossima Regata in Arrivo</h4>
-          <span id="nr-date" class="badge-data"></span>
-        </div>
-        <h3 id="nr-title">Caricamento...</h3>
-        <p id="nr-desc"></p>
-      </div>
-
-      <div class="video-container" style="max-width: 650px; margin: 2.5rem 0 1rem 0; text-align: left;">
-        <h4 data-i18n="spot_title" style="color: #38bdf8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem;">🎬 Spot Ufficiale</h4>
-        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-          <iframe 
-            src="https://www.youtube.com/embed/GYKltIx2TLQ" 
-            title="circolo velico italia c.v.i.gp spot 1" 
-            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
-        </div>
-      </div>
+  <main class="page-content">
+    <div style="margin-bottom: 2rem;">
+      <h1 style="font-size: 2.5rem; color: #fff; margin-bottom: 0.5rem;">Circolo Velico Italia<br>Vsk5</h1>
+      <p style="color: #9ca3af;">La community italiana dedicata alle regate virtuali su Virtual Skipper 5...</p>
     </div>
-  </div>
-
-  <script>
-    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
-
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Dizionario delle traduzioni
-    const traduzioni = {
-      it: {
-        nav_home: "Home",
-        nav_team: "Team",
-        nav_gare: "Gare & Eventi ▾",
-        nav_gare_sub: "Gare",
-        nav_classifiche: "Classifiche",
-        nav_albo: "Albo d'Oro",
-        nav_regolamento: "Regolamento",
-        nav_contatti: "Contatti",
-        nav_membri: "Membri",
-        nav_unisciti: "Unisciti",
-        nav_accedi: "Accedi",
-        nav_area_membri: "Area Membri",
-        tag_active: "• VIRTUAL SKIPPER 5 — STAGIONE ATTIVA",
-        hero_desc: "La community italiana dedicata alle regate virtuali su Virtual Skipper 5. Unisciti, forma il tuo equipaggio e gareggia per il titolo di campione.",
-        btn_join: "Unisciti al Circolo",
-        btn_calendar: "Calendario Gare",
-        next_race_title: "🏆 Prossima Regata in Arrivo",
-        spot_title: "🎬 Spot Ufficiale"
-      },
-      en: {
-        nav_home: "Home",
-        nav_team: "Teams",
-        nav_gare: "Races & Events ▾",
-        nav_gare_sub: "Races",
-        nav_classifiche: "Standings",
-        nav_albo: "Hall of Fame",
-        nav_regolamento: "Rules",
-        nav_contatti: "Contact",
-        nav_membri: "Members",
-        nav_unisciti: "Join Us",
-        nav_accedi: "Login",
-        nav_area_membri: "Member Area",
-        tag_active: "• VIRTUAL SKIPPER 5 — ACTIVE SEASON",
-        hero_desc: "The premier community dedicated to virtual regattas on Virtual Skipper 5. Join, form your crew, and compete for the championship title.",
-        btn_join: "Join the Club",
-        btn_calendar: "Race Calendar",
-        next_race_title: "🏆 Upcoming Regatta",
-        spot_title: "🎬 Official Spot"
-      },
-      fr: {
-        nav_home: "Accueil",
-        nav_team: "Équipes",
-        nav_gare: "Courses & Événements ▾",
-        nav_gare_sub: "Courses",
-        nav_classifiche: "Classements",
-        nav_albo: "Temple de la Renommée",
-        nav_regolamento: "Règlement",
-        nav_contatti: "Contact",
-        nav_membri: "Membres",
-        nav_unisciti: "Rejoindre",
-        nav_accedi: "Connexion",
-        nav_area_membri: "Espace Membre",
-        tag_active: "• VIRTUAL SKIPPER 5 — SAISON ACTIVE",
-        hero_desc: "La communauté dédiée aux régates virtuelles sur Virtual Skipper 5. Rejoignez-nous, formez votre équipage et visez le titre suprême.",
-        btn_join: "Rejoindre le Club",
-        btn_calendar: "Calendrier des Courses",
-        next_race_title: "🏆 Prochaine Régate",
-        spot_title: "🎬 Spot Officiel"
-      },
-      es: {
-        nav_home: "Inicio",
-        nav_team: "Equipos",
-        nav_gare: "Regatas y Eventos ▾",
-        nav_gare_sub: "Regatas",
-        nav_classifiche: "Clasificación",
-        nav_albo: "Salón de la Fama",
-        nav_regolamento: "Reglamento",
-        nav_contatti: "Contacto",
-        nav_membri: "Miembros",
-        nav_unisciti: "Únete",
-        nav_accedi: "Acceder",
-        nav_area_membri: "Área de Miembros",
-        tag_active: "• VIRTUAL SKIPPER 5 — TEMPORADA ACTIVA",
-        hero_desc: "La comunidad dedicada a las regatas virtuales en Virtual Skipper 5. Únete, forma tu tripulación y compite por el título de campeón.",
-        btn_join: "Únete al Club",
-        btn_calendar: "Calendario de Regatas",
-        next_race_title: "🏆 Próxima Regata",
-        spot_title: "🎬 Spot Oficial"
-      }
-    };
-
-    let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    document.getElementById('languageSelect').value = currentLang;
-
-    function cambiaLingua(lang) {
-      currentLang = lang;
-      localStorage.setItem('cvi_lang', lang);
-      
-      // Traduci tutti gli elementi con attributo data-i18n
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (traduzioni[lang][key]) {
-          el.textContent = traduzioni[lang][key];
-        }
-      });
-
-      // Aggiorna anche il link di accesso se loggato
-       aggiornaTestoAuth();
-    }
-
-    let isLogged = false;
-    function aggiornaTestoAuth() {
-      const authLink = document.getElementById('auth-link');
-      if (isLogged && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
-      }
-    }
-
-    // Funzione per formattare la data nella lingua scelta
-    function formatDataGara(dataString, lang) {
-      if (!dataString) return lang === 'it' ? 'Da definire' : (lang === 'fr' ? 'À définir' : (lang === 'es' ? 'Por definir' : 'TBA'));
-      const data = new Date(dataString);
-      if (isNaN(data)) return dataString; 
-      
-      const localeMap = { it: 'it-IT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
-      const locale = localeMap[lang] || 'it-IT';
-      
-      const dataFormattata = data.toLocaleDateString(locale, {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-      if (lang === 'it') return dataFormattata.replace(',', ' alle ore');
-      if (lang === 'fr') return dataFormattata.replace('à', 'à');
-      if (lang === 'es') return dataFormattata.replace(' a las', ' a las');
-      return dataFormattata;
-    }
-
-    let prossimaGaraDati = null;
-
-    async function initHome() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        isLogged = true;
-        aggiornaTestoAuth();
-      }
-
-      const { data: gare, error } = await supabaseClient
-        .from('gare')
-        .select('*')
-        .order('data_gara', { ascending: true })
-        .limit(1);
-
-      if (!error && gare && gare.length > 0) {
-        prossimaGaraDati = gare[0];
-        document.getElementById('nr-title').textContent = prossimaGaraDati.titolo || 'Gara';
-        document.getElementById('nr-date').textContent = '📅 ' + formatDataGara(prossimaGaraDati.data_gara, currentLang);
-        document.getElementById('nr-desc').textContent = prossimaGaraDati.descrizione || '';
-        document.getElementById('next-race-box').style.display = 'block';
-      }
-
-      // Applica la lingua iniziale salvata
-      cambiaLingua(currentLang);
-    }
-
-    initHome();
-  </script>
+    <!-- Qui inserisci il resto dei contenuti della Home (box gare, video, ecc.) -->
+  </main>
 
 </body>
 </html>
