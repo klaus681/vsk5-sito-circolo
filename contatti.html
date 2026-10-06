@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contatti - Circolo Velico Italia VSK5</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-content {
+      padding: 120px 2rem 4rem 2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .page-content h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+    .page-content p {
+      color: #9ca3af;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .contact-form input, .contact-form textarea {
+      padding: 0.9rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .contact-form textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    .contact-form button {
+      background-color: #0099ff;
+      color: #fff;
+      border: none;
+      padding: 0.9rem;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .contact-form button:hover {
+      background-color: #0077cc;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
+    </a>
+    
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li class="dropdown">
+          <a href="#">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="classifiche.html">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="#">Albo d'Oro</a></li>
+        <li><a href="#">Regolamento</a></li>
+        <li><a href="#">Download</a></li>
+        <li><a href="contatti.html" class="active">Contatti</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="page-content">
+    <h1>Contattaci</h1>
+    <p>Hai domande sulle nostre regate o vuoi metterti in contatto con la direzione del circolo? Compila il modulo sottostante.</p>
+    
+    <form class="contact-form">
+      <input type="text" placeholder="Il tuo nome / Nickname" required>
+      <input type="email" placeholder="La tua email" required>
+      <textarea placeholder="Il tuo messaggio..." required></textarea>
+      <button type="submit">Invia Messaggio</button>
+    </form>
+  </main>
+
+</body>
+</html>

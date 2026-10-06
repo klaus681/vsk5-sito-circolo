@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team - Circolo Velico Italia VSK5</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-content {
+      padding: 120px 2rem 4rem 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .page-content h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+    .page-content p {
+      color: #9ca3af;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    .team-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .team-card h3 {
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    .team-card span {
+      color: #0099ff;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
+    </a>
+    
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html" class="active">Team</a></li>
+        <li class="dropdown">
+          <a href="#">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="classifiche.html">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="#">Albo d'Oro</a></li>
+        <li><a href="#">Regolamento</a></li>
+        <li><a href="#">Download</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="page-content">
+    <h1>Il Nostro Team</h1>
+    <p>I membri e gli skipper che rappresentano il Circolo Velico Italia nelle competizioni ufficiali di Virtual Skipper 5.</p>
+    
+    <div class="team-grid">
+      <div class="team-card">
+        <h3>Skipper 1</h3>
+        <span>Comodoro / Fondatore</span>
+      </div>
+      <div class="team-card">
+        <h3>Skipper 2</h3>
+        <span>Capitano di Squadra</span>
+      </div>
+      <div class="team-card">
+        <h3>Skipper 3</h3>
+        <span>Responsabile Regate</span>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>
