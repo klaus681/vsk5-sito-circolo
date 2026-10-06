@@ -5,6 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circolo Velico Italia - VSK5</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .next-race-preview {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-left: 4px solid #38bdf8;
+      padding: 1.2rem 1.5rem;
+      border-radius: 6px;
+      margin-top: 2rem;
+      max-width: 600px;
+      text-align: left;
+    }
+    .next-race-preview h4 {
+      color: #38bdf8;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+    .next-race-preview h3 {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 0.3rem;
+    }
+    .next-race-preview p {
+      color: #9ca3af;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+  </style>
+  
+  <!-- Libreria JavaScript di Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -12,30 +44,28 @@
     <!-- Header / Menu -->
     <header>
       <a href="index.html" class="logo-container">
-        <!-- IMPORTANTE: L'immagine dello stemma si chiamerà logo-cvi.png -->
         <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
       </a>
       
       <nav>
-        <ul>
+        <ul id="nav-menu">
           <li><a href="index.html" class="active">Home</a></li>
-          <li><a href="#">Team</a></li>
+          <li><a href="team.html">Team</a></li>
           
-          <!-- Menu a tendina Gare & Eventi -->
           <li class="dropdown">
-            <a href="#">Gare & Eventi ▾</a>
+            <a href="gare.html">Gare & Eventi ▾</a>
             <ul class="dropdown-menu">
               <li><a href="classifiche.html">Classifiche</a></li>
             </ul>
           </li>
 
-         <li><a href="albo-doro.html">Albo d'Oro</a></li>
-          <li><a href="#">Regolamento</a></li>
-          <li><a href="#">Download</a></li>
-          <li><a href="#">Contatti</a></li>
+          <li><a href="albo-doro.html">Albo d'Oro</a></li>
+          <li><a href="regolamento.html">Regolamento</a></li>
+          <li><a href="download.html">Download</a></li>
+          <li><a href="contatti.html">Contatti</a></li>
           <li><a href="membri.html">Membri</a></li>
           <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-          <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+          <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
         </ul>
       </nav>
     </header>
@@ -48,10 +78,50 @@
       
       <div class="hero-buttons">
         <a href="unisciti.html" class="btn-primary">Unisciti al Circolo</a>
-        <a href="classifiche.html" class="btn-outline">Classifiche</a>
+        <a href="gare.html" class="btn-outline">Calendario Gare</a>
+      </div>
+
+      <!-- Box dinamico per la prossima gara -->
+      <div id="next-race-box" class="next-race-preview" style="display: none;">
+        <h4>🏆 Prossima Regata in Arrivo</h4>
+        <h3 id="nr-title">Caricamento...</h3>
+        <p id="nr-date" style="color: #38bdf8; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;"></p>
+        <p id="nr-desc"></p>
       </div>
     </div>
   </div>
+
+  <script>
+    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function initHome() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = "Area Membri";
+      }
+
+      const { data: gare, error } = await supabaseClient
+        .from('gare')
+        .select('*')
+        .order('data_gara', { ascending: true })
+        .limit(1);
+
+      if (!error && gare && gare.length > 0) {
+        const nextRace = gare[0];
+        document.getElementById('nr-title').textContent = nextRace.titolo || 'Gara';
+        document.getElementById('nr-date').textContent = 'Data: ' + (nextRace.data_gara || 'Da definire');
+        document.getElementById('nr-desc').textContent = nextRace.descrizione || '';
+        document.getElementById('next-race-box').style.display = 'block';
+      }
+    }
+
+    initHome();
+  </script>
 
 </body>
 </html>
