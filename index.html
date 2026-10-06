@@ -1,378 +1,265 @@
-    <div class="stats-box">
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circolo Velico Italiano - Virtual Skipper</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        <div class="stat-item">
+  <!-- Il tuo CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-          <span class="stat-number">18</span>
-
-          <span class="stat-label">Soci</span>
-
-        </div>
-
-        <div class="stat-item">
-
-          <span class="stat-number">5</span>
-
-          <span class="stat-label">Squadre</span>
-
-        </div>
-
-        <div class="stat-item">
-
-          <span class="stat-number">7</span>
-
-          <span class="stat-label">Regate 2026</span>
-
-        </div>
-
-        <div class="stat-item">
-
-          <span class="stat-number">2003</span>
-
-          <span class="stat-label">Dal</span>
-
-        </div>
-
+  <!-- HEADER / NAVBAR -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <a href="index.html">
+          <span class="logo-icon">⚓</span>
+          <span class="logo-text">CVI <span>Virtual</span></span>
+        </a>
       </div>
 
+      <nav class="main-nav">
+        <ul>
+          <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
+          <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+          <li class="dropdown">
+            <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+            <ul class="dropdown-menu">
+              <li><a href="calendario.html">Calendario</a></li>
+              <li><a href="iscritti.html">Iscritti</a></li>
+            </ul>
+          </li>
+          <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          <li><a href="albo.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+          <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+          <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+          <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        </ul>
+      </nav>
 
+      <div class="header-right">
+        <!-- Selettore Lingua -->
+        <select id="languageSelect" class="lang-select" onchange="cambiaLingua(this.value)">
+          <option value="it">🇮🇹 IT</option>
+          <option value="en">🇬🇧 EN</option>
+          <option value="fr">🇫🇷 FR</option>
+          <option value="es">🇪🇸 ES</option>
+        </select>
 
-      <!-- Card Prossima Gara Dinamica collegata esattamente ai tuoi campi Supabase -->
+        <a href="auth.html" id="auth-link" class="btn-primary" data-i18n="nav_accedi">Accedi</a>
+      </div>
+    </div>
+  </header>
 
-      <a href="regate.html" id="next-regata-card" class="next-regata-card">
+  <!-- MAIN CONTENT -->
+  <main class="main-container">
 
-        <div class="regata-content">
-
-          <span class="badge-tag">Prossima gara</span>
-
-          <h2 id="regata-titolo">Caricamento da database...</h2>
-
-          <div class="regata-meta">
-
-            <span id="regata-data">📅 --</span>
-
-            <span id="regata-descrizione">--</span>
-
-          </div>
-
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <span class="badge-est">Dal 2003</span>
+        <h1 data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
+        <p data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Dal 2003 il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
+        
+        <div class="hero-buttons">
+          <a href="gare.html" class="btn-accent">Calendario Regate</a>
+          <a href="auth.html" class="btn-outline" data-i18n="nav_unisciti">Unisciti al Circolo</a>
         </div>
+      </div>
 
+      <div class="stats-box">
+        <div class="stat-item">
+          <span class="stat-number">18</span>
+          <span class="stat-label">Soci</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">5</span>
+          <span class="stat-label">Squadre</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">7</span>
+          <span class="stat-label">Regate 2026</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">2003</span>
+          <span class="stat-label">Dal</span>
+        </div>
+      </div>
+
+      <!-- Card Prossima Gara Dinamica collegata a Supabase -->
+      <a href="gare.html" id="next-regata-card" class="next-regata-card">
+        <div class="regata-content">
+          <span class="badge-tag">Prossima gara</span>
+          <h2 id="regata-titolo">Caricamento da database...</h2>
+          <div class="regata-meta">
+            <span id="regata-data">📅 --</span>
+            <span id="regata-descrizione">--</span>
+          </div>
+        </div>
       </a>
-
     </section>
-
-
 
     <!-- CLASSIFICA E ULTIMI RISULTATI -->
-
     <section class="content-row">
-
       <!-- Classifica Generale -->
-
       <div class="card-box">
-
         <div class="card-header-flex">
-
           <h2>Classifica generale</h2>
-
-          <a href="classifica.html" class="link-more">Vedi tutto →</a>
-
+          <a href="classifiche.html" class="link-more">Vedi tutto →</a>
         </div>
-
         <ol class="ranking-list">
-
           <li>
-
             <span class="rank-pos">1</span>
-
             <div class="rank-info"><strong>ITA_Lupo</strong><span>Marco Bellini</span></div>
-
             <span class="team-badge">TRR · Tirreno Racing</span>
-
             <span class="rank-points">67</span>
-
           </li>
-
           <li>
-
             <span class="rank-pos">2</span>
-
             <div class="rank-info"><strong>LVV_Doge</strong><span>Paolo Zanetti</span></div>
-
             <span class="team-badge">LVV · Laguna Veneta</span>
-
             <span class="rank-points">61</span>
-
           </li>
-
           <li>
-
             <span class="rank-pos">3</span>
-
             <div class="rank-info"><strong>SCR_Etna</strong><span>Salvo Russo</span></div>
-
             <span class="team-badge">SCR · Scirocco Sailing</span>
-
             <span class="rank-points">59</span>
-
           </li>
-
         </ol>
-
       </div>
-
-
 
       <!-- Video / Highlights -->
-
       <div class="card-box">
-
         <h2>Ultime Regate & Highlights</h2>
-
         <div class="video-container">
-
           <iframe src="https://www.youtube.com/embed/GYKltIx2TLQ" 
-
-                  title="Circolo Velico Italia GP Spot" 
-
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-
-                  allowfullscreen>
-
+                title="Circolo Velico Italia GP Spot" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
           </iframe>
-
         </div>
-
       </div>
-
     </section>
-
-
 
   </main>
 
-
-
   <!-- SCRIPT SUPABASE E MULTILINGUA -->
-
   <script>
-
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
-
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
-
-    // Funzione per caricare la prossima gara usando i campi reali (titolo, descrizione, data_gara)
-
     async function caricaProssimaGara() {
-
       try {
-
         const { data, error } = await supabaseClient
-
           .from('gare')
-
           .select('id, titolo, descrizione, data_gara')
-
           .order('data_gara', { ascending: true })
-
           .limit(1);
 
-
-
         if (error) {
-
           console.error("Errore nel caricamento dalla tabella gare:", error);
-
           document.getElementById('regata-titolo').textContent = "Errore di connessione dati";
-
           return;
-
         }
-
-
 
         if (data && data.length > 0) {
-
           const gara = data[0];
-
           
-
-          // Assegnazione dei campi reali
-
           document.getElementById('regata-titolo').textContent = gara.titolo || "Gara senza titolo";
-
           
-
-          // Formattazione della data se presente
-
           let dataFormattata = gara.data_gara ? new Date(gara.data_gara).toLocaleString('it-IT', { 
-
             dateStyle: 'full', 
-
             timeStyle: 'short' 
-
           }) : 'Data da definirsi';
-
           
-
           document.getElementById('regata-data').textContent = `📅 ${dataFormattata}`;
-
           document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
-
         } else {
-
           document.getElementById('regata-titolo').textContent = "Nessuna gara in programma";
-
           document.getElementById('regata-data').textContent = "📅 --";
-
           document.getElementById('regata-descrizione').textContent = "Controlla più tardi per nuovi eventi.";
-
         }
-
       } catch (err) {
-
         console.error("Errore di connessione a Supabase:", err);
-
       }
-
     }
-
-
 
     caricaProssimaGara();
 
-
-
     const traduzioni = {
-
       it: {
-
         nav_home: "Home", nav_team: "Team", nav_gare: "Gare & Eventi ▾", nav_classifiche: "Classifiche",
-
         nav_albo: "Albo d'Oro", nav_regolamento: "Regolamento", nav_download: "Download",
-
         nav_contatti: "Contatti", nav_membri: "Membri", nav_unisciti: "Unisciti",
-
         nav_accedi: "Accedi", nav_area_membri: "Area Membri",
-
         home_title: "Regate vere,<br><em>mari virtuali.</em>",
-
         home_subtitle: "Squadre, regate settimanali e una classifica che conta. Dal 2003 il punto d'incontro degli skipper italiani di Virtual Skipper."
-
       },
-
       en: {
-
         nav_home: "Home", nav_team: "Teams", nav_gare: "Races & Events ▾", nav_classifiche: "Standings",
-
         nav_albo: "Hall of Fame", nav_regolamento: "Rules", nav_download: "Download",
-
         nav_contatti: "Contact", nav_membri: "Members", nav_unisciti: "Join Us",
-
         nav_accedi: "Login", nav_area_membri: "Member Area",
-
         home_title: "Real races,<br><em>virtual seas.</em>",
-
         home_subtitle: "Teams, weekly races and a ranking that counts. Since 2003, the meeting point for Italian Virtual Skipper skippers."
-
       },
-
       fr: {
-
         nav_home: "Accueil", nav_team: "Équipes", nav_gare: "Courses & Événements ▾", nav_classifiche: "Classements",
-
         nav_albo: "Temple de la Renommée", nav_regolamento: "Règlement", nav_download: "Téléchargements",
-
         nav_contatti: "Contact", nav_membri: "Membres", nav_unisciti: "Rejoindre",
-
         nav_accedi: "Connexion", nav_area_membri: "Espace Membre",
-
         home_title: "Vraies courses,<br><em>mers virtuelles.</em>",
-
         home_subtitle: "Équipes, courses hebdomadaires et classement. Depuis 2003, le point de rendez-vous des skippers italiens."
-
       },
-
       es: {
-
         nav_home: "Inicio", nav_team: "Equipos", nav_gare: "Regatas y Eventos ▾", nav_classifiche: "Clasificación",
-
         nav_albo: "Salón de la Fama", nav_regolamento: "Reglamento", nav_download: "Descargas",
-
         nav_contatti: "Contacto", nav_membri: "Miembros", nav_unisciti: "Únete",
-
         nav_accedi: "Acceder", nav_area_membri: "Área de Miembros",
-
         home_title: "Regatas reales,<br><em>mares virtuales.</em>",
-
         home_subtitle: "Equipos, regatas semanales y una clasificación que cuenta. Desde 2003 el punto de encuentro de los patrones."
-
       }
-
     };
 
-
-
     let currentLang = localStorage.getItem('cvi_lang') || 'it';
-
     const langSelect = document.getElementById('languageSelect');
-
     if (langSelect) langSelect.value = currentLang;
 
-
-
     function cambiaLingua(lang) {
-
       currentLang = lang;
-
       localStorage.setItem('cvi_lang', lang);
-
       document.querySelectorAll('[data-i18n]').forEach(el => {
-
         const key = el.getAttribute('data-i18n');
-
         if (traduzioni[lang][key]) {
-
           el.innerHTML = traduzioni[lang][key];
-
         }
-
       });
-
       aggiornaTestoAuth();
-
     }
-
-
 
     async function aggiornaTestoAuth() {
-
       const { data: { session } } = await supabaseClient.auth.getSession();
-
       const authLink = document.getElementById('auth-link');
-
       if (session && authLink) {
-
         authLink.href = "membri.html";
-
         authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
-
       }
-
     }
 
-
-
     aggiornaTestoAuth();
-
     cambiaLingua(currentLang);
-
   </script>
-
 </body>
-
-</html> 
-
+</html>
