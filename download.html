@@ -90,7 +90,6 @@
       padding: 3rem;
       font-style: italic;
     }
-    /* Stile per il selettore della lingua nel menu */
     .lang-selector {
       background: #1e293b;
       color: #38bdf8;
@@ -154,7 +153,6 @@
       <p style="color: #9ca3af; margin-bottom: 1.5rem;" data-i18n="download_subtitle">Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci del circolo.</p>
       
       <div class="download-list">
-        <!-- Esempio di file scaricabile -->
         <div class="download-item">
           <div class="download-info">
             <h3 data-i18n="file1_title">Regolamento Ufficiale di Circolo VSK5</h3>
@@ -184,7 +182,6 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Dizionario delle traduzioni
     const traduzioni = {
       it: {
         nav_home: "Home",
@@ -193,3 +190,154 @@
         nav_gare_sub: "Gare",
         nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro",
+        nav_regolamento: "Regolamento",
+        nav_download: "Download",
+        nav_contatti: "Contatti",
+        nav_membri: "Membri",
+        nav_unisciti: "Unisciti",
+        nav_accedi: "Accedi",
+        nav_area_membri: "Area Membri",
+        download_title: "Area Download",
+        download_subtitle: "Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci del circolo.",
+        btn_logout: "Disconnetti",
+        file1_title: "Regolamento Ufficiale di Circolo VSK5",
+        file1_desc: "Documento PDF con tutte le direttive e specifiche di navigazione.",
+        btn_download_pdf: "Scarica PDF",
+        file2_title: "Skin e Livree Ufficiali CVI",
+        file2_desc: "Pacchetto grafico personalizzato per le barche del team.",
+        btn_download_zip: "Scarica ZIP",
+        loading_verification: "Verifica autorizzazione in corso..."
+      },
+      en: {
+        nav_home: "Home",
+        nav_team: "Teams",
+        nav_gare: "Races & Events ▾",
+        nav_gare_sub: "Races",
+        nav_classifiche: "Standings",
+        nav_albo: "Hall of Fame",
+        nav_regolamento: "Rules",
+        nav_download: "Download",
+        nav_contatti: "Contact",
+        nav_membri: "Members",
+        nav_unisciti: "Join Us",
+        nav_accedi: "Login",
+        nav_area_membri: "Member Area",
+        download_title: "Download Area",
+        download_subtitle: "Official materials, skins, rules, and packages reserved for club members.",
+        btn_logout: "Log Out",
+        file1_title: "Official VSK5 Club Rules",
+        file1_desc: "PDF document with all navigation directives and specifications.",
+        btn_download_pdf: "Download PDF",
+        file2_title: "Official CVI Skins and Liveries",
+        file2_desc: "Custom graphic package for team boats.",
+        btn_download_zip: "Download ZIP",
+        loading_verification: "Verifying authorization..."
+      },
+      fr: {
+        nav_home: "Accueil",
+        nav_team: "Équipes",
+        nav_gare: "Courses & Événements ▾",
+        nav_gare_sub: "Courses",
+        nav_classifiche: "Classements",
+        nav_albo: "Temple de la Renommée",
+        nav_regolamento: "Règlement",
+        nav_download: "Téléchargements",
+        nav_contatti: "Contact",
+        nav_membri: "Membres",
+        nav_unisciti: "Rejoindre",
+        nav_accedi: "Connexion",
+        nav_area_membri: "Espace Membre",
+        download_title: "Espace Téléchargement",
+        download_subtitle: "Matériel officiel, skins, règlements et packages réservés aux membres du club.",
+        btn_logout: "Se déconnecter",
+        file1_title: "Règlement Officiel du Club VSK5",
+        file1_desc: "Document PDF avec toutes les directives et spécifications de navigation.",
+        btn_download_pdf: "Télécharger PDF",
+        file2_title: "Skins et Livrées Officielles CVI",
+        file2_desc: "Package graphique personnalisé pour les bateaux de l'équipe.",
+        btn_download_zip: "Télécharger ZIP",
+        loading_verification: "Vérification des autorisations..."
+      },
+      es: {
+        nav_home: "Inicio",
+        nav_team: "Equipos",
+        nav_gare: "Regatas y Eventos ▾",
+        nav_gare_sub: "Regatas",
+        nav_classifiche: "Clasificación",
+        nav_albo: "Salón de la Fama",
+        nav_regolamento: "Reglamento",
+        nav_download: "Descargas",
+        nav_contatti: "Contacto",
+        nav_membri: "Miembros",
+        nav_unisciti: "Únete",
+        nav_accedi: "Acceder",
+        nav_area_membri: "Área de Miembros",
+        download_title: "Área de Descargas",
+        download_subtitle: "Materiales oficiales, skins, reglamentos y paquetes reservados para los socios del club.",
+        btn_logout: "Cerrar sesión",
+        file1_title: "Reglamento Oficial del Club VSK5",
+        file1_desc: "Documento PDF con todas las directivas y especificaciones de navegación.",
+        btn_download_pdf: "Descargar PDF",
+        file2_title: "Skins y Libreas Oficiales CVI",
+        file2_desc: "Paquete gráfico personalizado para los barcos del equipo.",
+        btn_download_zip: "Descargar ZIP",
+        loading_verification: "Verificando autorización..."
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+      aggiornaTestoAuth();
+    }
+
+    async function aggiornaTestoAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      }
+    }
+
+    // Verifica della sessione per l'area protetta di download
+    async function verificaAccesso() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (!session) {
+        // Se non è loggato, reindirizza alla pagina di accesso
+        window.location.href = "accedi.html";
+      } else {
+        // Se è loggato, mostra il contenuto protetto e nasconde il caricamento
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('protected-content').style.display = 'block';
+      }
+    }
+
+    // Gestione del pulsante di logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "accedi.html";
+      });
+    }
+
+    aggiornaTestoAuth();
+    cambiaLingua(currentLang);
+    verificaAccesso();
+  </script>
+
+</body>
+</html>
