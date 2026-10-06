@@ -118,17 +118,27 @@
   <main class="page-content">
     <div class="join-box">
       <h1>Unisciti al Circolo</h1>
-      <p>Registrati per entrare nella community di Virtual Skipper 5 e partecipare alle regate ufficiali.</p>
+      <p>Compila il modulo per registrarti e far parte della community.</p>
       
       <form id="register-form">
         <div class="form-group">
-          <label for="username">Nome Skipper</label>
-          <input type="text" id="username" required placeholder="Es. Skipper_Alfa">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" required placeholder="Il tuo nome">
         </div>
 
         <div class="form-group">
-          <label for="boat">Nome Barca (Opzionale)</label>
-          <input type="text" id="boat" placeholder="Es. Vindicator">
+          <label for="cognome">Cognome</label>
+          <input type="text" id="cognome" required placeholder="Il tuo cognome">
+        </div>
+
+        <div class="form-group">
+          <label for="nickname">Nickname</label>
+          <input type="text" id="nickname" required placeholder="Il tuo nickname di gioco/skipper">
+        </div>
+
+        <div class="form-group">
+          <label for="team">Team</label>
+          <input type="text" id="team" placeholder="Nome del team di appartenenza">
         </div>
 
         <div class="form-group">
@@ -151,7 +161,7 @@
   </main>
 
   <script>
-    // Configurazione Supabase (Sostituisci con i tuoi dati reali)
+    // Inserisci le tue chiavi reali di Supabase
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co/rest/v1/';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
@@ -161,19 +171,23 @@
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
+      const nome = document.getElementById('nome').value;
+      const cognome = document.getElementById('cognome').value;
+      const nickname = document.getElementById('nickname').value;
+      const team = document.getElementById('team').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const username = document.getElementById('username').value;
-      const boat = document.getElementById('boat').value;
 
-      // 1. Registrazione dell'utente con Supabase Auth
+      // 1. Registrazione con Supabase Auth salvando i dati extra in options.data
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
         options: {
           data: {
-            username: username,
-            boat: boat
+            nome: nome,
+            cognome: cognome,
+            nickname: nickname,
+            team: team
           }
         }
       });
@@ -181,7 +195,7 @@
       if (error) {
         alert("Errore durante la registrazione: " + error.message);
       } else {
-        alert("Registrazione completata con successo! Controlla la tua email (se richiesta) oppure effettua il login.");
+        alert("Registrazione completata con successo! Ora puoi effettuare il login.");
         window.location.href = "accedi.html";
       }
     });
