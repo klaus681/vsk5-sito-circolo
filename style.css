@@ -44,7 +44,7 @@ header {
 }
 
 .logo-img {
-  height: 48px; /* Altezza ottimale dello stemma nell'header */
+  height: 48px;
   width: auto;
   display: block;
 }
@@ -115,6 +115,23 @@ nav a:hover, nav a.active {
   border: 1px solid rgba(255,255,255,0.4);
   padding: 0.5rem 1.2rem;
   border-radius: 20px;
+}
+
+/* --- SELETTORE LINGUA --- */
+.lang-selector {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.lang-selector:focus {
+  outline: none;
+  border-color: #38bdf8;
 }
 
 /* --- CONTENUTO CENTRALE --- */
@@ -189,4 +206,44 @@ nav a:hover, nav a.active {
 
 .btn-outline:hover {
   border-color: #ffffff;
+}
+
+/* --- TABELLE E SEZIONI INTERNE --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+th {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* --- FOOTER --- */
+footer {
+  margin-top: auto;
+  background: #080b13;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+  padding: 1.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
