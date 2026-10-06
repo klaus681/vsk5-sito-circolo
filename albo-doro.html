@@ -50,9 +50,18 @@
       padding: 2rem;
       font-style: italic;
     }
+    /* Stile per il selettore della lingua nel menu */
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
   </style>
 
-  <!-- Libreria JavaScript di Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -64,35 +73,44 @@
     
     <nav>
       <ul id="nav-menu">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="team.html">Team</a></li>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         
         <li class="dropdown">
-          <a href="gare.html">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html">Gare</a></li>
-            <li><a href="classifiche.html">Classifiche</a></li>
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
 
-        <li><a href="albo-doro.html" class="active">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="albo-doro.html" class="active" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html">Download</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
+        
+        <li>
+          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
+            <option value="it">🇮🇹 IT</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="es">🇪🇸 ES</option>
+          </select>
+        </li>
       </ul>
     </nav>
   </header>
 
   <main class="page-content">
     <div class="albo-box">
-      <h1>Albo d'Oro</h1>
-      <p style="color: #9ca3af; margin-bottom: 2rem;">I trionfi e i vincitori delle competizioni storiche del Circolo Velico Italia.</p>
+      <h1 data-i18n="albo_title">Albo d'Oro</h1>
+      <p style="color: #9ca3af; margin-bottom: 2rem;" data-i18n="albo_subtitle">I trionfi e i vincitori delle competizioni storiche del Circolo Velico Italia.</p>
       
       <div id="albo-container">
-        <p class="loading-text">Caricamento albo d'oro in corso...</p>
+        <p class="loading-text" data-i18n="albo_loading">Caricamento albo d'oro in corso...</p>
       </div>
     </div>
   </main>
@@ -103,50 +121,193 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Dizionario delle traduzioni
+    const traduzioni = {
+      it: {
+        nav_home: "Home",
+        nav_team: "Team",
+        nav_gare: "Gare & Eventi ▾",
+        nav_gare_sub: "Gare",
+        nav_classifiche: "Classifiche",
+        nav_albo: "Albo d'Oro",
+        nav_regolamento: "Regolamento",
+        nav_contatti: "Contatti",
+        nav_membri: "Membri",
+        nav_unisciti: "Unisciti",
+        nav_accedi: "Accedi",
+        nav_area_membri: "Area Membri",
+        albo_title: "Albo d'Oro",
+        albo_subtitle: "I trionfi e i vincitori delle competizioni storiche del Circolo Velico Italia.",
+        albo_loading: "Caricamento albo d'oro in corso...",
+        albo_empty: "Nessun record presente nell'albo d'oro al momento.",
+        th_skipper: "Skipper Vincitore",
+        th_race: "Nome Gara",
+        th_date: "Data Gara"
+      },
+      en: {
+        nav_home: "Home",
+        nav_team: "Teams",
+        nav_gare: "Races & Events ▾",
+        nav_gare_sub: "Races",
+        nav_classifiche: "Standings",
+        nav_albo: "Hall of Fame",
+        nav_regolamento: "Rules",
+        nav_contatti: "Contact",
+        nav_membri: "Members",
+        nav_unisciti: "Join Us",
+        nav_accedi: "Login",
+        nav_area_membri: "Member Area",
+        albo_title: "Hall of Fame",
+        albo_subtitle: "The triumphs and winners of historical competitions at Circolo Velico Italia.",
+        albo_loading: "Loading Hall of Fame...",
+        albo_empty: "No records found in the Hall of Fame at the moment.",
+        th_skipper: "Winning Skipper",
+        th_race: "Race Name",
+        th_date: "Race Date"
+      },
+      fr: {
+        nav_home: "Accueil",
+        nav_team: "Équipes",
+        nav_gare: "Courses & Événements ▾",
+        nav_gare_sub: "Courses",
+        nav_classifiche: "Classements",
+        nav_albo: "Temple de la Renommée",
+        nav_regolamento: "Règlement",
+        nav_contatti: "Contact",
+        nav_membri: "Membres",
+        nav_unisciti: "Rejoindre",
+        nav_accedi: "Connexion",
+        nav_area_membri: "Espace Membre",
+        albo_title: "Temple de la Renommée",
+        albo_subtitle: "Les triomphes et vainqueurs des compétitions historiques du Circolo Velico Italia.",
+        albo_loading: "Chargement du temple de la renommée...",
+        albo_empty: "Aucun enregistrement trouvé dans le temple de la renommée pour le moment.",
+        th_skipper: "Skipper Vainqueur",
+        th_race: "Nom de la Course",
+        th_date: "Date de la Course"
+      },
+      es: {
+        nav_home: "Inicio",
+        nav_team: "Equipos",
+        nav_gare: "Regatas y Eventos ▾",
+        nav_gare_sub: "Regatas",
+        nav_classifiche: "Clasificación",
+        nav_albo: "Salón de la Fama",
+        nav_regolamento: "Reglamento",
+        nav_contatti: "Contacto",
+        nav_membri: "Miembros",
+        nav_unisciti: "Únete",
+        nav_accedi: "Acceder",
+        nav_area_membri: "Área de Miembros",
+        albo_title: "Salón de la Fama",
+        albo_subtitle: "Los triunfos y ganadores de las competiciones históricas del Circolo Velico Italia.",
+        albo_loading: "Cargando el salón de la fama...",
+        albo_empty: "No hay registros en el salón de la fama por el momento.",
+        th_skipper: "Patrón Ganador",
+        th_race: "Nombre de la Regata",
+        th_date: "Fecha de la Regata"
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    document.getElementById('languageSelect').value = currentLang;
+
+    let vincitoriDati = [];
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+
+      aggiornaTestoAuth();
+
+      // Ridisegna la tabella se i dati sono già stati caricati, per tradurre intestazioni e date
+      if (vincitoriDati.length > 0) {
+        renderizzaTabella(vincitoriDati);
+      }
+    }
+
+    let isLogged = false;
+    function aggiornaTestoAuth() {
+      const authLink = document.getElementById('auth-link');
+      if (isLogged && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      }
+    }
+
+    function formatData(dataString, lang) {
+      if (!dataString) return '-';
+      const data = new Date(dataString);
+      if (isNaN(data)) return dataString; 
+
+      const localeMap = { it: 'it-IT', en: 'en-GB', fr: 'fr-FR', es: 'es-ES' };
+      const locale = localeMap[lang] || 'it-IT';
+      
+      return data.toLocaleDateString(locale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
     async function checkNavAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = "Area Membri";
+      if (session) {
+        isLogged = true;
+        aggiornaTestoAuth();
       }
     }
 
     async function loadAlboDoro() {
       const container = document.getElementById('albo-container');
 
-      // Interroga la tabella "albo_doro" su Supabase
       const { data: vincitori, error } = await supabaseClient
         .from('albo_doro')
         .select('*');
 
       if (error) {
-        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento dell'albo d'oro: ${error.message}</p>`;
+        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore: ${error.message}</p>`;
         return;
       }
 
       if (!vincitori || vincitori.length === 0) {
-        container.innerHTML = `<p class="empty-text">Nessun record presente nell'albo d'oro al momento.</p>`;
+        container.innerHTML = `<p class="empty-text">${traduzioni[currentLang]['albo_empty']}</p>`;
         return;
       }
+
+      vincitoriDati = vincitori;
+      renderizzaTabella(vincitori);
+    }
+
+    function renderizzaTabella(vincitori) {
+      const container = document.getElementById('albo-container');
+      const t = traduzioni[currentLang];
 
       let tableHtml = `
         <table class="results-table">
           <thead>
             <tr>
-              <th>Skipper Vincitore</th>
-              <th>Nome Gara</th>
-              <th>Data Gara</th>
+              <th>${t.th_skipper}</th>
+              <th>${t.th_race}</th>
+              <th>${t.th_date}</th>
             </tr>
           </thead>
           <tbody>
       `;
 
       vincitori.forEach(item => {
-        // Gestiamo eventuali variazioni nei nomi delle colonne (es. skipper, nome_gara/gara, data_gara/data)
         const skipper = item.skipper || item.nome_skipper || '-';
         const nomeGara = item.nome_gara || item.gara || item.titolo || '-';
-        const dataGara = item.data_gara || item.data || '-';
+        const dataGaraBrura = item.data_gara || item.data || '';
+        const dataGara = formatData(dataGaraBrura, currentLang);
 
         tableHtml += `
           <tr>
@@ -163,6 +324,7 @@
 
     checkNavAuth();
     loadAlboDoro();
+    cambiaLingua(currentLang);
   </script>
 
 </body>
