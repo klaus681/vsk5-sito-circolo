@@ -82,19 +82,19 @@
         </div>
       </div>
 
-      <!-- Card Prossima Regata -->
-      <a href="regate.html" class="next-regata-card">
+      <!-- Card Prossima Regata Dinamica (collegata a Supabase) -->
+      <a href="regate.html" id="next-regata-card" class="next-regata-card">
         <div class="regata-content">
           <span class="badge-tag">Prossima regata</span>
-          <h2>Coppa del Tirreno</h2>
+          <h2 id="regata-titolo">Caricamento regata...</h2>
           <div class="regata-meta">
-            <span>📅 Domenica 18 ottobre · 21:00</span>
-            <span>📍 Golfo di Napoli</span>
-            <span>⛵ ACC V5</span>
+            <span id="regata-data">📅 --</span>
+            <span id="regata-luogo">📍 --</span>
+            <span id="regata-barca">⛵ --</span>
           </div>
           <div class="regata-progress-container">
-            <div class="progress-bar" style="width: 70%;"></div>
-            <span class="progress-text">14/20 iscritti</span>
+            <div id="regata-barra" class="progress-bar" style="width: 0%;"></div>
+            <span id="regata-iscritti" class="progress-text">--/-- iscritti</span>
           </div>
         </div>
       </a>
@@ -145,11 +145,54 @@
 
   </main>
 
-  <!-- SCRIPT MULTILINGUA E SUPABASE -->
+  <!-- SCRIPT SUPABASE E MULTILINGUA -->
   <script>
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Funzione per caricare la prossima regata da Supabase
+    async function caricaProssimaRegata() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('regate')
+          .select('*')
+          .order('data', { ascending: true })
+          .limit(1);
+
+        if (error) {
+          console.error("Errore nel caricamento della regata:", error);
+          document.getElementById('regata-titolo').textContent = "Coppa del Tirreno";
+          document.getElementById('regata-data').textContent = "📅 Domenica 18 ottobre · 21:00";
+          document.getElementById('regata-luogo').textContent = "📍 Golfo di Napoli";
+          document.getElementById('regata-barca').textContent = "⛵ ACC V5";
+          document.getElementById('regata-barra').style.width = '70%';
+          document.getElementById('regata-iscritti').textContent = "14/20 iscritti";
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const regata = data[0];
+          document.getElementById('regata-titolo').textContent = regata.titolo || regata.nome || "Prossima Regata";
+          document.getElementById('regata-data').textContent = `📅 ${regata.data || 'Data da definirsi'}`;
+          document.getElementById('regata-luogo').textContent = `📍 ${regata.luogo || 'Golfo d\'Italia'}`;
+          document.getElementById('regata-barca').textContent = `⛵ ${regata.barca || 'Classe libera'}`;
+          
+          const iscritti = regata.iscritti_count || regata.iscritti || 0;
+          const maxIscritti = regata.max_iscritti || 20;
+          const percentuale = Math.min(Math.round((iscritti / maxIscritti) * 100), 100);
+          
+          document.getElementById('regata-barra').style.width = percentuale + '%';
+          document.getElementById('regata-iscritti').textContent = `${iscritti}/${maxIscritti} iscritti`;
+        } else {
+          document.getElementById('regata-titolo').textContent = "Nessuna regata in programma";
+        }
+      } catch (err) {
+        console.error("Errore di connessione a Supabase:", err);
+      }
+    }
+
+    caricaProssimaRegata();
 
     const traduzioni = {
       it: {
