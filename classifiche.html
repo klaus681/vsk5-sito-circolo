@@ -50,9 +50,18 @@
       padding: 2rem;
       font-style: italic;
     }
+    /* Stile per il selettore della lingua nel menu */
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
   </style>
 
-  <!-- Libreria JavaScript di Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -64,35 +73,44 @@
     
     <nav>
       <ul id="nav-menu">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="team.html">Team</a></li>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         
         <li class="dropdown">
-          <a href="gare.html" class="active">Gare & Eventi ▾</a>
+          <a href="gare.html" class="active" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html">Gare</a></li>
-            <li><a href="classifiche.html">Classifiche</a></li>
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
 
-        <li><a href="albo-doro.html">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html">Download</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
+        
+        <li>
+          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
+            <option value="it">🇮🇹 IT</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="es">🇪🇸 ES</option>
+          </select>
+        </li>
       </ul>
     </nav>
   </header>
 
   <main class="page-content">
     <div class="classifiche-box">
-      <h1>Classifiche & Risultati</h1>
-      <p style="color: #9ca3af; margin-bottom: 2rem;">Consulta i risultati ufficiali delle regate disputate dai membri del circolo.</p>
+      <h1 data-i18n="classifiche_title">Classifiche & Risultati</h1>
+      <p style="color: #9ca3af; margin-bottom: 2rem;" data-i18n="classifiche_subtitle">Consulta i risultati ufficiali delle regate disputate dai membri del circolo.</p>
       
       <div id="classifiche-container">
-        <p class="loading-text">Caricamento classifiche in corso...</p>
+        <p class="loading-text" data-i18n="classifiche_loading">Caricamento classifiche in corso...</p>
       </div>
     </div>
   </main>
@@ -103,44 +121,171 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function checkNavAuth() {
+    // Dizionario delle traduzioni
+    const traduzioni = {
+      it: {
+        nav_home: "Home",
+        nav_team: "Team",
+        nav_gare: "Gare & Eventi ▾",
+        nav_gare_sub: "Gare",
+        nav_classifiche: "Classifiche",
+        nav_albo: "Albo d'Oro",
+        nav_regolamento: "Regolamento",
+        nav_contatti: "Contatti",
+        nav_membri: "Membri",
+        nav_unisciti: "Unisciti",
+        nav_accedi: "Accedi",
+        nav_area_membri: "Area Membri",
+        classifiche_title: "Classifiche & Risultati",
+        classifiche_subtitle: "Consulta i risultati ufficiali delle regate disputate dai membri del circolo.",
+        classifiche_loading: "Caricamento classifiche in corso...",
+        classifiche_empty: "Nessun risultato disponibile al momento.",
+        th_position: "Posizione",
+        th_event: "Nome Evento / Gara",
+        th_race: "Regata (Race)",
+        th_skipper: "Skipper",
+        th_notes: "Note"
+      },
+      en: {
+        nav_home: "Home",
+        nav_team: "Teams",
+        nav_gare: "Races & Events ▾",
+        nav_gare_sub: "Races",
+        nav_classifiche: "Standings",
+        nav_albo: "Hall of Fame",
+        nav_regolamento: "Rules",
+        nav_contatti: "Contact",
+        nav_membri: "Members",
+        nav_unisciti: "Join Us",
+        nav_accedi: "Login",
+        nav_area_membri: "Member Area",
+        classifiche_title: "Standings & Results",
+        classifiche_subtitle: "Check the official results of the regattas sailed by club members.",
+        classifiche_loading: "Loading standings...",
+        classifiche_empty: "No results available at the moment.",
+        th_position: "Position",
+        th_event: "Event / Race Name",
+        th_race: "Race",
+        th_skipper: "Skipper",
+        th_notes: "Notes"
+      },
+      fr: {
+        nav_home: "Accueil",
+        nav_team: "Équipes",
+        nav_gare: "Courses & Événements ▾",
+        nav_gare_sub: "Courses",
+        nav_classifiche: "Classements",
+        nav_albo: "Temple de la Renommée",
+        nav_regolamento: "Règlement",
+        nav_contatti: "Contact",
+        nav_membri: "Membres",
+        nav_unisciti: "Rejoindre",
+        nav_accedi: "Connexion",
+        nav_area_membri: "Espace Membre",
+        classifiche_title: "Classements & Résultats",
+        classifiche_subtitle: "Consultez les résultats officiels des régates disputées par les membres du club.",
+        classifiche_loading: "Chargement des classements...",
+        classifiche_empty: "Aucun résultat disponible pour le moment.",
+        th_position: "Position",
+        th_event: "Nom de l'Événement",
+        th_race: "Course",
+        th_skipper: "Skipper",
+        th_notes: "Notes"
+      },
+      es: {
+        nav_home: "Inicio",
+        nav_team: "Equipos",
+        nav_gare: "Regatas y Eventos ▾",
+        nav_gare_sub: "Regatas",
+        nav_classifiche: "Clasificación",
+        nav_albo: "Salón de la Fama",
+        nav_regolamento: "Reglamento",
+        nav_contatti: "Contacto",
+        nav_membri: "Miembros",
+        nav_unisciti: "Únete",
+        nav_accedi: "Acceder",
+        nav_area_membri: "Área de Miembros",
+        classifiche_title: "Clasificación y Resultados",
+        classifiche_subtitle: "Consulta los resultados oficiales de las regatas disputadas por los miembros del club.",
+        classifiche_loading: "Cargando clasificaciones...",
+        classifiche_empty: "No hay resultados disponibles en este momento.",
+        th_position: "Posición",
+        th_event: "Nombre del Evento",
+        th_race: "Regata",
+        th_skipper: "Patrón",
+        th_notes: "Notas"
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    document.getElementById('languageSelect').value = currentLang;
+
+    let risultatiDati = [];
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+
+      aggiornaTestoAuth();
+
+      if (risultatiDati.length > 0) {
+        renderizzaTabella(risultatiDati);
+      }
+    }
+
+    let isLogged = false;
+    async function aggiornaTestoAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const authLink = document.getElementById('auth-link');
       if (session && authLink) {
+        isLogged = true;
         authLink.href = "membri.html";
-        authLink.textContent = "Area Membri";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
       }
     }
 
     async function loadClassifiche() {
       const container = document.getElementById('classifiche-container');
 
-      // Interroga la tabella "risultati_gara" usando i nomi esatti delle colonne
       const { data: risultati, error } = await supabaseClient
         .from('risultati_gara')
         .select('*')
         .order('position', { ascending: true });
 
       if (error) {
-        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento delle classifiche: ${error.message}</p>`;
+        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore: ${error.message}</p>`;
         return;
       }
 
       if (!risultati || risultati.length === 0) {
-        container.innerHTML = `<p class="empty-text">Nessun risultato disponibile al momento.</p>`;
+        container.innerHTML = `<p class="empty-text">${traduzioni[currentLang]['classifiche_empty']}</p>`;
         return;
       }
 
-      // Costruisce la tabella HTML mappando esattamente le tue colonne
+      risultatiDati = risultati;
+      renderizzaTabella(risultati);
+    }
+
+    function renderizzaTabella(risultati) {
+      const container = document.getElementById('classifiche-container');
+      const t = traduzioni[currentLang];
+
       let tableHtml = `
         <table class="results-table">
           <thead>
             <tr>
-              <th>Posizione</th>
-              <th>Nome Evento / Gara</th>
-              <th>Regata (Race)</th>
-              <th>Skipper</th>
-              <th>Note</th>
+              <th>${t.th_position}</th>
+              <th>${t.th_event}</th>
+              <th>${t.th_race}</th>
+              <th>${t.th_skipper}</th>
+              <th>${t.th_notes}</th>
             </tr>
           </thead>
           <tbody>
@@ -153,18 +298,3 @@
             <td>${item.nome || '-'}</td>
             <td>${item.race_name || '-'}</td>
             <td>${item.skipper_name || '-'}</td>
-            <td>${item.notes || '-'}</td>
-          </tr>
-        `;
-      });
-
-      tableHtml += `</tbody></table>`;
-      container.innerHTML = tableHtml;
-    }
-
-    checkNavAuth();
-    loadClassifiche();
-  </script>
-
-</body>
-</html>
