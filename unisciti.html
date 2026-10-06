@@ -4,8 +4,152 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unisciti - Circolo Velico Italia VSK5</title>
-  <link rel="stylesheet" href="style.css">
   
+  <!-- Stili incorporati per evitare problemi di caricamento del CSS -->
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #0b0f19;
+      color: #f3f4f6;
+      min-height: 100vh;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+    }
+    .logo-container img.logo-img {
+      height: 45px;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    nav ul li a {
+      color: #d1d5db;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    nav ul li a:hover, nav ul li a.active {
+      color: #38bdf8;
+    }
+    .btn-unisciti {
+      background: #38bdf8;
+      color: #0b0f19 !important;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .btn-accedi {
+      border: 1px solid #38bdf8;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .page-content {
+      padding: 140px 2rem 4rem 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .join-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2.5rem;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    .join-box h1 {
+      font-size: 1.8rem;
+      color: #38bdf8;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+    .join-box p {
+      color: #9ca3af;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 0.75rem;
+      background: #38bdf8;
+      color: #0b0f19;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 1rem;
+    }
+    .btn-submit:hover {
+      background: #0ea5e9;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+    .auth-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
   <!-- Libreria JavaScript di Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -22,9 +166,6 @@
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
           <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
-          <ul class="dropdown-menu">
-            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
-          </ul>
         </li>
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
@@ -183,7 +324,6 @@
       }
     }
 
-    // Gestione invio modulo di registrazione
     document.getElementById('register-form').addEventListener('submit', async function(e) {
       e.preventDefault();
       const t = traduzioni[currentLang];
