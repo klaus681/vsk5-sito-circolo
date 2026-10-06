@@ -6,6 +6,10 @@
   <title>Circolo Velico Italia - VSK5</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    /* Regolazione per evitare che il titolo si sovrapponga al menu */
+    .hero-content {
+      padding-top: 5rem !important;
+    }
     .next-race-preview {
       background: rgba(0, 0, 0, 0.5);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -53,13 +57,11 @@
     }
   </style>
   
-  <!-- Libreria JavaScript di Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
   <div class="hero-section">
-    <!-- Header / Menu -->
     <header>
       <a href="index.html" class="logo-container">
         <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
@@ -89,7 +91,6 @@
       </nav>
     </header>
 
-    <!-- Contenuto Centrale -->
     <div class="hero-content">
       <span class="tag-active">• VIRTUAL SKIPPER 5 — STAGIONE ATTIVA</span>
       <h1>Circolo Velico<br><span>Italia</span><br>Vsk5</h1>
@@ -100,7 +101,6 @@
         <a href="gare.html" class="btn-outline">Calendario Gare</a>
       </div>
 
-      <!-- Box dinamico per la prossima gara -->
       <div id="next-race-box" class="next-race-preview" style="display: none;">
         <div class="next-race-header">
           <h4>🏆 Prossima Regata in Arrivo</h4>
@@ -110,7 +110,6 @@
         <p id="nr-desc"></p>
       </div>
 
-      <!-- Video Spot YouTube nella Home -->
       <div class="video-container" style="max-width: 650px; margin: 2.5rem 0 1rem 0; text-align: left;">
         <h4 style="color: #38bdf8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem;">🎬 Spot Ufficiale</h4>
         <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
@@ -136,7 +135,7 @@
     function formatDataGara(dataString) {
       if (!dataString) return 'Da definire';
       const data = new Date(dataString);
-      if (isNaN(data)) return dataString; // Ritorna la stringa originale se non è una data valida
+      if (isNaN(data)) return dataString; 
       return data.toLocaleDateString('it-IT', {
         day: 'numeric',
         month: 'long',
