@@ -167,7 +167,7 @@
     <h1 data-i18n="home_title">Benvenuti al Circolo Velico Italia VSK5</h1>
     <p data-i18n="home_subtitle">Vivi la passione della vela virtuale e reale con la nostra community di skipper.</p>
 
-    <!-- Filmato di YouTube Inserito Correttamente -->
+    <!-- Filmato di YouTube Integrato -->
     <div class="video-section">
       <h2 data-i18n="video_title">Ultime Regate & Highlights</h2>
       <div class="video-container">
@@ -190,4 +190,67 @@
         nav_home: "Home", nav_team: "Team", nav_gare: "Gare & Eventi ▾", nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro", nav_regolamento: "Regolamento", nav_download: "Download",
         nav_contatti: "Contatti", nav_membri: "Membri", nav_unisciti: "Unisciti",
-        nav_accedi: "Accedi", nav
+        nav_accedi: "Accedi", nav_area_membri: "Area Membri",
+        home_title: "Benvenuti al Circolo Velico Italia VSK5",
+        home_subtitle: "Vivi la passione della vela virtuale e reale con la nostra community di skipper.",
+        video_title: "Ultime Regate & Highlights"
+      },
+      en: {
+        nav_home: "Home", nav_team: "Teams", nav_gare: "Races & Events ▾", nav_classifiche: "Standings",
+        nav_albo: "Hall of Fame", nav_regolamento: "Rules", nav_download: "Download",
+        nav_contatti: "Contact", nav_membri: "Members", nav_unisciti: "Join Us",
+        nav_accedi: "Login", nav_area_membri: "Member Area",
+        home_title: "Welcome to Circolo Velico Italia VSK5",
+        home_subtitle: "Experience the passion of virtual and real sailing with our community of skippers.",
+        video_title: "Latest Races & Highlights"
+      },
+      fr: {
+        nav_home: "Accueil", nav_team: "Équipes", nav_gare: "Courses & Événements ▾", nav_classifiche: "Classements",
+        nav_albo: "Temple de la Renommée", nav_regolamento: "Règlement", nav_download: "Téléchargements",
+        nav_contatti: "Contact", nav_membri: "Membres", nav_unisciti: "Rejoindre",
+        nav_accedi: "Connexion", nav_area_membri: "Espace Membre",
+        home_title: "Bienvenue au Circolo Velico Italia VSK5",
+        home_subtitle: "Vivez la passion de la voile virtuelle et réelle avec notre communauté de skippers.",
+        video_title: "Dernières Courses & Faits Marquants"
+      },
+      es: {
+        nav_home: "Inicio", nav_team: "Equipos", nav_gare: "Regatas y Eventos ▾", nav_classifiche: "Clasificación",
+        nav_albo: "Salón de la Fama", nav_regolamento: "Reglamento", nav_download: "Descargas",
+        nav_contatti: "Contacto", nav_membri: "Miembros", nav_unisciti: "Únete",
+        nav_accedi: "Acceder", nav_area_membri: "Área de Miembros",
+        home_title: "Bienvenido al Circolo Velico Italia VSK5",
+        home_subtitle: "Vive la pasión de la vela virtual y real con nuestra comunidad de patrones.",
+        video_title: "Últimas Regatas y Destacados"
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+      aggiornaTestoAuth();
+    }
+
+    async function aggiornaTestoAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      }
+    }
+
+    aggiornaTestoAuth();
+    cambiaLingua(currentLang);
+  </script>
+</body>
+</html>
