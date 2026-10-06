@@ -5,7 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Accedi - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
-  
+  <style>
+    .page-content {
+      padding: 160px 2rem 4rem 2rem;
+      max-width: 450px;
+      margin: 0 auto;
+    }
+    .auth-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2.5rem;
+      border-radius: 8px;
+    }
+    .auth-box h1 {
+      color: #38bdf8;
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #d1d5db;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 4px;
+    }
+    .btn-submit {
+      width: 100%;
+      background: #0099ff;
+      color: white;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover {
+      background: #0077cc;
+    }
+    .auth-footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+    .auth-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+
   <!-- Libreria Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -48,26 +118,26 @@
   </header>
 
   <main class="page-content">
-    <div class="auth-box" style="max-width: 400px; margin: 0 auto; background: rgba(255,255,255,0.03); padding: 2.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-      <h1 style="color: #38bdf8; font-size: 1.8rem; margin-bottom: 0.5rem; text-transform: uppercase;" data-i18n="login_title">Accedi</h1>
-      <p style="color: #9ca3af; margin-bottom: 2rem;" data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
+    <div class="auth-box">
+      <h1 data-i18n="login_title">Accedi</h1>
+      <p style="color: #9ca3af; margin-bottom: 1.5rem;" data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
       
       <form id="login-form">
-        <div style="margin-bottom: 1.2rem;">
-          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;" data-i18n="label_email">Email</label>
-          <input type="email" id="email" required placeholder="tuamail@example.com" style="width: 100%; padding: 0.8rem; background: #111827; border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
+        <div class="form-group">
+          <label for="email" data-i18n="label_email">Email</label>
+          <input type="email" id="email" required placeholder="tuamail@example.com" data-i18n-placeholder="ph_email">
         </div>
         
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;" data-i18n="label_password">Password</label>
-          <input type="password" id="password" required placeholder="••••••••" style="width: 100%; padding: 0.8rem; background: #111827; border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
+        <div class="form-group">
+          <label for="password" data-i18n="label_password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••">
         </div>
         
-        <button type="submit" style="width: 100%; background: #0099ff; color: white; padding: 0.8rem; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;" data-i18n="btn_login">Accedi</button>
+        <button type="submit" class="btn-submit" data-i18n="btn_login">Accedi</button>
       </form>
 
-      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: #9ca3af;">
-        <span data-i18n="footer_no_account">Non hai un account?</span> <a href="unisciti.html" style="color: #38bdf8; text-decoration: none;" data-i18n="footer_register_link">Registrati qui</a>
+      <div class="auth-footer">
+        <span data-i18n="footer_no_account">Non hai un account?</span> <a href="unisciti.html" data-i18n="footer_register_link">Registrati qui</a>
       </div>
     </div>
   </main>
@@ -83,7 +153,6 @@
         nav_home: "Home",
         nav_team: "Team",
         nav_gare: "Gare & Eventi ▾",
-        nav_gare_sub: "Gare",
         nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro",
         nav_regolamento: "Regolamento",
@@ -97,6 +166,7 @@
         login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.",
         label_email: "Email",
         label_password: "Password",
+        ph_email: "tuamail@example.com",
         btn_login: "Accedi",
         footer_no_account: "Non hai un account?",
         footer_register_link: "Registrati qui",
@@ -107,7 +177,6 @@
         nav_home: "Home",
         nav_team: "Teams",
         nav_gare: "Races & Events ▾",
-        nav_gare_sub: "Races",
         nav_classifiche: "Standings",
         nav_albo: "Hall of Fame",
         nav_regolamento: "Rules",
@@ -121,6 +190,7 @@
         login_subtitle: "Enter your credentials to access the member area.",
         label_email: "Email",
         label_password: "Password",
+        ph_email: "yourmail@example.com",
         btn_login: "Login",
         footer_no_account: "Don't have an account?",
         footer_register_link: "Register here",
@@ -131,7 +201,6 @@
         nav_home: "Accueil",
         nav_team: "Équipes",
         nav_gare: "Courses & Événements ▾",
-        nav_gare_sub: "Courses",
         nav_classifiche: "Classements",
         nav_albo: "Temple de la Renommée",
         nav_regolamento: "Règlement",
@@ -145,6 +214,7 @@
         login_subtitle: "Entrez vos identifiants pour accéder à l'espace membre.",
         label_email: "E-mail",
         label_password: "Mot de passe",
+        ph_email: "votremail@example.com",
         btn_login: "Se connecter",
         footer_no_account: "Vous n'avez pas de compte ?",
         footer_register_link: "Inscrivez-vous ici",
@@ -155,7 +225,6 @@
         nav_home: "Inicio",
         nav_team: "Equipos",
         nav_gare: "Regatas y Eventos ▾",
-        nav_gare_sub: "Regatas",
         nav_classifiche: "Clasificación",
         nav_albo: "Salón de la Fama",
         nav_regolamento: "Reglamento",
@@ -169,6 +238,7 @@
         login_subtitle: "Introduce tus credenciales para acceder al área de miembros.",
         label_email: "Correo electrónico",
         label_password: "Contraseña",
+        ph_email: "tumail@example.com",
         btn_login: "Acceder",
         footer_no_account: "¿No tienes una cuenta?",
         footer_register_link: "Regístrate aquí",
@@ -191,6 +261,14 @@
           el.textContent = traduzioni[lang][key];
         }
       });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (traduzioni[lang][key]) {
+          el.placeholder = traduzioni[lang][key];
+        }
+      });
+
       aggiornaTestoAuth();
     }
 
