@@ -7,56 +7,85 @@
   <link rel="stylesheet" href="style.css">
   <style>
     .page-content {
-      padding: 140px 2rem 4rem 2rem;
-      max-width: 450px;
+      padding: 130px 2rem 4rem 2rem;
+      max-width: 500px;
       margin: 0 auto;
     }
-    .login-card {
+    .login-box {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 2.5rem;
       border-radius: 8px;
     }
-    .login-card h1 {
+    .login-box h1 {
       font-size: 2rem;
       margin-bottom: 0.5rem;
       text-transform: uppercase;
       color: #38bdf8;
       text-align: center;
     }
-    .login-card p {
+    .login-box > p {
       color: #9ca3af;
       font-size: 0.95rem;
-      text-align: center;
+      line-height: 1.5;
       margin-bottom: 2rem;
+      text-align: center;
     }
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
+    .form-group {
+      margin-bottom: 1.2rem;
     }
-    .login-form input {
-      padding: 0.9rem;
-      background: rgba(255, 255, 255, 0.03);
+    .form-group label {
+      display: block;
+      color: #d1d5db;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      background: rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 4px;
       color: #fff;
       font-size: 1rem;
     }
-    .login-form button {
+    .form-group input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .btn-submit {
+      width: 100%;
       background-color: #0099ff;
       color: #fff;
+      padding: 0.8rem;
       border: none;
-      padding: 0.9rem;
       border-radius: 4px;
+      font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
+      margin-top: 1rem;
     }
-    .login-form button:hover {
+    .btn-submit:hover {
       background-color: #0077cc;
     }
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+    .auth-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
   </style>
+
+  <!-- Libreria JavaScript di Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -79,7 +108,7 @@
         <li><a href="regolamento.html">Regolamento</a></li>
         <li><a href="download.html">Download</a></li>
         <li><a href="contatti.html">Contatti</a></li>
-       <li><a href="membri.html">Membri</a></li>
+        <li><a href="membri.html">Membri</a></li>
         <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
         <li><a href="accedi.html" class="active btn-accedi">Accedi</a></li>
       </ul>
@@ -87,17 +116,59 @@
   </header>
 
   <main class="page-content">
-    <div class="login-card">
-      <h1>Area Soci</h1>
-      <p>Inserisci le tue credenziali per accedere</p>
+    <div class="login-box">
+      <h1>Accedi</h1>
+      <p>Inserisci le tue credenziali per entrare nell'area riservata.</p>
       
-      <form class="login-form">
-        <input type="email" placeholder="Email o Username" required>
-        <input type="password" placeholder="Password" required>
-        <button type="submit">Accedi</button>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="tuamail@example.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        
+        <button type="submit" class="btn-submit">Accedi</button>
       </form>
+
+      <div class="auth-footer">
+        Non hai ancora un account? <a href="unisciti.html">Unisciti qui</a>
+      </div>
     </div>
   </main>
+
+  <script>
+    // Configurazione Supabase
+    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      // Autenticazione con Supabase Auth
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        alert("Errore durante l'accesso: " + error.message);
+      } else {
+        alert("Accesso effettuato con successo!");
+        // Reindirizza alla pagina dei membri o alla home
+        window.location.href = "membri.html";
+      }
+    });
+  </script>
 
 </body>
 </html>
