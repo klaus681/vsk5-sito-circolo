@@ -1,0 +1,284 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #ffffff;
+  background-color: #0b0f19;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- HEADER / NAVIGAZIONE --- */
+header {
+  width: 100%;
+  padding: 1.5rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(5px);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo-img {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+nav a {
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+nav a:hover, nav a.active {
+  color: #ffffff;
+}
+
+/* --- DROPDOWN --- */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: rgba(11, 15, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  list-style: none;
+  padding: 0.5rem 0;
+  min-width: 150px;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.dropdown-menu li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #d1d5db;
+  white-space: nowrap;
+}
+
+.dropdown-menu li a:hover {
+  background-color: rgba(0, 153, 255, 0.2);
+  color: #ffffff;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.btn-unisciti {
+  background-color: #0088ff;
+  color: #ffffff !important;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.btn-accedi {
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+}
+
+/* --- CONTENUTO PAGINA --- */
+.page-content {
+  padding: 130px 2rem 5rem 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.albo-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.albo-header h1 {
+  font-size: 3rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #f59e0b;
+  margin-bottom: 0.5rem;
+}
+
+.albo-header p {
+  color: #9ca3af;
+  font-size: 1.1rem;
+}
+
+.trofili-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3.5rem;
+}
+
+.trofeo-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.trofeo-card::before {
+  content: '🏆';
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.trofeo-card h3 {
+  color: #fff;
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.trofeo-card .vincitore {
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.trofeo-card .anno {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  color: #38bdf8;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #38bdf8;
+  padding-left: 0.8rem;
+}
+
+.table-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 1.1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+th {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+td {
+  color: #d1d5db;
+}
+
+
+<nav>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="team.html">Team</a></li>
+    <li class="dropdown">
+      <a href="#">Gare & Eventi ▾</a>
+      <ul class="dropdown-menu">
+        <li><a href="classifiche.html">Classifiche</a></li>
+      </ul>
+    </li>
+    <li><a href="albo-doro.html" class="active" style="color: #f59e0b;">Albo d'Oro</a></li>
+    <li><a href="#">Regolamento</a></li>
+    <li><a href="#">Download</a></li>
+    <li><a href="contatti.html">Contatti</a></li>
+    <li><a href="membri.html">Membri</a></li>
+    <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+    <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+  </ul>
+</nav>
+
+
+<div class="trofili-grid">
+  <div class="trofeo-card">
+    <h3>Coppa Italia VSK5</h3>
+    <div class="vincitore">Skipper_Alfa</div>
+    <div class="anno">Stagione 2025</div>
+  </div>
+  <div class="trofeo-card">
+    <h3>Trofeo d'Inverno</h3>
+    <div class="vincitore">Beta_Sail</div>
+    <div class="anno">Stagione 2025</div>
+  </div>
+  <div class="trofeo-card">
+    <h3>Campionato Offshore</h3>
+    <div class="vincitore">Galeotto</div>
+    <div class="anno">Stagione 2024</div>
+  </div>
+</div>
+
+<h2 class="section-title">Storico Vincitori per Categoria</h2>
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Stagione</th>
+        <th>Trofeo / Competizione</th>
+        <th>Skipper Vincitore</th>
+        <th>Imbarcazione</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2025</td>
+        <td>Coppa Italia VSK5</td>
+        <td>Skipper_Alfa</td>
+        <td>ACC/V5 Vindicator</td>
+      </tr>
+      <tr>
+        <td>2025</td>
+        <td>Trofeo d'Inverno</td>
+        <td>Beta_Sail</td>
+        <td>ACC/V5 Bora</td>
+      </tr>
+      <tr>
+        <td>2024</td>
+        <td>Campionato Offshore</td>
+        <td>Galeotto</td>
+        <td>ACC/V5 Libeccio</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
