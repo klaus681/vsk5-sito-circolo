@@ -1,7 +1,7 @@
 /* --- STILI GLOBALI E VARIABILI --- */
 :root {
   --bg-color: #0b0f19;
-  --card-bg: #111827; /* Sfondo solido e scuro per garantire leggibilità */
+  --card-bg: #111827;
   --border-color: rgba(255, 255, 255, 0.1);
   --text-main: #ffffff;
   --text-muted: #9ca3af;
@@ -29,7 +29,7 @@ header {
   left: 0;
   width: 100%;
   height: 90px;
-  background-color: #0b0f19; /* Sfondo solido per evitare trasparenze illeggibili */
+  background-color: #0b0f19;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -238,9 +238,10 @@ nav ul li a.active {
   text-transform: uppercase;
 }
 
-/* Card Prossima Regata */
+/* Card Prossima Regata con Sfondo a Tema Vela ed Effetto Overlay */
 .next-regata-card {
-  background: #111827;
+  background: linear-gradient(rgba(11, 15, 25, 0.75), rgba(11, 15, 25, 0.90)), 
+              url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80') center/cover;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
@@ -249,6 +250,13 @@ nav ul li a.active {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.next-regata-card:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
 }
 
 .badge-tag {
