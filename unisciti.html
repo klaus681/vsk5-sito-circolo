@@ -5,95 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unisciti - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .page-content {
-      padding: 130px 2rem 4rem 2rem;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-    .join-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 2.5rem;
-      border-radius: 8px;
-    }
-    .join-box h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-      color: #38bdf8;
-      text-align: center;
-    }
-    .join-box > p {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      margin-bottom: 2rem;
-      text-align: center;
-    }
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-    .form-group label {
-      display: block;
-      color: #d1d5db;
-      margin-bottom: 0.4rem;
-      font-size: 0.9rem;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 0.8rem;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-      color: #fff;
-      font-size: 1rem;
-    }
-    .form-group input:focus {
-      outline: none;
-      border-color: #38bdf8;
-    }
-    .btn-submit {
-      width: 100%;
-      background-color: #0099ff;
-      color: #fff;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 1rem;
-    }
-    .btn-submit:hover {
-      background-color: #0077cc;
-    }
-    .auth-footer {
-      text-align: center;
-      margin-top: 1.5rem;
-      color: #9ca3af;
-      font-size: 0.9rem;
-    }
-    .auth-footer a {
-      color: #38bdf8;
-      text-decoration: none;
-    }
-    .auth-footer a:hover {
-      text-decoration: underline;
-    }
-    /* Stile per il selettore della lingua nel menu */
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-  </style>
-
+  
   <!-- Libreria JavaScript di Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -109,9 +21,8 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
@@ -183,4 +94,216 @@
 
   <script>
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtK
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const traduzioni = {
+      it: {
+        nav_home: "Home",
+        nav_team: "Team",
+        nav_gare: "Gare & Eventi ▾",
+        nav_gare_sub: "Gare",
+        nav_classifiche: "Classifiche",
+        nav_albo: "Albo d'Oro",
+        nav_regolamento: "Regolamento",
+        nav_download: "Download",
+        nav_contatti: "Contatti",
+        nav_membri: "Membri",
+        nav_unisciti: "Unisciti",
+        nav_accedi: "Accedi",
+        nav_area_membri: "Area Membri",
+        join_title: "Unisciti al Circolo",
+        join_subtitle: "Compila il modulo per registrarti e far parte della community.",
+        label_nome: "Nome",
+        label_cognome: "Cognome",
+        label_nickname: "Nickname",
+        label_team: "Team",
+        label_email: "Email",
+        label_password: "Password",
+        ph_nome: "Il tuo nome",
+        ph_cognome: "Il tuo cognome",
+        ph_nickname: "Il tuo nickname di gioco/skipper",
+        ph_team: "Nome del team di appartenenza",
+        ph_email: "tuamail@example.com",
+        btn_register: "Registrati",
+        footer_has_account: "Hai già un account?",
+        footer_login_link: "Accedi qui",
+        alert_success: "Registrazione completata con successo! Ora puoi effettuare il login.",
+        alert_error: "Errore durante la registrazione: "
+      },
+      en: {
+        nav_home: "Home",
+        nav_team: "Teams",
+        nav_gare: "Races & Events ▾",
+        nav_gare_sub: "Races",
+        nav_classifiche: "Standings",
+        nav_albo: "Hall of Fame",
+        nav_regolamento: "Rules",
+        nav_download: "Download",
+        nav_contatti: "Contact",
+        nav_membri: "Members",
+        nav_unisciti: "Join Us",
+        nav_accedi: "Login",
+        nav_area_membri: "Member Area",
+        join_title: "Join the Club",
+        join_subtitle: "Fill out the form to register and become part of the community.",
+        label_nome: "First Name",
+        label_cognome: "Last Name",
+        label_nickname: "Nickname",
+        label_team: "Team",
+        label_email: "Email",
+        label_password: "Password",
+        ph_nome: "Your first name",
+        ph_cognome: "Your last name",
+        ph_nickname: "Your game/skipper nickname",
+        ph_team: "Name of your team",
+        ph_email: "yourmail@example.com",
+        btn_register: "Register",
+        footer_has_account: "Already have an account?",
+        footer_login_link: "Log in here",
+        alert_success: "Registration completed successfully! You can now log in.",
+        alert_error: "Error during registration: "
+      },
+      fr: {
+        nav_home: "Accueil",
+        nav_team: "Équipes",
+        nav_gare: "Courses & Événements ▾",
+        nav_gare_sub: "Courses",
+        nav_classifiche: "Classements",
+        nav_albo: "Temple de la Renommée",
+        nav_regolamento: "Règlement",
+        nav_download: "Téléchargements",
+        nav_contatti: "Contact",
+        nav_membri: "Membres",
+        nav_unisciti: "Rejoindre",
+        nav_accedi: "Connexion",
+        nav_area_membri: "Espace Membre",
+        join_title: "Rejoindre le Club",
+        join_subtitle: "Remplissez le formulaire pour vous inscrire et faire partie de la communauté.",
+        label_nome: "Prénom",
+        label_cognome: "Nom",
+        label_nickname: "Pseudo",
+        label_team: "Équipe",
+        label_email: "E-mail",
+        label_password: "Mot de passe",
+        ph_nome: "Votre prénom",
+        ph_cognome: "Votre nom",
+        ph_nickname: "Votre pseudo de jeu/skipper",
+        ph_team: "Nom de votre équipe",
+        ph_email: "votremail@example.com",
+        btn_register: "S'inscrire",
+        footer_has_account: "Vous avez déjà un compte ?",
+        footer_login_link: "Connectez-vous ici",
+        alert_success: "Inscription réussie ! Vous pouvez maintenant vous connecter.",
+        alert_error: "Erreur lors de l'inscription : "
+      },
+      es: {
+        nav_home: "Inicio",
+        nav_team: "Equipos",
+        nav_gare: "Regatas y Eventos ▾",
+        nav_gare_sub: "Regatas",
+        nav_classifiche: "Clasificación",
+        nav_albo: "Salón de la Fama",
+        nav_regolamento: "Reglamento",
+        nav_download: "Descargas",
+        nav_contatti: "Contacto",
+        nav_membri: "Miembros",
+        nav_unisciti: "Únete",
+        nav_accedi: "Acceder",
+        nav_area_membri: "Área de Miembros",
+        join_title: "Únete al Club",
+        join_subtitle: "Rellena el formulario para registrarte y formar parte de la comunidad.",
+        label_nome: "Nombre",
+        label_cognome: "Apellido",
+        label_nickname: "Apodo",
+        label_team: "Equipo",
+        label_email: "Correo electrónico",
+        label_password: "Contraseña",
+        ph_nome: "Tu nombre",
+        ph_cognome: "Tu apellido",
+        ph_nickname: "Tu apodo de juego/skipper",
+        ph_team: "Nombre de tu equipo",
+        ph_email: "tumail@example.com",
+        btn_register: "Registrarse",
+        footer_has_account: "¿Ya tienes una cuenta?",
+        footer_login_link: "Inicia sesión aquí",
+        alert_success: "¡Registro completado con éxito! Ahora puedes iniciar sesión.",
+        alert_error: "Error durante el registro: "
+      }
+    };
+
+    let currentLang = localStorage.getItem('cvi_lang') || 'it';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
+
+    function cambiaLingua(lang) {
+      currentLang = lang;
+      localStorage.setItem('cvi_lang', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (traduzioni[lang][key]) {
+          el.textContent = traduzioni[lang][key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (traduzioni[lang][key]) {
+          el.placeholder = traduzioni[lang][key];
+        }
+      });
+
+      aggiornaTestoAuth();
+    }
+
+    async function aggiornaTestoAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      }
+    }
+
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const nome = document.getElementById('nome').value;
+        const cognome = document.getElementById('cognome').value;
+        const nickname = document.getElementById('nickname').value;
+        const team = document.getElementById('team').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const { data, error } = await supabaseClient.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              nome: nome,
+              cognome: cognome,
+              nickname: nickname,
+              team: team
+            }
+          }
+        });
+
+        if (error) {
+          alert(traduzioni[currentLang]['alert_error'] + error.message);
+        } else {
+          alert(traduzioni[currentLang]['alert_success']);
+          window.location.href = "accedi.html";
+        }
+      });
+    }
+
+    aggiornaTestoAuth();
+    cambiaLingua(currentLang);
+  </script>
+
+</body>
+</html>
