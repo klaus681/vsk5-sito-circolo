@@ -1,304 +1,446 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circolo Velico Italia VSK5 - Home</title>
-  
-  <style>
-    :root {
-      --bg-color: #0b0f19;
-      --card-bg: rgba(255, 255, 255, 0.03);
-      --border-color: rgba(255, 255, 255, 0.08);
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --accent-color: #38bdf8;
-    }
+/* --- STILI GLOBALI E VARIABILI --- */
+:root {
+  --bg-color: #0b0f19;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --accent-color: #38bdf8;
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
-    body {
-      background: linear-gradient(rgba(11, 15, 25, 0.85), rgba(11, 15, 25, 0.95)), 
-                  url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      color: var(--text-main);
-      min-height: 100vh;
-      line-height: 1.6;
-    }
+body {
+  background: linear-gradient(rgba(11, 15, 25, 0.85), rgba(11, 15, 25, 0.95)), 
+              url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+  background-size: cover;
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.6;
+}
 
-    /* Header e Navigazione in stile editoriale */
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(11, 15, 25, 0.9);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2.5rem;
-      border-bottom: 1px solid var(--border-color);
-      z-index: 1000;
-    }
+/* --- HEADER E NAVBAR --- */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 90px;
+  background-color: rgba(11, 15, 25, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 3rem;
+  z-index: 1000;
+  border-bottom: 1px solid var(--border-color);
+}
 
-    .logo-container {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-    }
+.logo-container {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
 
-    .logo-container img.logo-img {
-      height: 40px;
-    }
+.logo-img {
+  height: 45px;
+  width: auto;
+}
 
-    nav ul {
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
+nav ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
 
-    nav ul li a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: color 0.2s ease;
-    }
+nav ul li a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
 
-    nav ul li a:hover, 
-    nav ul li a.active {
-      color: var(--accent-color);
-    }
+nav ul li a:hover,
+nav ul li a.active {
+  color: var(--accent-color);
+}
 
-    .btn-unisciti {
-      background: var(--accent-color) !important;
-      color: var(--bg-color) !important;
-      padding: 0.5rem 1.1rem;
-      border-radius: 6px;
-      font-weight: 600;
-      transition: opacity 0.2s ease;
-    }
+/* Bottoni Navbar */
+.btn-unisciti {
+  background-color: var(--accent-color) !important;
+  color: var(--bg-color) !important;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
 
-    .btn-unisciti:hover {
-      opacity: 0.9;
-    }
+.btn-unisciti:hover {
+  opacity: 0.9;
+}
 
-    .btn-accedi {
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      padding: 0.5rem 1.1rem;
-      border-radius: 6px;
-      color: var(--accent-color) !important;
-      font-weight: 500;
-      transition: background 0.2s ease;
-    }
+.btn-accedi {
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  color: var(--accent-color) !important;
+  font-weight: 500;
+}
 
-    .btn-accedi:hover {
-      background: rgba(56, 189, 248, 0.1);
-    }
+.btn-accedi:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
 
-    .lang-selector {
-      background: #1e293b;
-      color: var(--accent-color);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      outline: none;
-    }
-    
-    /* Contenuto principale Hero */
-    .hero {
-      padding: 160px 2rem 4rem 2rem;
-      max-width: 900px;
-      margin: 0 auto;
-      text-align: center;
-    }
+.lang-selector {
+  background: #1e293b;
+  color: var(--accent-color);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+}
 
-    .hero h1 {
-      font-size: 3rem;
-      color: var(--text-main);
-      margin-bottom: 1rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
+/* Dropdown */
+.dropdown {
+  position: relative;
+}
 
-    .hero p {
-      color: var(--text-muted);
-      font-size: 1.15rem;
-      max-width: 650px;
-      margin: 0 auto 3rem auto;
-    }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #0f172a;
+  min-width: 160px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  flex-direction: column;
+}
 
-    /* Sezione Video YouTube con look moderno a card */
-    .video-section {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      padding: 2rem;
-      border-radius: 16px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      text-align: left;
-    }
+.dropdown:hover .dropdown-menu {
+  display: flex;
+}
 
-    .video-section h2 {
-      color: var(--text-main);
-      margin-bottom: 1.25rem;
-      font-size: 1.35rem;
-      font-weight: 600;
-    }
+.dropdown-menu li a {
+  padding: 0.5rem 1rem;
+  color: var(--text-muted);
+  display: block;
+}
 
-    .video-container {
-      position: relative;
-      width: 100%;
-      padding-bottom: 56.25%; /* Rapporto 16:9 */
-      height: 0;
-      overflow: hidden;
-      border-radius: 10px;
-    }
+.dropdown-menu li a:hover {
+  background-color: rgba(56, 189, 248, 0.1);
+  color: var(--accent-color);
+}
 
-    .video-container iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-  </style>
+/* --- LAYOUT CONTENUTI --- */
+.page-content {
+  padding-top: 140px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 4rem;
+}
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
+/* Sezione Hero Editoriale */
+.hero-section {
+  text-align: center;
+  padding: 2rem 0 3rem 0;
+}
 
-  <header>
-    <a href="index.html" class="logo-container">
-      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
-    </a>
-    
-    <nav>
-      <ul id="nav-menu">
-        <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
-        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
-        <li class="dropdown">
-          <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
-        </li>
-        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
-        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
-        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
-        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
-        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
-        
-        <li>
-          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
-            <option value="it">🇮🇹 IT</option>
-            <option value="en">🇬🇧 EN</option>
-            <option value="fr">🇫🇷 FR</option>
-            <option value="es">🇪🇸 ES</option>
-          </select>
-        </li>
-      </ul>
-    </nav>
-  </header>
+.hero-badge {
+  display: inline-block;
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--accent-color);
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
 
-  <main class="hero">
-    <h1 data-i18n="home_title">Benvenuti al Circolo Velico Italia VSK5</h1>
-    <p data-i18n="home_subtitle">Vivi la passione della vela virtuale e reale con la nostra community di skipper.</p>
+.hero-section h1 {
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+}
 
-    <!-- Filmato di YouTube Integrato -->
-    <div class="video-section">
-      <h2 data-i18n="video_title">Ultime Regate & Highlights</h2>
-      <div class="video-container">
-        <iframe src="https://www.youtube.com/embed/GYKltIx2TLQ" 
-                title="Circolo Velico Italia GP Spot" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-        </iframe>
-      </div>
-    </div>
-  </main>
+.hero-section h1 em {
+  font-style: italic;
+  color: var(--accent-color);
+}
 
-  <script>
-    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+.hero-section p {
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  max-width: 650px;
+  margin: 0 auto 2rem auto;
+}
 
-    const traduzioni = {
-      it: {
-        nav_home: "Home", nav_team: "Team", nav_gare: "Gare & Eventi ▾", nav_classifiche: "Classifiche",
-        nav_albo: "Albo d'Oro", nav_regolamento: "Regolamento", nav_download: "Download",
-        nav_contatti: "Contatti", nav_membri: "Membri", nav_unisciti: "Unisciti",
-        nav_accedi: "Accedi", nav_area_membri: "Area Membri",
-        home_title: "Benvenuti al Circolo Velico Italia VSK5",
-        home_subtitle: "Vivi la passione della vela virtuale e reale con la nostra community di skipper.",
-        video_title: "Ultime Regate & Highlights"
-      },
-      en: {
-        nav_home: "Home", nav_team: "Teams", nav_gare: "Races & Events ▾", nav_classifiche: "Standings",
-        nav_albo: "Hall of Fame", nav_regolamento: "Rules", nav_download: "Download",
-        nav_contatti: "Contact", nav_membri: "Members", nav_unisciti: "Join Us",
-        nav_accedi: "Login", nav_area_membri: "Member Area",
-        home_title: "Welcome to Circolo Velico Italia VSK5",
-        home_subtitle: "Experience the passion of virtual and real sailing with our community of skippers.",
-        video_title: "Latest Races & Highlights"
-      },
-      fr: {
-        nav_home: "Accueil", nav_team: "Équipes", nav_gare: "Courses & Événements ▾", nav_classifiche: "Classements",
-        nav_albo: "Temple de la Renommée", nav_regolamento: "Règlement", nav_download: "Téléchargements",
-        nav_contatti: "Contact", nav_membri: "Membres", nav_unisciti: "Rejoindre",
-        nav_accedi: "Connexion", nav_area_membri: "Espace Membre",
-        home_title: "Bienvenue au Circolo Velico Italia VSK5",
-        home_subtitle: "Vivez la passion de la voile virtuelle et réelle avec notre communauté de skippers.",
-        video_title: "Dernières Courses & Faits Marquants"
-      },
-      es: {
-        nav_home: "Inicio", nav_team: "Equipos", nav_gare: "Regatas y Eventos ▾", nav_classifiche: "Clasificación",
-        nav_albo: "Salón de la Fama", nav_regolamento: "Reglamento", nav_download: "Descargas",
-        nav_contatti: "Contacto", nav_membri: "Miembros", nav_unisciti: "Únete",
-        nav_accedi: "Acceder", nav_area_membri: "Área de Miembros",
-        home_title: "Bienvenido al Circolo Velico Italia VSK5",
-        home_subtitle: "Vive la pasión de la vela virtual y real con nuestra comunidad de patrones.",
-        video_title: "Últimas Regatas y Destacados"
-      }
-    };
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
 
-    let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) langSelect.value = currentLang;
+.btn-primary {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
 
-    function cambiaLingua(lang) {
-      currentLang = lang;
-      localStorage.setItem('cvi_lang', lang);
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (traduzioni[lang][key]) {
-          el.textContent = traduzioni[lang][key];
-        }
-      });
-      aggiornaTestoAuth();
-    }
+.btn-secondary {
+  background: var(--card-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
 
-    async function aggiornaTestoAuth() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
-      }
-    }
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 
-    aggiornaTestoAuth();
-    cambiaLingua(currentLang);
-  </script>
-</body>
-</html>
+/* Dashboard Grid (Metriche + Prossima Regata) */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.stats-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Card Prossima Regata */
+.next-regata-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8)), 
+              url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80') center/cover;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  text-decoration: none;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  transition: border-color 0.2s;
+}
+
+.next-regata-card:hover {
+  border-color: var(--accent-color);
+}
+
+.badge-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent-color);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.next-regata-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.regata-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.regata-progress-container {
+  background: rgba(255, 255, 255, 0.1);
+  height: 8px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: var(--accent-color);
+  height: 100%;
+  border-radius: 4px;
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Sezione Righe Contenuti (Classifica / Video) */
+.content-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.card-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.card-box h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.link-more {
+  font-size: 0.85rem;
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+/* Tabella Classifica */
+.ranking-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ranking-list li {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.rank-pos {
+  font-weight: 700;
+  color: var(--accent-color);
+  width: 25px;
+}
+
+.rank-info {
+  flex-grow: 1;
+}
+
+.rank-info strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.rank-info span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.team-badge {
+  font-size: 0.75rem;
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--accent-color);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-right: 1rem;
+}
+
+.rank-points {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* Video Responsive */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Responsive per dispositivi mobili */
+@media (max-width: 900px) {
+  .dashboard-grid, .content-row {
+    grid-template-columns: 1fr;
+  }
+  .hero-section h1 {
+    font-size: 2.3rem;
+  }
+  header {
+    padding: 0 1.5rem;
+  }
+}
