@@ -103,6 +103,16 @@
       font-style: italic;
       grid-column: 1 / -1;
     }
+    /* Stile per il selettore della lingua nel menu */
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
   </style>
 
   <!-- Libreria JavaScript di Supabase -->
@@ -117,35 +127,45 @@
     
     <nav>
       <ul id="nav-menu">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="team.html" class="active">Team</a></li>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" class="active" data-i18n="nav_team">Team</a></li>
         
         <li class="dropdown">
-          <a href="gare.html">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html">Gare</a></li>
-            <li><a href="classifiche.html">Classifiche</a></li>
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
 
-        <li><a href="albo-doro.html">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
-        <li><a href="download.html">Download</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
+        
+        <!-- Selettore Lingua -->
+        <li>
+          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
+            <option value="it">🇮🇹 IT</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="es">🇪🇸 ES</option>
+          </select>
+        </li>
       </ul>
     </nav>
   </header>
 
   <main class="page-content">
     <div class="team-box">
-      <h1>Team & Equipaggi</h1>
-      <p style="color: #9ca3af; margin-bottom: 2rem;">Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.</p>
+      <h1 data-i18n="team_title">Team & Equipaggi</h1>
+      <p style="color: #9ca3af; margin-bottom: 2rem;" data-i18n="team_subtitle">Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.</p>
       
       <div id="teams-container" class="teams-grid">
-        <p class="loading-text">Caricamento team in corso...</p>
+        <p class="loading-text" data-i18n="team_loading">Caricamento team in corso...</p>
       </div>
     </div>
   </main>
@@ -156,100 +176,42 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function checkNavAuth() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = "Area Membri";
-      }
-    }
-
-    async function loadTeamsWithMembers() {
-      const container = document.getElementById('teams-container');
-
-      // 1. Carica i team dalla tabella "teams"
-      const { data: teams, error: teamError } = await supabaseClient
-        .from('teams')
-        .select('*');
-
-      if (teamError) {
-        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento dei team: ${teamError.message}</p>`;
-        return;
-      }
-
-      if (!teams || teams.length === 0) {
-        container.innerHTML = `<p class="empty-text">Nessun team registrato al momento.</p>`;
-        return;
-      }
-
-      // 2. Carica i profili dalla tabella "profiles"
-      const { data: profiles, error: profileError } = await supabaseClient
-        .from('profiles')
-        .select('*');
-
-      const allProfiles = profileError ? [] : (profiles || []);
-
-      let htmlContent = '';
-
-      teams.forEach(team => {
-        const teamName = team.nome_team || team.nome || '';
-        const captainName = team.capitano || team.skipper || '';
-        
-        // Filtra i profili che appartengono a questo team
-        const teamMembers = allProfiles.filter(p => p.team && p.team.trim().toLowerCase() === teamName.trim().toLowerCase());
-        
-        const memberCount = teamMembers.length;
-
-        let membersHtml = '';
-        if (memberCount > 0) {
-          membersHtml += `<ul class="members-list">`;
-          teamMembers.forEach(member => {
-            let displayName = '';
-            if (member.nome) {
-              displayName = member.nome.trim();
-            }
-            if (member.nickname) {
-              displayName += displayName ? ` (${member.nickname.trim()})` : member.nickname.trim();
-            }
-            if (!displayName) {
-              displayName = member.email || 'Membro';
-            }
-
-            membersHtml += `<li>${displayName}</li>`;
-          });
-          membersHtml += `</ul>`;
-        } else {
-          membersHtml += `<span class="no-members">Nessun membro iscritto a questo team.</span>`;
-        }
-
-        // Se il capitano è impostato, crea il tesserino visivo
-        const captainHtml = captainName ? `<span class="team-captain-badge">⚓ Capitano: ${captainName}</span>` : '';
-
-        htmlContent += `
-          <div class="team-card">
-            <div>
-              <h3>${teamName}</h3>
-              ${captainHtml}
-              <p>${team.descrizione || 'Nessuna descrizione disponibile.'}</p>
-            </div>
-            <div class="team-members-section">
-              <div class="team-members-title">
-                <span>Membri</span>
-                <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${memberCount}</span>
-              </div>
-              ${membersHtml}
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = htmlContent;
-    }
-
-    checkNavAuth();
-    loadTeamsWithMembers();
-  </script>
-
-</body>
-</html>
+    // Dizionario delle traduzioni
+    const traduzioni = {
+      it: {
+        nav_home: "Home",
+        nav_team: "Team",
+        nav_gare: "Gare & Eventi ▾",
+        nav_gare_sub: "Gare",
+        nav_classifiche: "Classifiche",
+        nav_albo: "Albo d'Oro",
+        nav_regolamento: "Regolamento",
+        nav_download: "Download",
+        nav_contatti: "Contatti",
+        nav_membri: "Membri",
+        nav_unisciti: "Unisciti",
+        nav_accedi: "Accedi",
+        nav_area_membri: "Area Membri",
+        team_title: "Team & Equipaggi",
+        team_subtitle: "Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.",
+        team_loading: "Caricamento team in corso...",
+        team_empty: "Nessun team registrato al momento.",
+        captain_label: "⚓ Capitano: ",
+        members_label: "Membri",
+        no_members: "Nessun membro iscritto a questo team.",
+        no_desc: "Nessuna descrizione disponibile."
+      },
+      en: {
+        nav_home: "Home",
+        nav_team: "Teams",
+        nav_gare: "Races & Events ▾",
+        nav_gare_sub: "Races",
+        nav_classifiche: "Standings",
+        nav_albo: "Hall of Fame",
+        nav_regolamento: "Rules",
+        nav_download: "Download",
+        nav_contatti: "Contact",
+        nav_membri: "Members",
+        nav_unisciti: "Join Us",
+        nav_accedi: "Login",
+        nav_area_membri: "Member
