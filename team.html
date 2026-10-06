@@ -3,47 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Team - Circolo Velico Italia VSK5</title>
+  <title>Team & Equipaggi - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .page-content {
-      padding: 120px 2rem 4rem 2rem;
+      padding: 130px 2rem 4rem 2rem;
       max-width: 1000px;
       margin: 0 auto;
     }
-    .page-content h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      color: #38bdf8;
-    }
-    .page-content p {
-      color: #9ca3af;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin-bottom: 2rem;
-    }
-    .team-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-    .team-card {
+    .team-box {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 2rem;
+      padding: 2.5rem;
       border-radius: 8px;
-      text-align: center;
+    }
+    .team-box h1 {
+      font-size: 2rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: 0.5rem;
+    }
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .team-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 4px solid #38bdf8;
+      padding: 1.8rem;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
     .team-card h3 {
-      margin-bottom: 0.5rem;
       color: #fff;
+      font-size: 1.5rem;
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-    .team-card span {
-      color: #0099ff;
+    .team-captain-badge {
+      display: inline-block;
+      color: #38bdf8;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    .team-card p {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      margin: 0 0 1.2rem 0;
+      line-height: 1.5;
+    }
+    .team-members-section {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 1rem;
+      margin-top: auto;
+    }
+    .team-members-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: #38bdf8;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .members-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      color: #e2e8f0;
       font-size: 0.9rem;
     }
+    .members-list li {
+      padding: 0.2rem 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    }
+    .members-list li:last-child {
+      border-bottom: none;
+    }
+    .no-members {
+      color: #6b7280;
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+    .loading-text, .empty-text {
+      text-align: center;
+      color: #9ca3af;
+      padding: 2rem;
+      font-style: italic;
+      grid-column: 1 / -1;
+    }
   </style>
+
+  <!-- Libreria JavaScript di Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -53,45 +116,140 @@
     </a>
     
     <nav>
-      <ul>
+      <ul id="nav-menu">
         <li><a href="index.html">Home</a></li>
         <li><a href="team.html" class="active">Team</a></li>
+        
         <li class="dropdown">
-          <a href="#">Gare & Eventi ▾</a>
+          <a href="gare.html">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
+            <li><a href="gare.html">Gare</a></li>
             <li><a href="classifiche.html">Classifiche</a></li>
           </ul>
         </li>
-       <li><a href="albo-doro.html">Albo d'Oro</a></li>
+
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
         <li><a href="regolamento.html">Regolamento</a></li>
-       <li><a href="download.html">Download</a></li>
+        <li><a href="download.html">Download</a></li>
         <li><a href="contatti.html">Contatti</a></li>
         <li><a href="membri.html">Membri</a></li>
         <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
       </ul>
     </nav>
   </header>
 
   <main class="page-content">
-    <h1>Il Nostro Team</h1>
-    <p>I membri e gli skipper che rappresentano il Circolo Velico Italia nelle competizioni ufficiali di Virtual Skipper 5.</p>
-    
-    <div class="team-grid">
-      <div class="team-card">
-        <h3>Skipper 1</h3>
-        <span>Comodoro / Fondatore</span>
-      </div>
-      <div class="team-card">
-        <h3>Skipper 2</h3>
-        <span>Capitano di Squadra</span>
-      </div>
-      <div class="team-card">
-        <h3>Skipper 3</h3>
-        <span>Responsabile Regate</span>
+    <div class="team-box">
+      <h1>Team & Equipaggi</h1>
+      <p style="color: #9ca3af; margin-bottom: 2rem;">Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.</p>
+      
+      <div id="teams-container" class="teams-grid">
+        <p class="loading-text">Caricamento team in corso...</p>
       </div>
     </div>
   </main>
+
+  <script>
+    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkNavAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const authLink = document.getElementById('auth-link');
+      if (session && authLink) {
+        authLink.href = "membri.html";
+        authLink.textContent = "Area Membri";
+      }
+    }
+
+    async function loadTeamsWithMembers() {
+      const container = document.getElementById('teams-container');
+
+      // 1. Carica i team dalla tabella "teams"
+      const { data: teams, error: teamError } = await supabaseClient
+        .from('teams')
+        .select('*');
+
+      if (teamError) {
+        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento dei team: ${teamError.message}</p>`;
+        return;
+      }
+
+      if (!teams || teams.length === 0) {
+        container.innerHTML = `<p class="empty-text">Nessun team registrato al momento.</p>`;
+        return;
+      }
+
+      // 2. Carica i profili dalla tabella "profiles"
+      const { data: profiles, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('*');
+
+      const allProfiles = profileError ? [] : (profiles || []);
+
+      let htmlContent = '';
+
+      teams.forEach(team => {
+        const teamName = team.nome_team || team.nome || '';
+        const captainName = team.capitano || team.skipper || '';
+        
+        // Filtra i profili che appartengono a questo team
+        const teamMembers = allProfiles.filter(p => p.team && p.team.trim().toLowerCase() === teamName.trim().toLowerCase());
+        
+        const memberCount = teamMembers.length;
+
+        let membersHtml = '';
+        if (memberCount > 0) {
+          membersHtml += `<ul class="members-list">`;
+          teamMembers.forEach(member => {
+            let displayName = '';
+            if (member.nome) {
+              displayName = member.nome.trim();
+            }
+            if (member.nickname) {
+              displayName += displayName ? ` (${member.nickname.trim()})` : member.nickname.trim();
+            }
+            if (!displayName) {
+              displayName = member.email || 'Membro';
+            }
+
+            membersHtml += `<li>${displayName}</li>`;
+          });
+          membersHtml += `</ul>`;
+        } else {
+          membersHtml += `<span class="no-members">Nessun membro iscritto a questo team.</span>`;
+        }
+
+        // Se il capitano è impostato, crea il tesserino visivo
+        const captainHtml = captainName ? `<span class="team-captain-badge">⚓ Capitano: ${captainName}</span>` : '';
+
+        htmlContent += `
+          <div class="team-card">
+            <div>
+              <h3>${teamName}</h3>
+              ${captainHtml}
+              <p>${team.descrizione || 'Nessuna descrizione disponibile.'}</p>
+            </div>
+            <div class="team-members-section">
+              <div class="team-members-title">
+                <span>Membri</span>
+                <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${memberCount}</span>
+              </div>
+              ${membersHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = htmlContent;
+    }
+
+    checkNavAuth();
+    loadTeamsWithMembers();
+  </script>
 
 </body>
 </html>
