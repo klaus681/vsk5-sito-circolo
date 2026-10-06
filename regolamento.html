@@ -38,7 +38,20 @@
       color: #d1d5db;
       line-height: 1.6;
     }
+    /* Stile per il selettore della lingua nel menu */
+    .lang-selector {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
   </style>
+
+  <!-- Libreria JavaScript di Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -48,45 +61,57 @@
     </a>
     
     <nav>
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="team.html">Team</a></li>
+      <ul id="nav-menu">
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="#">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="classifiche.html">Classifiche</a></li>
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
-        <li><a href="albo-doro.html">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
-       <li><a href="download.html">Download</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi">Accedi</a></li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" class="active" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
+        
+        <!-- Selettore Lingua -->
+        <li>
+          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
+            <option value="it">🇮🇹 IT</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="fr">🇫🇷 FR</option>
+            <option value="es">🇪🇸 ES</option>
+          </select>
+        </li>
       </ul>
     </nav>
   </header>
 
   <main class="page-content">
-    <h1>Regolamento Ufficiale</h1>
-    <p>Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.</p>
+    <h1 data-i18n="rules_title">Regolamento Ufficiale</h1>
+    <p data-i18n="rules_subtitle">Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.</p>
     
     <div class="rule-box">
-      <h3>1. Fair Play e Condotta in Mare</h3>
-      <p>Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.</p>
+      <h3 data-i18n="rule1_title">1. Fair Play e Condotta in Mare</h3>
+      <p data-i18n="rule1_desc">Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.</p>
     </div>
 
     <div class="rule-box">
-      <h3>2. Classi di Imbarcazioni</h3>
-      <p>Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.</p>
+      <h3 data-i18n="rule2_title">2. Classi di Imbarcazioni</h3>
+      <p data-i18n="rule2_desc">Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.</p>
     </div>
 
     <div class="rule-box">
-      <h3>3. Punteggi e Classifiche</h3>
-      <p>I punteggi vengono assegnati in base all'ordine di arrivo di ogni singola regata. Il sistema di scarto si applica secondo il regolamento specifico pubblicato ad inizio stagione.</p>
+      <h3 data-i18n="rule3_title">3. Punteggi e Classifiche</h3>
+      <p data-i18n="rule3_desc">I punteggi vengono assegnati in base all'ordine di arrivo di ogni singola regata. Il sistema di scarto si applica secondo il regolamento specifico pubblicato ad inizio stagione.</p>
     </div>
   </main>
 
-</body>
-</html>
+  <script>
+    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3ll
