@@ -80,7 +80,6 @@
       padding: 2rem;
       font-style: italic;
     }
-    /* Stile per il selettore della lingua nel menu */
     .lang-selector {
       background: #1e293b;
       color: #38bdf8;
@@ -107,9 +106,8 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
@@ -154,13 +152,11 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Dizionario delle traduzioni
     const traduzioni = {
       it: {
         nav_home: "Home",
         nav_team: "Team",
         nav_gare: "Gare & Eventi ▾",
-        nav_gare_sub: "Gare",
         nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro",
         nav_regolamento: "Regolamento",
@@ -186,7 +182,6 @@
         nav_home: "Home",
         nav_team: "Teams",
         nav_gare: "Races & Events ▾",
-        nav_gare_sub: "Races",
         nav_classifiche: "Standings",
         nav_albo: "Hall of Fame",
         nav_regolamento: "Rules",
@@ -212,7 +207,6 @@
         nav_home: "Accueil",
         nav_team: "Équipes",
         nav_gare: "Courses & Événements ▾",
-        nav_gare_sub: "Courses",
         nav_classifiche: "Classements",
         nav_albo: "Temple de la Renommée",
         nav_regolamento: "Règlement",
@@ -238,7 +232,6 @@
         nav_home: "Inicio",
         nav_team: "Equipos",
         nav_gare: "Regatas y Eventos ▾",
-        nav_gare_sub: "Regatas",
         nav_classifiche: "Clasificación",
         nav_albo: "Salón de la Fama",
         nav_regolamento: "Reglamento",
@@ -263,7 +256,8 @@
     };
 
     let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    document.getElementById('languageSelect').value = currentLang;
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
 
     let cachedProfiles = [];
 
@@ -285,19 +279,100 @@
       }
     }
 
-    let isLogged = false;
     async function aggiornaTestoAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const authLink = document.getElementById('auth-link');
       if (session && authLink) {
-        isLogged = true;
         authLink.href = "membri.html";
         authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
       }
     }
 
     async function initMembersPage() {
-      // 1. Controllo di autenticazione: se non è loggato, reindirizza alla pagina di login
+      // 1. Controllo di autenticazione: se non è loggato, reindirizza al login
       const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
-      if (sessionError || !session)
+      if (sessionError || !session) {
+        alert(traduzioni[currentLang]['alert_auth_required']);
+        window.location.href = "accedi.html";
+        return;
+      }
+
+      // 2. Carica i dati dalla tabella profiles
+      const container = document.getElementById('members-container');
+      const { data: profiles, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('*');
+
+      if (profileError) {
+        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento dei soci: ${profileError.message}</p>`;
+        return;
+      }
+
+      if (!profiles || profiles.length === 0) {
+        container.innerHTML = `<p class="empty-text">${traduzioni[currentLang]['members_empty']}</p>`;
+        return;
+      }
+
+      cachedProfiles = profiles;
+      renderizzaTabellaSoci(cachedProfiles);
+    }
+
+    function renderizzaTabellaSoci(profiles) {
+      const container = document.getElementById('members-container');
+      const t = traduzioni[currentLang];
+
+      let html = `
+        <table class="members-table">
+          <thead>
+            <tr>
+              <th>${t.th_name}</th>
+              <th>${t.th_nickname}</th>
+              <th>${t.th_team}</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      profiles.forEach(profile => {
+        const fullName = `${profile.nome || ''} ${profile.cognome || ''}`.trim() || profile.email || 'Socio';
+        const nickname = profile.nickname || '-';
+        const team = profile.team || t.no_team;
+
+        html += `
+          <tr>
+            <td>${fullName}</td>
+            <td>${nickname}</td>
+            <td>${team}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    // Gestione Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+          alert(traduzioni[currentLang]['alert_logout_error'] + error.message);
+        } else {
+          window.location.href = "accedi.html";
+        }
+      });
+    }
+
+    aggiornaTestoAuth();
+    cambiaLingua(currentLang);
+    initMembersPage();
+  </script>
+
+</body>
+</html>
