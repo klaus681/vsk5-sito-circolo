@@ -1,4 +1,83 @@
-<div class="stats-box">
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circolo Velico Italiano - Virtual Skipper</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Il tuo CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER / NAVBAR -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <a href="index.html">
+          <span class="logo-icon">⚓</span>
+          <span class="logo-text">CVI <span>Virtual</span></span>
+        </a>
+      </div>
+
+      <nav class="main-nav">
+        <ul>
+          <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
+          <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+          <li class="dropdown">
+            <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+            <ul class="dropdown-menu">
+              <li><a href="calendario.html">Calendario</a></li>
+              <li><a href="iscritti.html">Iscritti</a></li>
+            </ul>
+          </li>
+          <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          <li><a href="albo.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+          <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+          <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+          <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-right">
+        <!-- Selettore Lingua -->
+        <select id="languageSelect" class="lang-select" onchange="cambiaLingua(this.value)">
+          <option value="it">🇮🇹 IT</option>
+          <option value="en">🇬🇧 EN</option>
+          <option value="fr">🇫🇷 FR</option>
+          <option value="es">🇪🇸 ES</option>
+        </select>
+
+        <a href="auth.html" id="auth-link" class="btn-primary" data-i18n="nav_accedi">Accedi</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-container">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <span class="badge-est">Dal 2003</span>
+        <h1 data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
+        <p data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Dal 2003 il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
+        
+        <div class="hero-buttons">
+          <a href="gare.html" class="btn-accent">Calendario Regate</a>
+          <a href="auth.html" class="btn-outline" data-i18n="nav_unisciti">Unisciti al Circolo</a>
+        </div>
+      </div>
+
+      <div class="stats-box">
         <div class="stat-item">
           <span class="stat-number">18</span>
           <span class="stat-label">Soci</span>
@@ -17,7 +96,7 @@
         </div>
       </div>
 
-      <!-- Card Prossima Gara Dinamica collegata esattamente ai tuoi campi Supabase -->
+      <!-- Card Prossima Gara Dinamica collegata a Supabase -->
       <a href="gare.html" id="next-regata-card" class="next-regata-card">
         <div class="regata-content">
           <span class="badge-tag">Prossima gara</span>
@@ -36,7 +115,6 @@
       <div class="card-box">
         <div class="card-header-flex">
           <h2>Classifica generale</h2>
-          <!-- CORRETTO QUI: puntava a classifica.html, ora punta a classifiche.html -->
           <a href="classifiche.html" class="link-more">Vedi tutto →</a>
         </div>
         <ol class="ranking-list">
@@ -180,16 +258,6 @@
         authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
       }
     }
-
-    // Correttore automatico di sicurezza per i link del menu (Risultati -> classifiche.html)
-    document.addEventListener("DOMContentLoaded", function() {
-      document.querySelectorAll("nav a").forEach(link => {
-        const testo = link.textContent.trim().toLowerCase();
-        if (testo.includes("risultati") || testo.includes("classifiche")) {
-          link.setAttribute("href", "classifiche.html");
-        }
-      });
-    });
 
     aggiornaTestoAuth();
     cambiaLingua(currentLang);
