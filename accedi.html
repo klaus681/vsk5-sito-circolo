@@ -82,6 +82,28 @@
     .auth-footer a:hover {
       text-decoration: underline;
     }
+    .forgot-password {
+      display: block;
+      text-align: right;
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .forgot-password:hover {
+      text-decoration: underline;
+    }
+    .logged-in-container {
+      text-align: center;
+    }
+    .btn-logout {
+      background-color: #ef4444;
+      margin-top: 1.5rem;
+    }
+    .btn-logout:hover {
+      background-color: #dc2626;
+    }
   </style>
 
   <!-- Libreria JavaScript di Supabase -->
@@ -95,7 +117,7 @@
     </a>
     
     <nav>
-      <ul>
+      <ul id="nav-menu">
         <li><a href="index.html">Home</a></li>
         <li><a href="team.html">Team</a></li>
         <li class="dropdown">
@@ -116,7 +138,8 @@
   </header>
 
   <main class="page-content">
-    <div class="login-box">
+    <div class="login-box" id="auth-box">
+      <!-- Contenuto dinamico gestito da JS (Form di login oppure Pannello utente loggato) -->
       <h1>Accedi</h1>
       <p>Inserisci le tue credenziali per entrare nell'area riservata.</p>
       
@@ -131,6 +154,8 @@
           <input type="password" id="password" required placeholder="••••••••">
         </div>
         
+        <a href="#" id="forgot-btn" class="forgot-password">Password dimenticata?</a>
+        
         <button type="submit" class="btn-submit">Accedi</button>
       </form>
 
@@ -141,33 +166,82 @@
   </main>
 
   <script>
-    // Configurazione Supabase
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const loginForm = document.getElementById('login-form');
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const authBox = document.getElementById('auth-box');
+
+    // Funzione per controllare lo stato dell'utente all'avvio della pagina
+    async function checkUserSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
       
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+      if (session) {
+        // Se l'utente è già loggato, mostra la schermata di benvenuto con il tasto Disconnetti
+        authBox.innerHTML = `
+          <h1>Area Riservata</h1>
+          <p>Sei attualmente connesso come: <br><strong>${session.user.email}</strong></p>
+          <button id="logout-btn" class="btn-submit btn-logout">Disconnetti</button>
+        `;
 
-      // Autenticazione con Supabase Auth
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-
-      if (error) {
-        alert("Errore durante l'accesso: " + error.message);
-      } else {
-        alert("Accesso effettuato con successo!");
-        // Reindirizza alla pagina dei membri o alla home
-        window.location.href = "membri.html";
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+          const { error } = await supabaseClient.auth.signOut();
+          if (error) {
+            alert("Errore durante la disconnessione: " + error.message);
+          } else {
+            alert("Disconnessione effettuata con successo!");
+            window.location.reload(); // Ricarica la pagina per tornare al form di login
+          }
+        });
       }
-    });
+    }
+
+    checkUserSession();
+
+    // Gestione del form di login
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) {
+          alert("Errore durante l'accesso: " + error.message);
+        } else {
+          alert("Accesso effettuato con successo!");
+          window.location.href = "membri.html";
+        }
+      });
+    }
+
+    // Gestione del recupero password
+    const forgotBtn = document.getElementById('forgot-btn');
+    if (forgotBtn) {
+      forgotBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const email = prompt("Inserisci l'indirizzo email associato al tuo account per il recupero della password:");
+        
+        if (email) {
+          const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.href, // reindirizza qui o a una pagina di reset dedicata
+          });
+
+          if (error) {
+            alert("Errore nell'invio dell'email di recupero: " + error.message);
+          } else {
+            alert("Ti è stata inviata un'email con le istruzioni per reimpostare la password.");
+          }
+        }
+      });
+    }
   </script>
 
 </body>
