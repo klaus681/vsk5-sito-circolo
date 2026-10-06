@@ -1,0 +1,192 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #ffffff;
+  background-color: #0b0f19;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- HERO SECTION CON SFONDO VELA --- */
+.hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(rgba(11, 15, 25, 0.5), rgba(11, 15, 25, 0.85)), 
+              url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- HEADER / NAVIGAZIONE IN ALTO --- */
+header {
+  width: 100%;
+  padding: 1.5rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo-img {
+  height: 48px; /* Altezza ottimale dello stemma nell'header */
+  width: auto;
+  display: block;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+nav a {
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+nav a:hover, nav a.active {
+  color: #ffffff;
+}
+
+/* --- SOTTOSEZIONE A TENDINA (DROPDOWN) --- */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: rgba(11, 15, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  list-style: none;
+  padding: 0.5rem 0;
+  min-width: 150px;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.dropdown-menu li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #d1d5db;
+  white-space: nowrap;
+}
+
+.dropdown-menu li a:hover {
+  background-color: rgba(0, 153, 255, 0.2);
+  color: #ffffff;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+/* --- PULSANTI MENU --- */
+.btn-unisciti {
+  background-color: #0088ff;
+  color: #ffffff !important;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.btn-accedi {
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+}
+
+/* --- CONTENUTO CENTRALE --- */
+.hero-content {
+  max-width: 800px;
+  margin: auto;
+  text-align: center;
+  padding: 0 1.5rem;
+}
+
+.tag-active {
+  display: inline-block;
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  color: #38bdf8;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.hero-content h1 {
+  font-size: 3.8rem;
+  line-height: 1.1;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  letter-spacing: -1px;
+}
+
+.hero-content h1 span {
+  color: #0099ff;
+}
+
+.hero-content p {
+  font-size: 1.1rem;
+  color: #9ca3af;
+  max-width: 600px;
+  margin: 0 auto 2.5rem auto;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-primary {
+  background-color: #0099ff;
+  color: white;
+  padding: 0.8rem 2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #0077cc;
+}
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 0.8rem 2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: border-color 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: #ffffff;
+}
