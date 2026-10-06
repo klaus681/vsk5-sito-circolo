@@ -3,370 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gare & Eventi - Circolo Velico Italia VSK5</title>
+  <title>Calendario Gare - Circolo Velico Italia VSK5</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .page-content {
-      padding: 140px 2rem 4rem 2rem;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .gare-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 2.5rem;
-      border-radius: 8px;
-    }
-    .gare-box h1 {
-      font-size: 2rem;
-      text-transform: uppercase;
-      color: #38bdf8;
-      margin-bottom: 0.5rem;
-      margin-top: 0;
-    }
-    .event-card {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-left: 4px solid #38bdf8;
-      padding: 1.5rem;
-      border-radius: 6px;
-      margin-top: 1.5rem;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .event-card:hover {
-      transform: translateY(-3px);
-      border-color: #38bdf8;
-    }
-    .event-card h3 {
-      color: #fff;
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
-      margin-top: 0;
-    }
-    .event-date {
-      color: #38bdf8;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.8rem;
-      display: block;
-    }
-    .event-card p {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      margin: 0;
-      line-height: 1.5;
-    }
-    .loading-text, .empty-text {
-      text-align: center;
-      color: #9ca3af;
-      padding: 2rem;
-      font-style: italic;
-    }
-
-    /* Finestra Modale */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .modal-content {
-      background: #0f172a;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 2.5rem;
-      border-radius: 8px;
-      max-width: 500px;
-      width: 90%;
-      position: relative;
-    }
-    .modal-close {
-      position: absolute;
-      top: 1rem; right: 1rem;
-      background: none; border: none;
-      color: #9ca3af; font-size: 1.5rem;
-      cursor: pointer;
-    }
-    .modal-close:hover { color: #fff; }
-
-    .btn-primary {
-      background: #0099ff;
-      color: white;
-      padding: 0.8rem;
-      border-radius: 4px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      display: block;
-      margin-top: 1.5rem;
-      transition: background 0.2s;
-    }
-    .btn-primary:hover {
-      background: #0077cc;
-    }
-
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-  </style>
-
-  <!-- Libreria JavaScript di Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+  <!-- HEADER E NAVBAR -->
   <header>
     <a href="index.html" class="logo-container">
       <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
     </a>
     
     <nav>
-      <ul>
-        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
-        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
-        
+      <ul id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" class="active" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="#" class="active">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
-            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+            <li><a href="gare.html" class="active">Calendario Regate</a></li>
+            <li><a href="risultati.html">Risultati</a></li>
           </ul>
         </li>
-
-        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
-        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
-        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
-        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
-        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
-        
-        <li>
-          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
-            <option value="it">🇮🇹 IT</option>
-            <option value="en">🇬🇧 EN</option>
-            <option value="fr">🇫🇷 FR</option>
-            <option value="es">🇪🇸 ES</option>
-          </select>
-        </li>
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
+        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
+        <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
       </ul>
     </nav>
   </header>
 
+  <!-- CONTENUTO PRINCIPALE -->
   <main class="page-content">
-    <div class="gare-box">
-      <h1 data-i18n="gare_title">Calendario Gare & Eventi</h1>
-      <p style="color: #9ca3af; margin-bottom: 2rem;" data-i18n="gare_subtitle">Scopri i prossimi appuntamenti in programma e le regate ufficiali del Circolo Velico Italia.</p>
+    
+    <section class="hero-section" style="padding-bottom: 1.5rem;">
+      <div class="hero-badge">Stagione 2026</div>
+      <h1>Calendario <em>Gare</em></h1>
+      <p>Tutti gli eventi ufficiali del Circolo Velico Italia sincronizzati in tempo reale dal database.</p>
+    </section>
+
+    <!-- LISTA DINAMICA DELLE GARE -->
+    <section class="card-box" style="max-width: 800px; margin: 0 auto;">
+      <h2 style="margin-bottom: 1.5rem;">Elenco Gare in Programma</h2>
       
-      <div id="gare-container">
-        <p class="loading-text" data-i18n="gare_loading">Caricamento gare in corso...</p>
+      <div id="lista-gare" style="display: flex; flex-direction: column; gap: 1rem;">
+        <p style="color: var(--text-muted); text-align: center;">Caricamento gare dal database...</p>
       </div>
-    </div>
+    </section>
+
   </main>
 
-  <!-- Finestra Modale Dettaglio Gara -->
-  <div id="race-modal" class="modal-overlay">
-    <div class="modal-content">
-      <button class="modal-close" id="close-modal">&times;</button>
-      <span id="modal-date" class="event-date"></span>
-      <h2 id="modal-title" style="color: #fff; margin-bottom: 1rem; margin-top: 0;"></h2>
-      <p id="modal-desc" style="color: #9ca3af; line-height: 1.6; margin-bottom: 1.5rem;"></p>
-      <button class="btn-primary" id="btn-iscriviti" onclick="iscriviGara()" data-i18n="btn_register">Iscriviti alla Regata</button>
-    </div>
-  </div>
-
+  <!-- SCRIPT SUPABASE -->
   <script>
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
-
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const traduzioni = {
-      it: {
-        nav_home: "Home", nav_team: "Team", nav_gare: "Gare & Eventi ▾", nav_gare_sub: "Gare",
-        nav_classifiche: "Classifiche", nav_albo: "Albo d'Oro", nav_regolamento: "Regolamento",
-        nav_download: "Download", nav_contatti: "Contatti", nav_membri: "Membri",
-        nav_unisciti: "Unisciti", nav_accedi: "Accedi", nav_area_membri: "Area Membri",
-        gare_title: "Calendario Gare & Eventi",
-        gare_subtitle: "Scopri i prossimi appuntamenti in programma e le regate ufficiali del Circolo Velico Italia.",
-        gare_loading: "Caricamento gare in corso...",
-        gare_empty: "Nessuna gara in programma al momento.",
-        btn_register: "Iscriviti alla Regata",
-        alert_success: "Iscrizione alla regata registrata con successo!"
-      },
-      en: {
-        nav_home: "Home", nav_team: "Teams", nav_gare: "Races & Events ▾", nav_gare_sub: "Races",
-        nav_classifiche: "Standings", nav_albo: "Hall of Fame", nav_regolamento: "Rules",
-        nav_download: "Download", nav_contatti: "Contact", nav_membri: "Members",
-        nav_unisciti: "Join Us", nav_accedi: "Login", nav_area_membri: "Member Area",
-        gare_title: "Race Calendar & Events",
-        gare_subtitle: "Discover upcoming scheduled events and official races of the Italian Sailing Club.",
-        gare_loading: "Loading races...",
-        gare_empty: "No races scheduled at the moment.",
-        btn_register: "Register for Race",
-        alert_success: "Successfully registered for the race!"
-      },
-      fr: {
-        nav_home: "Accueil", nav_team: "Équipes", nav_gare: "Courses & Événements ▾", nav_gare_sub: "Courses",
-        nav_classifiche: "Classements", nav_albo: "Temple de la Renommée", nav_regolamento: "Règlement",
-        nav_download: "Téléchargements", nav_contatti: "Contact", nav_membri: "Membres",
-        nav_unisciti: "Rejoindre", nav_accedi: "Connexion", nav_area_membri: "Espace Membre",
-        gare_title: "Calendrier des Courses & Événements",
-        gare_subtitle: "Découvrez les prochains rendez-vous et les régates officielles du Club Nautique.",
-        gare_loading: "Chargement des courses...",
-        gare_empty: "Aucune course programmée pour le moment.",
-        btn_register: "S'inscrire à la Course",
-        alert_success: "Inscription à la course réussie !"
-      },
-      es: {
-        nav_home: "Inicio", nav_team: "Equipos", nav_gare: "Regatas y Eventos ▾", nav_gare_sub: "Regatas",
-        nav_classifiche: "Clasificación", nav_albo: "Salón de la Fama", nav_regolamento: "Reglamento",
-        nav_download: "Descargas", nav_contatti: "Contacto", nav_membri: "Miembros",
-        nav_unisciti: "Únete", nav_accedi: "Acceder", nav_area_membri: "Área de Miembros",
-        gare_title: "Calendario de Regatas y Eventos",
-        gare_subtitle: "Descubre los próximos eventos programados y las regatas oficiales del Club Náutico.",
-        gare_loading: "Cargando regatas...",
-        gare_empty: "No hay regatas programadas en este momento.",
-        btn_register: "Inscribirse en la Regata",
-        alert_success: "¡Inscripción a la regata registrada con éxito!"
-      }
-    };
-
-    let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) langSelect.value = currentLang;
-
-    let cachedGare = [];
-    let selectedGaraId = null;
-
-    function cambiaLingua(lang) {
-      currentLang = lang;
-      localStorage.setItem('cvi_lang', lang);
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (traduzioni[lang][key]) el.textContent = traduzioni[lang][key];
-      });
-      aggiornaTestoAuth();
-      if (cachedGare.length > 0) renderizzaGare(cachedGare);
-    }
-
-    async function aggiornaTestoAuth() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
-      }
-    }
-
-    async function initGarePage() {
-      const container = document.getElementById('gare-container');
+    async function caricaTutteLeGare() {
+      const container = document.getElementById('lista-gare');
       
-      // Scarica i dati ordinandoli correttamente usando la colonna data_gara
-      const { data: gare, error } = await supabaseClient
-        .from('gare')
-        .select('*')
-        .order('data_gara', { ascending: true });
+      try {
+        const { data, error } = await supabaseClient
+          .from('gare')
+          .select('id, titolo, descrizione, data_gara, created_at')
+          .order('data_gara', { ascending: true });
 
-      if (error) {
-        container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento delle gare: ${error.message}</p>`;
-        return;
-      }
+        if (error) {
+          console.error("Errore nel recupero delle gare:", error);
+          container.innerHTML = `<p style="color: #ef4444; text-align: center;">Errore durante il caricamento delle gare.</p>`;
+          return;
+        }
 
-      if (!gare || gare.length === 0) {
-        container.innerHTML = `<p class="empty-text">${traduzioni[currentLang]['gare_empty']}</p>`;
-        return;
-      }
+        if (data && data.length > 0) {
+          container.innerHTML = ''; 
+          
+          data.forEach(gara => {
+            let dataFormattata = gara.data_gara ? new Date(gara.data_gara).toLocaleString('it-IT', { 
+              dateStyle: 'full', 
+              timeStyle: 'short' 
+            }) : 'Data da definirsi';
 
-      cachedGare = gare;
-      renderizzaGare(cachedGare);
-    }
-
-    function renderizzaGare(gare) {
-      const container = document.getElementById('gare-container');
-      let html = '';
-
-      gare.forEach(gara => {
-        const dataGara = gara.data_gara || '';
-        const titoloGara = gara.titolo || 'Gara';
-        const descGara = gara.descrizione || '';
-
-        html += `
-          <div class="event-card" onclick="apriModale('${gara.id}', '${escapeHtml(titoloGara)}', '${escapeHtml(dataGara)}', '${escapeHtml(descGara)}')">
-            <span class="event-date">${dataGara}</span>
-            <h3>${titoloGara}</h3>
-            <p>${descGara}</p>
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function escapeHtml(text) {
-      if (!text) return '';
-      return String(text).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-    }
-
-    const modal = document.getElementById('race-modal');
-    const closeModal = document.getElementById('close-modal');
-
-    function apriModale(id, titolo, data, descrizione) {
-      selectedGaraId = id;
-      document.getElementById('modal-title').textContent = titolo;
-      document.getElementById('modal-date').textContent = data;
-      document.getElementById('modal-desc').textContent = descrizione;
-      modal.style.display = 'flex';
-    }
-
-    if (closeModal) {
-      closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
-    }
-
-    window.addEventListener('click', (e) => {
-      if (e.target === modal) { modal.style.display = 'none'; }
-    });
-
-    async function iscriviGara() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        alert(currentLang === 'en' ? 'You must log in to register for a race.' : 'Devi effettuare l\'accesso per iscriverti a una regata.');
-        window.location.href = 'accedi.html';
-        return;
-      }
-
-      const { error } = await supabaseClient
-        .from('iscrizioni_gare')
-        .insert([{ user_id: session.user.id, gara_id: selectedGaraId }]);
-
-      if (error) {
-        alert('Errore durante l\'iscrizione: ' + error.message);
-      } else {
-        alert(traduzioni[currentLang]['alert_success']);
-        modal.style.display = 'none';
+            const card = document.createElement('div');
+            card.style.cssText = "background: #1f2937; border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem; border-radius: 8px;";
+            
+            card.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 600;">${gara.titolo || 'Gara senza titolo'}</h3>
+                <span style="font-size: 0.85rem; color: var(--accent-color); font-weight: 500;">📅 ${dataFormattata}</span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">${gara.descrizione || 'Nessuna descrizione disponibile.'}</p>
+            `;
+            
+            container.appendChild(card);
+          });
+        } else {
+          container.innerHTML = `<p style="color: var(--text-muted); text-align: center;">Nessuna gara inserita nel database.</p>`;
+        }
+      } catch (err) {
+        console.error("Errore di connessione:", err);
+        container.innerHTML = `<p style="color: #ef4444; text-align: center;">Impossibile connettersi al database.</p>`;
       }
     }
 
-    aggiornaTestoAuth();
-    cambiaLingua(currentLang);
-    initGarePage();
+    caricaTutteLeGare();
   </script>
-
 </body>
 </html>
