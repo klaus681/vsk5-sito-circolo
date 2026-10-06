@@ -218,7 +218,8 @@
     };
 
     let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    document.getElementById('languageSelect').value = currentLang;
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) langSelect.value = currentLang;
 
     let risultatiDati = [];
 
@@ -240,12 +241,10 @@
       }
     }
 
-    let isLogged = false;
     async function aggiornaTestoAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const authLink = document.getElementById('auth-link');
       if (session && authLink) {
-        isLogged = true;
         authLink.href = "membri.html";
         authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
       }
@@ -298,3 +297,22 @@
             <td>${item.nome || '-'}</td>
             <td>${item.race_name || '-'}</td>
             <td>${item.skipper_name || '-'}</td>
+            <td>${item.notes || '-'}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = tableHtml;
+    }
+
+    aggiornaTestoAuth();
+    cambiaLingua(currentLang);
+    loadClassifiche();
+  </script>
+</body>
+</html>
