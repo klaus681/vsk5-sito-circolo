@@ -103,15 +103,6 @@
       font-style: italic;
       grid-column: 1 / -1;
     }
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
   </style>
 
   <!-- Libreria JavaScript di Supabase -->
@@ -130,9 +121,8 @@
         <li><a href="team.html" class="active" data-i18n="nav_team">Team</a></li>
         
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html" data-i18n="nav_gare_sub">Gare</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
@@ -170,18 +160,17 @@
   </main>
 
   <script>
+    // Inizializzazione pulita di Supabase
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Dizionario delle traduzioni
     const traduzioni = {
       it: {
         nav_home: "Home",
         nav_team: "Team",
         nav_gare: "Gare & Eventi ▾",
-        nav_gare_sub: "Gare",
         nav_classifiche: "Classifiche",
         nav_albo: "Albo d'Oro",
         nav_regolamento: "Regolamento",
@@ -204,7 +193,6 @@
         nav_home: "Home",
         nav_team: "Teams",
         nav_gare: "Races & Events ▾",
-        nav_gare_sub: "Races",
         nav_classifiche: "Standings",
         nav_albo: "Hall of Fame",
         nav_regolamento: "Rules",
@@ -227,7 +215,6 @@
         nav_home: "Accueil",
         nav_team: "Équipes",
         nav_gare: "Courses & Événements ▾",
-        nav_gare_sub: "Courses",
         nav_classifiche: "Classements",
         nav_albo: "Temple de la Renommée",
         nav_regolamento: "Règlement",
@@ -250,7 +237,6 @@
         nav_home: "Inicio",
         nav_team: "Equipos",
         nav_gare: "Regatas y Eventos ▾",
-        nav_gare_sub: "Regatas",
         nav_classifiche: "Clasificación",
         nav_albo: "Salón de la Fama",
         nav_regolamento: "Reglamento",
