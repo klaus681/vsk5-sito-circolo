@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <style>
     .page-content {
-      padding: 160px 2rem 4rem 2rem;
+      padding: 140px 2rem 4rem 2rem;
       max-width: 900px;
       margin: 0 auto;
       width: 100%;
@@ -137,7 +137,7 @@
     </a>
     
     <nav>
-      <ul id="nav-menu">
+      <ul>
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         
@@ -157,7 +157,6 @@
         <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
         <li><a href="accedi.html" class="btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
         
-        <!-- Selettore Lingua -->
         <li>
           <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
             <option value="it">🇮🇹 IT</option>
@@ -200,19 +199,10 @@
 
     const traduzioni = {
       it: {
-        nav_home: "Home",
-        nav_team: "Team",
-        nav_gare: "Gare & Eventi ▾",
-        nav_gare_sub: "Gare",
-        nav_classifiche: "Classifiche",
-        nav_albo: "Albo d'Oro",
-        nav_regolamento: "Regolamento",
-        nav_download: "Download",
-        nav_contatti: "Contatti",
-        nav_membri: "Membri",
-        nav_unisciti: "Unisciti",
-        nav_accedi: "Accedi",
-        nav_area_membri: "Area Membri",
+        nav_home: "Home", nav_team: "Team", nav_gare: "Gare & Eventi ▾", nav_gare_sub: "Gare",
+        nav_classifiche: "Classifiche", nav_albo: "Albo d'Oro", nav_regolamento: "Regolamento",
+        nav_download: "Download", nav_contatti: "Contatti", nav_membri: "Membri",
+        nav_unisciti: "Unisciti", nav_accedi: "Accedi", nav_area_membri: "Area Membri",
         gare_title: "Calendario Gare & Eventi",
         gare_subtitle: "Scopri i prossimi appuntamenti in programma e le regate ufficiali del Circolo Velico Italia.",
         gare_loading: "Caricamento gare in corso...",
@@ -221,19 +211,10 @@
         alert_success: "Iscrizione alla regata registrata con successo!"
       },
       en: {
-        nav_home: "Home",
-        nav_team: "Teams",
-        nav_gare: "Races & Events ▾",
-        nav_gare_sub: "Races",
-        nav_classifiche: "Standings",
-        nav_albo: "Hall of Fame",
-        nav_regolamento: "Rules",
-        nav_download: "Download",
-        nav_contatti: "Contact",
-        nav_membri: "Members",
-        nav_unisciti: "Join Us",
-        nav_accedi: "Login",
-        nav_area_membri: "Member Area",
+        nav_home: "Home", nav_team: "Teams", nav_gare: "Races & Events ▾", nav_gare_sub: "Races",
+        nav_classifiche: "Standings", nav_albo: "Hall of Fame", nav_regolamento: "Rules",
+        nav_download: "Download", nav_contatti: "Contact", nav_membri: "Members",
+        nav_unisciti: "Join Us", nav_accedi: "Login", nav_area_membri: "Member Area",
         gare_title: "Race Calendar & Events",
         gare_subtitle: "Discover upcoming scheduled events and official races of the Italian Sailing Club.",
         gare_loading: "Loading races...",
@@ -242,19 +223,10 @@
         alert_success: "Successfully registered for the race!"
       },
       fr: {
-        nav_home: "Accueil",
-        nav_team: "Équipes",
-        nav_gare: "Courses & Événements ▾",
-        nav_gare_sub: "Courses",
-        nav_classifiche: "Classements",
-        nav_albo: "Temple de la Renommée",
-        nav_regolamento: "Règlement",
-        nav_download: "Téléchargements",
-        nav_contatti: "Contact",
-        nav_membri: "Membres",
-        nav_unisciti: "Rejoindre",
-        nav_accedi: "Connexion",
-        nav_area_membri: "Espace Membre",
+        nav_home: "Accueil", nav_team: "Équipes", nav_gare: "Courses & Événements ▾", nav_gare_sub: "Courses",
+        nav_classifiche: "Classements", nav_albo: "Temple de la Renommée", nav_regolamento: "Règlement",
+        nav_download: "Téléchargements", nav_contatti: "Contact", nav_membri: "Membres",
+        nav_unisciti: "Rejoindre", nav_accedi: "Connexion", nav_area_membri: "Espace Membre",
         gare_title: "Calendrier des Courses & Événements",
         gare_subtitle: "Découvrez les prochains rendez-vous et les régates officielles du Club Nautique.",
         gare_loading: "Chargement des courses...",
@@ -263,19 +235,10 @@
         alert_success: "Inscription à la course réussie !"
       },
       es: {
-        nav_home: "Inicio",
-        nav_team: "Equipos",
-        nav_gare: "Regatas y Eventos ▾",
-        nav_gare_sub: "Regatas",
-        nav_classifiche: "Clasificación",
-        nav_albo: "Salón de la Fama",
-        nav_regolamento: "Reglamento",
-        nav_download: "Descargas",
-        nav_contatti: "Contacto",
-        nav_membri: "Miembros",
-        nav_unisciti: "Únete",
-        nav_accedi: "Acceder",
-        nav_area_membri: "Área de Miembros",
+        nav_home: "Inicio", nav_team: "Equipos", nav_gare: "Regatas y Eventos ▾", nav_gare_sub: "Regatas",
+        nav_classifiche: "Clasificación", nav_albo: "Salón de la Fama", nav_regolamento: "Reglamento",
+        nav_download: "Descargas", nav_contatti: "Contacto", nav_membri: "Miembros",
+        nav_unisciti: "Únete", nav_accedi: "Acceder", nav_area_membri: "Área de Miembros",
         gare_title: "Calendario de Regatas y Eventos",
         gare_subtitle: "Descubre los próximos eventos programados y las regatas oficiales del Club Náutico.",
         gare_loading: "Cargando regatas...",
@@ -295,19 +258,12 @@
     function cambiaLingua(lang) {
       currentLang = lang;
       localStorage.setItem('cvi_lang', lang);
-      
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (traduzioni[lang][key]) {
-          el.textContent = traduzioni[lang][key];
-        }
+        if (traduzioni[lang][key]) el.textContent = traduzioni[lang][key];
       });
-
       aggiornaTestoAuth();
-
-      if (cachedGare.length > 0) {
-        renderizzaGare(cachedGare);
-      }
+      if (cachedGare.length > 0) renderizzaGare(cachedGare);
     }
 
     async function aggiornaTestoAuth() {
@@ -321,10 +277,11 @@
 
     async function initGarePage() {
       const container = document.getElementById('gare-container');
+      
+      // Scarica i dati senza ordinamento rigido per evitare errori se la colonna data ha un nome diverso
       const { data: gare, error } = await supabaseClient
         .from('gare')
-        .select('*')
-        .order('data', { ascending: true });
+        .select('*');
 
       if (error) {
         container.innerHTML = `<p class="empty-text" style="color: #ef4444;">Errore nel caricamento delle gare: ${error.message}</p>`;
@@ -345,11 +302,16 @@
       let html = '';
 
       gare.forEach(gara => {
+        // Prende in automatico la data indipendentemente da come si chiama la colonna nel database
+        const dataGara = gara.data || gara.data_gara || gara.date || '';
+        const titoloGara = gara.titolo || gara.nome || 'Gara';
+        const descGara = gara.descrizione || '';
+
         html += `
-          <div class="event-card" onclick="apriModale('${gara.id}', '${escapeHtml(gara.titolo)}', '${escapeHtml(gara.data)}', '${escapeHtml(gara.descrizione)}')">
-            <span class="event-date">${gara.data || ''}</span>
-            <h3>${gara.titolo || ''}</h3>
-            <p>${gara.descrizione || ''}</p>
+          <div class="event-card" onclick="apriModale('${gara.id}', '${escapeHtml(titoloGara)}', '${escapeHtml(dataGara)}', '${escapeHtml(descGara)}')">
+            <span class="event-date">${dataGara}</span>
+            <h3>${titoloGara}</h3>
+            <p>${descGara}</p>
           </div>
         `;
       });
@@ -359,7 +321,7 @@
 
     function escapeHtml(text) {
       if (!text) return '';
-      return text.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+      return String(text).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
     }
 
     const modal = document.getElementById('race-modal');
@@ -374,15 +336,11 @@
     }
 
     if (closeModal) {
-      closeModal.addEventListener('click', () => {
-        modal.style.display = 'none';
-      });
+      closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
     }
 
     window.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-      }
+      if (e.target === modal) { modal.style.display = 'none'; }
     });
 
     async function iscriviGara() {
@@ -395,9 +353,7 @@
 
       const { error } = await supabaseClient
         .from('iscrizioni_gare')
-        .insert([
-          { user_id: session.user.id, gara_id: selectedGaraId }
-        ]);
+        .insert([{ user_id: session.user.id, gara_id: selectedGaraId }]);
 
       if (error) {
         alert('Errore durante l\'iscrizione: ' + error.message);
