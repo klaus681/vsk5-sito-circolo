@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
 </head>
 <body>
   <header>
@@ -29,6 +30,7 @@
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
@@ -58,23 +60,21 @@
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
     <a href="download.html" data-i18n="nav_download">Download</a>
     <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
   <main class="page-content">
-    <section class="page-hero">
-      <span class="hero-badge">Stagione 2026</span>
-      <h1>Calendario <em>Gare</em></h1>
-      <p>Tutti gli eventi ufficiali del Circolo Velico Italia sincronizzati dal database.</p>
-    </section>
-    <section class="content-box narrow">
-      <h2 style="margin-bottom:1.25rem;font-size:1.15rem;">Elenco Gare in Programma</h2>
-      <div id="lista-gare" class="list-stack">
-        <p class="loading-text">Caricamento gare dal database...</p>
+    <div class="content-box">
+      <h1 data-i18n="gare_title">Calendario Gare &amp; Eventi</h1>
+      <p class="subtitle" data-i18n="gare_subtitle">Tutte le regate ufficiali del Circolo Velico Italia.</p>
+      <div id="gare-list" class="teams-grid">
+        <p class="loading-text">Caricamento gare...</p>
       </div>
-    </section>
+    </div>
   </main>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
@@ -105,44 +105,28 @@
 
   <script src="common.js"></script>
   <script>
-
-    async function caricaTutteLeGare() {
-      const container = document.getElementById('lista-gare');
+    const extra = {
+      it: { gare_title: "Calendario Gare & Eventi", gare_subtitle: "Tutte le regate ufficiali del Circolo Velico Italia." },
+      en: { gare_title: "Race Calendar & Events", gare_subtitle: "All official races of Circolo Velico Italia." },
+      fr: { gare_title: "Calendrier Courses & Événements", gare_subtitle: "Toutes les courses officielles." },
+      es: { gare_title: "Calendario Regatas y Eventos", gare_subtitle: "Todas las regatas oficiales." }
+    };
+    async function loadGare() {
+      const box = document.getElementById('gare-list');
       try {
-        const { data, error } = await CVI.supabase
-          .from('gare')
-          .select('id, titolo, descrizione, data_gara')
-          .order('data_gara', { ascending: true });
-        if (error) {
-          container.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore durante il caricamento delle gare.</p>';
-          return;
-        }
-        if (!data || !data.length) {
-          container.innerHTML = '<p class="empty-text">Nessuna gara inserita nel database.</p>';
-          return;
-        }
-        container.innerHTML = '';
-        data.forEach(gara => {
-          const dataFmt = gara.data_gara
-            ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
-            : 'Data da definirsi';
-          const card = document.createElement('div');
-          card.className = 'list-card';
-          card.innerHTML = `
-            <div class="list-card-header">
-              <h3>${gara.titolo || 'Gara senza titolo'}</h3>
-              <span>📅 ${dataFmt}</span>
-            </div>
-            <p>${gara.descrizione || 'Nessuna descrizione disponibile.'}</p>`;
-          container.appendChild(card);
-        });
-      } catch (err) {
-        container.innerHTML = '<p class="empty-text" style="color:#ef4444;">Impossibile connettersi al database.</p>';
+        const { data, error } = await CVI.supabase.from('gare').select('*').order('data_gara', { ascending: true });
+        if (error) { box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`; return; }
+        if (!data || !data.length) { box.innerHTML = '<p class="empty-text">Nessuna gara in calendario.</p>'; return; }
+        box.innerHTML = data.map(g => {
+          const d = g.data_gara ? new Date(g.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' }) : 'Data da definire';
+          return `<div class="team-card"><h3>${g.titolo || 'Gara'}</h3><p style="color:var(--accent-color);font-size:0.9rem;margin:0.4rem 0;">📅 ${d}</p><p>${g.descrizione || ''}</p></div>`;
+        }).join('');
+      } catch (e) {
+        box.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore di connessione.</p>';
       }
     }
-    caricaTutteLeGare();
-
-    CVI.init('gare.html');
+    CVI.init('gare.html', extra);
+    loadGare();
   </script>
 </body>
 </html>
