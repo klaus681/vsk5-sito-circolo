@@ -87,6 +87,13 @@
           </div>
           <a href="https://cdn.discordapp.com/attachments/1554762463386542183/1554762599936295033/c.v.i._friend.zip?backend=b2&ex=6ac6a2c1&is=6ac55141&hm=d38af0ea9deb04078e1ff4b5afba42f4a409779e4498330dcf0213a67178b38c&" class="btn-download" target="_blank" rel="noopener noreferrer" download="c.v.i._friend.zip" data-i18n="btn_download_zip">Scarica ZIP</a>
         </div>
+        <div class="download-item">
+          <div class="download-info">
+            <h3 data-i18n="file3_title">Mappe Ufficiali C.V.I.</h3>
+            <p data-i18n="file3_desc">Setup mappe VSK5 ufficiali del Circolo Velico Italiano GP.</p>
+          </div>
+          <a href="https://cdn.discordapp.com/attachments/1554762463386542183/1554814389042024459/VSK5_Maps_c.v.i.GP_Setup.exe?backend=b2&ex=6ac6d2fd&is=6ac5817d&hm=9061b20ebf785e03667c94106d51ade9cd06cbf822b5665670ad57b173594a8f&" class="btn-download" target="_blank" rel="noopener noreferrer" download="VSK5_Maps_c.v.i.GP_Setup.exe" data-i18n="btn_download_maps">Scarica EXE</a>
+        </div>
       </div>
     </div>
   </main>
@@ -125,10 +132,66 @@
   <script src="common.js"></script>
   <script>
     const extra = {
-      it: { download_title: "Area Download", download_subtitle: "Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci.", btn_logout: "Disconnetti", file1_title: "Regolamento Ufficiale di Circolo VSK5", file1_desc: "Documento PDF con tutte le direttive e specifiche di navigazione.", btn_download_pdf: "Scarica PDF", file2_title: "Skin e Livree Ufficiali CVI", file2_desc: "Pacchetto grafico personalizzato per le barche del team.", btn_download_zip: "Scarica ZIP", loading_verification: "Verifica autorizzazione in corso..." },
-      en: { download_title: "Download Area", download_subtitle: "Official materials reserved for members.", btn_logout: "Log Out", file1_title: "Official VSK5 Club Rules", file1_desc: "PDF with navigation directives.", btn_download_pdf: "Download PDF", file2_title: "Official CVI Skins", file2_desc: "Custom graphic package for team boats.", btn_download_zip: "Download ZIP", loading_verification: "Verifying authorization..." },
-      fr: { download_title: "Espace Téléchargement", download_subtitle: "Matériel officiel réservé aux membres.", btn_logout: "Se déconnecter", file1_title: "Règlement Officiel VSK5", file1_desc: "PDF avec les directives.", btn_download_pdf: "Télécharger PDF", file2_title: "Skins Officielles CVI", file2_desc: "Package graphique pour les bateaux.", btn_download_zip: "Télécharger ZIP", loading_verification: "Vérification..." },
-      es: { download_title: "Área de Descargas", download_subtitle: "Materiales oficiales para socios.", btn_logout: "Cerrar sesión", file1_title: "Reglamento Oficial VSK5", file1_desc: "PDF con directrices.", btn_download_pdf: "Descargar PDF", file2_title: "Skins Oficiales CVI", file2_desc: "Paquete gráfico para barcos.", btn_download_zip: "Descargar ZIP", loading_verification: "Verificando..." }
+      it: {
+        download_title: "Area Download",
+        download_subtitle: "Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci.",
+        btn_logout: "Disconnetti",
+        file1_title: "Regolamento Ufficiale di Circolo VSK5",
+        file1_desc: "Documento PDF con tutte le direttive e specifiche di navigazione.",
+        btn_download_pdf: "Scarica PDF",
+        file2_title: "Skin e Livree Ufficiali CVI",
+        file2_desc: "Pacchetto grafico personalizzato per le barche del team.",
+        btn_download_zip: "Scarica ZIP",
+        file3_title: "Mappe Ufficiali C.V.I.",
+        file3_desc: "Setup mappe VSK5 ufficiali del Circolo Velico Italiano GP.",
+        btn_download_maps: "Scarica EXE",
+        loading_verification: "Verifica autorizzazione in corso..."
+      },
+      en: {
+        download_title: "Download Area",
+        download_subtitle: "Official materials reserved for members.",
+        btn_logout: "Log Out",
+        file1_title: "Official VSK5 Club Rules",
+        file1_desc: "PDF with navigation directives.",
+        btn_download_pdf: "Download PDF",
+        file2_title: "Official CVI Skins",
+        file2_desc: "Custom graphic package for team boats.",
+        btn_download_zip: "Download ZIP",
+        file3_title: "Official C.V.I. Maps",
+        file3_desc: "Official VSK5 maps setup for Circolo Velico Italiano GP.",
+        btn_download_maps: "Download EXE",
+        loading_verification: "Verifying authorization..."
+      },
+      fr: {
+        download_title: "Espace Téléchargement",
+        download_subtitle: "Matériel officiel réservé aux membres.",
+        btn_logout: "Se déconnecter",
+        file1_title: "Règlement Officiel VSK5",
+        file1_desc: "PDF avec les directives.",
+        btn_download_pdf: "Télécharger PDF",
+        file2_title: "Skins Officielles CVI",
+        file2_desc: "Package graphique pour les bateaux.",
+        btn_download_zip: "Télécharger ZIP",
+        file3_title: "Cartes Officielles C.V.I.",
+        file3_desc: "Setup des cartes VSK5 officielles CVI GP.",
+        btn_download_maps: "Télécharger EXE",
+        loading_verification: "Vérification..."
+      },
+      es: {
+        download_title: "Área de Descargas",
+        download_subtitle: "Materiales oficiales para socios.",
+        btn_logout: "Cerrar sesión",
+        file1_title: "Reglamento Oficial VSK5",
+        file1_desc: "PDF con directrices.",
+        btn_download_pdf: "Descargar PDF",
+        file2_title: "Skins Oficiales CVI",
+        file2_desc: "Paquete gráfico para barcos.",
+        btn_download_zip: "Descargar ZIP",
+        file3_title: "Mapas Oficiales C.V.I.",
+        file3_desc: "Setup de mapas VSK5 oficiales CVI GP.",
+        btn_download_maps: "Descargar EXE",
+        loading_verification: "Verificando..."
+      }
     };
     const _orig = CVI.init;
     CVI.init = function(a) {
