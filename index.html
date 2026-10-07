@@ -13,7 +13,6 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Il tuo CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,15 +20,16 @@
   <!-- HEADER E NAVBAR -->
   <header>
     <a href="index.html" class="logo-container">
-      <span class="logo-text" style="font-size: 1.4rem; font-weight: 700; color: #ffffff;">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
     </a>
 
-    <nav>
+    <!-- Nav desktop -->
+    <nav class="nav-desktop" aria-label="Menu principale">
       <ul>
         <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="calendario.html">Calendario</a></li>
             <li><a href="iscritti.html">Iscritti</a></li>
@@ -43,9 +43,8 @@
       </ul>
     </nav>
 
-    <div style="display: flex; align-items: center; gap: 1rem;">
-      <!-- Selettore Lingua -->
-      <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)" aria-label="Lingua">
         <option value="it">🇮🇹 IT</option>
         <option value="en">🇬🇧 EN</option>
         <option value="fr">🇫🇷 FR</option>
@@ -53,8 +52,32 @@
       </select>
 
       <a href="auth.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+
+      <!-- Hamburger -->
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </header>
+
+  <!-- Menu mobile -->
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" class="active" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="calendario.html">→ Calendario</a>
+      <a href="iscritti.html">→ Iscritti</a>
+    </div>
+    <a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a>
+    <a href="albo.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="auth.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
 
   <!-- MAIN CONTENT -->
   <main class="page-content">
@@ -71,7 +94,7 @@
       </div>
     </section>
 
-    <!-- DASHBOARD GRID: STATISTICHE E PROSSIMA GARA -->
+    <!-- DASHBOARD GRID -->
     <div class="dashboard-grid">
       <div class="stats-box">
         <div class="stat-item">
@@ -92,7 +115,7 @@
         </div>
       </div>
 
-      <!-- Card Prossima Gara Dinamica collegata a Supabase -->
+      <!-- Card Prossima Gara (Supabase) -->
       <a href="gare.html" id="next-regata-card" class="next-regata-card">
         <div>
           <span class="badge-tag">Prossima gara</span>
@@ -105,9 +128,8 @@
       </a>
     </div>
 
-    <!-- CLASSIFICA E ULTIMI RISULTATI -->
+    <!-- CLASSIFICA E VIDEO -->
     <section class="content-row">
-      <!-- Classifica Generale -->
       <div class="card-box">
         <div class="card-header-flex">
           <h2>Classifica generale</h2>
@@ -135,9 +157,8 @@
         </ol>
       </div>
 
-      <!-- Video / Highlights -->
       <div class="card-box">
-        <h2>Ultime Regate & Highlights</h2>
+        <h2>Ultime Regate &amp; Highlights</h2>
         <div class="video-container">
           <iframe src="https://www.youtube.com/embed/GYKltIx2TLQ" 
                 title="Circolo Velico Italia GP Spot" 
@@ -150,8 +171,58 @@
 
   </main>
 
-  <!-- SCRIPT SUPABASE E MULTILINGUA -->
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="download.html">Download</a>
+          <a href="contatti.html">Contatti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
+  </footer>
+
+  <!-- SCRIPT -->
   <script>
+    // --- Mobile menu ---
+    const navToggle = document.getElementById('navToggle');
+    const navMobile = document.getElementById('navMobile');
+
+    navToggle.addEventListener('click', () => {
+      const open = navMobile.classList.toggle('is-open');
+      navToggle.classList.toggle('is-open', open);
+      navToggle.setAttribute('aria-expanded', open);
+      document.body.classList.toggle('menu-open', open);
+    });
+
+    // Chiudi menu al click su un link
+    navMobile.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navMobile.classList.remove('is-open');
+        navToggle.classList.remove('is-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('menu-open');
+      });
+    });
+
+    // --- Supabase ---
     const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -194,6 +265,7 @@
 
     caricaProssimaGara();
 
+    // --- i18n ---
     const traduzioni = {
       it: {
         nav_home: "Home", nav_team: "Team", nav_gare: "Gare & Eventi ▾", nav_classifiche: "Classifiche",
@@ -248,9 +320,16 @@
     async function aggiornaTestoAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+      const authLinkMobile = document.getElementById('auth-link-mobile');
+      if (session) {
+        if (authLink) {
+          authLink.href = "membri.html";
+          authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
+        }
+        if (authLinkMobile) {
+          authLinkMobile.href = "membri.html";
+          authLinkMobile.textContent = traduzioni[currentLang]['nav_area_membri'];
+        }
       }
     }
 
