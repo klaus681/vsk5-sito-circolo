@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
 </head>
 <body>
   <header>
@@ -29,6 +30,7 @@
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
@@ -58,6 +60,7 @@
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
     <a href="download.html" data-i18n="nav_download">Download</a>
     <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
@@ -105,7 +108,6 @@
 
   <script src="common.js"></script>
   <script>
-
     async function caricaRisultatiGara() {
       const container = document.getElementById('lista-risultati');
       try {
@@ -135,7 +137,6 @@
       }
     }
     caricaRisultatiGara();
-
     CVI.init('classifiche.html');
   </script>
 </body>
