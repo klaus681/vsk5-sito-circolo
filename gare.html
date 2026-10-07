@@ -35,8 +35,53 @@
     .gara-desc {
       color: var(--text-muted);
       font-size: 0.95rem;
-      margin: 0;
+      margin: 0 0 0.5rem;
       line-height: 1.55;
+    }
+    .iscritti-box {
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .iscritti-box h4 {
+      margin: 0 0 0.55rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .iscritti-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .iscritti-list li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 999px;
+      padding: 0.22rem 0.65rem;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+    }
+    .iscritti-list li .nick {
+      font-weight: 600;
+      color: #7dd3fc;
+    }
+    .iscritti-list li .team-tag {
+      color: var(--text-muted);
+      font-size: 0.74rem;
+    }
+    .iscritti-empty {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
     }
   </style>
 </head>
@@ -141,32 +186,84 @@
       es: { gare_title: "Calendario Regatas y Eventos", gare_subtitle: "Todas las regatas oficiales." }
     };
 
+    function pick(row, keys) {
+      for (const k of keys) {
+        if (row[k] != null && String(row[k]).trim() !== '') return String(row[k]).trim();
+      }
+      return '';
+    }
+
+    function renderIscritti(list) {
+      if (!list || !list.length) {
+        return '<p class="iscritti-empty">Nessun iscritto al momento.</p>';
+      }
+      const items = list.map(row => {
+        const nick = pick(row, ['nickname', 'nick', 'pseudo', 'username', 'nome']);
+        const team = pick(row, ['team', 'squadra', 'team_name']);
+        if (!nick && !team) return '';
+        return `<li><span class="nick">${nick || '-'}</span>${team ? `<span class="team-tag">· ${team}</span>` : ''}</li>`;
+      }).filter(Boolean).join('');
+      if (!items) return '<p class="iscritti-empty">Nessun iscritto al momento.</p>';
+      return `<ul class="iscritti-list">${items}</ul>`;
+    }
+
+    function groupByGaraId(rows) {
+      const map = {};
+      (rows || []).forEach(row => {
+        const gid = row.gara_id ?? row.garaId ?? row.id_gara ?? row.gare_id;
+        if (gid == null) return;
+        const key = String(gid);
+        if (!map[key]) map[key] = [];
+        map[key].push(row);
+      });
+      return map;
+    }
+
     async function loadGare() {
       const box = document.getElementById('gare-list');
       try {
-        const { data, error } = await CVI.supabase
-          .from('gare')
-          .select('id, titolo, descrizione, data_gara, created_at')
-          .order('data_gara', { ascending: true });
+        const [gareRes, iscrRes] = await Promise.all([
+          CVI.supabase
+            .from('gare')
+            .select('id, titolo, descrizione, data_gara, created_at')
+            .order('data_gara', { ascending: true }),
+          CVI.supabase.from('iscrizioni_gare').select('*')
+        ]);
 
-        if (error) {
-          box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`;
+        if (gareRes.error) {
+          box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore gare: ${gareRes.error.message}</p>`;
           return;
         }
-        if (!data || !data.length) {
+
+        const gare = gareRes.data || [];
+        let iscrizioni = [];
+        if (iscrRes.error) {
+          console.warn('iscrizioni_gare:', iscrRes.error.message);
+        } else {
+          iscrizioni = iscrRes.data || [];
+        }
+
+        const byGara = groupByGaraId(iscrizioni);
+
+        if (!gare.length) {
           box.innerHTML = '<p class="empty-text">Nessuna gara in calendario.</p>';
           return;
         }
 
-        box.innerHTML = data.map(g => {
+        box.innerHTML = gare.map(g => {
           const d = g.data_gara
             ? new Date(g.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
             : 'Data da definire';
+          const iscritti = byGara[String(g.id)] || [];
           return `
             <div class="gara-card">
               <h3>${g.titolo || 'Gara'}</h3>
               <p class="gara-date">📅 ${d}</p>
               <p class="gara-desc">${g.descrizione || ''}</p>
+              <div class="iscritti-box">
+                <h4>Iscritti (${iscritti.length})</h4>
+                ${renderIscritti(iscritti)}
+              </div>
             </div>`;
         }).join('');
       } catch (e) {
