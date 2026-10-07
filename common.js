@@ -101,8 +101,40 @@
     });
   };
 
+  // Auto-align: fix-nav.css + voce Membri su tutte le pagine
+  window.CVI.ensureNavAlign = function () {
+    if (!document.querySelector('link[href="fix-nav.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'fix-nav.css';
+      document.head.appendChild(link);
+    }
+    const desktopUl = document.querySelector('.nav-desktop > ul');
+    if (desktopUl && !desktopUl.querySelector('a[href="membri.html"]')) {
+      const contatti = desktopUl.querySelector('a[href="contatti.html"]');
+      const li = document.createElement('li');
+      li.innerHTML = '<a href="membri.html" data-i18n="nav_membri">Membri</a>';
+      if (contatti && contatti.parentElement) {
+        contatti.parentElement.parentElement.insertBefore(li, contatti.parentElement);
+      } else {
+        desktopUl.appendChild(li);
+      }
+    }
+    const mobile = document.getElementById('navMobile');
+    if (mobile && !mobile.querySelector('a[href="membri.html"]')) {
+      const contatti = mobile.querySelector('a[href="contatti.html"]');
+      const a = document.createElement('a');
+      a.href = 'membri.html';
+      a.setAttribute('data-i18n', 'nav_membri');
+      a.textContent = 'Membri';
+      if (contatti) mobile.insertBefore(a, contatti.nextSibling);
+      else mobile.appendChild(a);
+    }
+  };
+
   window.CVI.init = function (activePage, extraI18n) {
     window.CVI.initMobileNav();
+    window.CVI.ensureNavAlign();
     const sel = document.getElementById('languageSelect');
     if (sel) {
       sel.value = window.CVI.currentLang;
