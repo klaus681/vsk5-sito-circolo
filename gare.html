@@ -35,53 +35,8 @@
     .gara-desc {
       color: var(--text-muted);
       font-size: 0.95rem;
-      margin: 0 0 1rem;
+      margin: 0;
       line-height: 1.55;
-    }
-    .iscritti-box {
-      margin-top: 0.75rem;
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border-color);
-    }
-    .iscritti-box h4 {
-      margin: 0 0 0.55rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .iscritti-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .iscritti-list li {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 999px;
-      padding: 0.25rem 0.7rem;
-      font-size: 0.82rem;
-      color: #e2e8f0;
-    }
-    .iscritti-list li .nick {
-      font-weight: 600;
-      color: #7dd3fc;
-    }
-    .iscritti-list li .team-tag {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
-    .iscritti-empty {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin: 0;
     }
   </style>
 </head>
@@ -186,51 +141,24 @@
       es: { gare_title: "Calendario Regatas y Eventos", gare_subtitle: "Todas las regatas oficiales." }
     };
 
-    function renderIscritti(profiles) {
-      if (!profiles || !profiles.length) {
-        return '<p class="iscritti-empty">Nessun iscritto al momento.</p>';
-      }
-      const items = profiles
-        .filter(p => p.nickname || p.team)
-        .map(p => {
-          const nick = (p.nickname || '-').trim();
-          const team = (p.team || '').trim();
-          return `<li><span class="nick">${nick}</span>${team ? `<span class="team-tag">· ${team}</span>` : ''}</li>`;
-        })
-        .join('');
-      if (!items) return '<p class="iscritti-empty">Nessun iscritto al momento.</p>';
-      return `<ul class="iscritti-list">${items}</ul>`;
-    }
-
     async function loadGare() {
       const box = document.getElementById('gare-list');
       try {
-        const [gareRes, profilesRes] = await Promise.all([
-          CVI.supabase.from('gare').select('*').order('data_gara', { ascending: true }),
-          CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, email, created_at')
-        ]);
+        const { data, error } = await CVI.supabase
+          .from('gare')
+          .select('id, titolo, descrizione, data_gara, created_at')
+          .order('data_gara', { ascending: true });
 
-        if (gareRes.error) {
-          box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore gare: ${gareRes.error.message}</p>`;
+        if (error) {
+          box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`;
           return;
         }
-
-        const gare = gareRes.data || [];
-        // profili (nickname + team) — stessa lista per ora su ogni gara
-        // finché non esiste una tabella iscrizioni con gara_id
-        let profiles = profilesRes.data || [];
-        if (profilesRes.error) {
-          // fallback: prova tabella "gare" se contiene colonne profilo (caso schema misto)
-          console.warn('profiles error', profilesRes.error.message);
-          profiles = [];
-        }
-
-        if (!gare.length) {
+        if (!data || !data.length) {
           box.innerHTML = '<p class="empty-text">Nessuna gara in calendario.</p>';
           return;
         }
 
-        box.innerHTML = gare.map(g => {
+        box.innerHTML = data.map(g => {
           const d = g.data_gara
             ? new Date(g.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
             : 'Data da definire';
@@ -239,10 +167,6 @@
               <h3>${g.titolo || 'Gara'}</h3>
               <p class="gara-date">📅 ${d}</p>
               <p class="gara-desc">${g.descrizione || ''}</p>
-              <div class="iscritti-box">
-                <h4>Iscritti · Nickname & Team</h4>
-                ${renderIscritti(profiles)}
-              </div>
             </div>`;
         }).join('');
       } catch (e) {
