@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
 </head>
 <body>
   <header>
@@ -20,7 +21,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -29,6 +30,7 @@
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
@@ -49,7 +51,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -58,10 +60,10 @@
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
     <a href="download.html" data-i18n="nav_download">Download</a>
     <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
-
 
   <main class="page-content auth-layout">
     <div class="auth-box">
@@ -115,7 +117,6 @@
 
   <script src="common.js"></script>
   <script>
-
     const extra = {
       it: { login_title: "Accedi", login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.", label_email: "Email", label_password: "Password", ph_email: "tuamail@example.com", btn_login: "Accedi", footer_no_account: "Non hai un account?", footer_register_link: "Registrati qui", alert_success: "Login effettuato con successo!", alert_error: "Errore durante il login: " },
       en: { login_title: "Login", login_subtitle: "Enter your credentials to access the member area.", label_email: "Email", label_password: "Password", ph_email: "yourmail@example.com", btn_login: "Login", footer_no_account: "Don't have an account?", footer_register_link: "Register here", alert_success: "Login successful!", alert_error: "Login error: " },
