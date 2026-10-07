@@ -1,10 +1,117 @@
-<script src="common.js"></script>
-  <script>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contatti - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+
+  <main class="page-content narrow">
+    <section class="page-hero" style="text-align:left;">
+      <h1 data-i18n="contact_title">Contattaci</h1>
+      <p data-i18n="contact_subtitle">Hai domande sulle nostre regate o vuoi metterti in contatto con la direzione del circolo? Compila il modulo sottostante.</p>
+    </section>
+    <form class="contact-form content-box" id="contact-form">
+      <input type="text" id="contact-name" data-i18n-placeholder="placeholder_name" placeholder="Il tuo nome / Nickname" required>
+      <input type="email" id="contact-email" data-i18n-placeholder="placeholder_email" placeholder="La tua email" required>
+      <textarea id="contact-msg" data-i18n-placeholder="placeholder_msg" placeholder="Il tuo messaggio..." required></textarea>
+      <button type="submit" class="btn-submit" data-i18n="btn_send">Invia Messaggio</button>
+      <p id="form-status" style="margin-top: 15px; font-weight: 500; font-size: 0.95rem;"></p>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo-doro.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="download.html">Download</a>
+          <a href="contatti.html">Contatti</a>
+          <a href="unisciti.html">Unisciti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
+  </footer>
+
+  <script src="common.js"></script>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
     // INSERISCI QUI I TUOI DATI DI SUPABASE:
-    const supabaseUrl = 'https://kisffsyerranniypkcqa.supabase.co/rest/v1/';       // Esempio: 'https://abcdefgh.supabase.co'
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';  // Esempio: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+    const supabaseUrl = 'IL_TUO_SUPABASE_URL';
+    const supabaseKey = 'LA_TUA_SUPABASE_ANON_KEY';
     
-    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const _supabase = createClient(supabaseUrl, supabaseKey);
 
     const extra = {
       it: { 
@@ -88,3 +195,5 @@
 
     CVI.init('contatti.html');
   </script>
+</body>
+</html>
