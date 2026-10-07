@@ -1,0 +1,46 @@
+/* Fix: dropdown Gare & Eventi sempre chiuso di default */
+.nav-desktop > ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* Annulla display:flex ereditato dal menu principale sul sottomenu */
+.nav-desktop ul.dropdown-menu,
+.dropdown-menu {
+  display: none !important;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 170px;
+  background: var(--bg-elevated, #0f1524);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 0.4rem;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  z-index: 1100;
+}
+
+.dropdown:hover > .dropdown-menu,
+.dropdown:focus-within > .dropdown-menu {
+  display: flex !important;
+}
+
+.dropdown-menu li a {
+  display: block;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 500;
+}
+
+.dropdown-menu li a:hover,
+.dropdown-menu li a.active {
+  background: var(--accent-soft, rgba(56, 189, 248, 0.12));
+  color: var(--accent-color, #38bdf8);
+}
