@@ -31,6 +31,16 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+.hero-community {
+  margin: 0.85rem 0 0.5rem;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif);
+  font-size: clamp(1.35rem, 3.2vw, 1.85rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff !important;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
 .hero-section h1 {
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
 }
@@ -57,4 +67,5 @@
 @media (max-width: 600px) {
   .hero-wrap { min-height: min(62vh, 520px); }
   .hero-section { padding: 3rem 1rem 2.5rem; }
+  .hero-community { letter-spacing: 0.04em; }
 }
