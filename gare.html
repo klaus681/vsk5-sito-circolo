@@ -10,6 +10,80 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .gara-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.35rem 1.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .gara-card:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+    }
+    .gara-card h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1.15rem;
+      color: #fff;
+    }
+    .gara-date {
+      color: var(--accent-color);
+      font-size: 0.9rem;
+      margin: 0.35rem 0 0.6rem;
+    }
+    .gara-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0 0 1rem;
+      line-height: 1.55;
+    }
+    .iscritti-box {
+      margin-top: 0.75rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .iscritti-box h4 {
+      margin: 0 0 0.55rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .iscritti-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .iscritti-list li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 999px;
+      padding: 0.25rem 0.7rem;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+    }
+    .iscritti-list li .nick {
+      font-weight: 600;
+      color: #7dd3fc;
+    }
+    .iscritti-list li .team-tag {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+    .iscritti-empty {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -21,7 +95,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -51,7 +125,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -67,7 +141,7 @@
 
   <main class="page-content">
     <div class="content-box">
-      <h1 data-i18n="gare_title">Calendario Gare &amp; Eventi</h1>
+      <h1 data-i18n="gare_title">Calendario Gare & Eventi</h1>
       <p class="subtitle" data-i18n="gare_subtitle">Tutte le regate ufficiali del Circolo Velico Italia.</p>
       <div id="gare-list" class="teams-grid">
         <p class="loading-text">Caricamento gare...</p>
@@ -111,20 +185,72 @@
       fr: { gare_title: "Calendrier Courses & Événements", gare_subtitle: "Toutes les courses officielles." },
       es: { gare_title: "Calendario Regatas y Eventos", gare_subtitle: "Todas las regatas oficiales." }
     };
+
+    function renderIscritti(profiles) {
+      if (!profiles || !profiles.length) {
+        return '<p class="iscritti-empty">Nessun iscritto al momento.</p>';
+      }
+      const items = profiles
+        .filter(p => p.nickname || p.team)
+        .map(p => {
+          const nick = (p.nickname || '-').trim();
+          const team = (p.team || '').trim();
+          return `<li><span class="nick">${nick}</span>${team ? `<span class="team-tag">· ${team}</span>` : ''}</li>`;
+        })
+        .join('');
+      if (!items) return '<p class="iscritti-empty">Nessun iscritto al momento.</p>';
+      return `<ul class="iscritti-list">${items}</ul>`;
+    }
+
     async function loadGare() {
       const box = document.getElementById('gare-list');
       try {
-        const { data, error } = await CVI.supabase.from('gare').select('*').order('data_gara', { ascending: true });
-        if (error) { box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`; return; }
-        if (!data || !data.length) { box.innerHTML = '<p class="empty-text">Nessuna gara in calendario.</p>'; return; }
-        box.innerHTML = data.map(g => {
-          const d = g.data_gara ? new Date(g.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' }) : 'Data da definire';
-          return `<div class="team-card"><h3>${g.titolo || 'Gara'}</h3><p style="color:var(--accent-color);font-size:0.9rem;margin:0.4rem 0;">📅 ${d}</p><p>${g.descrizione || ''}</p></div>`;
+        const [gareRes, profilesRes] = await Promise.all([
+          CVI.supabase.from('gare').select('*').order('data_gara', { ascending: true }),
+          CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, email, created_at')
+        ]);
+
+        if (gareRes.error) {
+          box.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore gare: ${gareRes.error.message}</p>`;
+          return;
+        }
+
+        const gare = gareRes.data || [];
+        // profili (nickname + team) — stessa lista per ora su ogni gara
+        // finché non esiste una tabella iscrizioni con gara_id
+        let profiles = profilesRes.data || [];
+        if (profilesRes.error) {
+          // fallback: prova tabella "gare" se contiene colonne profilo (caso schema misto)
+          console.warn('profiles error', profilesRes.error.message);
+          profiles = [];
+        }
+
+        if (!gare.length) {
+          box.innerHTML = '<p class="empty-text">Nessuna gara in calendario.</p>';
+          return;
+        }
+
+        box.innerHTML = gare.map(g => {
+          const d = g.data_gara
+            ? new Date(g.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
+            : 'Data da definire';
+          return `
+            <div class="gara-card">
+              <h3>${g.titolo || 'Gara'}</h3>
+              <p class="gara-date">📅 ${d}</p>
+              <p class="gara-desc">${g.descrizione || ''}</p>
+              <div class="iscritti-box">
+                <h4>Iscritti · Nickname & Team</h4>
+                ${renderIscritti(profiles)}
+              </div>
+            </div>`;
         }).join('');
       } catch (e) {
+        console.error(e);
         box.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore di connessione.</p>';
       }
     }
+
     CVI.init('gare.html', extra);
     loadGare();
   </script>
