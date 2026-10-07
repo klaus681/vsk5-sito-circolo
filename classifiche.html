@@ -3,109 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Classifiche - Circolo Velico Italia VSK5</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Classifiche - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- HEADER E NAVBAR -->
   <header>
     <a href="index.html" class="logo-container">
-      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
     </a>
-    
-    <nav>
-      <ul id="nav-menu">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="team.html">Team</a></li>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="#" class="active">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
           <ul class="dropdown-menu">
-            <li><a href="gare.html">Calendario Regate</a></li>
-            <li><a href="classifiche.html" class="active">Risultati</a></li>
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
-        <li><a href="albo-doro.html">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
-        <li><a href="download.html">Download</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
-        <li><a href="membri.html">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="btn-accedi" id="auth-link">Accedi</a></li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </header>
 
-  <!-- CONTENUTO PRINCIPALE -->
-  <main class="page-content">
-    
-    <section class="hero-section" style="padding-bottom: 1.5rem;">
-      <div class="hero-badge">Stagione 2026</div>
-      <h1>Risultati & <em>Classifiche</em></h1>
-      <p>I dati ufficiali estratti dalla tabella <code>risultati_gara</code> del database.</p>
-    </section>
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
 
-    <!-- LISTA DINAMICA DEI RISULTATI -->
-    <section class="card-box" style="max-width: 800px; margin: 0 auto;">
-      <h2 style="margin-bottom: 1.5rem;">Storico Risultati</h2>
-      
-      <div id="lista-risultati" style="display: flex; flex-direction: column; gap: 1rem;">
-        <p style="color: var(--text-muted); text-align: center;">Caricamento risultati da Supabase...</p>
+  <main class="page-content">
+    <section class="page-hero">
+      <span class="hero-badge">Stagione 2026</span>
+      <h1>Risultati &amp; <em>Classifiche</em></h1>
+      <p>I dati ufficiali estratti dal database del circolo.</p>
+    </section>
+    <section class="content-box narrow">
+      <h2 style="margin-bottom:1.25rem;font-size:1.15rem;">Storico Risultati</h2>
+      <div id="lista-risultati" class="list-stack">
+        <p class="loading-text">Caricamento risultati da Supabase...</p>
       </div>
     </section>
-
   </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo-doro.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="download.html">Download</a>
+          <a href="contatti.html">Contatti</a>
+          <a href="unisciti.html">Unisciti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
+  </footer>
 
-  <!-- SCRIPT SUPABASE COLLEGATO ALLA TABELLA risultati_gara -->
+  <script src="common.js"></script>
   <script>
-    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function caricaRisultatiGara() {
       const container = document.getElementById('lista-risultati');
-      
       try {
-        // Interroga esattamente la tabella risultati_gara
-        const { data, error } = await supabaseClient
-          .from('risultati_gara')
-          .select('*');
-
+        const { data, error } = await CVI.supabase.from('risultati_gara').select('*');
         if (error) {
-          console.error("Errore nel recupero dei risultati dalla tabella risultati_gara:", error);
-          container.innerHTML = `<p style="color: #ef4444; text-align: center;">Errore durante il caricamento dei dati.</p>`;
+          container.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore durante il caricamento dei dati.</p>';
           return;
         }
-
-        if (data && data.length > 0) {
-          container.innerHTML = ''; 
-          
-          data.forEach(item => {
-            const card = document.createElement('div');
-            card.style.cssText = "background: #1f2937; border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.25rem; border-radius: 8px;";
-            
-            // Stampa i campi principali (modificali se hai colonne con nomi specifici nella tabella risultati_gara)
-            card.innerHTML = `
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 600;">${item.titolo || item.nome || 'Risultato Gara'}</h3>
-                <span style="font-size: 0.85rem; color: var(--accent-color); font-weight: 500;">🏆 Ufficiale</span>
-              </div>
-              <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">${item.descrizione || item.dettagli || 'Nessun dettaglio inserito.'}</p>
-            `;
-            
-            container.appendChild(card);
-          });
-        } else {
-          container.innerHTML = `<p style="color: var(--text-muted); text-align: center;">Nessun record trovato nella tabella risultati_gara.</p>`;
+        if (!data || !data.length) {
+          container.innerHTML = '<p class="empty-text">Nessun record trovato nella tabella risultati_gara.</p>';
+          return;
         }
+        container.innerHTML = '';
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'list-card';
+          card.innerHTML = `
+            <div class="list-card-header">
+              <h3>${item.titolo || item.nome || 'Risultato Gara'}</h3>
+              <span>🏆 Ufficiale</span>
+            </div>
+            <p>${item.descrizione || item.dettagli || 'Nessun dettaglio inserito.'}</p>`;
+          container.appendChild(card);
+        });
       } catch (err) {
-        console.error("Errore di connessione a Supabase:", err);
-        container.innerHTML = `<p style="color: #ef4444; text-align: center;">Impossibile connettersi al database.</p>`;
+        container.innerHTML = '<p class="empty-text" style="color:#ef4444;">Impossibile connettersi al database.</p>';
       }
     }
-
     caricaRisultatiGara();
+
+    CVI.init('classifiche.html');
   </script>
 </body>
 </html>
