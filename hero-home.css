@@ -12,8 +12,8 @@
   align-items: center;
   justify-content: center;
   background:
-    linear-gradient(180deg, rgba(11, 15, 25, 0.55) 0%, rgba(11, 15, 25, 0.75) 55%, #0b0f19 100%),
-    url("https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1920&q=80") center/cover no-repeat;
+    linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.72) 55%, #0b0f19 100%),
+    url("https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1920&q=85") center/cover no-repeat;
   background-color: #0b0f19;
 }
 .hero-section {
@@ -51,8 +51,8 @@
 }
 .next-regata-card {
   background:
-    linear-gradient(160deg, rgba(11, 15, 25, 0.65) 0%, rgba(11, 15, 25, 0.88) 100%),
-    url("https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1000&q=80") center/cover !important;
+    linear-gradient(160deg, rgba(11, 15, 25, 0.6) 0%, rgba(11, 15, 25, 0.88) 100%),
+    url("https://images.unsplash.com/photo-1468581267911-ea82e6fcf92d?auto=format&fit=crop&w=1200&q=85") center/cover !important;
 }
 @media (max-width: 600px) {
   .hero-wrap { min-height: min(62vh, 520px); }
