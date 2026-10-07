@@ -3,96 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Accedi - Circolo Velico Italia VSK5</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .page-content {
-      padding: 160px 2rem 4rem 2rem;
-      max-width: 450px;
-      margin: 0 auto;
-    }
-    .auth-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 2.5rem;
-      border-radius: 8px;
-    }
-    .auth-box h1 {
-      color: #38bdf8;
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-    }
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      color: #d1d5db;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 0.8rem;
-      background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #fff;
-      border-radius: 4px;
-    }
-    .btn-submit {
-      width: 100%;
-      background: #0099ff;
-      color: white;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 4px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1rem;
-      transition: background 0.2s;
-    }
-    .btn-submit:hover {
-      background: #0077cc;
-    }
-    .auth-footer {
-      margin-top: 1.5rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #9ca3af;
-    }
-    .auth-footer a {
-      color: #38bdf8;
-      text-decoration: none;
-    }
-    .lang-selector {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-  </style>
-
-  <!-- Libreria Supabase -->
+  <title>Accedi - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
   <header>
     <a href="index.html" class="logo-container">
-      <img src="logo-cvi.png" alt="Circolo Velico Italia - VSK5" class="logo-img">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
     </a>
-    
-    <nav>
-      <ul id="nav-menu">
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="#" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
           <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
@@ -100,212 +30,114 @@
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
-        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
-        <li><a href="unisciti.html" class="btn-unisciti" data-i18n="nav_unisciti">Unisciti</a></li>
-        <li><a href="accedi.html" class="active btn-accedi" id="auth-link" data-i18n="nav_accedi">Accedi</a></li>
-        
-        <!-- Selettore Lingua -->
-        <li>
-          <select id="languageSelect" class="lang-selector" onchange="cambiaLingua(this.value)">
-            <option value="it">🇮🇹 IT</option>
-            <option value="en">🇬🇧 EN</option>
-            <option value="fr">🇫🇷 FR</option>
-            <option value="es">🇪🇸 ES</option>
-          </select>
-        </li>
       </ul>
     </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </header>
 
-  <main class="page-content">
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+
+
+  <main class="page-content auth-layout">
     <div class="auth-box">
       <h1 data-i18n="login_title">Accedi</h1>
-      <p style="color: #9ca3af; margin-bottom: 1.5rem;" data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
-      
-      <form id="login-form">
+      <p data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
+      <form id="login-form" class="auth-form">
         <div class="form-group">
           <label for="email" data-i18n="label_email">Email</label>
           <input type="email" id="email" required placeholder="tuamail@example.com" data-i18n-placeholder="ph_email">
         </div>
-        
         <div class="form-group">
           <label for="password" data-i18n="label_password">Password</label>
           <input type="password" id="password" required placeholder="••••••••">
         </div>
-        
         <button type="submit" class="btn-submit" data-i18n="btn_login">Accedi</button>
       </form>
-
       <div class="auth-footer">
-        <span data-i18n="footer_no_account">Non hai un account?</span> <a href="unisciti.html" data-i18n="footer_register_link">Registrati qui</a>
+        <span data-i18n="footer_no_account">Non hai un account?</span>
+        <a href="unisciti.html" data-i18n="footer_register_link">Registrati qui</a>
       </div>
     </div>
   </main>
 
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo-doro.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="download.html">Download</a>
+          <a href="contatti.html">Contatti</a>
+          <a href="unisciti.html">Unisciti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
+  </footer>
+
+  <script src="common.js"></script>
   <script>
-    const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const traduzioni = {
-      it: {
-        nav_home: "Home",
-        nav_team: "Team",
-        nav_gare: "Gare & Eventi ▾",
-        nav_classifiche: "Classifiche",
-        nav_albo: "Albo d'Oro",
-        nav_regolamento: "Regolamento",
-        nav_download: "Download",
-        nav_contatti: "Contatti",
-        nav_membri: "Membri",
-        nav_unisciti: "Unisciti",
-        nav_accedi: "Accedi",
-        nav_area_membri: "Area Membri",
-        login_title: "Accedi",
-        login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.",
-        label_email: "Email",
-        label_password: "Password",
-        ph_email: "tuamail@example.com",
-        btn_login: "Accedi",
-        footer_no_account: "Non hai un account?",
-        footer_register_link: "Registrati qui",
-        alert_success: "Login effettuato con successo!",
-        alert_error: "Errore durante il login: "
-      },
-      en: {
-        nav_home: "Home",
-        nav_team: "Teams",
-        nav_gare: "Races & Events ▾",
-        nav_classifiche: "Standings",
-        nav_albo: "Hall of Fame",
-        nav_regolamento: "Rules",
-        nav_download: "Download",
-        nav_contatti: "Contact",
-        nav_membri: "Members",
-        nav_unisciti: "Join Us",
-        nav_accedi: "Login",
-        nav_area_membri: "Member Area",
-        login_title: "Login",
-        login_subtitle: "Enter your credentials to access the member area.",
-        label_email: "Email",
-        label_password: "Password",
-        ph_email: "yourmail@example.com",
-        btn_login: "Login",
-        footer_no_account: "Don't have an account?",
-        footer_register_link: "Register here",
-        alert_success: "Login successful!",
-        alert_error: "Login error: "
-      },
-      fr: {
-        nav_home: "Accueil",
-        nav_team: "Équipes",
-        nav_gare: "Courses & Événements ▾",
-        nav_classifiche: "Classements",
-        nav_albo: "Temple de la Renommée",
-        nav_regolamento: "Règlement",
-        nav_download: "Téléchargements",
-        nav_contatti: "Contact",
-        nav_membri: "Membres",
-        nav_unisciti: "Rejoindre",
-        nav_accedi: "Connexion",
-        nav_area_membri: "Espace Membre",
-        login_title: "Connexion",
-        login_subtitle: "Entrez vos identifiants pour accéder à l'espace membre.",
-        label_email: "E-mail",
-        label_password: "Mot de passe",
-        ph_email: "votremail@example.com",
-        btn_login: "Se connecter",
-        footer_no_account: "Vous n'avez pas de compte ?",
-        footer_register_link: "Inscrivez-vous ici",
-        alert_success: "Connexion réussie !",
-        alert_error: "Erreur de connexion : "
-      },
-      es: {
-        nav_home: "Inicio",
-        nav_team: "Equipos",
-        nav_gare: "Regatas y Eventos ▾",
-        nav_classifiche: "Clasificación",
-        nav_albo: "Salón de la Fama",
-        nav_regolamento: "Reglamento",
-        nav_download: "Descargas",
-        nav_contatti: "Contacto",
-        nav_membri: "Miembros",
-        nav_unisciti: "Únete",
-        nav_accedi: "Acceder",
-        nav_area_membri: "Área de Miembros",
-        login_title: "Acceder",
-        login_subtitle: "Introduce tus credenciales para acceder al área de miembros.",
-        label_email: "Correo electrónico",
-        label_password: "Contraseña",
-        ph_email: "tumail@example.com",
-        btn_login: "Acceder",
-        footer_no_account: "¿No tienes una cuenta?",
-        footer_register_link: "Regístrate aquí",
-        alert_success: "¡Inicio de sesión exitoso!",
-        alert_error: "Error de inicio de sesión: "
-      }
+    const extra = {
+      it: { login_title: "Accedi", login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.", label_email: "Email", label_password: "Password", ph_email: "tuamail@example.com", btn_login: "Accedi", footer_no_account: "Non hai un account?", footer_register_link: "Registrati qui", alert_success: "Login effettuato con successo!", alert_error: "Errore durante il login: " },
+      en: { login_title: "Login", login_subtitle: "Enter your credentials to access the member area.", label_email: "Email", label_password: "Password", ph_email: "yourmail@example.com", btn_login: "Login", footer_no_account: "Don't have an account?", footer_register_link: "Register here", alert_success: "Login successful!", alert_error: "Login error: " },
+      fr: { login_title: "Connexion", login_subtitle: "Entrez vos identifiants.", label_email: "E-mail", label_password: "Mot de passe", ph_email: "votremail@example.com", btn_login: "Se connecter", footer_no_account: "Pas de compte ?", footer_register_link: "Inscrivez-vous", alert_success: "Connexion réussie !", alert_error: "Erreur : " },
+      es: { login_title: "Acceder", login_subtitle: "Introduce tus credenciales.", label_email: "Correo", label_password: "Contraseña", ph_email: "tumail@example.com", btn_login: "Acceder", footer_no_account: "¿No tienes cuenta?", footer_register_link: "Regístrate", alert_success: "¡Inicio de sesión exitoso!", alert_error: "Error: " }
+    };
+    const _orig = CVI.init;
+    CVI.init = function(a) {
+      _orig(a, extra);
+      document.getElementById('login-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const t = extra[CVI.currentLang] || extra.it;
+        const { error } = await CVI.supabase.auth.signInWithPassword({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        });
+        if (error) alert(t.alert_error + error.message);
+        else { alert(t.alert_success); window.location.href = 'membri.html'; }
+      });
     };
 
-    let currentLang = localStorage.getItem('cvi_lang') || 'it';
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) langSelect.value = currentLang;
-
-    function cambiaLingua(lang) {
-      currentLang = lang;
-      localStorage.setItem('cvi_lang', lang);
-      
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (traduzioni[lang][key]) {
-          el.textContent = traduzioni[lang][key];
-        }
-      });
-
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (traduzioni[lang][key]) {
-          el.placeholder = traduzioni[lang][key];
-        }
-      });
-
-      aggiornaTestoAuth();
-    }
-
-    async function aggiornaTestoAuth() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const authLink = document.getElementById('auth-link');
-      if (session && authLink) {
-        authLink.href = "membri.html";
-        authLink.textContent = traduzioni[currentLang]['nav_area_membri'];
-      }
-    }
-
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email: email,
-          password: password,
-        });
-
-        if (error) {
-          alert(traduzioni[currentLang]['alert_error'] + error.message);
-        } else {
-          alert(traduzioni[currentLang]['alert_success']);
-          window.location.href = "membri.html";
-        }
-      });
-    }
-
-    aggiornaTestoAuth();
-    cambiaLingua(currentLang);
+    CVI.init('accedi.html');
   </script>
-
 </body>
 </html>
