@@ -282,30 +282,22 @@
 
     async function caricaStats() {
       try {
-        const [profRes, gareRes] = await Promise.all([
-          CVI.supabase.from('profiles').select('id, team'),
+        const [profRes, teamsRes, gareRes] = await Promise.all([
+          CVI.supabase.from('profiles').select('id'),
+          CVI.supabase.from('teams').select('id'),
           CVI.supabase.from('gare').select('id, data_gara')
         ]);
 
+        if (profRes.error) console.warn('profiles:', profRes.error.message);
+        if (teamsRes.error) console.warn('teams:', teamsRes.error.message);
+        if (gareRes.error) console.warn('gare:', gareRes.error.message);
+
         const profiles = profRes.data || [];
+        const teams = teamsRes.data || [];
         const gare = gareRes.data || [];
 
         document.getElementById('stat-soci').textContent = profiles.length;
-
-        // Conta team unici normalizzati (ignora maiuscole/spazi e valori fittizi)
-        const EXCLUDE = new Set([
-          '', '-', '—', 'n/a', 'na', 'none', 'null', 'undefined',
-          'nessuno', 'nessun team', 'no team', 'sin equipo', 'aucune', 'senza team'
-        ]);
-        const teams = new Set();
-        profiles.forEach(p => {
-          const raw = String(p.team || '').trim().replace(/\s+/g, ' ');
-          if (!raw) return;
-          const key = raw.toLowerCase();
-          if (EXCLUDE.has(key)) return;
-          teams.add(key);
-        });
-        document.getElementById('stat-squadre').textContent = teams.size;
+        document.getElementById('stat-squadre').textContent = teams.length;
 
         const regate2026 = gare.filter(g => {
           if (!g.data_gara) return false;
