@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="forms.css">
 </head>
 <body>
   <header>
@@ -20,7 +21,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -29,6 +30,7 @@
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
@@ -49,7 +51,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -58,14 +60,15 @@
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
     <a href="download.html" data-i18n="nav_download">Download</a>
     <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
   <main class="page-content narrow">
-    <section class="page-hero" style="text-align:left;max-width:none;">
+    <section class="page-hero">
       <h1 data-i18n="rules_title">Regolamento Ufficiale</h1>
-      <p data-i18n="rules_subtitle" style="margin:0.5rem 0 1.5rem;">Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.</p>
+      <p data-i18n="rules_subtitle">Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.</p>
     </section>
     <div class="rule-box">
       <h3 data-i18n="rule1_title">1. Fair Play e Condotta in Mare</h3>
@@ -80,6 +83,7 @@
       <p data-i18n="rule3_desc">I punteggi vengono assegnati in base all'ordine di arrivo di ogni singola regata. Il sistema di scarto si applica secondo il regolamento specifico pubblicato ad inizio stagione.</p>
     </div>
   </main>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
@@ -110,15 +114,49 @@
 
   <script src="common.js"></script>
   <script>
-
     const extra = {
-      it: { rules_title: "Regolamento Ufficiale", rules_subtitle: "Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.", rule1_title: "1. Fair Play e Condotta in Mare", rule1_desc: "Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.", rule2_title: "2. Classi di Imbarcazioni", rule2_desc: "Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.", rule3_title: "3. Punteggi e Classifiche", rule3_desc: "I punteggi vengono assegnati in base all'ordine di arrivo di ogni singola regata. Il sistema di scarto si applica secondo il regolamento specifico pubblicato ad inizio stagione." },
-      en: { rules_title: "Official Rules", rules_subtitle: "Guidelines, codes of conduct and technical specifications for Circolo Velico Italia races on Virtual Skipper 5.", rule1_title: "1. Fair Play and Conduct at Sea", rule1_desc: "Respect for virtual ISAF racing rules is the foundation of our club. Any serious misconduct or unsportsmanlike behaviour during official races will result in sanctions or disqualification from the overall standings.", rule2_title: "2. Boat Classes", rule2_desc: "Competitions are mainly held in the America's Cup Class (ACC/V5) or other classes agreed by the race committee before the season starts.", rule3_title: "3. Scoring and Standings", rule3_desc: "Points are awarded based on finishing order in each race. The discard system follows the specific rules published at the start of the season." },
-      fr: { rules_title: "Règlement Officiel", rules_subtitle: "Lignes directrices, code de conduite et spécifications techniques pour les courses du Circolo Velico Italia sur Virtual Skipper 5.", rule1_title: "1. Fair-play et Conduite en Mer", rule1_desc: "Le respect des règles de course ISAF virtuelles est le pilier de notre club. Toute incorrection grave ou comportement antisportif lors des épreuves officielles entraînera des sanctions ou une disqualification du classement général.", rule2_title: "2. Classes de Bateaux", rule2_desc: "Les compétitions se déroulent principalement en classe America's Cup (ACC/V5) ou d'autres classes convenues par le comité de course avant le début de la saison.", rule3_title: "3. Points et Classements", rule3_desc: "Les points sont attribués selon l'ordre d'arrivée de chaque course. Le système de jeté suit le règlement spécifique publié en début de saison." },
-      es: { rules_title: "Reglamento Oficial", rules_subtitle: "Directrices, normas de conducta y especificaciones técnicas para las regatas del Circolo Velico Italia en Virtual Skipper 5.", rule1_title: "1. Juego Limpio y Conducta en el Mar", rule1_desc: "El respeto a las reglas de regata ISAF virtuales es el pilar de nuestro club. Cualquier incorrección grave o comportamiento antideportivo durante las pruebas oficiales conllevará sanciones o descalificación de la clasificación general.", rule2_title: "2. Clases de Embarcaciones", rule2_desc: "Las competiciones se celebran principalmente en la clase America's Cup (ACC/V5) u otras clases acordadas por el comité de regata antes del inicio de la temporada.", rule3_title: "3. Puntuaciones y Clasificaciones", rule3_desc: "Los puntos se otorgan según el orden de llegada de cada regata. El sistema de descarte sigue el reglamento específico publicado al inicio de la temporada." }
+      it: {
+        rules_title: "Regolamento Ufficiale",
+        rules_subtitle: "Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.",
+        rule1_title: "1. Fair Play e Condotta in Mare",
+        rule1_desc: "Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.",
+        rule2_title: "2. Classi di Imbarcazioni",
+        rule2_desc: "Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.",
+        rule3_title: "3. Punteggi e Classifiche",
+        rule3_desc: "I punteggi vengono assegnati in base all'ordine di arrivo di ogni singola regata. Il sistema di scarto si applica secondo il regolamento specifico pubblicato ad inizio stagione."
+      },
+      en: {
+        rules_title: "Official Rules",
+        rules_subtitle: "Guidelines, code of conduct and technical specs for Circolo Velico Italia races on Virtual Skipper 5.",
+        rule1_title: "1. Fair Play and Conduct at Sea",
+        rule1_desc: "Respect for virtual ISAF racing rules is the pillar of our club. Any serious misconduct or unsportsmanlike behaviour during official races will result in sanctions or disqualification from the overall standings.",
+        rule2_title: "2. Boat Classes",
+        rule2_desc: "Competitions are mainly held in the America's Cup Class (ACC/V5) or other classes agreed by the race committee before the season starts.",
+        rule3_title: "3. Scoring and Standings",
+        rule3_desc: "Points are awarded based on finishing order in each race. The discard system follows the specific rules published at the start of the season."
+      },
+      fr: {
+        rules_title: "Règlement Officiel",
+        rules_subtitle: "Lignes directrices, code de conduite et spécifications techniques pour les courses du Circolo Velico Italia sur Virtual Skipper 5.",
+        rule1_title: "1. Fair-play et Conduite en Mer",
+        rule1_desc: "Le respect des règles de course ISAF virtuelles est le pilier de notre club. Toute incorrection grave ou comportement antisportif lors des épreuves officielles entraînera des sanctions ou une disqualification du classement général.",
+        rule2_title: "2. Classes de Bateaux",
+        rule2_desc: "Les compétitions se déroulent principalement en classe America's Cup (ACC/V5) ou d'autres classes convenues par le comité de course avant le début de la saison.",
+        rule3_title: "3. Points et Classements",
+        rule3_desc: "Les points sont attribués selon l'ordre d'arrivée de chaque course. Le système de jeté suit le règlement spécifique publié en début de saison."
+      },
+      es: {
+        rules_title: "Reglamento Oficial",
+        rules_subtitle: "Directrices, normas de conducta y especificaciones técnicas para las regatas del Circolo Velico Italia en Virtual Skipper 5.",
+        rule1_title: "1. Juego Limpio y Conducta en el Mar",
+        rule1_desc: "El respeto a las reglas de regata ISAF virtuales es el pilar de nuestro club. Cualquier incorrección grave o comportamiento antideportivo durante las pruebas oficiales conllevará sanciones o descalificación de la clasificación general.",
+        rule2_title: "2. Clases de Embarcaciones",
+        rule2_desc: "Las competiciones se celebran principalmente en la clase America's Cup (ACC/V5) u otras clases acordadas por el comité de regata antes del inicio de la temporada.",
+        rule3_title: "3. Puntuaciones y Clasificaciones",
+        rule3_desc: "Los puntos se otorgan según el orden de llegada de cada regata. El sistema de descarte sigue el reglamento específico publicado al inicio de la temporada."
+      }
     };
     CVI.init = (function(orig){ return function(a){ orig(a, extra); }; })(CVI.init);
-
     CVI.init('regolamento.html');
   </script>
 </body>
