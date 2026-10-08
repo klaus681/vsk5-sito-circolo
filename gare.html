@@ -19,20 +19,54 @@
       transition: border-color 0.2s, box-shadow 0.2s;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
     .gara-card:hover {
       border-color: rgba(56, 189, 248, 0.35);
       box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
     }
+    .gara-card.is-conclusa {
+      opacity: 0.78;
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+    .gara-card.is-conclusa:hover {
+      border-color: rgba(148, 163, 184, 0.4);
+      box-shadow: none;
+    }
+    .gara-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.15rem;
+    }
     .gara-card h3 {
-      margin: 0 0 0.35rem;
+      margin: 0;
       font-size: 1.15rem;
       color: #fff;
+      flex: 1;
+    }
+    .badge-conclusa {
+      flex-shrink: 0;
+      display: inline-block;
+      background: rgba(148, 163, 184, 0.18);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      white-space: nowrap;
     }
     .gara-date {
       color: var(--accent-color);
       font-size: 0.9rem;
       margin: 0.35rem 0 0.6rem;
+    }
+    .gara-card.is-conclusa .gara-date {
+      color: #94a3b8;
     }
     .gara-desc {
       color: var(--text-muted);
@@ -161,6 +195,11 @@
       color: var(--success);
       font-weight: 600;
     }
+    .status-conclusa-msg {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -265,6 +304,8 @@
         btn_disiscriviti: "Disiscriviti",
         btn_login_iscriviti: "Accedi per iscriverti",
         status_iscritto: "✓ Sei iscritto",
+        badge_conclusa: "Conclusa",
+        msg_conclusa: "Gara conclusa — iscrizioni chiuse",
         msg_iscrizione_ok: "Iscrizione effettuata!",
         msg_disiscrizione_ok: "Iscrizione annullata.",
         msg_errore: "Errore: "
@@ -276,6 +317,8 @@
         btn_disiscriviti: "Unregister",
         btn_login_iscriviti: "Login to register",
         status_iscritto: "✓ Registered",
+        badge_conclusa: "Finished",
+        msg_conclusa: "Race finished — registration closed",
         msg_iscrizione_ok: "Registration successful!",
         msg_disiscrizione_ok: "Registration cancelled.",
         msg_errore: "Error: "
@@ -287,6 +330,8 @@
         btn_disiscriviti: "Se désinscrire",
         btn_login_iscriviti: "Connexion pour s'inscrire",
         status_iscritto: "✓ Inscrit",
+        badge_conclusa: "Terminée",
+        msg_conclusa: "Course terminée — inscriptions fermées",
         msg_iscrizione_ok: "Inscription réussie !",
         msg_disiscrizione_ok: "Inscription annulée.",
         msg_errore: "Erreur : "
@@ -298,18 +343,27 @@
         btn_disiscriviti: "Cancelar inscripción",
         btn_login_iscriviti: "Accede para inscribirte",
         status_iscritto: "✓ Inscrito",
+        badge_conclusa: "Finalizada",
+        msg_conclusa: "Regata finalizada — inscripciones cerradas",
         msg_iscrizione_ok: "¡Inscripción realizada!",
-        msg_disiscrizione_ok: "Inscripción cancelada.",
+        msg_disiscripcion_ok: "Inscripción cancelada.",
         msg_errore: "Error: "
       }
     };
 
     let currentUserId = null;
-    let currentUserIscrizioni = new Set(); // gara_id a cui l'utente è iscritto
+    let currentUserIscrizioni = new Set();
 
     function t(key) {
       const lang = CVI.currentLang || 'it';
       return (extra[lang] && extra[lang][key]) || extra.it[key] || key;
+    }
+
+    function isGaraConclusa(dataGara) {
+      if (!dataGara) return false;
+      const garaDate = new Date(dataGara);
+      if (isNaN(garaDate.getTime())) return false;
+      return garaDate.getTime() < Date.now();
     }
 
     function renderIscritti(list) {
@@ -324,7 +378,10 @@
       return `<ul class="iscritti-list">${items}</ul>`;
     }
 
-    function renderActionButton(garaId) {
+    function renderActionButton(garaId, conclusa) {
+      if (conclusa) {
+        return `<span class="status-conclusa-msg">${t('msg_conclusa')}</span>`;
+      }
       if (!currentUserId) {
         return `<a href="accedi.html" class="btn-login-iscriviti">${t('btn_login_iscriviti')}</a>`;
       }
@@ -371,7 +428,6 @@
           currentUserIscrizioni.delete(String(garaId));
           alert(t('msg_disiscrizione_ok'));
         }
-        // ricarica tutta la lista per aggiornare iscritti + bottoni
         await loadGare();
       } catch (err) {
         console.error(err);
@@ -384,7 +440,6 @@
     async function loadGare() {
       const box = document.getElementById('gare-list');
       try {
-        // sessione utente
         const { data: { session } } = await CVI.supabase.auth.getSession();
         currentUserId = session?.user?.id || null;
         currentUserIscrizioni = new Set();
@@ -414,13 +469,11 @@
         if (iscrRes.error) console.warn('iscrizioni_gare:', iscrRes.error.message);
         if (profRes.error) console.warn('profiles:', profRes.error.message);
 
-        // mappa profilo
         const profileById = {};
         profiles.forEach(p => {
           if (p.id != null) profileById[String(p.id)] = p;
         });
 
-        // mappa gara_id -> lista profili iscritti + set iscrizioni utente corrente
         const iscrittiByGara = {};
         iscrizioni.forEach(row => {
           if (row.gara_id == null || row.user_id == null) return;
@@ -444,13 +497,17 @@
         }
 
         box.innerHTML = gare.map(g => {
+          const conclusa = isGaraConclusa(g.data_gara);
           const d = g.data_gara
             ? new Date(g.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
             : 'Data da definire';
           const iscritti = iscrittiByGara[String(g.id)] || [];
           return `
-            <div class="gara-card" data-gara-id="${g.id}">
-              <h3>${g.titolo || 'Gara'}</h3>
+            <div class="gara-card${conclusa ? ' is-conclusa' : ''}" data-gara-id="${g.id}">
+              <div class="gara-card-header">
+                <h3>${g.titolo || 'Gara'}</h3>
+                ${conclusa ? `<span class="badge-conclusa">${t('badge_conclusa')}</span>` : ''}
+              </div>
               <p class="gara-date">📅 ${d}</p>
               <p class="gara-desc">${g.descrizione || ''}</p>
               <div class="iscritti-box">
@@ -458,12 +515,11 @@
                 ${renderIscritti(iscritti)}
               </div>
               <div class="gara-actions">
-                ${renderActionButton(g.id)}
+                ${renderActionButton(g.id, conclusa)}
               </div>
             </div>`;
         }).join('');
 
-        // bind bottoni
         box.querySelectorAll('[data-action]').forEach(btn => {
           btn.addEventListener('click', () => handleIscrizione(btn));
         });
