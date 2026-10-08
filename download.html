@@ -65,13 +65,13 @@
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
-  <main class="page-content" id="protected-content" style="display:none;">
+  <main class="page-content" id="protected-content">
     <div class="content-box">
       <div class="download-header">
         <h1 data-i18n="download_title">Area Download</h1>
-        <button id="logout-btn" class="btn-logout" data-i18n="btn_logout">Disconnetti</button>
+        <button id="logout-btn" class="btn-logout" data-i18n="btn_logout" style="display:none">Disconnetti</button>
       </div>
-      <p class="subtitle" data-i18n="download_subtitle">Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci del circolo.</p>
+      <p class="subtitle" data-i18n="download_subtitle">Materiali ufficiali, skin, regolamenti e pacchetti del circolo.</p>
       <div class="download-list">
 
         <div class="download-item">
@@ -109,9 +109,6 @@
       </div>
     </div>
   </main>
-  <div id="loading-screen" class="page-content">
-    <p class="loading-text" data-i18n="loading_verification">Verifica autorizzazione in corso...</p>
-  </div>
 
   <footer class="site-footer">
     <div class="footer-inner">
@@ -146,7 +143,7 @@
     const extra = {
       it: {
         download_title: "Area Download",
-        download_subtitle: "Materiali ufficiali, skin, regolamenti e pacchetti riservati ai soci.",
+        download_subtitle: "Materiali ufficiali, skin, regolamenti e pacchetti del circolo.",
         btn_logout: "Disconnetti",
         file1_title: "Regolamento Ufficiale di Circolo VSK5",
         file1_desc: "Documento PDF con tutte le direttive e specifiche di navigazione.",
@@ -159,12 +156,11 @@
         btn_download_zip: "Scarica ZIP",
         file3_title: "Mappe Ufficiali C.V.I.",
         file3_desc: "Setup mappe VSK5 ufficiali del Circolo Velico Italiano GP.",
-        btn_download_maps: "Scarica EXE",
-        loading_verification: "Verifica autorizzazione in corso..."
+        btn_download_maps: "Scarica EXE"
       },
       en: {
         download_title: "Download Area",
-        download_subtitle: "Official materials reserved for members.",
+        download_subtitle: "Official club materials, skins, rules and packages.",
         btn_logout: "Log Out",
         file1_title: "Official VSK5 Club Rules",
         file1_desc: "PDF with navigation directives.",
@@ -177,12 +173,11 @@
         btn_download_zip: "Download ZIP",
         file3_title: "Official C.V.I. Maps",
         file3_desc: "Official VSK5 maps setup for Circolo Velico Italiano GP.",
-        btn_download_maps: "Download EXE",
-        loading_verification: "Verifying authorization..."
+        btn_download_maps: "Download EXE"
       },
       fr: {
         download_title: "Espace Téléchargement",
-        download_subtitle: "Matériel officiel réservé aux membres.",
+        download_subtitle: "Matériel officiel du club.",
         btn_logout: "Se déconnecter",
         file1_title: "Règlement Officiel VSK5",
         file1_desc: "PDF avec les directives.",
@@ -195,12 +190,11 @@
         btn_download_zip: "Télécharger ZIP",
         file3_title: "Cartes Officielles C.V.I.",
         file3_desc: "Setup des cartes VSK5 officielles CVI GP.",
-        btn_download_maps: "Télécharger EXE",
-        loading_verification: "Vérification..."
+        btn_download_maps: "Télécharger EXE"
       },
       es: {
         download_title: "Área de Descargas",
-        download_subtitle: "Materiales oficiales para socios.",
+        download_subtitle: "Materiales oficiales del club.",
         btn_logout: "Cerrar sesión",
         file1_title: "Reglamento Oficial VSK5",
         file1_desc: "PDF con directrices.",
@@ -213,22 +207,22 @@
         btn_download_zip: "Descargar ZIP",
         file3_title: "Mapas Oficiales C.V.I.",
         file3_desc: "Setup de mapas VSK5 oficiales CVI GP.",
-        btn_download_maps: "Descargar EXE",
-        loading_verification: "Verificando..."
+        btn_download_maps: "Descargar EXE"
       }
     };
     const _orig = CVI.init;
     CVI.init = function(a) {
       _orig(a, extra);
-      document.getElementById('logout-btn').addEventListener('click', async () => {
-        await CVI.supabase.auth.signOut();
-        window.location.href = 'accedi.html';
-      });
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+          await CVI.supabase.auth.signOut();
+          window.location.href = 'accedi.html';
+        });
+      }
       (async () => {
         const { data: { session } } = await CVI.supabase.auth.getSession();
-        if (!session) { window.location.href = 'accedi.html'; return; }
-        document.getElementById('loading-screen').style.display = 'none';
-        document.getElementById('protected-content').style.display = 'block';
+        if (session && logoutBtn) logoutBtn.style.display = '';
       })();
     };
 
