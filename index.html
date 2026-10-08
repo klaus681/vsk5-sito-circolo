@@ -119,25 +119,8 @@
           <h2>Classifica generale</h2>
           <a href="classifiche.html" class="link-more">Vedi tutto →</a>
         </div>
-        <ol class="ranking-list">
-          <li>
-            <span class="rank-pos">1</span>
-            <div class="rank-info"><strong>ITA_Lupo</strong><span>Marco Bellini</span></div>
-            <span class="team-badge">TRR · Tirreno Racing</span>
-            <span class="rank-points">67</span>
-          </li>
-          <li>
-            <span class="rank-pos">2</span>
-            <div class="rank-info"><strong>LVV_Doge</strong><span>Paolo Zanetti</span></div>
-            <span class="team-badge">LVV · Laguna Veneta</span>
-            <span class="rank-points">61</span>
-          </li>
-          <li>
-            <span class="rank-pos">3</span>
-            <div class="rank-info"><strong>SCR_Etna</strong><span>Salvo Russo</span></div>
-            <span class="team-badge">SCR · Scirocco Sailing</span>
-            <span class="rank-points">59</span>
-          </li>
+        <ol class="ranking-list" id="home-ranking">
+          <li class="loading-rank"><span class="rank-pos">…</span><div class="rank-info"><strong>Caricamento...</strong></div></li>
         </ol>
       </div>
 
@@ -209,24 +192,26 @@
 
     async function caricaProssimaGara() {
       try {
+        const now = new Date().toISOString();
         const { data, error } = await CVI.supabase
           .from('gare')
           .select('id, titolo, descrizione, data_gara')
+          .gte('data_gara', now)
           .order('data_gara', { ascending: true })
           .limit(1);
 
         if (error) {
-          document.getElementById('regata-titolo').textContent = "Errore di connessione dati";
+          // fallback: prima gara in assoluto
+          const fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara').order('data_gara', { ascending: true }).limit(1);
+          if (fb.error || !fb.data?.length) {
+            document.getElementById('regata-titolo').textContent = "Nessuna gara in programma";
+            return;
+          }
+          fillRegata(fb.data[0]);
           return;
         }
         if (data && data.length > 0) {
-          const gara = data[0];
-          document.getElementById('regata-titolo').textContent = gara.titolo || "Gara senza titolo";
-          const dataFmt = gara.data_gara
-            ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
-            : 'Data da definirsi';
-          document.getElementById('regata-data').textContent = `📅 ${dataFmt}`;
-          document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
+          fillRegata(data[0]);
         } else {
           document.getElementById('regata-titolo').textContent = "Nessuna gara in programma";
           document.getElementById('regata-data').textContent = "📅 --";
@@ -237,8 +222,69 @@
       }
     }
 
+    function fillRegata(gara) {
+      document.getElementById('regata-titolo').textContent = gara.titolo || "Gara senza titolo";
+      const dataFmt = gara.data_gara
+        ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
+        : 'Data da definirsi';
+      document.getElementById('regata-data').textContent = `📅 ${dataFmt}`;
+      document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
+    }
+
+    async function caricaClassificaHome() {
+      const list = document.getElementById('home-ranking');
+      try {
+        const [risRes, profRes] = await Promise.all([
+          CVI.supabase.from('risultati_gara').select('user_id, punti'),
+          CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome')
+        ]);
+
+        if (risRes.error || !risRes.data?.length) {
+          list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
+          return;
+        }
+
+        const profiles = {};
+        (profRes.data || []).forEach(p => { profiles[String(p.id)] = p; });
+
+        const totals = {};
+        risRes.data.forEach(r => {
+          const uid = String(r.user_id);
+          totals[uid] = (totals[uid] || 0) + (Number(r.punti) || 0);
+        });
+
+        const rows = Object.keys(totals).map(uid => {
+          const p = profiles[uid] || {};
+          const nome = [p.nome, p.cognome].filter(Boolean).join(' ').trim();
+          return {
+            uid,
+            punti: totals[uid],
+            nick: (p.nickname || '').trim() || nome || 'Skipper',
+            nome,
+            team: (p.team || '').trim()
+          };
+        });
+
+        // Low Point: meno punti = meglio
+        rows.sort((a, b) => a.punti - b.punti);
+        const top = rows.slice(0, 3);
+
+        list.innerHTML = top.map((r, i) => `
+          <li>
+            <span class="rank-pos">${i + 1}</span>
+            <div class="rank-info"><strong>${r.nick}</strong>${r.nome ? `<span>${r.nome}</span>` : ''}</div>
+            ${r.team ? `<span class="team-badge">${r.team}</span>` : ''}
+            <span class="rank-points">${r.punti}</span>
+          </li>`).join('');
+      } catch (e) {
+        console.error(e);
+        list.innerHTML = '<li><div class="rank-info"><strong>Errore caricamento</strong></div></li>';
+      }
+    }
+
     CVI.init('index.html', extra);
     caricaProssimaGara();
+    caricaClassificaHome();
   </script>
 </body>
 </html>
