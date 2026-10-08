@@ -7,7 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="forms.css">
 </head>
 <body>
   <header>
@@ -19,7 +21,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -28,6 +30,7 @@
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
@@ -48,7 +51,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -57,20 +60,30 @@
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
     <a href="download.html" data-i18n="nav_download">Download</a>
     <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
   <main class="page-content narrow">
-    <section class="page-hero" style="text-align:left;">
-      <h1 data-i18n="contact_title">Contattaci</h1>
-      <p data-i18n="contact_subtitle">Hai domande sulle nostre regate o vuoi metterti in contatto con la direzione del circolo? Compila il modulo sottostante.</p>
+    <section class="page-hero">
+      <h1 data-i18n="contact_title">Contatti</h1>
+      <p data-i18n="contact_subtitle">Hai domande sulle nostre regate? Compila il modulo qui sotto.</p>
     </section>
     <form class="contact-form content-box" id="contact-form">
-      <input type="text" id="contact-name" data-i18n-placeholder="placeholder_name" placeholder="Il tuo nome / Nickname" required>
-      <input type="email" id="contact-email" data-i18n-placeholder="placeholder_email" placeholder="La tua email" required>
-      <textarea id="contact-msg" data-i18n-placeholder="placeholder_msg" placeholder="Il tuo messaggio..." required></textarea>
-      <button type="submit" class="btn-submit" data-i18n="btn_send">Invia Messaggio</button>
+      <div class="form-group">
+        <label for="contact-name" data-i18n="label_name">Nome</label>
+        <input type="text" id="contact-name" data-i18n-placeholder="placeholder_name" placeholder="Il tuo nome / Nickname" required>
+      </div>
+      <div class="form-group">
+        <label for="contact-email" data-i18n="label_email">Email</label>
+        <input type="email" id="contact-email" data-i18n-placeholder="placeholder_email" placeholder="La tua email" required>
+      </div>
+      <div class="form-group">
+        <label for="contact-msg" data-i18n="label_msg">Messaggio</label>
+        <textarea id="contact-msg" data-i18n-placeholder="placeholder_msg" placeholder="Il tuo messaggio..." required></textarea>
+      </div>
+      <button type="submit" class="btn-submit" data-i18n="btn_send">Invia messaggio</button>
       <p id="form-status" style="margin-top: 15px; font-weight: 500; font-size: 0.95rem;"></p>
     </form>
   </main>
@@ -98,101 +111,57 @@
         </div>
       </div>
     </div>
-    <div class="footer-bottom">
-      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
-    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
   <script src="common.js"></script>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-    const supabaseUrl = 'https://kisffsyerranniypkcqa.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
-    
-    const _supabase = createClient(supabaseUrl, supabaseKey);
-
+  <script>
     const extra = {
-      it: { 
-        contact_title: "Contattaci", 
-        contact_subtitle: "Hai domande sulle nostre regate o vuoi metterti in contatto con la direzione del circolo? Compila il modulo sottostante.", 
-        placeholder_name: "Il tuo nome / Nickname", 
-        placeholder_email: "La tua email", 
-        placeholder_msg: "Il tuo messaggio...", 
-        btn_send: "Invia Messaggio", 
-        msg_sent_success: "Messaggio inviato con successo! Ti risponderemo presto.",
-        msg_sending: "Invio in corso...",
-        msg_error: "Errore durante l'invio. Riprova più tardi."
+      it: {
+        contact_title: "Contatti",
+        contact_subtitle: "Hai domande sulle nostre regate? Compila il modulo qui sotto.",
+        label_name: "Nome", label_email: "Email", label_msg: "Messaggio",
+        placeholder_name: "Il tuo nome / Nickname",
+        placeholder_email: "La tua email",
+        placeholder_msg: "Il tuo messaggio...",
+        btn_send: "Invia messaggio"
       },
-      en: { 
-        contact_title: "Contact Us", 
-        contact_subtitle: "Have questions about our regattas? Fill out the form below.", 
-        placeholder_name: "Your name / Nickname", 
-        placeholder_email: "Your email", 
-        placeholder_msg: "Your message...", 
-        btn_send: "Send Message", 
-        msg_sent_success: "Message sent successfully! We will get back to you soon.",
-        msg_sending: "Sending...",
-        msg_error: "Error sending message. Please try again."
+      en: {
+        contact_title: "Contact",
+        contact_subtitle: "Have questions about our regattas? Fill out the form below.",
+        label_name: "Name", label_email: "Email", label_msg: "Message",
+        placeholder_name: "Your name / Nickname",
+        placeholder_email: "Your email",
+        placeholder_msg: "Your message...",
+        btn_send: "Send message"
       },
-      fr: { 
-        contact_title: "Contactez-nous", 
-        contact_subtitle: "Des questions sur nos régates ? Remplissez le formulaire.", 
-        placeholder_name: "Votre nom / Pseudo", 
-        placeholder_email: "Votre e-mail", 
-        placeholder_msg: "Votre message...", 
-        btn_send: "Envoyer", 
-        msg_sent_success: "Message envoyé avec succès !",
-        msg_sending: "Envoi en cours...",
-        msg_error: "Erreur lors de l'envoi. Veuillez réessayer."
+      fr: {
+        contact_title: "Contact",
+        contact_subtitle: "Des questions sur nos régates ? Remplissez le formulaire.",
+        label_name: "Nom", label_email: "Email", label_msg: "Message",
+        placeholder_name: "Votre nom / Pseudo",
+        placeholder_email: "Votre email",
+        placeholder_msg: "Votre message...",
+        btn_send: "Envoyer"
       },
-      es: { 
-        contact_title: "Contáctanos", 
-        contact_subtitle: "¿Preguntas sobre nuestras regatas? Rellena el formulario.", 
-        placeholder_name: "Tu nombre / Apodo", 
-        placeholder_email: "Tu correo", 
-        placeholder_msg: "Tu mensaje...", 
-        btn_send: "Enviar Mensaje", 
-        msg_sent_success: "¡Mensaje enviado con éxito!",
-        msg_sending: "Enviando...",
-        msg_error: "Error al enviar. Inténtalo de nuevo."
+      es: {
+        contact_title: "Contacto",
+        contact_subtitle: "¿Preguntas sobre nuestras regatas? Rellena el formulario.",
+        label_name: "Nombre", label_email: "Email", label_msg: "Mensaje",
+        placeholder_name: "Tu nombre / Apodo",
+        placeholder_email: "Tu email",
+        placeholder_msg: "Tu mensaje...",
+        btn_send: "Enviar mensaje"
       }
     };
-
-    const _orig = CVI.init;
-    CVI.init = function(a) {
-      _orig(a, extra);
-
-      document.getElementById('contact-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const nome = document.getElementById('contact-name').value;
-        const email = document.getElementById('contact-email').value;
-        const messaggio = document.getElementById('contact-msg').value;
-        const statusEl = document.getElementById('form-status');
-        const translations = extra[CVI.currentLang] || extra.it;
-
-        statusEl.textContent = translations.msg_sending;
-        statusEl.style.color = '#38bdf8';
-
-        // Salvataggio nel database Supabase nella tabella 'messaggi'
-        const { data, error } = await _supabase
-          .from('messaggi')
-          .insert([{ nome, email, messaggio }]);
-
-        if (error) {
-          console.error('Errore Supabase:', error);
-          statusEl.textContent = translations.msg_error;
-          statusEl.style.color = '#f87171';
-        } else {
-          statusEl.textContent = translations.msg_sent_success;
-          statusEl.style.color = '#34d399';
-          e.target.reset();
-        }
-      });
-    };
-
-    CVI.init('contatti.html');
+    document.getElementById('contact-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const statusEl = document.getElementById('form-status');
+      statusEl.textContent = 'Messaggio inviato (demo). Ti risponderemo al più presto.';
+      statusEl.style.color = '#34d399';
+      this.reset();
+    });
+    CVI.init('contatti.html', extra);
   </script>
 </body>
 </html>
