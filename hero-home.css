@@ -7,14 +7,25 @@
   margin-left: -50vw;
   margin-right: -50vw;
   width: 100vw;
-  min-height: min(72vh, 640px);
+  min-height: min(78vh, 700px);
   display: flex;
   align-items: center;
   justify-content: center;
   background:
-    linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.72) 55%, #0b0f19 100%),
+    linear-gradient(180deg, rgba(7, 16, 24, 0.35) 0%, rgba(11, 15, 25, 0.55) 40%, rgba(11, 15, 25, 0.88) 78%, #0b0f19 100%),
+    linear-gradient(90deg, rgba(8, 47, 73, 0.25) 0%, transparent 50%),
     url("https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1920&q=85") center/cover no-repeat;
   background-color: #0b0f19;
+  isolation: isolate;
+}
+.hero-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, #0b0f19);
+  pointer-events: none;
+  z-index: 0;
 }
 .hero-section {
   text-align: center;
@@ -43,11 +54,27 @@
 }
 .hero-section h1 {
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  letter-spacing: -0.03em;
+  line-height: 1.12;
 }
-.hero-section h1 em { color: #7dd3fc !important; }
+.hero-section h1 em {
+  color: #7dd3fc !important;
+  font-style: italic;
+  text-shadow: 0 0 40px rgba(56, 189, 248, 0.35);
+}
 .hero-section p {
   color: rgba(248, 250, 252, 0.88) !important;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+.hero-actions .btn-primary {
+  box-shadow: 0 8px 28px rgba(56, 189, 248, 0.35);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.hero-actions .btn-primary:hover {
+  box-shadow: 0 12px 36px rgba(56, 189, 248, 0.45);
+  transform: translateY(-2px);
 }
 .hero-actions .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
@@ -60,9 +87,13 @@
   border-color: #38bdf8;
 }
 .next-regata-card {
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
   background:
-    linear-gradient(160deg, rgba(11, 15, 25, 0.6) 0%, rgba(11, 15, 25, 0.88) 100%),
+    linear-gradient(160deg, rgba(11, 15, 25, 0.55) 0%, rgba(11, 15, 25, 0.9) 100%),
     url("https://images.unsplash.com/photo-1468581267911-ea82e6fcf92d?auto=format&fit=crop&w=1200&q=85") center/cover !important;
+}
+.next-regata-card .badge-tag {
+  backdrop-filter: blur(6px);
 }
 @media (max-width: 600px) {
   .hero-wrap { min-height: min(62vh, 520px); }
