@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="fix-nav.css">
+  <link rel="stylesheet" href="forms.css">
 </head>
 <body>
   <header>
@@ -21,7 +22,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -51,7 +52,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -72,34 +73,35 @@
       <form id="register-form" class="auth-form">
         <div class="form-group">
           <label for="nome" data-i18n="label_nome">Nome</label>
-          <input type="text" id="nome" required placeholder="Il tuo nome">
+          <input type="text" id="nome" required placeholder="Il tuo nome" autocomplete="given-name">
         </div>
         <div class="form-group">
           <label for="cognome" data-i18n="label_cognome">Cognome</label>
-          <input type="text" id="cognome" required placeholder="Il tuo cognome">
+          <input type="text" id="cognome" required placeholder="Il tuo cognome" autocomplete="family-name">
         </div>
         <div class="form-group">
           <label for="nickname" data-i18n="label_nickname">Nickname</label>
-          <input type="text" id="nickname" required placeholder="Nickname di gioco">
+          <input type="text" id="nickname" required placeholder="Nickname di gioco" autocomplete="username">
         </div>
         <div class="form-group">
           <label for="team" data-i18n="label_team">Team</label>
-          <input type="text" id="team" placeholder="Nome del team">
+          <input type="text" id="team" placeholder="Nome del team" autocomplete="organization">
         </div>
         <div class="form-group">
           <label for="email" data-i18n="label_email">Email</label>
-          <input type="email" id="email" required placeholder="tuamail@example.com">
+          <input type="email" id="email" required placeholder="tuamail@example.com" autocomplete="email">
         </div>
         <div class="form-group">
           <label for="password" data-i18n="label_password">Password</label>
-          <input type="password" id="password" required placeholder="••••••••">
+          <input type="password" id="password" required minlength="6" placeholder="••••••••" autocomplete="new-password">
         </div>
         <button type="submit" class="btn-submit" data-i18n="btn_register">Registrati</button>
       </form>
       <div class="auth-footer">
-        <span data-i18n="footer_has_account">Hai già un account?</span>
-        <a href="accedi.html" data-i18n="footer_login_link">Accedi qui</a>
+        <span data-i18n="has_account">Hai già un account?</span>
+        <a href="accedi.html" data-i18n="link_login">Accedi qui</a>
       </div>
+      <div id="reg-msg" class="auth-msg" style="display:none;margin-top:1rem;padding:0.75rem 1rem;border-radius:8px;font-size:0.9rem;"></div>
     </div>
   </main>
 
@@ -126,51 +128,74 @@
         </div>
       </div>
     </div>
-    <div class="footer-bottom">
-      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
-    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
   <script src="common.js"></script>
   <script>
     const extra = {
-      it: { join_title: "Unisciti al Circolo", join_subtitle: "Compila il modulo per registrarti e far parte della community.", label_nome: "Nome", label_cognome: "Cognome", label_nickname: "Nickname", label_team: "Team", label_email: "Email", label_password: "Password", btn_register: "Registrati", footer_has_account: "Hai già un account?", footer_login_link: "Accedi qui", alert_success: "Registrazione completata! Ora puoi effettuare il login.", alert_error: "Errore durante la registrazione: " },
-      en: { join_title: "Join the Club", join_subtitle: "Fill out the form to register.", label_nome: "First Name", label_cognome: "Last Name", label_nickname: "Nickname", label_team: "Team", label_email: "Email", label_password: "Password", btn_register: "Register", footer_has_account: "Already have an account?", footer_login_link: "Log in here", alert_success: "Registration successful! You can now log in.", alert_error: "Registration error: " },
-      fr: { join_title: "Rejoindre le Club", join_subtitle: "Remplissez le formulaire pour vous inscrire.", label_nome: "Prénom", label_cognome: "Nom", label_nickname: "Pseudo", label_team: "Équipe", label_email: "E-mail", label_password: "Mot de passe", btn_register: "S'inscrire", footer_has_account: "Déjà un compte ?", footer_login_link: "Connectez-vous", alert_success: "Inscription réussie !", alert_error: "Erreur : " },
-      es: { join_title: "Únete al Club", join_subtitle: "Completa el formulario para registrarte.", label_nome: "Nombre", label_cognome: "Apellido", label_nickname: "Apodo", label_team: "Equipo", label_email: "Correo", label_password: "Contraseña", btn_register: "Registrarse", footer_has_account: "¿Ya tienes cuenta?", footer_login_link: "Inicia sesión", alert_success: "¡Registro completado!", alert_error: "Error: " }
-    };
-    const _orig = CVI.init;
-    CVI.init = function(a) {
-      _orig(a, extra);
-      document.getElementById('register-form').addEventListener('submit', async e => {
-        e.preventDefault();
-        const t = extra[CVI.currentLang] || extra.it;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const nome = document.getElementById('nome').value;
-        const cognome = document.getElementById('cognome').value;
-        const nickname = document.getElementById('nickname').value;
-        const team = document.getElementById('team').value;
-        try {
-          const { data, error } = await CVI.supabase.auth.signUp({
-            email, password,
-            options: { data: { nome, cognome, nickname, team } }
-          });
-          if (error) { alert(t.alert_error + error.message); return; }
-          if (data.user) {
-            await CVI.supabase.from('profiles').upsert({
-              id: data.user.id, email, nome, cognome, nickname, team
-            });
-          }
-          alert(t.alert_success);
-          window.location.href = 'accedi.html';
-        } catch (err) {
-          alert(t.alert_error + (err.message || err));
-        }
-      });
+      it: {
+        join_title: "Unisciti al Circolo", join_subtitle: "Compila il modulo per registrarti e far parte della community.",
+        label_nome: "Nome", label_cognome: "Cognome", label_nickname: "Nickname", label_team: "Team",
+        label_email: "Email", label_password: "Password", btn_register: "Registrati",
+        has_account: "Hai già un account?", link_login: "Accedi qui"
+      },
+      en: {
+        join_title: "Join the Club", join_subtitle: "Fill the form to register and join the community.",
+        label_nome: "First name", label_cognome: "Last name", label_nickname: "Nickname", label_team: "Team",
+        label_email: "Email", label_password: "Password", btn_register: "Register",
+        has_account: "Already have an account?", link_login: "Log in here"
+      },
+      fr: {
+        join_title: "Rejoindre le Club", join_subtitle: "Remplissez le formulaire pour vous inscrire.",
+        label_nome: "Prénom", label_cognome: "Nom", label_nickname: "Pseudo", label_team: "Équipe",
+        label_email: "Email", label_password: "Mot de passe", btn_register: "S'inscrire",
+        has_account: "Déjà un compte ?", link_login: "Se connecter"
+      },
+      es: {
+        join_title: "Únete al Club", join_subtitle: "Completa el formulario para registrarte.",
+        label_nome: "Nombre", label_cognome: "Apellido", label_nickname: "Apodo", label_team: "Equipo",
+        label_email: "Email", label_password: "Contraseña", btn_register: "Registrarse",
+        has_account: "¿Ya tienes cuenta?", link_login: "Accede aquí"
+      }
     };
 
-    CVI.init('unisciti.html');
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('reg-msg');
+      msg.style.display = 'none';
+      const nome = document.getElementById('nome').value.trim();
+      const cognome = document.getElementById('cognome').value.trim();
+      const nickname = document.getElementById('nickname').value.trim();
+      const team = document.getElementById('team').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const { data, error } = await CVI.supabase.auth.signUp({
+        email, password,
+        options: { data: { nome, cognome, nickname, team } }
+      });
+      if (error) {
+        msg.textContent = error.message;
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(248,113,113,0.12)';
+        msg.style.color = '#f87171';
+        return;
+      }
+      if (data.user) {
+        await CVI.supabase.from('profiles').upsert({
+          id: data.user.id,
+          nome, cognome, nickname, team,
+          email
+        });
+      }
+      msg.textContent = 'Registrazione completata! Controlla la email se richiesta conferma, poi accedi.';
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(52,211,153,0.15)';
+      msg.style.color = '#34d399';
+      setTimeout(() => { window.location.href = 'accedi.html'; }, 2000);
+    });
+
+    CVI.init('unisciti.html', extra);
   </script>
 </body>
 </html>
