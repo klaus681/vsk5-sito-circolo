@@ -10,6 +10,47 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .auth-switch {
+      margin-top: 0.85rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .auth-switch button {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+    }
+    .auth-switch button:hover { opacity: 0.85; }
+    .auth-msg {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      display: none;
+    }
+    .auth-msg.ok {
+      display: block;
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      color: #34d399;
+    }
+    .auth-msg.err {
+      display: block;
+      background: rgba(248, 113, 113, 0.12);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #f87171;
+    }
+    .auth-panel { display: none; }
+    .auth-panel.active { display: block; }
+  </style>
 </head>
 <body>
   <header>
@@ -67,23 +108,66 @@
 
   <main class="page-content auth-layout">
     <div class="auth-box">
-      <h1 data-i18n="login_title">Accedi</h1>
-      <p data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
-      <form id="login-form" class="auth-form">
-        <div class="form-group">
-          <label for="email" data-i18n="label_email">Email</label>
-          <input type="email" id="email" required placeholder="tuamail@example.com" data-i18n-placeholder="ph_email">
+
+      <!-- LOGIN -->
+      <div id="panel-login" class="auth-panel active">
+        <h1 data-i18n="login_title">Accedi</h1>
+        <p data-i18n="login_subtitle">Inserisci le tue credenziali per entrare nell'area riservata.</p>
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="email" data-i18n="label_email">Email</label>
+            <input type="email" id="email" required placeholder="tuamail@example.com" data-i18n-placeholder="ph_email" autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="password" data-i18n="label_password">Password</label>
+            <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn-submit" data-i18n="btn_login">Accedi</button>
+        </form>
+        <div class="auth-switch">
+          <button type="button" id="btn-show-forgot" data-i18n="link_forgot">Password dimenticata?</button>
         </div>
-        <div class="form-group">
-          <label for="password" data-i18n="label_password">Password</label>
-          <input type="password" id="password" required placeholder="••••••••">
+        <div class="auth-footer">
+          <span data-i18n="footer_no_account">Non hai un account?</span>
+          <a href="unisciti.html" data-i18n="footer_register_link">Registrati qui</a>
         </div>
-        <button type="submit" class="btn-submit" data-i18n="btn_login">Accedi</button>
-      </form>
-      <div class="auth-footer">
-        <span data-i18n="footer_no_account">Non hai un account?</span>
-        <a href="unisciti.html" data-i18n="footer_register_link">Registrati qui</a>
       </div>
+
+      <!-- RICHIESTA RESET -->
+      <div id="panel-forgot" class="auth-panel">
+        <h1 data-i18n="forgot_title">Recupera password</h1>
+        <p data-i18n="forgot_subtitle">Inserisci la tua email: ti invieremo un link per reimpostare la password.</p>
+        <form id="forgot-form" class="auth-form">
+          <div class="form-group">
+            <label for="forgot-email" data-i18n="label_email">Email</label>
+            <input type="email" id="forgot-email" required placeholder="tuamail@example.com" data-i18n-placeholder="ph_email" autocomplete="email">
+          </div>
+          <button type="submit" class="btn-submit" data-i18n="btn_send_reset">Invia link di recupero</button>
+        </form>
+        <div id="forgot-msg" class="auth-msg"></div>
+        <div class="auth-switch">
+          <button type="button" id="btn-show-login" data-i18n="link_back_login">← Torna al login</button>
+        </div>
+      </div>
+
+      <!-- NUOVA PASSWORD (dopo click sul link email) -->
+      <div id="panel-newpass" class="auth-panel">
+        <h1 data-i18n="newpass_title">Nuova password</h1>
+        <p data-i18n="newpass_subtitle">Scegli una nuova password per il tuo account.</p>
+        <form id="newpass-form" class="auth-form">
+          <div class="form-group">
+            <label for="new-password" data-i18n="label_new_password">Nuova password</label>
+            <input type="password" id="new-password" required minlength="6" placeholder="••••••••" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="new-password2" data-i18n="label_confirm_password">Conferma password</label>
+            <input type="password" id="new-password2" required minlength="6" placeholder="••••••••" autocomplete="new-password">
+          </div>
+          <button type="submit" class="btn-submit" data-i18n="btn_save_password">Salva nuova password</button>
+        </form>
+        <div id="newpass-msg" class="auth-msg"></div>
+      </div>
+
     </div>
   </main>
 
@@ -117,24 +201,238 @@
 
   <script src="common.js"></script>
   <script>
+    const REDIRECT_RESET = window.location.origin + window.location.pathname;
+
     const extra = {
-      it: { login_title: "Accedi", login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.", label_email: "Email", label_password: "Password", ph_email: "tuamail@example.com", btn_login: "Accedi", footer_no_account: "Non hai un account?", footer_register_link: "Registrati qui", alert_success: "Login effettuato con successo!", alert_error: "Errore durante il login: " },
-      en: { login_title: "Login", login_subtitle: "Enter your credentials to access the member area.", label_email: "Email", label_password: "Password", ph_email: "yourmail@example.com", btn_login: "Login", footer_no_account: "Don't have an account?", footer_register_link: "Register here", alert_success: "Login successful!", alert_error: "Login error: " },
-      fr: { login_title: "Connexion", login_subtitle: "Entrez vos identifiants.", label_email: "E-mail", label_password: "Mot de passe", ph_email: "votremail@example.com", btn_login: "Se connecter", footer_no_account: "Pas de compte ?", footer_register_link: "Inscrivez-vous", alert_success: "Connexion réussie !", alert_error: "Erreur : " },
-      es: { login_title: "Acceder", login_subtitle: "Introduce tus credenciales.", label_email: "Correo", label_password: "Contraseña", ph_email: "tumail@example.com", btn_login: "Acceder", footer_no_account: "¿No tienes cuenta?", footer_register_link: "Regístrate", alert_success: "¡Inicio de sesión exitoso!", alert_error: "Error: " }
+      it: {
+        login_title: "Accedi",
+        login_subtitle: "Inserisci le tue credenziali per entrare nell'area riservata.",
+        label_email: "Email",
+        label_password: "Password",
+        ph_email: "tuamail@example.com",
+        btn_login: "Accedi",
+        footer_no_account: "Non hai un account?",
+        footer_register_link: "Registrati qui",
+        alert_success: "Login effettuato con successo!",
+        alert_error: "Errore durante il login: ",
+        link_forgot: "Password dimenticata?",
+        forgot_title: "Recupera password",
+        forgot_subtitle: "Inserisci la tua email: ti invieremo un link per reimpostare la password.",
+        btn_send_reset: "Invia link di recupero",
+        link_back_login: "← Torna al login",
+        forgot_ok: "Se l'email esiste, riceverai un link per reimpostare la password. Controlla anche lo spam.",
+        forgot_err: "Errore: ",
+        newpass_title: "Nuova password",
+        newpass_subtitle: "Scegli una nuova password per il tuo account.",
+        label_new_password: "Nuova password",
+        label_confirm_password: "Conferma password",
+        btn_save_password: "Salva nuova password",
+        newpass_mismatch: "Le password non coincidono.",
+        newpass_ok: "Password aggiornata! Ora puoi accedere.",
+        newpass_err: "Errore: "
+      },
+      en: {
+        login_title: "Login",
+        login_subtitle: "Enter your credentials to access the member area.",
+        label_email: "Email",
+        label_password: "Password",
+        ph_email: "yourmail@example.com",
+        btn_login: "Login",
+        footer_no_account: "Don't have an account?",
+        footer_register_link: "Register here",
+        alert_success: "Login successful!",
+        alert_error: "Login error: ",
+        link_forgot: "Forgot password?",
+        forgot_title: "Reset password",
+        forgot_subtitle: "Enter your email and we'll send a reset link.",
+        btn_send_reset: "Send reset link",
+        link_back_login: "← Back to login",
+        forgot_ok: "If the email exists, you'll receive a reset link. Check spam too.",
+        forgot_err: "Error: ",
+        newpass_title: "New password",
+        newpass_subtitle: "Choose a new password for your account.",
+        label_new_password: "New password",
+        label_confirm_password: "Confirm password",
+        btn_save_password: "Save new password",
+        newpass_mismatch: "Passwords do not match.",
+        newpass_ok: "Password updated! You can now log in.",
+        newpass_err: "Error: "
+      },
+      fr: {
+        login_title: "Connexion",
+        login_subtitle: "Entrez vos identifiants.",
+        label_email: "E-mail",
+        label_password: "Mot de passe",
+        ph_email: "votremail@example.com",
+        btn_login: "Se connecter",
+        footer_no_account: "Pas de compte ?",
+        footer_register_link: "Inscrivez-vous",
+        alert_success: "Connexion réussie !",
+        alert_error: "Erreur : ",
+        link_forgot: "Mot de passe oublié ?",
+        forgot_title: "Récupérer le mot de passe",
+        forgot_subtitle: "Entrez votre e-mail pour recevoir un lien.",
+        btn_send_reset: "Envoyer le lien",
+        link_back_login: "← Retour connexion",
+        forgot_ok: "Si l'e-mail existe, vous recevrez un lien. Vérifiez les spams.",
+        forgot_err: "Erreur : ",
+        newpass_title: "Nouveau mot de passe",
+        newpass_subtitle: "Choisissez un nouveau mot de passe.",
+        label_new_password: "Nouveau mot de passe",
+        label_confirm_password: "Confirmer",
+        btn_save_password: "Enregistrer",
+        newpass_mismatch: "Les mots de passe ne correspondent pas.",
+        newpass_ok: "Mot de passe mis à jour !",
+        newpass_err: "Erreur : "
+      },
+      es: {
+        login_title: "Acceder",
+        login_subtitle: "Introduce tus credenciales.",
+        label_email: "Correo",
+        label_password: "Contraseña",
+        ph_email: "tumail@example.com",
+        btn_login: "Acceder",
+        footer_no_account: "¿No tienes cuenta?",
+        footer_register_link: "Regístrate",
+        alert_success: "¡Inicio de sesión exitoso!",
+        alert_error: "Error: ",
+        link_forgot: "¿Olvidaste la contraseña?",
+        forgot_title: "Recuperar contraseña",
+        forgot_subtitle: "Introduce tu correo y te enviaremos un enlace.",
+        btn_send_reset: "Enviar enlace",
+        link_back_login: "← Volver al login",
+        forgot_ok: "Si el correo existe, recibirás un enlace. Revisa el spam.",
+        forgot_err: "Error: ",
+        newpass_title: "Nueva contraseña",
+        newpass_subtitle: "Elige una nueva contraseña.",
+        label_new_password: "Nueva contraseña",
+        label_confirm_password: "Confirmar",
+        btn_save_password: "Guardar",
+        newpass_mismatch: "Las contraseñas no coinciden.",
+        newpass_ok: "¡Contraseña actualizada!",
+        newpass_err: "Error: "
+      }
     };
+
+    function t(key) {
+      const lang = (window.CVI && CVI.currentLang) || 'it';
+      return (extra[lang] && extra[lang][key]) || extra.it[key] || key;
+    }
+
+    function showPanel(id) {
+      document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showMsg(elId, text, ok) {
+      const el = document.getElementById(elId);
+      el.textContent = text;
+      el.className = 'auth-msg ' + (ok ? 'ok' : 'err');
+    }
+
+    // Rileva se l'utente arriva dal link email di recovery
+    async function checkRecoverySession() {
+      // Supabase mette type=recovery nell'URL hash o crea una sessione
+      const hash = window.location.hash || '';
+      const isRecovery =
+        hash.includes('type=recovery') ||
+        hash.includes('type%3Drecovery');
+
+      const { data: { session } } = await CVI.supabase.auth.getSession();
+
+      if (isRecovery || (session && hash.includes('access_token'))) {
+        // Se c'è un token di recovery, mostra form nuova password
+        if (isRecovery || session) {
+          showPanel('panel-newpass');
+          // Pulisce l'hash dall'URL senza ricaricare
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+
     const _orig = CVI.init;
-    CVI.init = function(a) {
+    CVI.init = function (a) {
       _orig(a, extra);
+
+      document.getElementById('btn-show-forgot').addEventListener('click', () => {
+        showPanel('panel-forgot');
+        document.getElementById('forgot-msg').className = 'auth-msg';
+        document.getElementById('forgot-msg').textContent = '';
+      });
+      document.getElementById('btn-show-login').addEventListener('click', () => showPanel('panel-login'));
+
+      // Login
       document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const t = extra[CVI.currentLang] || extra.it;
         const { error } = await CVI.supabase.auth.signInWithPassword({
-          email: document.getElementById('email').value,
+          email: document.getElementById('email').value.trim(),
           password: document.getElementById('password').value
         });
-        if (error) alert(t.alert_error + error.message);
-        else { alert(t.alert_success); window.location.href = 'membri.html'; }
+        if (error) alert(t('alert_error') + error.message);
+        else {
+          alert(t('alert_success'));
+          window.location.href = 'membri.html';
+        }
+      });
+
+      // Richiesta reset
+      document.getElementById('forgot-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const email = document.getElementById('forgot-email').value.trim();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        try {
+          const { error } = await CVI.supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: REDIRECT_RESET
+          });
+          if (error) showMsg('forgot-msg', t('forgot_err') + error.message, false);
+          else showMsg('forgot-msg', t('forgot_ok'), true);
+        } catch (err) {
+          showMsg('forgot-msg', t('forgot_err') + (err.message || err), false);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      // Nuova password
+      document.getElementById('newpass-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const p1 = document.getElementById('new-password').value;
+        const p2 = document.getElementById('new-password2').value;
+        if (p1 !== p2) {
+          showMsg('newpass-msg', t('newpass_mismatch'), false);
+          return;
+        }
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        try {
+          const { error } = await CVI.supabase.auth.updateUser({ password: p1 });
+          if (error) showMsg('newpass-msg', t('newpass_err') + error.message, false);
+          else {
+            showMsg('newpass-msg', t('newpass_ok'), true);
+            setTimeout(() => {
+              showPanel('panel-login');
+            }, 1500);
+          }
+        } catch (err) {
+          showMsg('newpass-msg', t('newpass_err') + (err.message || err), false);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      // All'avvio: recovery?
+      checkRecoverySession();
+
+      // Anche su evento auth (Supabase emette PASSWORD_RECOVERY)
+      CVI.supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          showPanel('panel-newpass');
+        }
       });
     };
 
