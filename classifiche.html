@@ -69,7 +69,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -93,7 +93,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown"><a href="gare.html">→ Calendario</a><a href="classifiche.html">→ Classifiche</a></div>
     <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
@@ -106,14 +106,14 @@
   <main class="page-content">
     <section class="page-hero">
       <span class="hero-badge">Stagione 2026 · Low Point</span>
-      <h1>Risultati &amp; <em>Classifiche</em></h1>
+      <h1>Risultati & <em>Classifiche</em></h1>
       <p>Sistema Low Point: 1° = 1 pt, 2° = 2 pt… Vince chi ha il totale più basso.</p>
     </section>
     <div class="content-box">
       <div class="tabs" role="tablist">
         <button type="button" class="tab-btn active" data-tab="generale">Classifica generale</button>
         <button type="button" class="tab-btn" data-tab="gare">Per gara</button>
-        <button type="button" class="tab-btn" data-tab="inserisci">Inserisci risultati</button>
+        <button type="button" class="tab-btn" data-tab="inserisci" id="tab-btn-inserisci" style="display:none">Inserisci risultati</button>
       </div>
       <div id="tab-generale" class="tab-panel active">
         <div class="info-banner"><strong>Low Point System</strong> — Classifica salvata in <strong>classifiche</strong>, aggiornata dopo ogni inserimento.</div>
@@ -162,7 +162,7 @@
 
     function esc(s) {
       if (s == null) return '';
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
     }
 
     function profiloLabel(uid) {
@@ -256,19 +256,32 @@
     }
 
     function setupInserimento() {
+      const tabBtn = document.getElementById('tab-btn-inserisci');
+      const tabPanel = document.getElementById('tab-inserisci');
       const gate = document.getElementById('inserisci-auth-gate');
       const panel = document.getElementById('inserisci-panel');
-      const msg = document.getElementById('inserisci-gate-msg');
-      const link = document.getElementById('inserisci-gate-link');
-      if (!currentUserId) {
-        msg.textContent = "Devi effettuare l'accesso per inserire i risultati.";
-        link.style.display = 'block'; gate.style.display = 'block'; panel.style.display = 'none'; return;
-      }
+
       if (!isAdmin) {
-        msg.textContent = 'Solo gli amministratori possono inserire i risultati.';
-        link.style.display = 'none'; gate.style.display = 'block'; panel.style.display = 'none'; return;
+        if (tabBtn) tabBtn.style.display = 'none';
+        if (tabPanel) {
+          tabPanel.classList.remove('active');
+          tabPanel.style.display = 'none';
+        }
+        if (tabBtn && tabBtn.classList.contains('active')) {
+          tabBtn.classList.remove('active');
+          const gen = document.querySelector('.tab-btn[data-tab="generale"]');
+          const genPanel = document.getElementById('tab-generale');
+          if (gen) gen.classList.add('active');
+          if (genPanel) genPanel.classList.add('active');
+        }
+        return;
       }
-      gate.style.display = 'none'; panel.style.display = 'block';
+
+      if (tabBtn) tabBtn.style.display = '';
+      if (tabPanel) tabPanel.style.display = '';
+      if (gate) gate.style.display = 'none';
+      if (panel) panel.style.display = 'block';
+
       const sel = document.getElementById('select-gara-insert');
       sel.innerHTML = '<option value="">— Seleziona gara —</option>' +
         cacheGare.map(g => {
