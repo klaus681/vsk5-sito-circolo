@@ -334,25 +334,22 @@
         <button type="button" class="tab-btn" data-tab="inserisci">Inserisci risultati</button>
       </div>
 
-      <!-- TAB GENERALE -->
       <div id="tab-generale" class="tab-panel active">
         <div class="info-banner">
           <strong>Low Point System</strong> — I punti di ogni gara corrispondono alla posizione di arrivo.
-          La classifica generale somma i punti di tutte le gare: <strong>vince chi ha meno punti</strong>.
+          La classifica generale è salvata nella tabella <strong>classifiche</strong> e si aggiorna automaticamente dopo ogni inserimento risultati.
         </div>
         <div id="classifica-generale">
           <p class="loading-text">Caricamento classifica...</p>
         </div>
       </div>
 
-      <!-- TAB PER GARA -->
       <div id="tab-gare" class="tab-panel">
         <div id="lista-gare-risultati">
           <p class="loading-text">Caricamento gare...</p>
         </div>
       </div>
 
-      <!-- TAB INSERIMENTO -->
       <div id="tab-inserisci" class="tab-panel">
         <div id="inserisci-auth-gate" class="auth-needed" style="display:none;">
           <p>Devi effettuare l'accesso per inserire i risultati.</p>
@@ -360,9 +357,9 @@
         </div>
         <div id="inserisci-panel" style="display:none;">
           <div class="info-banner">
-            Seleziona una gara, assegna le posizioni agli iscritti e salva.
-            I punti Low Point vengono calcolati automaticamente (posizione = punti).
-            Per DNF / DNS / DSQ / RET viene assegnato <strong>numero partenti + 1</strong>.
+            Seleziona una gara, assegna le posizioni e salva.
+            I punti Low Point si calcolano automaticamente.
+            Dopo il salvataggio viene aggiornata anche la tabella <strong>classifiche</strong>.
           </div>
           <div class="gara-select-row">
             <select id="select-gara-insert">
@@ -407,13 +404,15 @@
 
   <script src="common.js"></script>
   <script>
+    const STAGIONE = '2026';
+
     let cacheGare = [];
     let cacheProfiles = {};
     let cacheRisultati = [];
     let cacheIscrizioni = [];
+    let cacheClassifiche = [];
     let currentUserId = null;
 
-    // ---------- Tabs ----------
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -443,15 +442,9 @@
       };
     }
 
-    // ---------- Classifica generale (somma Low Point) ----------
-    function renderClassificaGenerale() {
-      const box = document.getElementById('classifica-generale');
-      if (!cacheRisultati.length) {
-        box.innerHTML = '<p class="empty-hint">Nessun risultato inserito ancora. Usa la tab «Inserisci risultati» dopo una gara.</p>';
-        return;
-      }
-
-      // somma punti per user_id
+    // ---------- Scrive/aggiorna tabella classifiche da risultati_gara ----------
+    async function syncClassifiche() {
+      // somma punti e gare per ogni user
       const totals = {};
       const gareCount = {};
       cacheRisultati.forEach(r => {
@@ -461,34 +454,92 @@
         gareCount[uid] += 1;
       });
 
-      const rows = Object.keys(totals).map(uid => ({
-        uid,
-        punti: totals[uid],
-        gare: gareCount[uid],
-        ...profiloLabel(uid)
+      // ordina Low Point (meno punti = meglio) e assegna posizione
+      const ranked = Object.keys(totals).map(uid => ({
+        user_id: uid,
+        stagione: STAGIONE,
+        punti_totali: totals[uid],
+        gare_disputate: gareCount[uid],
+        updated_at: new Date().toISOString()
       }));
+      ranked.sort((a, b) => a.punti_totali - b.punti_totali);
+      ranked.forEach((row, i) => { row.posizione = i + 1; });
 
-      // Low Point: meno punti = meglio
-      rows.sort((a, b) => a.punti - b.punti || a.nick.localeCompare(b.nick));
+      // cancella classifica stagione e riscrive
+      const { error: delErr } = await CVI.supabase
+        .from('classifiche')
+        .delete()
+        .eq('stagione', STAGIONE);
+      if (delErr) {
+        console.warn('syncClassifiche delete:', delErr.message);
+        throw delErr;
+      }
+
+      if (ranked.length) {
+        const { error: insErr } = await CVI.supabase
+          .from('classifiche')
+          .insert(ranked);
+        if (insErr) {
+          console.warn('syncClassifiche insert:', insErr.message);
+          throw insErr;
+        }
+      }
+
+      cacheClassifiche = ranked;
+    }
+
+    // ---------- Classifica generale: legge da tabella classifiche ----------
+    function renderClassificaGenerale() {
+      const box = document.getElementById('classifica-generale');
+
+      let rows = (cacheClassifiche || []).slice();
+
+      // fallback: se classifiche vuota, calcola al volo da risultati
+      if (!rows.length && cacheRisultati.length) {
+        const totals = {};
+        const gareCount = {};
+        cacheRisultati.forEach(r => {
+          const uid = String(r.user_id);
+          if (!totals[uid]) { totals[uid] = 0; gareCount[uid] = 0; }
+          totals[uid] += Number(r.punti) || 0;
+          gareCount[uid] += 1;
+        });
+        rows = Object.keys(totals).map(uid => ({
+          user_id: uid,
+          punti_totali: totals[uid],
+          gare_disputate: gareCount[uid]
+        }));
+        rows.sort((a, b) => a.punti_totali - b.punti_totali);
+        rows.forEach((r, i) => { r.posizione = i + 1; });
+      }
+
+      if (!rows.length) {
+        box.innerHTML = '<p class="empty-hint">Nessun risultato inserito ancora. Usa la tab «Inserisci risultati» dopo una gara.</p>';
+        return;
+      }
+
+      rows.sort((a, b) => (a.posizione || 999) - (b.posizione || 999) || (a.punti_totali - b.punti_totali));
 
       let html = `<table class="rank-table"><thead><tr>
         <th>#</th><th>Skipper</th><th>Team</th><th>Gare</th><th class="pts">Punti</th>
       </tr></thead><tbody>`;
 
       rows.forEach((r, i) => {
+        const p = profiloLabel(r.user_id);
+        const pos = r.posizione != null ? r.posizione : i + 1;
         html += `<tr>
-          <td class="pos">${i + 1}</td>
-          <td><div class="nick">${esc(r.nick)}</div>${r.nome ? `<div class="name">${esc(r.nome)}</div>` : ''}</td>
-          <td>${r.team ? `<span class="team">${esc(r.team)}</span>` : '—'}</td>
-          <td>${r.gare}</td>
-          <td class="pts">${r.punti}</td>
+          <td class="pos">${pos}</td>
+          <td><div class="nick">${esc(p.nick)}</div>${p.nome ? `<div class="name">${esc(p.nome)}</div>` : ''}</td>
+          <td>${p.team ? `<span class="team">${esc(p.team)}</span>` : '—'}</td>
+          <td>${r.gare_disputate != null ? r.gare_disputate : '—'}</td>
+          <td class="pts">${r.punti_totali}</td>
         </tr>`;
       });
       html += '</tbody></table>';
       box.innerHTML = html;
     }
 
-    // ---------- Per gara ----------
+    // ---------- Per gara (da risultati_gara) ----------
     function renderPerGara() {
       const box = document.getElementById('lista-gare-risultati');
       const gareConRisultati = {};
@@ -504,7 +555,6 @@
         return;
       }
 
-      // ordina per data gara desc
       const gareSorted = gareIds.map(id => {
         const g = cacheGare.find(x => String(x.id) === id);
         return { id, gara: g, risultati: gareConRisultati[id] };
@@ -519,8 +569,6 @@
         const dataStr = gara?.data_gara
           ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' })
           : '';
-
-        // ordina per punti asc (low point)
         const sorted = [...risultati].sort((a, b) => (Number(a.punti) || 0) - (Number(b.punti) || 0));
 
         let table = `<table class="rank-table"><thead><tr>
@@ -573,9 +621,7 @@
       const sel = document.getElementById('select-gara-insert');
       sel.innerHTML = '<option value="">— Seleziona gara —</option>' +
         cacheGare.map(g => {
-          const d = g.data_gara
-            ? new Date(g.data_gara).toLocaleDateString('it-IT')
-            : '';
+          const d = g.data_gara ? new Date(g.data_gara).toLocaleDateString('it-IT') : '';
           return `<option value="${esc(g.id)}">${esc(g.titolo || 'Gara')}${d ? ' · ' + d : ''}</option>`;
         }).join('');
 
@@ -589,23 +635,17 @@
         return;
       }
 
-      // iscritti a questa gara
       const iscrittiIds = cacheIscrizioni
         .filter(i => String(i.gara_id) === String(garaId))
         .map(i => String(i.user_id));
 
-      // se non ci sono iscrizioni, mostra tutti i profili come opzione
-      let userIds = iscrittiIds.length
-        ? iscrittiIds
-        : Object.keys(cacheProfiles);
+      let userIds = iscrittiIds.length ? iscrittiIds : Object.keys(cacheProfiles);
 
-      // risultati già salvati
       const esistenti = {};
       cacheRisultati
         .filter(r => String(r.gara_id) === String(garaId))
         .forEach(r => { esistenti[String(r.user_id)] = r; });
 
-      // includi anche chi ha già un risultato ma non è più negli iscritti
       Object.keys(esistenti).forEach(uid => {
         if (!userIds.includes(uid)) userIds.push(uid);
       });
@@ -616,7 +656,6 @@
       }
 
       const nPartenti = userIds.length;
-
       let html = `<div class="form-resultati" data-gara-id="${esc(garaId)}" data-n="${nPartenti}">`;
       userIds.forEach(uid => {
         const p = profiloLabel(uid);
@@ -642,7 +681,6 @@
         </div>`;
 
       container.innerHTML = html;
-
       document.getElementById('btn-save-risultati').onclick = () => saveRisultati(garaId, nPartenti);
       document.getElementById('btn-clear-risultati').onclick = () => clearRisultati(garaId);
     }
@@ -653,7 +691,6 @@
         const p = parseInt(posizione, 10);
         return isNaN(p) || p < 1 ? null : p;
       }
-      // DNF/DNS/DSQ/RET = n + 1 (Low Point classico)
       return nPartenti + 1;
     }
 
@@ -662,7 +699,6 @@
       if (!form) return;
       const rows = form.querySelectorAll('.result-row');
       const payload = [];
-      const errors = [];
 
       rows.forEach(row => {
         const uid = row.dataset.userId;
@@ -670,29 +706,17 @@
         const stato = row.querySelector('.input-stato').value;
         const punti = calcPunti(posVal, stato, nPartenti);
 
-        if (stato === 'ok' && (posVal === '' || punti == null)) {
-          // riga vuota: salta (non obbligatoria)
-          return;
-        }
-        if (stato === 'ok' && punti == null) {
-          errors.push('Posizione non valida per uno skipper');
-          return;
-        }
+        if (stato === 'ok' && (posVal === '' || punti == null)) return;
 
-        const posizione = stato === 'ok' ? parseInt(posVal, 10) : null;
         payload.push({
           gara_id: garaId,
           user_id: uid,
-          posizione: posizione,
+          posizione: stato === 'ok' ? parseInt(posVal, 10) : null,
           punti: punti,
           stato: stato
         });
       });
 
-      if (errors.length) {
-        alert(errors[0]);
-        return;
-      }
       if (!payload.length) {
         alert('Inserisci almeno una posizione.');
         return;
@@ -703,7 +727,6 @@
       btn.textContent = 'Salvataggio...';
 
       try {
-        // upsert: elimina esistenti di questa gara e reinserisce
         const { error: delErr } = await CVI.supabase
           .from('risultati_gara')
           .delete()
@@ -715,9 +738,16 @@
           .insert(payload);
         if (insErr) throw insErr;
 
-        alert('Risultati salvati!');
+        // ricarica risultati e aggiorna tabella classifiche
+        const risRes = await CVI.supabase
+          .from('risultati_gara')
+          .select('id, gara_id, user_id, posizione, punti, stato, note');
+        cacheRisultati = risRes.data || [];
+
+        await syncClassifiche();
+
+        alert('Risultati salvati e classifica aggiornata!');
         await reloadAll();
-        // resta sulla tab inserisci e ricarica form
         document.getElementById('select-gara-insert').value = garaId;
         loadFormRisultati(garaId);
       } catch (err) {
@@ -737,7 +767,15 @@
           .delete()
           .eq('gara_id', garaId);
         if (error) throw error;
-        alert('Risultati eliminati.');
+
+        const risRes = await CVI.supabase
+          .from('risultati_gara')
+          .select('id, gara_id, user_id, posizione, punti, stato, note');
+        cacheRisultati = risRes.data || [];
+
+        await syncClassifiche();
+
+        alert('Risultati eliminati e classifica aggiornata.');
         await reloadAll();
         document.getElementById('select-gara-insert').value = garaId;
         loadFormRisultati(garaId);
@@ -751,25 +789,37 @@
       const { data: { session } } = await CVI.supabase.auth.getSession();
       currentUserId = session?.user?.id || null;
 
-      const [gareRes, risRes, profRes, iscrRes] = await Promise.all([
+      const [gareRes, risRes, profRes, iscrRes, classRes] = await Promise.all([
         CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara').order('data_gara', { ascending: true }),
         CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note'),
         CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome'),
-        CVI.supabase.from('iscrizioni_gare').select('id, user_id, gara_id')
+        CVI.supabase.from('iscrizioni_gare').select('id, user_id, gara_id'),
+        CVI.supabase.from('classifiche').select('id, user_id, stagione, punti_totali, gare_disputate, posizione').eq('stagione', STAGIONE).order('posizione', { ascending: true })
       ]);
 
       if (gareRes.error) console.warn('gare:', gareRes.error.message);
       if (risRes.error) console.warn('risultati_gara:', risRes.error.message);
       if (profRes.error) console.warn('profiles:', profRes.error.message);
       if (iscrRes.error) console.warn('iscrizioni:', iscrRes.error.message);
+      if (classRes.error) console.warn('classifiche:', classRes.error.message);
 
       cacheGare = gareRes.data || [];
       cacheRisultati = risRes.data || [];
       cacheIscrizioni = iscrRes.data || [];
+      cacheClassifiche = classRes.data || [];
       cacheProfiles = {};
       (profRes.data || []).forEach(p => {
         if (p.id != null) cacheProfiles[String(p.id)] = p;
       });
+
+      // se ci sono risultati ma classifiche vuota, sincronizza una volta
+      if (cacheRisultati.length && !cacheClassifiche.length && currentUserId) {
+        try {
+          await syncClassifiche();
+        } catch (e) {
+          console.warn('auto-sync classifiche fallita:', e.message || e);
+        }
+      }
 
       renderClassificaGenerale();
       renderPerGara();

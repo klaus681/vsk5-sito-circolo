@@ -167,6 +167,8 @@
 
   <script src="common.js"></script>
   <script>
+    const STAGIONE = '2026';
+
     const extra = {
       it: {
         home_community: "Circolo Velico Italia",
@@ -201,7 +203,6 @@
           .limit(1);
 
         if (error) {
-          // fallback: prima gara in assoluto
           const fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara').order('data_gara', { ascending: true }).limit(1);
           if (fb.error || !fb.data?.length) {
             document.getElementById('regata-titolo').textContent = "Nessuna gara in programma";
@@ -231,15 +232,28 @@
       document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
     }
 
+    // Legge dalla tabella classifiche (stagione corrente)
     async function caricaClassificaHome() {
       const list = document.getElementById('home-ranking');
       try {
-        const [risRes, profRes] = await Promise.all([
-          CVI.supabase.from('risultati_gara').select('user_id, punti'),
+        const [classRes, profRes] = await Promise.all([
+          CVI.supabase
+            .from('classifiche')
+            .select('user_id, punti_totali, gare_disputate, posizione')
+            .eq('stagione', STAGIONE)
+            .order('posizione', { ascending: true })
+            .limit(3),
           CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome')
         ]);
 
-        if (risRes.error || !risRes.data?.length) {
+        if (classRes.error) {
+          console.warn('classifiche:', classRes.error.message);
+          list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
+          return;
+        }
+
+        const rows = classRes.data || [];
+        if (!rows.length) {
           list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
           return;
         }
@@ -247,35 +261,20 @@
         const profiles = {};
         (profRes.data || []).forEach(p => { profiles[String(p.id)] = p; });
 
-        const totals = {};
-        risRes.data.forEach(r => {
-          const uid = String(r.user_id);
-          totals[uid] = (totals[uid] || 0) + (Number(r.punti) || 0);
-        });
-
-        const rows = Object.keys(totals).map(uid => {
-          const p = profiles[uid] || {};
+        list.innerHTML = rows.map((r, i) => {
+          const p = profiles[String(r.user_id)] || {};
           const nome = [p.nome, p.cognome].filter(Boolean).join(' ').trim();
-          return {
-            uid,
-            punti: totals[uid],
-            nick: (p.nickname || '').trim() || nome || 'Skipper',
-            nome,
-            team: (p.team || '').trim()
-          };
-        });
-
-        // Low Point: meno punti = meglio
-        rows.sort((a, b) => a.punti - b.punti);
-        const top = rows.slice(0, 3);
-
-        list.innerHTML = top.map((r, i) => `
+          const nick = (p.nickname || '').trim() || nome || 'Skipper';
+          const team = (p.team || '').trim();
+          const pos = r.posizione != null ? r.posizione : i + 1;
+          return `
           <li>
-            <span class="rank-pos">${i + 1}</span>
-            <div class="rank-info"><strong>${r.nick}</strong>${r.nome ? `<span>${r.nome}</span>` : ''}</div>
-            ${r.team ? `<span class="team-badge">${r.team}</span>` : ''}
-            <span class="rank-points">${r.punti}</span>
-          </li>`).join('');
+            <span class="rank-pos">${pos}</span>
+            <div class="rank-info"><strong>${nick}</strong>${nome ? `<span>${nome}</span>` : ''}</div>
+            ${team ? `<span class="team-badge">${team}</span>` : ''}
+            <span class="rank-points">${r.punti_totali}</span>
+          </li>`;
+        }).join('');
       } catch (e) {
         console.error(e);
         list.innerHTML = '<li><div class="rank-info"><strong>Errore caricamento</strong></div></li>';
