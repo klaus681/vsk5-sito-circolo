@@ -1,1 +1,156 @@
-PLACEHOLDER_WILL_FIX
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gare - CVI Virtual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="fix-nav.css">
+<style>
+.badge-conclusa{display:inline-block;background:rgba(148,163,184,.2);color:#94a3b8;font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
+.gara-card.is-conclusa{opacity:.85}
+.gara-card-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.gara-card-header h3{margin:0}
+.iscritti-box{margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--border-color)}
+.iscritti-box h4{margin:0 0 .55rem;font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)}
+.iscritti-list{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;margin:0;padding:0}
+.iscritti-list li{display:inline-flex;align-items:center;gap:.3rem;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.28);border-radius:999px;padding:.22rem .65rem;font-size:.82rem;color:#e2e8f0}
+.iscritti-list li .nick{font-weight:600;color:#7dd3fc}
+.iscritti-list li .team-tag{color:var(--text-muted);font-size:.74rem}
+.iscritti-empty{font-size:.85rem;color:var(--text-muted);margin:0}
+.gara-actions{margin-top:1rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.btn-iscriviti{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-color);color:#0b0f19;padding:.55rem 1.15rem;border-radius:8px;font-weight:700;font-size:.88rem;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,.25)}
+.btn-iscriviti:hover:not(:disabled){background:#7dd3fc}
+.btn-iscriviti:disabled{opacity:.65;cursor:not-allowed}
+.btn-disiscriviti{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:#f87171;padding:.55rem 1.15rem;border-radius:8px;font-weight:600;font-size:.88rem;border:1px solid rgba(248,113,113,.45);cursor:pointer}
+.btn-disiscriviti:hover:not(:disabled){background:rgba(248,113,113,.12)}
+.btn-login-iscriviti{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--accent-color);padding:.55rem 1.15rem;border-radius:8px;font-weight:600;font-size:.88rem;border:1px solid rgba(56,189,248,.4);text-decoration:none}
+.iscrizione-status{font-size:.85rem;color:#34d399;font-weight:600}
+.status-conclusa-msg{font-size:.85rem;color:var(--text-muted)}
+.admin-gare-panel{display:none;background:#1a2332;border:1px solid rgba(56,189,248,.3);border-radius:12px;padding:1.25rem 1.35rem;margin-bottom:1.5rem}
+.admin-gare-panel.visible{display:block}
+.admin-gare-panel h2{margin:0 0 .35rem;font-size:1.1rem;color:var(--accent-color)}
+.admin-gare-panel .admin-hint{font-size:.85rem;color:var(--text-muted);margin:0 0 1rem}
+.admin-form{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:640px){.admin-form{grid-template-columns:1fr}}
+.admin-form .form-group{display:flex;flex-direction:column;gap:.3rem}
+.admin-form .form-group.full{grid-column:1/-1}
+.admin-form label{font-size:.78rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em}
+.admin-form input,.admin-form textarea{background:var(--bg-color,#0b0f19);color:var(--text-main,#e2e8f0);border:1px solid var(--border-color);border-radius:8px;padding:.55rem .75rem;font-family:inherit;font-size:.9rem}
+.admin-form input:focus,.admin-form textarea:focus{outline:none;border-color:var(--accent-color)}
+.admin-form textarea{min-height:80px;resize:vertical}
+.admin-form-actions{grid-column:1/-1;display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem}
+.btn-admin-save{background:var(--accent-color);color:#0b0f19;border:none;padding:.6rem 1.2rem;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:inherit}
+.btn-admin-save:hover{background:#7dd3fc}
+.btn-admin-save:disabled{opacity:.6;cursor:not-allowed}
+.btn-admin-cancel{background:transparent;color:var(--text-muted);border:1px solid var(--border-color);padding:.6rem 1rem;border-radius:8px;font-weight:600;font-size:.88rem;cursor:pointer;font-family:inherit}
+.btn-admin-edit,.btn-admin-delete{padding:.4rem .75rem;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid transparent}
+.btn-admin-edit{background:rgba(56,189,248,.12);color:var(--accent-color);border-color:rgba(56,189,248,.35)}
+.btn-admin-delete{background:rgba(248,113,113,.1);color:#f87171;border-color:rgba(248,113,113,.35)}
+.admin-card-actions{display:flex;gap:.4rem;margin-left:auto}
+</style>
+</head>
+<body>
+<header>
+<a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+<nav class="nav-desktop" aria-label="Menu principale">
+<ul>
+<li><a href="index.html" data-i18n="nav_home">Home</a></li>
+<li><a href="team.html" data-i18n="nav_team">Team</a></li>
+<li class="dropdown">
+<a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+<ul class="dropdown-menu">
+<li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+<li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+</ul>
+</li>
+<li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+<li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+<li><a href="download.html" data-i18n="nav_download">Download</a></li>
+<li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+<li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+</ul>
+</nav>
+<div class="header-actions">
+<select id="languageSelect" class="lang-selector" aria-label="Lingua">
+<option value="it">🇮🇹 IT</option><option value="en">🇬🇧 EN</option><option value="fr">🇫🇷 FR</option><option value="es">🇪🇸 ES</option>
+</select>
+<a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+<button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</div>
+</header>
+<nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+<a href="index.html" data-i18n="nav_home">Home</a>
+<a href="team.html" data-i18n="nav_team">Team</a>
+<a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+<div class="mobile-dropdown"><a href="gare.html">→ Calendario</a><a href="classifiche.html">→ Classifiche</a></div>
+<a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+<a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+<a href="download.html" data-i18n="nav_download">Download</a>
+<a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+<a href="membri.html" data-i18n="nav_membri">Membri</a>
+<a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+<a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+</nav>
+<main class="page-content">
+<div class="content-box">
+<h1 data-i18n="gare_title">Calendario Gare</h1>
+<p class="subtitle" data-i18n="gare_subtitle">Tutte le regate ufficiali del Circolo Velico Italia.</p>
+<div id="admin-gare-panel" class="admin-gare-panel">
+<h2 id="admin-form-title">➕ Nuova gara</h2>
+<p class="admin-hint">Solo amministratori. Compila i campi e salva.</p>
+<form id="admin-gara-form" class="admin-form">
+<input type="hidden" id="admin-gara-id" value="">
+<div class="form-group full"><label for="admin-titolo">Titolo</label><input type="text" id="admin-titolo" required placeholder="Es. Regata CVI GP #1" maxlength="200"></div>
+<div class="form-group"><label for="admin-data">Data e ora</label><input type="datetime-local" id="admin-data" required></div>
+<div class="form-group full"><label for="admin-descrizione">Descrizione</label><textarea id="admin-descrizione" placeholder="Dettagli, mappa, note..."></textarea></div>
+<div class="admin-form-actions">
+<button type="submit" class="btn-admin-save" id="admin-save-btn">Salva gara</button>
+<button type="button" class="btn-admin-cancel" id="admin-cancel-btn" style="display:none">Annulla modifica</button>
+</div>
+</form>
+</div>
+<div id="gare-list" class="teams-grid"><p class="loading-text">Caricamento gare...</p></div>
+</div>
+</main>
+<footer class="site-footer">
+<div class="footer-inner">
+<div class="footer-brand"><span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span><p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p></div>
+<div class="footer-links">
+<div class="footer-col"><h4>Circolo</h4><a href="team.html">Team</a><a href="classifiche.html">Classifiche</a><a href="albo-doro.html">Albo d'Oro</a><a href="regolamento.html">Regolamento</a></div>
+<div class="footer-col"><h4>Gare</h4><a href="gare.html">Calendario</a><a href="download.html">Download</a><a href="contatti.html">Contatti</a><a href="unisciti.html">Unisciti</a></div>
+</div>
+</div>
+<div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
+</footer>
+<script src="common.js"></script>
+<script>
+const extra={
+it:{gare_title:"Calendario Gare",gare_subtitle:"Tutte le regate ufficiali del Circolo Velico Italia.",badge_conclusa:"Conclusa",msg_conclusa:"Gara conclusa — iscrizioni chiuse",btn_iscriviti:"Iscriviti",btn_disiscriviti:"Annulla iscrizione",btn_login_iscriviti:"Accedi per iscriverti",status_iscritto:"Sei iscritto",msg_iscrizione_ok:"Iscrizione effettuata!",msg_disiscrizione_ok:"Iscrizione annullata."},
+en:{gare_title:"Race Calendar",gare_subtitle:"All official Circolo Velico Italia races.",badge_conclusa:"Finished",msg_conclusa:"Race finished — registration closed",btn_iscriviti:"Register",btn_disiscriviti:"Cancel registration",btn_login_iscriviti:"Log in to register",status_iscritto:"You are registered",msg_iscrizione_ok:"Registration successful!",msg_disiscrizione_ok:"Registration cancelled."},
+fr:{gare_title:"Calendrier",gare_subtitle:"Toutes les courses officielles.",badge_conclusa:"Terminée",msg_conclusa:"Course terminée",btn_iscriviti:"S'inscrire",btn_disiscriviti:"Annuler",btn_login_iscriviti:"Connexion requise",status_iscritto:"Inscrit",msg_iscrizione_ok:"Inscription réussie !",msg_disiscrizione_ok:"Inscription annulée."},
+es:{gare_title:"Calendario",gare_subtitle:"Todas las regatas oficiales.",badge_conclusa:"Finalizada",msg_conclusa:"Regata finalizada",btn_iscriviti:"Inscribirse",btn_disiscriviti:"Cancelar",btn_login_iscriviti:"Inicia sesión",status_iscritto:"Inscrito",msg_iscrizione_ok:"¡Inscripción realizada!",msg_disiscrizione_ok:"Inscripción anulada."}
+};
+let currentUserId=null,isAdmin=false,cacheGareList=[],currentUserIscrizioni=new Set();
+function t(key){const lang=(window.CVI&&CVI.currentLang)||'it';return(extra[lang]&&extra[lang][key])||extra.it[key]||key}
+function isGaraConclusa(dataGara){if(!dataGara)return false;return new Date(dataGara).getTime()<Date.now()}
+function renderIscritti(list){if(!list.length)return'<p class="iscritti-empty">Nessun iscritto al momento.</p>';const items=list.map(p=>{const nick=(p.nickname||'').trim()||[p.nome,p.cognome].filter(Boolean).join(' ')||'Skipper';const team=(p.team||'').trim();return`<li><span class="nick">${nick}</span>${team?`<span class="team-tag">· ${team}</span>`:''}</li>`}).join('');return`<ul class="iscritti-list">${items}</ul>`}
+function renderActionButton(garaId,conclusa){if(conclusa)return`<span class="status-conclusa-msg">${t('msg_conclusa')}</span>`;if(!currentUserId)return`<a href="accedi.html" class="btn-login-iscriviti">${t('btn_login_iscriviti')}</a>`;if(currentUserIscrizioni.has(String(garaId)))return`<span class="iscrizione-status">${t('status_iscritto')}</span><button type="button" class="btn-disiscriviti" data-gara-id="${garaId}" data-action="leave">${t('btn_disiscriviti')}</button>`;return`<button type="button" class="btn-iscriviti" data-gara-id="${garaId}" data-action="join">${t('btn_iscriviti')}</button>`}
+async function handleIscrizione(btn){const garaId=btn.dataset.garaId,action=btn.dataset.action;if(!garaId||!currentUserId)return;btn.disabled=true;try{if(action==='join'){const{error}=await CVI.supabase.from('iscrizioni_gare').insert({gara_id:garaId,user_id:currentUserId});if(error)throw error;alert(t('msg_iscrizione_ok'))}else{const{error}=await CVI.supabase.from('iscrizioni_gare').delete().eq('gara_id',garaId).eq('user_id',currentUserId);if(error)throw error;alert(t('msg_disiscrizione_ok'))}await loadGare()}catch(err){alert('Errore: '+(err.message||err));btn.disabled=false}}
+async function loadGare(){const box=document.getElementById('gare-list');currentUserIscrizioni=new Set();try{const{data:{session}}=await CVI.supabase.auth.getSession();currentUserId=session?.user?.id||null;const[gareRes,iscrRes,profRes]=await Promise.all([CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, created_at').order('data_gara',{ascending:true}),CVI.supabase.from('iscrizioni_gare').select('id, user_id, gara_id'),CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, is_admin')]);if(gareRes.error){box.innerHTML=`<p class="empty-text" style="color:#ef4444">Errore gare: ${gareRes.error.message}</p>`;return}const gare=gareRes.data||[],iscrizioni=iscrRes.data||[],profiles=profRes.data||[];const profileById={};profiles.forEach(p=>{if(p.id!=null)profileById[String(p.id)]=p});isAdmin=!!(currentUserId&&profileById[String(currentUserId)]&&profileById[String(currentUserId)].is_admin===true);const adminPanel=document.getElementById('admin-gare-panel');if(adminPanel)adminPanel.classList.toggle('visible',isAdmin);cacheGareList=gare;const iscrittiByGara={};iscrizioni.forEach(row=>{if(row.gara_id==null||row.user_id==null)return;const gid=String(row.gara_id),uid=String(row.user_id);if(currentUserId&&uid===String(currentUserId))currentUserIscrizioni.add(gid);const prof=profileById[uid]||{nickname:uid.slice(0,8)+'…',team:''};if(!iscrittiByGara[gid])iscrittiByGara[gid]=[];if(!iscrittiByGara[gid].some(x=>x._uid===uid))iscrittiByGara[gid].push({...prof,_uid:uid})});if(!gare.length){box.innerHTML='<p class="empty-text">Nessuna gara in calendario.</p>';return}box.innerHTML=gare.map(g=>{const conclusa=isGaraConclusa(g.data_gara);const d=g.data_gara?new Date(g.data_gara).toLocaleString('it-IT',{dateStyle:'full',timeStyle:'short'}):'Data da definire';const iscritti=iscrittiByGara[String(g.id)]||[];return`<div class="gara-card${conclusa?' is-conclusa':''}" data-gara-id="${g.id}"><div class="gara-card-header"><h3>${g.titolo||'Gara'}</h3>${conclusa?`<span class="badge-conclusa">${t('badge_conclusa')}</span>`:''}</div><p class="gara-date">📅 ${d}</p><p class="gara-desc">${g.descrizione||''}</p><div class="iscritti-box"><h4>Iscritti (${iscritti.length})</h4>${renderIscritti(iscritti)}</div><div class="gara-actions">${renderActionButton(g.id,conclusa)}${isAdmin?`<div class="admin-card-actions"><button type="button" class="btn-admin-edit" data-edit-id="${g.id}">Modifica</button><button type="button" class="btn-admin-delete" data-delete-id="${g.id}">Elimina</button></div>`:''}</div></div>`}).join('');box.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>handleIscrizione(btn)));box.querySelectorAll('[data-edit-id]').forEach(btn=>btn.addEventListener('click',()=>startEditGara(btn.dataset.editId)));box.querySelectorAll('[data-delete-id]').forEach(btn=>btn.addEventListener('click',()=>deleteGara(btn.dataset.deleteId)))}catch(e){console.error(e);box.innerHTML='<p class="empty-text" style="color:#ef4444">Errore di connessione.</p>'}}
+function toLocalInputValue(iso){if(!iso)return'';const d=new Date(iso);if(isNaN(d.getTime()))return'';const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
+function resetAdminForm(){document.getElementById('admin-gara-id').value='';document.getElementById('admin-titolo').value='';document.getElementById('admin-data').value='';document.getElementById('admin-descrizione').value='';document.getElementById('admin-form-title').textContent='➕ Nuova gara';document.getElementById('admin-save-btn').textContent='Salva gara';document.getElementById('admin-cancel-btn').style.display='none'}
+function startEditGara(id){const g=cacheGareList.find(x=>String(x.id)===String(id));if(!g)return;document.getElementById('admin-gara-id').value=g.id;document.getElementById('admin-titolo').value=g.titolo||'';document.getElementById('admin-data').value=toLocalInputValue(g.data_gara);document.getElementById('admin-descrizione').value=g.descrizione||'';document.getElementById('admin-form-title').textContent='✏️ Modifica gara';document.getElementById('admin-save-btn').textContent='Aggiorna gara';document.getElementById('admin-cancel-btn').style.display='inline-block';document.getElementById('admin-gare-panel').scrollIntoView({behavior:'smooth',block:'start'})}
+async function deleteGara(id){if(!isAdmin)return;if(!confirm('Eliminare questa gara?'))return;try{const{error}=await CVI.supabase.from('gare').delete().eq('id',id);if(error)throw error;alert('Gara eliminata.');resetAdminForm();await loadGare()}catch(err){alert('Errore: '+(err.message||err))}}
+async function saveGara(e){e.preventDefault();if(!isAdmin){alert('Solo gli amministratori possono gestire le gare.');return}const id=document.getElementById('admin-gara-id').value.trim();const titolo=document.getElementById('admin-titolo').value.trim();const dataLocal=document.getElementById('admin-data').value;const descrizione=document.getElementById('admin-descrizione').value.trim();if(!titolo||!dataLocal){alert('Titolo e data sono obbligatori.');return}const data_gara=new Date(dataLocal).toISOString();const payload={titolo,descrizione:descrizione||null,data_gara};const btn=document.getElementById('admin-save-btn');btn.disabled=true;try{if(id){const{error}=await CVI.supabase.from('gare').update(payload).eq('id',id);if(error)throw error;alert('Gara aggiornata.')}else{const{error}=await CVI.supabase.from('gare').insert(payload);if(error)throw error;alert('Gara creata.')}resetAdminForm();await loadGare()}catch(err){alert('Errore: '+(err.message||err))}finally{btn.disabled=false}}
+document.getElementById('admin-gara-form').addEventListener('submit',saveGara);
+document.getElementById('admin-cancel-btn').addEventListener('click',resetAdminForm);
+CVI.init('gare.html',extra);
+loadGare();
+</script>
+</body>
+</html>
