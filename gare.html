@@ -17,6 +17,8 @@
       border-radius: 14px;
       padding: 1.35rem 1.5rem;
       transition: border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
     }
     .gara-card:hover {
       border-color: rgba(56, 189, 248, 0.35);
@@ -37,6 +39,7 @@
       font-size: 0.95rem;
       margin: 0 0 0.5rem;
       line-height: 1.55;
+      flex: 1;
     }
     .iscritti-box {
       margin-top: 0.85rem;
@@ -82,6 +85,81 @@
       font-size: 0.85rem;
       color: var(--text-muted);
       margin: 0;
+    }
+    .gara-actions {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn-iscriviti {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-color);
+      color: #0b0f19;
+      padding: 0.55rem 1.15rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+    }
+    .btn-iscriviti:hover:not(:disabled) {
+      background: #7dd3fc;
+      transform: translateY(-1px);
+    }
+    .btn-iscriviti:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .btn-disiscriviti {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      color: #f87171;
+      padding: 0.55rem 1.15rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-disiscriviti:hover:not(:disabled) {
+      background: rgba(248, 113, 113, 0.12);
+      border-color: #f87171;
+    }
+    .btn-disiscriviti:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .btn-login-iscriviti {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      color: var(--accent-color);
+      padding: 0.55rem 1.15rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-login-iscriviti:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-color);
+    }
+    .iscrizione-status {
+      font-size: 0.82rem;
+      color: var(--success);
+      font-weight: 600;
     }
   </style>
 </head>
@@ -180,11 +258,59 @@
   <script src="common.js"></script>
   <script>
     const extra = {
-      it: { gare_title: "Calendario Gare & Eventi", gare_subtitle: "Tutte le regate ufficiali del Circolo Velico Italia." },
-      en: { gare_title: "Race Calendar & Events", gare_subtitle: "All official races of Circolo Velico Italia." },
-      fr: { gare_title: "Calendrier Courses & Événements", gare_subtitle: "Toutes les courses officielles." },
-      es: { gare_title: "Calendario Regatas y Eventos", gare_subtitle: "Todas las regatas oficiales." }
+      it: {
+        gare_title: "Calendario Gare & Eventi",
+        gare_subtitle: "Tutte le regate ufficiali del Circolo Velico Italia.",
+        btn_iscriviti: "Iscriviti",
+        btn_disiscriviti: "Disiscriviti",
+        btn_login_iscriviti: "Accedi per iscriverti",
+        status_iscritto: "✓ Sei iscritto",
+        msg_iscrizione_ok: "Iscrizione effettuata!",
+        msg_disiscrizione_ok: "Iscrizione annullata.",
+        msg_errore: "Errore: "
+      },
+      en: {
+        gare_title: "Race Calendar & Events",
+        gare_subtitle: "All official races of Circolo Velico Italia.",
+        btn_iscriviti: "Register",
+        btn_disiscriviti: "Unregister",
+        btn_login_iscriviti: "Login to register",
+        status_iscritto: "✓ Registered",
+        msg_iscrizione_ok: "Registration successful!",
+        msg_disiscrizione_ok: "Registration cancelled.",
+        msg_errore: "Error: "
+      },
+      fr: {
+        gare_title: "Calendrier Courses & Événements",
+        gare_subtitle: "Toutes les courses officielles.",
+        btn_iscriviti: "S'inscrire",
+        btn_disiscriviti: "Se désinscrire",
+        btn_login_iscriviti: "Connexion pour s'inscrire",
+        status_iscritto: "✓ Inscrit",
+        msg_iscrizione_ok: "Inscription réussie !",
+        msg_disiscrizione_ok: "Inscription annulée.",
+        msg_errore: "Erreur : "
+      },
+      es: {
+        gare_title: "Calendario Regatas y Eventos",
+        gare_subtitle: "Todas las regatas oficiales.",
+        btn_iscriviti: "Inscribirse",
+        btn_disiscriviti: "Cancelar inscripción",
+        btn_login_iscriviti: "Accede para inscribirte",
+        status_iscritto: "✓ Inscrito",
+        msg_iscrizione_ok: "¡Inscripción realizada!",
+        msg_disiscrizione_ok: "Inscripción cancelada.",
+        msg_errore: "Error: "
+      }
     };
+
+    let currentUserId = null;
+    let currentUserIscrizioni = new Set(); // gara_id a cui l'utente è iscritto
+
+    function t(key) {
+      const lang = CVI.currentLang || 'it';
+      return (extra[lang] && extra[lang][key]) || extra.it[key] || key;
+    }
 
     function renderIscritti(list) {
       if (!list || !list.length) {
@@ -198,9 +324,71 @@
       return `<ul class="iscritti-list">${items}</ul>`;
     }
 
+    function renderActionButton(garaId) {
+      if (!currentUserId) {
+        return `<a href="accedi.html" class="btn-login-iscriviti">${t('btn_login_iscriviti')}</a>`;
+      }
+      const iscritto = currentUserIscrizioni.has(String(garaId));
+      if (iscritto) {
+        return `
+          <span class="iscrizione-status">${t('status_iscritto')}</span>
+          <button type="button" class="btn-disiscriviti" data-gara-id="${garaId}" data-action="leave">
+            ${t('btn_disiscriviti')}
+          </button>`;
+      }
+      return `<button type="button" class="btn-iscriviti" data-gara-id="${garaId}" data-action="join">
+        ${t('btn_iscriviti')}
+      </button>`;
+    }
+
+    async function handleIscrizione(btn) {
+      const garaId = btn.dataset.garaId;
+      const action = btn.dataset.action;
+      if (!garaId || !currentUserId) return;
+
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = '...';
+
+      try {
+        if (action === 'join') {
+          const { error } = await CVI.supabase
+            .from('iscrizioni_gare')
+            .insert({
+              user_id: currentUserId,
+              gara_id: garaId
+            });
+          if (error) throw error;
+          currentUserIscrizioni.add(String(garaId));
+          alert(t('msg_iscrizione_ok'));
+        } else if (action === 'leave') {
+          const { error } = await CVI.supabase
+            .from('iscrizioni_gare')
+            .delete()
+            .eq('user_id', currentUserId)
+            .eq('gara_id', garaId);
+          if (error) throw error;
+          currentUserIscrizioni.delete(String(garaId));
+          alert(t('msg_disiscrizione_ok'));
+        }
+        // ricarica tutta la lista per aggiornare iscritti + bottoni
+        await loadGare();
+      } catch (err) {
+        console.error(err);
+        alert(t('msg_errore') + (err.message || 'operazione non riuscita'));
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
     async function loadGare() {
       const box = document.getElementById('gare-list');
       try {
+        // sessione utente
+        const { data: { session } } = await CVI.supabase.auth.getSession();
+        currentUserId = session?.user?.id || null;
+        currentUserIscrizioni = new Set();
+
         const [gareRes, iscrRes, profRes] = await Promise.all([
           CVI.supabase
             .from('gare')
@@ -226,21 +414,25 @@
         if (iscrRes.error) console.warn('iscrizioni_gare:', iscrRes.error.message);
         if (profRes.error) console.warn('profiles:', profRes.error.message);
 
-        // mappa profilo: id utente -> { nickname, team }
+        // mappa profilo
         const profileById = {};
         profiles.forEach(p => {
           if (p.id != null) profileById[String(p.id)] = p;
         });
 
-        // mappa gara_id -> lista profili iscritti
+        // mappa gara_id -> lista profili iscritti + set iscrizioni utente corrente
         const iscrittiByGara = {};
         iscrizioni.forEach(row => {
           if (row.gara_id == null || row.user_id == null) return;
           const gid = String(row.gara_id);
           const uid = String(row.user_id);
+
+          if (currentUserId && uid === String(currentUserId)) {
+            currentUserIscrizioni.add(gid);
+          }
+
           const prof = profileById[uid] || { nickname: uid.slice(0, 8) + '…', team: '' };
           if (!iscrittiByGara[gid]) iscrittiByGara[gid] = [];
-          // evita duplicati stesso user sulla stessa gara
           if (!iscrittiByGara[gid].some(x => x._uid === uid)) {
             iscrittiByGara[gid].push({ ...prof, _uid: uid });
           }
@@ -257,7 +449,7 @@
             : 'Data da definire';
           const iscritti = iscrittiByGara[String(g.id)] || [];
           return `
-            <div class="gara-card">
+            <div class="gara-card" data-gara-id="${g.id}">
               <h3>${g.titolo || 'Gara'}</h3>
               <p class="gara-date">📅 ${d}</p>
               <p class="gara-desc">${g.descrizione || ''}</p>
@@ -265,8 +457,17 @@
                 <h4>Iscritti (${iscritti.length})</h4>
                 ${renderIscritti(iscritti)}
               </div>
+              <div class="gara-actions">
+                ${renderActionButton(g.id)}
+              </div>
             </div>`;
         }).join('');
+
+        // bind bottoni
+        box.querySelectorAll('[data-action]').forEach(btn => {
+          btn.addEventListener('click', () => handleIscrizione(btn));
+        });
+
       } catch (e) {
         console.error(e);
         box.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore di connessione.</p>';
