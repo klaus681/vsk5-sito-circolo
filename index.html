@@ -84,19 +84,19 @@
     <div class="dashboard-grid">
       <div class="stats-box">
         <div class="stat-item">
-          <span class="stat-number">18</span>
+          <span class="stat-number" id="stat-soci">—</span>
           <span class="stat-label">Soci</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">5</span>
+          <span class="stat-number" id="stat-squadre">—</span>
           <span class="stat-label">Squadre</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">7</span>
+          <span class="stat-number" id="stat-regate">—</span>
           <span class="stat-label">Regate 2026</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">2003</span>
+          <span class="stat-number" id="stat-fondazione">2003</span>
           <span class="stat-label">Dal</span>
         </div>
       </div>
@@ -232,7 +232,6 @@
       document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
     }
 
-    // Legge dalla tabella classifiche (stagione corrente)
     async function caricaClassificaHome() {
       const list = document.getElementById('home-ranking');
       try {
@@ -281,9 +280,44 @@
       }
     }
 
+    async function caricaStats() {
+      try {
+        const [profRes, gareRes] = await Promise.all([
+          CVI.supabase.from('profiles').select('id, team'),
+          CVI.supabase.from('gare').select('id, data_gara')
+        ]);
+
+        const profiles = profRes.data || [];
+        const gare = gareRes.data || [];
+
+        document.getElementById('stat-soci').textContent = profiles.length;
+
+        const teams = new Set(
+          profiles
+            .map(p => (p.team || '').trim())
+            .filter(t => t.length > 0)
+        );
+        document.getElementById('stat-squadre').textContent = teams.size;
+
+        const regate2026 = gare.filter(g => {
+          if (!g.data_gara) return false;
+          return new Date(g.data_gara).getFullYear() === 2026;
+        }).length;
+        document.getElementById('stat-regate').textContent = regate2026;
+
+        document.getElementById('stat-fondazione').textContent = '2003';
+      } catch (e) {
+        console.error('stats:', e);
+        document.getElementById('stat-soci').textContent = '—';
+        document.getElementById('stat-squadre').textContent = '—';
+        document.getElementById('stat-regate').textContent = '—';
+      }
+    }
+
     CVI.init('index.html', extra);
     caricaProssimaGara();
     caricaClassificaHome();
+    caricaStats();
   </script>
 </body>
 </html>
