@@ -292,11 +292,19 @@
 
         document.getElementById('stat-soci').textContent = profiles.length;
 
-        const teams = new Set(
-          profiles
-            .map(p => (p.team || '').trim())
-            .filter(t => t.length > 0)
-        );
+        // Conta team unici normalizzati (ignora maiuscole/spazi e valori fittizi)
+        const EXCLUDE = new Set([
+          '', '-', '—', 'n/a', 'na', 'none', 'null', 'undefined',
+          'nessuno', 'nessun team', 'no team', 'sin equipo', 'aucune', 'senza team'
+        ]);
+        const teams = new Set();
+        profiles.forEach(p => {
+          const raw = String(p.team || '').trim().replace(/\s+/g, ' ');
+          if (!raw) return;
+          const key = raw.toLowerCase();
+          if (EXCLUDE.has(key)) return;
+          teams.add(key);
+        });
         document.getElementById('stat-squadre').textContent = teams.size;
 
         const regate2026 = gare.filter(g => {
