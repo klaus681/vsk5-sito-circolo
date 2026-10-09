@@ -214,7 +214,7 @@
       const gara = cacheGare.find(g => String(g.id) === String(garaId));
       const risultati = cacheRisultati.filter(r => String(r.gara_id) === String(garaId));
       if (!risultati.length) {
-        await CVI.supabase.from('albo_doro').delete().eq('gara_id', garaId);
+        try { await CVI.supabase.from('albo_doro').delete().eq('gara_id', garaId); } catch (e) {}
         return;
       }
       const byUser = {};
@@ -229,16 +229,26 @@
       });
       if (!winnerId) return;
       const p = profiloLabel(winnerId);
+      const titolo = (gara && gara.titolo) || 'Evento';
+      const dataGara = (gara && gara.data_gara) || new Date().toISOString();
       const row = {
         gara_id: garaId,
         user_id: winnerId,
         skipper: p.nick,
-        nome_gara: (gara && gara.titolo) || 'Evento',
-        data_gara: (gara && gara.data_gara) || null,
-        punti: best
+        nome_skipper: p.nick,
+        nome_gara: titolo,
+        race_name: titolo,
+        data_gara: dataGara,
+        race_date: dataGara,
+        punti: best,
+        points: best
       };
-      const { error: delErr } = await CVI.supabase.from('albo_doro').delete().eq('gara_id', garaId);
-      if (delErr) throw delErr;
+      try {
+        await CVI.supabase.from('albo_doro').delete().eq('gara_id', garaId);
+      } catch (e) {}
+      try {
+        await CVI.supabase.from('albo_doro').delete().eq('race_name', titolo);
+      } catch (e) {}
       const { error: insErr } = await CVI.supabase.from('albo_doro').insert(row);
       if (insErr) throw insErr;
     }
