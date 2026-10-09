@@ -10,6 +10,169 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.35rem;
+      margin-top: 1.5rem;
+    }
+    .team-card {
+      position: relative;
+      background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 280px;
+      transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .team-card:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.15);
+    }
+    .team-card-top {
+      position: relative;
+      padding: 1.35rem 1.35rem 1.1rem;
+      background:
+        linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(56, 189, 248, 0.06) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .team-card-top::after {
+      content: "";
+      position: absolute;
+      top: -30%;
+      right: -15%;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .team-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: #0b0f19;
+      background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+      margin-bottom: 0.9rem;
+      letter-spacing: -0.02em;
+    }
+    .team-card:nth-child(2) .team-avatar {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      box-shadow: 0 4px 16px rgba(52, 211, 153, 0.35);
+    }
+    .team-card:nth-child(3) .team-avatar {
+      background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+      box-shadow: 0 4px 16px rgba(167, 139, 250, 0.35);
+    }
+    .team-card:nth-child(4) .team-avatar {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
+    }
+    .team-card:nth-child(5) .team-avatar {
+      background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+      box-shadow: 0 4px 16px rgba(244, 114, 182, 0.35);
+    }
+    .team-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.25rem;
+      font-weight: 750;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .team-captain-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      margin-bottom: 0.65rem;
+    }
+    .team-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+    .team-members-section {
+      padding: 1.1rem 1.35rem 1.35rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .team-members-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .team-members-title .count-pill {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-color);
+      font-size: 0.7rem;
+      padding: 0.12rem 0.45rem;
+      border-radius: 999px;
+      font-weight: 800;
+    }
+    .members-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .members-chips li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem 0.35rem 0.4rem;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      font-weight: 500;
+    }
+    .member-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent-color);
+      font-size: 0.65rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .no-members {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -21,7 +184,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -51,7 +214,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -67,7 +230,7 @@
 
   <main class="page-content">
     <div class="content-box">
-      <h1 data-i18n="team_title">Team &amp; Equipaggi</h1>
+      <h1 data-i18n="team_title">Team & Equipaggi</h1>
       <p class="subtitle" data-i18n="team_subtitle">Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.</p>
       <div id="teams-container" class="teams-grid">
         <p class="loading-text" data-i18n="team_loading">Caricamento team in corso...</p>
@@ -106,49 +269,74 @@
   <script src="common.js"></script>
   <script>
     const extra = {
-      it: { team_title: "Team & Equipaggi", team_subtitle: "Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.", team_loading: "Caricamento team in corso...", team_empty: "Nessun team registrato al momento.", captain_label: "⚓ Capitano: ", members_label: "Membri", no_members: "Nessun membro iscritto a questo team.", no_desc: "Nessuna descrizione disponibile." },
-      en: { team_title: "Teams & Crews", team_subtitle: "Official teams of Circolo Velico Italia and their crews.", team_loading: "Loading teams...", team_empty: "No teams registered.", captain_label: "⚓ Captain: ", members_label: "Members", no_members: "No members in this team.", no_desc: "No description available." },
-      fr: { team_title: "Équipes & Équipages", team_subtitle: "Les équipes officielles du Circolo Velico Italia.", team_loading: "Chargement des équipes...", team_empty: "Aucune équipe enregistrée.", captain_label: "⚓ Capitaine : ", members_label: "Membres", no_members: "Aucun membre dans cette équipe.", no_desc: "Aucune description." },
-      es: { team_title: "Equipos y Tripulaciones", team_subtitle: "Los equipos oficiales del Circolo Velico Italia.", team_loading: "Cargando equipos...", team_empty: "No hay equipos registrados.", captain_label: "⚓ Capitán: ", members_label: "Miembros", no_members: "Sin miembros en este equipo.", no_desc: "Sin descripción." }
+      it: { team_title: "Team & Equipaggi", team_subtitle: "Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.", team_loading: "Caricamento team in corso...", team_empty: "Nessun team registrato al momento.", captain_label: "⚓ Capitano: ", members_label: "Equipaggio", no_members: "Nessun membro iscritto a questo team.", no_desc: "Nessuna descrizione disponibile." },
+      en: { team_title: "Teams & Crews", team_subtitle: "Official teams of Circolo Velico Italia and their crews.", team_loading: "Loading teams...", team_empty: "No teams registered.", captain_label: "⚓ Captain: ", members_label: "Crew", no_members: "No members in this team.", no_desc: "No description available." },
+      fr: { team_title: "Équipes & Équipages", team_subtitle: "Les équipes officielles du Circolo Velico Italia.", team_loading: "Chargement des équipes...", team_empty: "Aucune équipe enregistrée.", captain_label: "⚓ Capitaine : ", members_label: "Équipage", no_members: "Aucun membre dans cette équipe.", no_desc: "Aucune description." },
+      es: { team_title: "Equipos y Tripulaciones", team_subtitle: "Los equipos oficiales del Circolo Velico Italia.", team_loading: "Cargando equipos...", team_empty: "No hay equipos registrados.", captain_label: "⚓ Capitán: ", members_label: "Tripulación", no_members: "Sin miembros en este equipo.", no_desc: "Sin descripción." }
     };
     let cachedTeams = [], cachedProfiles = [];
+
+    function esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+    }
+
+    function initials(name) {
+      const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return '⚓';
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    function memberInitials(m) {
+      const n = (m.nickname || m.nome || '').trim();
+      if (!n) return '?';
+      return n.slice(0, 2).toUpperCase();
+    }
+
     function renderizzaTeams(teams, allProfiles) {
       const container = document.getElementById('teams-container');
       const t = extra[CVI.currentLang] || extra.it;
-      if (!teams.length) { container.innerHTML = `<p class="empty-text">${t.team_empty}</p>`; return; }
+      if (!teams.length) { container.innerHTML = '<p class="empty-text">' + t.team_empty + '</p>'; return; }
       container.innerHTML = teams.map(team => {
         const teamName = team.nome_team || team.nome || '';
         const captainName = team.capitano || team.skipper || '';
         const members = allProfiles.filter(p => p.team && p.team.trim().toLowerCase() === teamName.trim().toLowerCase());
         const membersHtml = members.length
-          ? '<ul class="members-list">' + members.map(m => {
-              let n = (m.nome||'').trim();
-              if (m.nickname) n += n ? ` (${m.nickname.trim()})` : m.nickname.trim();
-              return `<li>${n || m.email || 'Membro'}</li>`;
+          ? '<ul class="members-chips">' + members.map(m => {
+              let label = (m.nome || '').trim();
+              if (m.nickname) label += label ? ' (' + m.nickname.trim() + ')' : m.nickname.trim();
+              label = label || m.email || 'Membro';
+              return '<li><span class="member-dot">' + esc(memberInitials(m)) + '</span>' + esc(label) + '</li>';
             }).join('') + '</ul>'
-          : `<span class="no-members">${t.no_members}</span>`;
-        return `<div class="team-card">
-          <div>
-            <h3>${teamName}</h3>
-            ${captainName ? `<span class="team-captain-badge">${t.captain_label}${captainName}</span>` : ''}
-            <p>${team.descrizione || t.no_desc}</p>
-          </div>
-          <div class="team-members-section">
-            <div class="team-members-title">${t.members_label} (${members.length})</div>
-            ${membersHtml}
-          </div>
-        </div>`;
+          : '<span class="no-members">' + t.no_members + '</span>';
+        return (
+          '<div class="team-card">' +
+            '<div class="team-card-top">' +
+              '<div class="team-avatar">' + esc(initials(teamName)) + '</div>' +
+              '<h3>' + esc(teamName) + '</h3>' +
+              (captainName ? '<span class="team-captain-badge">' + t.captain_label + esc(captainName) + '</span>' : '') +
+              '<p class="team-desc">' + esc(team.descrizione || t.no_desc) + '</p>' +
+            '</div>' +
+            '<div class="team-members-section">' +
+              '<div class="team-members-title">' + t.members_label + ' <span class="count-pill">' + members.length + '</span></div>' +
+              membersHtml +
+            '</div>' +
+          '</div>'
+        );
       }).join('');
     }
+
     async function loadTeams() {
       const container = document.getElementById('teams-container');
       const { data: teams, error } = await CVI.supabase.from('teams').select('*');
-      if (error) { container.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`; return; }
-      if (!teams || !teams.length) { container.innerHTML = `<p class="empty-text">${(extra[CVI.currentLang]||extra.it).team_empty}</p>`; return; }
+      if (error) { container.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore: ' + error.message + '</p>'; return; }
+      if (!teams || !teams.length) { container.innerHTML = '<p class="empty-text">' + (extra[CVI.currentLang]||extra.it).team_empty + '</p>'; return; }
       const { data: profiles } = await CVI.supabase.from('profiles').select('*');
       cachedTeams = teams; cachedProfiles = profiles || [];
       renderizzaTeams(cachedTeams, cachedProfiles);
     }
+
     const _orig = CVI.init;
     CVI.init = function(a) {
       _orig(a, extra);
