@@ -31,7 +31,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -61,7 +61,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -130,24 +130,25 @@
     }
     function esc(s) {
       if (s == null) return '';
-      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
     function renderizzaTabella(vincitori) {
       const t = extra[CVI.currentLang] || extra.it;
       const sorted = [...vincitori].sort((a, b) => {
-        const da = a.data_gara ? new Date(a.data_gara).getTime() : 0;
-        const db = b.data_gara ? new Date(b.data_gara).getTime() : 0;
+        const da = a.race_date || a.data_gara ? new Date(a.race_date || a.data_gara).getTime() : 0;
+        const db = b.race_date || b.data_gara ? new Date(b.race_date || b.data_gara).getTime() : 0;
         return db - da;
       });
       let html = '<table class="albo-table"><thead><tr><th>' + t.th_skipper + '</th><th>' + t.th_race + '</th><th>' + t.th_date + '</th><th style="text-align:right">' + t.th_pts + '</th></tr></thead><tbody>';
       sorted.forEach(item => {
-        const skipper = item.skipper || item.nome_skipper || '—';
-        const race = item.nome_gara || item.gara || item.titolo || '—';
+        const skipper = item.skipper_name || item.skipper || item.nome_skipper || '—';
+        const race = item.race_name || item.nome_gara || item.gara || item.titolo || '—';
         const pts = item.punti != null ? item.punti : '—';
+        const dateVal = item.race_date || item.data_gara || item.data || '';
         html += '<tr>' +
           '<td class="winner"><span class="albo-medal">🏆</span>' + esc(skipper) + '</td>' +
           '<td class="event-name">' + esc(race) + '</td>' +
-          '<td>' + formatData(item.data_gara || item.data || '', CVI.currentLang) + '</td>' +
+          '<td>' + formatData(dateVal, CVI.currentLang) + '</td>' +
           '<td class="pts">' + esc(pts) + '</td>' +
           '</tr>';
       });
@@ -156,7 +157,7 @@
     }
     async function loadAlbo() {
       const c = document.getElementById('albo-container');
-      const { data, error } = await CVI.supabase.from('albo_doro').select('*').order('data_gara', { ascending: false });
+      const { data, error } = await CVI.supabase.from('albo_doro').select('*').order('race_date', { ascending: false });
       if (error) { c.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore: ' + error.message + '</p>'; return; }
       if (!data || !data.length) { c.innerHTML = '<p class="empty-text">' + (extra[CVI.currentLang]||extra.it).albo_empty + '</p>'; return; }
       vincitoriDati = data; renderizzaTabella(data);
