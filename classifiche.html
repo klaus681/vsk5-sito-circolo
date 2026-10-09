@@ -59,6 +59,15 @@
     .gara-result-card.open .gara-result-body { display: block; padding-top: 0.75rem; }
     .gara-result-card.open .toggle-icon { transform: rotate(180deg); }
     .toggle-icon { color: var(--text-muted); transition: transform 0.2s; font-size: 0.85rem; }
+    .regata-section { margin-bottom: 1.5rem; border: 1px solid rgba(56,189,248,.2); border-radius: 10px; overflow: hidden; }
+    .regata-section-header { background: rgba(56,189,248,.08); padding: 0.65rem 1rem; font-weight: 700; font-size: 0.9rem; color: var(--accent-color); display: flex; justify-content: space-between; align-items: center; }
+    .regata-section-body { padding: 0.85rem; }
+    .regata-tabs { display: flex; gap: 0.35rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .regata-tab { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 0.4rem 0.9rem; border-radius: 6px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .regata-tab.active { color: var(--accent-color); background: var(--accent-soft); border-color: rgba(56,189,248,.4); }
+    .regata-panel { display: none; }
+    .regata-panel.active { display: block; }
+    .event-total-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin: 1rem 0 .5rem; }
   </style>
 </head>
 <body>
@@ -107,16 +116,16 @@
     <section class="page-hero">
       <span class="hero-badge">Stagione 2026 · Low Point</span>
       <h1>Risultati & <em>Classifiche</em></h1>
-      <p>Sistema Low Point: 1° = 1 pt, 2° = 2 pt… Vince chi ha il totale più basso.</p>
+      <p>Sistema Low Point: 1° = 1 pt, 2° = 2 pt… Vince chi ha il totale più basso. Gli eventi multi-regata sommano i punti di ogni prova.</p>
     </section>
     <div class="content-box">
       <div class="tabs" role="tablist">
         <button type="button" class="tab-btn active" data-tab="generale">Classifica generale</button>
-        <button type="button" class="tab-btn" data-tab="gare">Per gara</button>
+        <button type="button" class="tab-btn" data-tab="gare">Per evento</button>
         <button type="button" class="tab-btn" data-tab="inserisci" id="tab-btn-inserisci" style="display:none">Inserisci risultati</button>
       </div>
       <div id="tab-generale" class="tab-panel active">
-        <div class="info-banner"><strong>Low Point System</strong> — Classifica salvata in <strong>classifiche</strong>, aggiornata dopo ogni inserimento.</div>
+        <div class="info-banner"><strong>Low Point System</strong> — Ogni regata conta separatamente. Classifica aggiornata dopo ogni inserimento.</div>
         <div id="classifica-generale"><p class="loading-text">Caricamento classifica...</p></div>
       </div>
       <div id="tab-gare" class="tab-panel">
@@ -128,9 +137,9 @@
           <p id="inserisci-gate-link"><a href="accedi.html">Vai al login →</a></p>
         </div>
         <div id="inserisci-panel" style="display:none;">
-          <div class="info-banner">Solo <strong>admin</strong> possono inserire. Punti Low Point automatici. Aggiorna anche <strong>classifiche</strong>.</div>
-          <div class="gara-select-row"><select id="select-gara-insert"><option value="">— Seleziona gara —</option></select></div>
-          <div id="form-risultati-container"><p class="empty-hint">Seleziona una gara per iniziare.</p></div>
+          <div class="info-banner">Solo <strong>admin</strong>. Per eventi multi-regata inserisci i risultati di ogni prova (tab Regata 1/2/3). Punti Low Point automatici.</div>
+          <div class="gara-select-row"><select id="select-gara-insert"><option value="">— Seleziona evento —</option></select></div>
+          <div id="form-risultati-container"><p class="empty-hint">Seleziona un evento per iniziare.</p></div>
         </div>
       </div>
     </div>
@@ -163,6 +172,10 @@
     function esc(s) {
       if (s == null) return '';
       return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+    }
+
+    function numRegate(g) {
+      return Math.min(3, Math.max(1, parseInt(g && g.num_regate, 10) || 1));
     }
 
     function profiloLabel(uid) {
@@ -214,13 +227,43 @@
         return;
       }
       rows.sort((a, b) => (a.posizione || 999) - (b.posizione || 999));
-      let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Gare</th><th class="pts">Punti</th></tr></thead><tbody>';
+      let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Regate</th><th class="pts">Punti</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
         const p = profiloLabel(r.user_id);
         html += '<tr><td class="pos">' + (r.posizione != null ? r.posizione : i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div>' + (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') + '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + (r.gare_disputate != null ? r.gare_disputate : '—') + '</td><td class="pts">' + r.punti_totali + '</td></tr>';
       });
       html += '</tbody></table>';
       box.innerHTML = html;
+    }
+
+    function buildRegataTable(risultati) {
+      const list = [...risultati].sort((a, b) => (Number(a.punti) || 0) - (Number(b.punti) || 0));
+      let table = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Stato</th><th class="pts">Punti</th></tr></thead><tbody>';
+      list.forEach((r, i) => {
+        const p = profiloLabel(r.user_id);
+        const stato = (r.stato || 'ok').toLowerCase();
+        table += '<tr><td class="pos">' + (r.posizione != null ? r.posizione : i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div></td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td><span class="stato-badge ' + (stato === 'ok' ? 'stato-ok' : 'stato-dnf') + '">' + esc(stato.toUpperCase()) + '</span></td><td class="pts">' + r.punti + '</td></tr>';
+      });
+      table += '</tbody></table>';
+      return table;
+    }
+
+    function buildEventTotalTable(risultati) {
+      const byUser = {};
+      risultati.forEach(r => {
+        const uid = String(r.user_id);
+        if (!byUser[uid]) byUser[uid] = { user_id: uid, punti: 0, regate: 0 };
+        byUser[uid].punti += Number(r.punti) || 0;
+        byUser[uid].regate += 1;
+      });
+      const list = Object.values(byUser).sort((a, b) => a.punti - b.punti);
+      let table = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Regate</th><th class="pts">Totale</th></tr></thead><tbody>';
+      list.forEach((r, i) => {
+        const p = profiloLabel(r.user_id);
+        table += '<tr><td class="pos">' + (i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div></td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + r.regate + '</td><td class="pts">' + r.punti + '</td></tr>';
+      });
+      table += '</tbody></table>';
+      return table;
     }
 
     function renderPerGara() {
@@ -232,7 +275,7 @@
         byGara[gid].push(r);
       });
       const ids = Object.keys(byGara);
-      if (!ids.length) { box.innerHTML = '<p class="empty-hint">Nessuna classifica di gara disponibile.</p>'; return; }
+      if (!ids.length) { box.innerHTML = '<p class="empty-hint">Nessuna classifica di evento disponibile.</p>'; return; }
       const sorted = ids.map(id => ({ id, gara: cacheGare.find(x => String(x.id) === id), risultati: byGara[id] }))
         .sort((a, b) => {
           const da = a.gara?.data_gara ? new Date(a.gara.data_gara).getTime() : 0;
@@ -240,17 +283,29 @@
           return db - da;
         });
       box.innerHTML = sorted.map(({ id, gara, risultati }) => {
-        const titolo = gara?.titolo || 'Gara';
+        const titolo = gara?.titolo || 'Evento';
         const dataStr = gara?.data_gara ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) : '';
-        const list = [...risultati].sort((a, b) => (Number(a.punti) || 0) - (Number(b.punti) || 0));
-        let table = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Stato</th><th class="pts">Punti</th></tr></thead><tbody>';
-        list.forEach((r, i) => {
-          const p = profiloLabel(r.user_id);
-          const stato = (r.stato || 'ok').toLowerCase();
-          table += '<tr><td class="pos">' + (r.posizione != null ? r.posizione : i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div></td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td><span class="stato-badge ' + (stato === 'ok' ? 'stato-ok' : 'stato-dnf') + '">' + esc(stato.toUpperCase()) + '</span></td><td class="pts">' + r.punti + '</td></tr>';
+        const nr = numRegate(gara);
+        const byRegata = {};
+        for (let i = 1; i <= nr; i++) byRegata[i] = [];
+        risultati.forEach(r => {
+          const rn = Math.min(nr, Math.max(1, parseInt(r.regata_num, 10) || 1));
+          if (!byRegata[rn]) byRegata[rn] = [];
+          byRegata[rn].push(r);
         });
-        table += '</tbody></table>';
-        return '<div class="gara-result-card"><div class="gara-result-header"><div><h3>' + esc(titolo) + '</h3><div class="meta">' + esc(dataStr) + ' · ' + list.length + ' risultati</div></div><span class="toggle-icon">▼</span></div><div class="gara-result-body">' + table + '</div></div>';
+        let body = '';
+        if (nr > 1) {
+          for (let i = 1; i <= nr; i++) {
+            const list = byRegata[i] || [];
+            body += '<div class="regata-section"><div class="regata-section-header">Regata ' + i + ' · ' + list.length + ' risultati</div><div class="regata-section-body">' +
+              (list.length ? buildRegataTable(list) : '<p class="empty-hint" style="padding:0.5rem 0">Nessun risultato</p>') +
+              '</div></div>';
+          }
+          body += '<div class="event-total-label">Classifica evento (somma regate)</div>' + buildEventTotalTable(risultati);
+        } else {
+          body = buildRegataTable(risultati);
+        }
+        return '<div class="gara-result-card"><div class="gara-result-header"><div><h3>' + esc(titolo) + '</h3><div class="meta">' + esc(dataStr) + ' · ' + nr + ' regat' + (nr === 1 ? 'a' : 'e') + ' · ' + risultati.length + ' risultati</div></div><span class="toggle-icon">▼</span></div><div class="gara-result-body">' + body + '</div></div>';
       }).join('');
       box.querySelectorAll('.gara-result-header').forEach(h => h.addEventListener('click', () => h.parentElement.classList.toggle('open')));
     }
@@ -283,34 +338,71 @@
       if (panel) panel.style.display = 'block';
 
       const sel = document.getElementById('select-gara-insert');
-      sel.innerHTML = '<option value="">— Seleziona gara —</option>' +
+      sel.innerHTML = '<option value="">— Seleziona evento —</option>' +
         cacheGare.map(g => {
           const d = g.data_gara ? new Date(g.data_gara).toLocaleDateString('it-IT') : '';
-          return '<option value="' + esc(g.id) + '">' + esc(g.titolo || 'Gara') + (d ? ' · ' + d : '') + '</option>';
+          const nr = numRegate(g);
+          const label = (g.titolo || 'Evento') + (d ? ' · ' + d : '') + (nr > 1 ? ' · ' + nr + ' regate' : '');
+          return '<option value="' + esc(g.id) + '">' + esc(label) + '</option>';
         }).join('');
       sel.onchange = () => loadFormRisultati(sel.value);
     }
 
     function loadFormRisultati(garaId) {
       const container = document.getElementById('form-risultati-container');
-      if (!garaId) { container.innerHTML = '<p class="empty-hint">Seleziona una gara per iniziare.</p>'; return; }
+      if (!garaId) { container.innerHTML = '<p class="empty-hint">Seleziona un evento per iniziare.</p>'; return; }
+      const gara = cacheGare.find(g => String(g.id) === String(garaId));
+      const nr = numRegate(gara);
       let userIds = cacheIscrizioni.filter(i => String(i.gara_id) === String(garaId)).map(i => String(i.user_id));
       if (!userIds.length) userIds = Object.keys(cacheProfiles);
-      const esistenti = {};
-      cacheRisultati.filter(r => String(r.gara_id) === String(garaId)).forEach(r => { esistenti[String(r.user_id)] = r; });
-      Object.keys(esistenti).forEach(uid => { if (!userIds.includes(uid)) userIds.push(uid); });
-      if (!userIds.length) { container.innerHTML = '<p class="empty-hint">Nessun iscritto a questa gara.</p>'; return; }
-      const n = userIds.length;
-      let html = '<div class="form-resultati">';
-      userIds.forEach(uid => {
-        const p = profiloLabel(uid);
-        const ex = esistenti[uid] || {};
-        const stato = (ex.stato || 'ok').toLowerCase();
-        html += '<div class="result-row" data-user-id="' + esc(uid) + '"><div class="skipper-label">' + esc(p.nick) + (p.team ? ' <span>· ' + esc(p.team) + '</span>' : '') + '</div><input type="number" min="1" max="99" placeholder="Pos." class="input-pos" value="' + esc(ex.posizione != null ? ex.posizione : '') + '"><select class="input-stato"><option value="ok"' + (stato==='ok'?' selected':'') + '>OK</option><option value="dnf"' + (stato==='dnf'?' selected':'') + '>DNF</option><option value="dns"' + (stato==='dns'?' selected':'') + '>DNS</option><option value="dsq"' + (stato==='dsq'?' selected':'') + '>DSQ</option><option value="ret"' + (stato==='ret'?' selected':'') + '>RET</option></select></div>';
+      const esistentiByRegata = {};
+      for (let i = 1; i <= nr; i++) esistentiByRegata[i] = {};
+      cacheRisultati.filter(r => String(r.gara_id) === String(garaId)).forEach(r => {
+        const rn = Math.min(nr, Math.max(1, parseInt(r.regata_num, 10) || 1));
+        esistentiByRegata[rn][String(r.user_id)] = r;
+        if (!userIds.includes(String(r.user_id))) userIds.push(String(r.user_id));
       });
-      html += '</div><div class="form-actions"><button type="button" class="btn-save" id="btn-save-risultati">Salva risultati</button><button type="button" class="btn-clear" id="btn-clear-risultati">Elimina risultati gara</button></div>';
+      if (!userIds.length) { container.innerHTML = '<p class="empty-hint">Nessun iscritto a questo evento.</p>'; return; }
+      const n = userIds.length;
+
+      let html = '';
+      if (nr > 1) {
+        html += '<div class="regata-tabs">';
+        for (let i = 1; i <= nr; i++) {
+          html += '<button type="button" class="regata-tab' + (i === 1 ? ' active' : '') + '" data-regata="' + i + '">Regata ' + i + '</button>';
+        }
+        html += '</div>';
+      }
+
+      for (let i = 1; i <= nr; i++) {
+        html += '<div class="regata-panel' + (i === 1 || nr === 1 ? ' active' : '') + '" data-regata-panel="' + i + '">';
+        if (nr > 1) html += '<div class="regata-section-header" style="margin-bottom:0.75rem;border-radius:8px">Risultati Regata ' + i + '</div>';
+        html += '<div class="form-resultati" data-regata="' + i + '">';
+        userIds.forEach(uid => {
+          const p = profiloLabel(uid);
+          const ex = esistentiByRegata[i][uid] || {};
+          const stato = (ex.stato || 'ok').toLowerCase();
+          html += '<div class="result-row" data-user-id="' + esc(uid) + '"><div class="skipper-label">' + esc(p.nick) + (p.team ? ' <span>· ' + esc(p.team) + '</span>' : '') + '</div><input type="number" min="1" max="99" placeholder="Pos." class="input-pos" value="' + esc(ex.posizione != null ? ex.posizione : '') + '"><select class="input-stato"><option value="ok"' + (stato==='ok'?' selected':'') + '>OK</option><option value="dnf"' + (stato==='dnf'?' selected':'') + '>DNF</option><option value="dns"' + (stato==='dns'?' selected':'') + '>DNS</option><option value="dsq"' + (stato==='dsq'?' selected':'') + '>DSQ</option><option value="ret"' + (stato==='ret'?' selected':'') + '>RET</option></select></div>';
+        });
+        html += '</div></div>';
+      }
+
+      html += '<div class="form-actions"><button type="button" class="btn-save" id="btn-save-risultati">Salva risultati</button><button type="button" class="btn-clear" id="btn-clear-risultati">Elimina tutti i risultati evento</button></div>';
       container.innerHTML = html;
-      document.getElementById('btn-save-risultati').onclick = () => saveRisultati(garaId, n);
+
+      if (nr > 1) {
+        container.querySelectorAll('.regata-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            container.querySelectorAll('.regata-tab').forEach(t => t.classList.remove('active'));
+            container.querySelectorAll('.regata-panel').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = container.querySelector('[data-regata-panel="' + tab.dataset.regata + '"]');
+            if (panel) panel.classList.add('active');
+          });
+        });
+      }
+
+      document.getElementById('btn-save-risultati').onclick = () => saveRisultati(garaId, n, nr);
       document.getElementById('btn-clear-risultati').onclick = () => clearRisultati(garaId);
     }
 
@@ -322,18 +414,26 @@
       return n + 1;
     }
 
-    async function saveRisultati(garaId, n) {
+    async function saveRisultati(garaId, n, nr) {
       if (!isAdmin) { alert('Solo gli amministratori possono inserire i risultati.'); return; }
-      const form = document.querySelector('.form-resultati');
-      if (!form) return;
       const payload = [];
-      form.querySelectorAll('.result-row').forEach(row => {
-        const uid = row.dataset.userId;
-        const posVal = row.querySelector('.input-pos').value.trim();
-        const stato = row.querySelector('.input-stato').value;
-        const punti = calcPunti(posVal, stato, n);
-        if (stato === 'ok' && (posVal === '' || punti == null)) return;
-        payload.push({ gara_id: garaId, user_id: uid, posizione: stato === 'ok' ? parseInt(posVal, 10) : null, punti, stato });
+      document.querySelectorAll('.form-resultati').forEach(form => {
+        const regataNum = parseInt(form.dataset.regata, 10) || 1;
+        form.querySelectorAll('.result-row').forEach(row => {
+          const uid = row.dataset.userId;
+          const posVal = row.querySelector('.input-pos').value.trim();
+          const stato = row.querySelector('.input-stato').value;
+          const punti = calcPunti(posVal, stato, n);
+          if (stato === 'ok' && (posVal === '' || punti == null)) return;
+          payload.push({
+            gara_id: garaId,
+            user_id: uid,
+            regata_num: regataNum,
+            posizione: stato === 'ok' ? parseInt(posVal, 10) : null,
+            punti,
+            stato
+          });
+        });
       });
       if (!payload.length) { alert('Inserisci almeno una posizione.'); return; }
       const btn = document.getElementById('btn-save-risultati');
@@ -343,7 +443,7 @@
         if (error) throw error;
         ({ error } = await CVI.supabase.from('risultati_gara').insert(payload));
         if (error) throw error;
-        const risRes = await CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note');
+        const risRes = await CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note, regata_num');
         cacheRisultati = risRes.data || [];
         await syncClassifiche();
         alert('Risultati salvati e classifica aggiornata!');
@@ -359,11 +459,11 @@
 
     async function clearRisultati(garaId) {
       if (!isAdmin) { alert('Solo gli amministratori possono eliminare i risultati.'); return; }
-      if (!confirm('Eliminare tutti i risultati di questa gara?')) return;
+      if (!confirm('Eliminare tutti i risultati di questo evento (tutte le regate)?')) return;
       try {
         const { error } = await CVI.supabase.from('risultati_gara').delete().eq('gara_id', garaId);
         if (error) throw error;
-        const risRes = await CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note');
+        const risRes = await CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note, regata_num');
         cacheRisultati = risRes.data || [];
         await syncClassifiche();
         alert('Risultati eliminati e classifica aggiornata.');
@@ -379,8 +479,8 @@
       const { data: { session } } = await CVI.supabase.auth.getSession();
       currentUserId = session?.user?.id || null;
       const [gareRes, risRes, profRes, iscrRes, classRes] = await Promise.all([
-        CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara').order('data_gara', { ascending: true }),
-        CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note'),
+        CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, num_regate').order('data_gara', { ascending: true }),
+        CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note, regata_num'),
         CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, is_admin'),
         CVI.supabase.from('iscrizioni_gare').select('id, user_id, gara_id'),
         CVI.supabase.from('classifiche').select('id, user_id, stagione, punti_totali, gare_disputate, posizione').eq('stagione', STAGIONE).order('posizione', { ascending: true })
