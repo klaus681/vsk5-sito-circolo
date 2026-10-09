@@ -65,11 +65,11 @@
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
-  <main class="page-content" id="protected-content">
+  <main class="page-content" id="protected-content" style="display:none">
     <div class="content-box">
       <div class="download-header">
         <h1 data-i18n="download_title">Area Download</h1>
-        <button id="logout-btn" class="btn-logout" data-i18n="btn_logout" style="display:none">Disconnetti</button>
+        <button id="logout-btn" class="btn-logout" data-i18n="btn_logout">Disconnetti</button>
       </div>
       <p class="subtitle" data-i18n="download_subtitle">Materiali ufficiali, skin, regolamenti e pacchetti del circolo.</p>
       <div class="download-list">
@@ -156,7 +156,8 @@
         btn_download_zip: "Scarica ZIP",
         file3_title: "Mappe Ufficiali C.V.I.",
         file3_desc: "Setup mappe VSK5 ufficiali del Circolo Velico Italiano GP.",
-        btn_download_maps: "Scarica EXE"
+        btn_download_maps: "Scarica EXE",
+        alert_auth_required: "Devi effettuare l'accesso per accedere all'Area Download."
       },
       en: {
         download_title: "Download Area",
@@ -173,7 +174,8 @@
         btn_download_zip: "Download ZIP",
         file3_title: "Official C.V.I. Maps",
         file3_desc: "Official VSK5 maps setup for Circolo Velico Italiano GP.",
-        btn_download_maps: "Download EXE"
+        btn_download_maps: "Download EXE",
+        alert_auth_required: "You must log in to access the Download Area."
       },
       fr: {
         download_title: "Espace Téléchargement",
@@ -190,7 +192,8 @@
         btn_download_zip: "Télécharger ZIP",
         file3_title: "Cartes Officielles C.V.I.",
         file3_desc: "Setup des cartes VSK5 officielles CVI GP.",
-        btn_download_maps: "Télécharger EXE"
+        btn_download_maps: "Télécharger EXE",
+        alert_auth_required: "Vous devez vous connecter pour accéder à l'Espace Téléchargement."
       },
       es: {
         download_title: "Área de Descargas",
@@ -207,12 +210,20 @@
         btn_download_zip: "Descargar ZIP",
         file3_title: "Mapas Oficiales C.V.I.",
         file3_desc: "Setup de mapas VSK5 oficiales CVI GP.",
-        btn_download_maps: "Descargar EXE"
+        btn_download_maps: "Descargar EXE",
+        alert_auth_required: "Debes iniciar sesión para acceder al Área de Descargas."
       }
     };
-    const _orig = CVI.init;
-    CVI.init = function(a) {
-      _orig(a, extra);
+
+    async function checkAuthAndShow() {
+      const { data: { session } } = await CVI.supabase.auth.getSession();
+      if (!session) {
+        alert((extra[CVI.currentLang] || extra.it).alert_auth_required);
+        window.location.href = 'accedi.html';
+        return;
+      }
+      // Utente autenticato → mostra il contenuto
+      document.getElementById('protected-content').style.display = '';
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
@@ -220,10 +231,12 @@
           window.location.href = 'accedi.html';
         });
       }
-      (async () => {
-        const { data: { session } } = await CVI.supabase.auth.getSession();
-        if (session && logoutBtn) logoutBtn.style.display = '';
-      })();
+    }
+
+    const _orig = CVI.init;
+    CVI.init = function(a) {
+      _orig(a, extra);
+      checkAuthAndShow();
     };
 
     CVI.init('download.html');
