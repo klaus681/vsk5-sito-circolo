@@ -67,7 +67,6 @@
       margin-bottom: 0.9rem;
       letter-spacing: -0.02em;
     }
-    /* Temi colore per squadra */
     .team-card[data-theme="red"] {
       border-color: rgba(248, 113, 113, 0.28);
     }
@@ -97,7 +96,6 @@
       background: rgba(248, 113, 113, 0.2);
       color: #fca5a5;
     }
-
     .team-card[data-theme="teal"] {
       border-color: rgba(45, 212, 191, 0.28);
     }
@@ -127,7 +125,6 @@
       background: rgba(45, 212, 191, 0.2);
       color: #5eead4;
     }
-
     .team-card[data-theme="violet"] {
       border-color: rgba(167, 139, 250, 0.28);
     }
@@ -157,7 +154,6 @@
       background: rgba(167, 139, 250, 0.2);
       color: #c4b5fd;
     }
-
     .team-card[data-theme="amber"] {
       border-color: rgba(251, 191, 36, 0.28);
     }
@@ -187,7 +183,6 @@
       background: rgba(251, 191, 36, 0.2);
       color: #fcd34d;
     }
-
     .team-card[data-theme="sky"] {
       border-color: rgba(56, 189, 248, 0.28);
     }
@@ -409,12 +404,11 @@
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
 
-    /** Colore dedicato per squadra (per nome). */
     function teamTheme(name) {
       const n = String(name || '').trim().toLowerCase();
       if (n.includes('red moon') || n.includes('redmoon')) return 'red';
       if (n.includes('uru') || n.includes('surf')) return 'teal';
-      if (n === 'ist' || n.startsWith('ist ')) return 'violet';
+      if (n === 'ist' || n.startsWith('ist ')) return 'red';
       const themes = ['sky', 'amber', 'teal', 'violet', 'red'];
       let h = 0;
       for (let i = 0; i < n.length; i++) h = (h + n.charCodeAt(i) * (i + 1)) % themes.length;
