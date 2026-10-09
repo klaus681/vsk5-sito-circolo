@@ -94,16 +94,23 @@
     .btn-bacheca:hover { background: #7dd3fc; }
     .btn-avviso-del {
       background: transparent;
-      border: 1px solid rgba(248,113,113,0.4);
+      border: 1px solid rgba(248,113,113,0.45);
       color: #f87171;
-      padding: 0.2rem 0.55rem;
+      padding: 0.3rem 0.7rem;
       border-radius: 6px;
-      font-size: 0.72rem;
-      font-weight: 600;
+      font-size: 0.78rem;
+      font-weight: 650;
       cursor: pointer;
       font-family: inherit;
+      white-space: nowrap;
     }
-    .btn-avviso-del:hover { background: rgba(248,113,113,0.12); }
+    .btn-avviso-del:hover { background: rgba(248,113,113,0.15); }
+    .avviso-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
     .bacheca-form {
       display: none;
       margin-top: 1rem;
@@ -248,7 +255,6 @@
       </a>
     </div>
 
-    <!-- Bacheca avvisi -->
     <section class="bacheca" id="bacheca">
       <div class="bacheca-header">
         <h2>📌 <span>Bacheca</span> avvisi</h2>
@@ -519,14 +525,21 @@
           <article class="avviso-item" data-id="${escHtml(a.id)}">
             <div class="avviso-meta">
               <span class="avviso-titolo">${escHtml(a.titolo)}</span>
-              <span class="avviso-data">${formatDataAvviso(a.created_at)}${isAdminHome ? ' <button type="button" class="btn-avviso-del" data-del="${escHtml(a.id)}">Elimina</button>' : ''}</span>
+              <div class="avviso-actions">
+                <span class="avviso-data">${formatDataAvviso(a.created_at)}</span>
+                ${isAdminHome ? `<button type="button" class="btn-avviso-del" data-del="${escHtml(a.id)}" title="Elimina avviso">🗑 Elimina</button>` : ''}
+              </div>
             </div>
             <div class="avviso-testo">${escHtml(a.testo)}</div>
           </article>
         `).join('');
         if (isAdminHome) {
           box.querySelectorAll('[data-del]').forEach(btn => {
-            btn.addEventListener('click', () => eliminaAvviso(btn.dataset.del));
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              eliminaAvviso(btn.dataset.del);
+            });
           });
         }
       } catch (err) {
@@ -567,13 +580,16 @@
     }
 
     async function eliminaAvviso(id) {
-      if (!confirm('Eliminare questo avviso?')) return;
+      if (!confirm('Eliminare questo avviso dalla bacheca?')) return;
       try {
-        const { error } = await CVI.supabase.from('avvisi').delete().eq('id', id);
+        let { error } = await CVI.supabase.from('avvisi').delete().eq('id', id);
+        if (error) {
+          ({ error } = await CVI.supabase.from('avvisi').update({ attivo: false }).eq('id', id));
+        }
         if (error) throw error;
         await caricaAvvisi();
       } catch (err) {
-        alert('Errore: ' + (err.message || err));
+        alert('Errore eliminazione: ' + (err.message || err));
       }
     }
 
