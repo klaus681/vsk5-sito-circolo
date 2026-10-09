@@ -47,38 +47,28 @@
     const dict = Object.assign({}, NAV_KEYS[lang] || NAV_KEYS.it, (extra && extra[lang]) || {});
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
-      if (dict[key]) el.innerHTML = dict[key];
-    });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const key = el.getAttribute('data-i18n-placeholder');
-      if (dict[key]) el.placeholder = dict[key];
+      if (dict[key] != null) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = dict[key];
+        else el.innerHTML = dict[key];
+      }
     });
   };
 
   window.CVI.cambiaLingua = function (lang, extra) {
     window.CVI.currentLang = lang;
     localStorage.setItem('cvi_lang', lang);
-    const sel = document.getElementById('languageSelect');
-    if (sel) sel.value = lang;
     window.CVI.applyI18n(extra);
-    window.CVI.aggiornaAuth();
   };
 
   window.CVI.aggiornaAuth = async function () {
     if (!window.CVI.supabase) return;
     const { data: { session } } = await window.CVI.supabase.auth.getSession();
-    const lang = window.CVI.currentLang;
-    const label = (NAV_KEYS[lang] || NAV_KEYS.it).nav_area_membri;
-    ['auth-link', 'auth-link-mobile'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (session) {
-        el.href = 'membri.html';
-        el.textContent = label;
-      } else {
-        el.href = 'accedi.html';
-      }
-    });
+    const link = document.getElementById('auth-link');
+    const linkM = document.getElementById('auth-link-mobile');
+    const label = session ? (NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it).nav_area_membri : (NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it).nav_accedi;
+    const href = session ? 'membri.html' : 'accedi.html';
+    if (link) { link.textContent = label; link.href = href; }
+    if (linkM) { linkM.textContent = label; linkM.href = href; }
   };
 
   window.CVI.initMobileNav = function () {
@@ -88,20 +78,11 @@
     toggle.addEventListener('click', () => {
       const open = mobile.classList.toggle('is-open');
       toggle.classList.toggle('is-open', open);
-      toggle.setAttribute('aria-expanded', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       document.body.classList.toggle('menu-open', open);
-    });
-    mobile.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        mobile.classList.remove('is-open');
-        toggle.classList.remove('is-open');
-        toggle.setAttribute('aria-expanded', 'false');
-        document.body.classList.remove('menu-open');
-      });
     });
   };
 
-  // Auto-align: fix-nav.css + voce Membri su tutte le pagine
   window.CVI.ensureNavAlign = function () {
     if (!document.querySelector('link[href="fix-nav.css"]')) {
       const link = document.createElement('link');
@@ -132,15 +113,32 @@
     }
   };
 
+  /** Sostituisce l'ancora testuale con il logo CVI nell'header */
+  window.CVI.upgradeHeaderLogo = function () {
+    document.querySelectorAll('header .logo-container').forEach(function (el) {
+      if (el.querySelector('img.logo-img')) return;
+      const text = el.querySelector('.logo-text');
+      if (!text) return;
+      text.innerHTML = text.innerHTML.replace(/⚓\s*/g, '');
+      const img = document.createElement('img');
+      img.src = 'logo-cvi.png';
+      img.alt = 'CVI';
+      img.className = 'logo-img';
+      img.width = 32;
+      img.height = 32;
+      el.insertBefore(img, text);
+    });
+  };
+
   window.CVI.init = function (activePage, extraI18n) {
     window.CVI.initMobileNav();
+    window.CVI.upgradeHeaderLogo();
     window.CVI.ensureNavAlign();
     const sel = document.getElementById('languageSelect');
     if (sel) {
       sel.value = window.CVI.currentLang;
       sel.onchange = () => window.CVI.cambiaLingua(sel.value, extraI18n);
     }
-    // mark active links
     if (activePage) {
       document.querySelectorAll(`a[href="${activePage}"]`).forEach(a => a.classList.add('active'));
     }
