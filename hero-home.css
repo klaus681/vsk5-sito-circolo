@@ -19,7 +19,7 @@
 .hero-section {
   text-align: center;
   padding: 4rem 1.5rem 3.5rem;
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -43,14 +43,14 @@
   object-fit: contain;
 }
 
-.hero-community {
-  margin: 0 0 1rem;
-  font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: clamp(2.2rem, 6.5vw, 3.75rem);
-  font-weight: 700;
-  letter-spacing: 0.14em;
+.hero-section .hero-community {
+  margin: 0 0 1.1rem;
+  font-family: var(--font-display, "Playfair Display", Georgia, serif) !important;
+  font-size: clamp(2.6rem, 8vw, 4.5rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  line-height: 1.1;
+  line-height: 1.12;
   color: #fff !important;
   -webkit-text-fill-color: #fff;
   text-shadow:
@@ -60,9 +60,10 @@
   position: relative;
   display: block;
   width: 100%;
+  max-width: none;
 }
 
-.hero-community::after {
+.hero-section .hero-community::after {
   content: "";
   display: block;
   width: min(12rem, 55%);
@@ -78,9 +79,10 @@
   margin-top: 0.25rem;
 }
 .hero-section h1 em { color: #7dd3fc !important; }
-.hero-section p {
+.hero-section p:not(.hero-community) {
   color: rgba(248, 250, 252, 0.88) !important;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+  font-size: 1.1rem;
 }
 .hero-actions .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
@@ -100,5 +102,5 @@
 @media (max-width: 600px) {
   .hero-wrap { min-height: min(62vh, 520px); }
   .hero-section { padding: 3rem 1rem 2.5rem; }
-  .hero-community { letter-spacing: 0.08em; font-size: clamp(1.85rem, 9vw, 2.6rem); }
+  .hero-section .hero-community { letter-spacing: 0.06em; font-size: clamp(1.9rem, 9.5vw, 2.8rem) !important; }
 }
