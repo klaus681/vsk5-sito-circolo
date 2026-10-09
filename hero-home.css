@@ -19,7 +19,7 @@
 .hero-section {
   text-align: center;
   padding: 4rem 1.5rem 3.5rem;
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -31,35 +31,48 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
 .hero-community {
-  margin: 0 0 0.85rem;
+  margin: 0 0 1.15rem;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: clamp(1.85rem, 5vw, 2.85rem);
+  font-size: clamp(2.4rem, 7.5vw, 4.25rem);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  line-height: 1.2;
-  background: linear-gradient(120deg, #e0f2fe 0%, #38bdf8 40%, #7dd3fc 70%, #bae6fd 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 18px rgba(56, 189, 248, 0.45));
+  line-height: 1.1;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+  text-shadow:
+    0 0 40px rgba(56, 189, 248, 0.55),
+    0 4px 28px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(125, 211, 252, 0.35);
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 100%;
+}
+.hero-community::before {
+  content: "⚓";
+  display: block;
+  font-size: 0.38em;
+  letter-spacing: 0;
+  margin-bottom: 0.35rem;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.6));
 }
 .hero-community::after {
   content: "";
   display: block;
-  width: 4.5rem;
-  height: 3px;
-  margin: 0.65rem auto 0;
+  width: min(12rem, 55%);
+  height: 4px;
+  margin: 0.85rem auto 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, #38bdf8, #7dd3fc, transparent);
-  opacity: 0.9;
+  background: linear-gradient(90deg, transparent 0%, #38bdf8 20%, #7dd3fc 50%, #38bdf8 80%, transparent 100%);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
 }
 .hero-section h1 {
+  font-size: clamp(1.85rem, 4.2vw, 2.75rem) !important;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+  margin-top: 0.25rem;
 }
 .hero-section h1 em { color: #7dd3fc !important; }
 .hero-section p {
@@ -84,5 +97,5 @@
 @media (max-width: 600px) {
   .hero-wrap { min-height: min(62vh, 520px); }
   .hero-section { padding: 3rem 1rem 2.5rem; }
-  .hero-community { letter-spacing: 0.06em; font-size: clamp(1.55rem, 7vw, 2rem); }
+  .hero-community { letter-spacing: 0.08em; font-size: clamp(1.85rem, 9vw, 2.6rem); }
 }
