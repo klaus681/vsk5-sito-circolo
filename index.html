@@ -255,7 +255,7 @@
       </a>
     </div>
 
-    <section class="bacheca" id="bacheca">
+    <section class="bacheca" id="bacheca" style="display:none">
       <div class="bacheca-header">
         <h2>📌 <span>Bacheca</span> avvisi</h2>
         <button type="button" class="btn-bacheca" id="btn-nuovo-avviso" style="display:none">+ Nuovo avviso</button>
@@ -611,9 +611,20 @@
     caricaClassificaHome();
     caricaStats();
     (async () => {
-      isAdminHome = await checkAdminHome();
-      setupBachecaAdmin();
-      await caricaAvvisi();
+      const bacheca = document.getElementById('bacheca');
+      try {
+        const { data: { session } } = await CVI.supabase.auth.getSession();
+        if (!session?.user) {
+          if (bacheca) bacheca.style.display = 'none';
+          return;
+        }
+        if (bacheca) bacheca.style.display = '';
+        isAdminHome = await checkAdminHome();
+        setupBachecaAdmin();
+        await caricaAvvisi();
+      } catch (e) {
+        if (bacheca) bacheca.style.display = 'none';
+      }
     })();
   </script>
 </body>
