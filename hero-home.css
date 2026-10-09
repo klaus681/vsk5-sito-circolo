@@ -32,10 +32,21 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
+.hero-logo {
+  display: block;
+  width: clamp(96px, 16vw, 150px);
+  height: auto;
+  margin: 0 auto 1rem;
+  filter: drop-shadow(0 4px 24px rgba(56, 189, 248, 0.45)) drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+  border-radius: 50%;
+  background: rgba(11, 15, 25, 0.35);
+  object-fit: contain;
+}
+
 .hero-community {
-  margin: 0 0 1.15rem;
+  margin: 0 0 1rem;
   font-family: var(--font-display, "Playfair Display", Georgia, serif);
-  font-size: clamp(2.4rem, 7.5vw, 4.25rem);
+  font-size: clamp(2.2rem, 6.5vw, 3.75rem);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -50,15 +61,7 @@
   display: block;
   width: 100%;
 }
-.hero-community::before {
-  content: "⚓";
-  display: block;
-  font-size: 0.38em;
-  letter-spacing: 0;
-  margin-bottom: 0.35rem;
-  opacity: 0.9;
-  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.6));
-}
+
 .hero-community::after {
   content: "";
   display: block;
