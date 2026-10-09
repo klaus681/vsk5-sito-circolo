@@ -47,6 +47,8 @@
     .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-clear { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
     .btn-clear:hover { border-color: #f87171; color: #f87171; }
+    .btn-clear-regata { background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,.4); padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+    .btn-clear-regata:hover { background: rgba(248,113,113,.12); }
     .empty-hint { text-align: center; color: var(--text-muted); padding: 2rem 1rem; font-size: 0.95rem; }
     .auth-needed { text-align: center; padding: 2rem 1rem; }
     .auth-needed a { color: var(--accent-color); font-weight: 600; }
@@ -137,7 +139,7 @@
           <p id="inserisci-gate-link"><a href="accedi.html">Vai al login →</a></p>
         </div>
         <div id="inserisci-panel" style="display:none;">
-          <div class="info-banner">Solo <strong>admin</strong>. Per eventi multi-regata inserisci i risultati di ogni prova (tab Regata 1/2/3). Punti Low Point automatici.</div>
+          <div class="info-banner">Solo <strong>admin</strong>. Per eventi multi-regata inserisci i risultati di ogni prova (tab Regata 1/2/3). Puoi eliminare i risultati di una singola regata o dell'intero evento.</div>
           <div class="gara-select-row"><select id="select-gara-insert"><option value="">— Seleziona evento —</option></select></div>
           <div id="form-risultati-container"><p class="empty-hint">Seleziona un evento per iniziare.</p></div>
         </div>
@@ -384,7 +386,9 @@
           const stato = (ex.stato || 'ok').toLowerCase();
           html += '<div class="result-row" data-user-id="' + esc(uid) + '"><div class="skipper-label">' + esc(p.nick) + (p.team ? ' <span>· ' + esc(p.team) + '</span>' : '') + '</div><input type="number" min="1" max="99" placeholder="Pos." class="input-pos" value="' + esc(ex.posizione != null ? ex.posizione : '') + '"><select class="input-stato"><option value="ok"' + (stato==='ok'?' selected':'') + '>OK</option><option value="dnf"' + (stato==='dnf'?' selected':'') + '>DNF</option><option value="dns"' + (stato==='dns'?' selected':'') + '>DNS</option><option value="dsq"' + (stato==='dsq'?' selected':'') + '>DSQ</option><option value="ret"' + (stato==='ret'?' selected':'') + '>RET</option></select></div>';
         });
-        html += '</div></div>';
+        html += '</div>';
+        html += '<div class="form-actions" style="margin-top:0.75rem"><button type="button" class="btn-clear-regata" data-clear-regata="' + i + '">Elimina risultati Regata ' + i + '</button></div>';
+        html += '</div>';
       }
 
       html += '<div class="form-actions"><button type="button" class="btn-save" id="btn-save-risultati">Salva risultati</button><button type="button" class="btn-clear" id="btn-clear-risultati">Elimina tutti i risultati evento</button></div>';
@@ -402,6 +406,9 @@
         });
       }
 
+      container.querySelectorAll('[data-clear-regata]').forEach(btn => {
+        btn.addEventListener('click', () => clearRisultatiRegata(garaId, parseInt(btn.dataset.clearRegata, 10)));
+      });
       document.getElementById('btn-save-risultati').onclick = () => saveRisultati(garaId, n, nr);
       document.getElementById('btn-clear-risultati').onclick = () => clearRisultati(garaId);
     }
@@ -454,6 +461,24 @@
         alert('Errore: ' + (err.message || err));
       } finally {
         btn.disabled = false; btn.textContent = 'Salva risultati';
+      }
+    }
+
+    async function clearRisultatiRegata(garaId, regataNum) {
+      if (!isAdmin) { alert('Solo gli amministratori possono eliminare i risultati.'); return; }
+      if (!confirm('Eliminare i risultati della Regata ' + regataNum + '?')) return;
+      try {
+        const { error } = await CVI.supabase.from('risultati_gara').delete().eq('gara_id', garaId).eq('regata_num', regataNum);
+        if (error) throw error;
+        const risRes = await CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note, regata_num');
+        cacheRisultati = risRes.data || [];
+        await syncClassifiche();
+        alert('Risultati Regata ' + regataNum + ' eliminati. Classifica aggiornata.');
+        await reloadAll();
+        document.getElementById('select-gara-insert').value = garaId;
+        loadFormRisultati(garaId);
+      } catch (err) {
+        alert('Errore: ' + (err.message || err));
       }
     }
 
