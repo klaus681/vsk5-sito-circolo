@@ -9,6 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .albo-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .albo-table th { text-align: left; padding: 0.75rem 0.85rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); font-weight: 650; }
+    .albo-table td { padding: 0.85rem 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .albo-table tr:hover td { background: rgba(56, 189, 248, 0.04); }
+    .albo-table .winner { font-weight: 700; color: var(--accent-color); }
+    .albo-table .event-name { color: #fff; font-weight: 600; }
+    .albo-table .pts { font-weight: 700; color: #fff; text-align: right; }
+    .albo-medal { display: inline-block; margin-right: 0.4rem; }
+  </style>
 </head>
 <body>
   <header>
@@ -20,7 +31,7 @@
         <li><a href="index.html" data-i18n="nav_home">Home</a></li>
         <li><a href="team.html" data-i18n="nav_team">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi ▾</a>
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
@@ -29,6 +40,7 @@
         <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
         <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
         <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
         <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
       </ul>
     </nav>
@@ -49,7 +61,7 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html" data-i18n="nav_home">Home</a>
     <a href="team.html" data-i18n="nav_team">Team</a>
-    <a href="gare.html" data-i18n="nav_gare">Gare &amp; Eventi</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
     <div class="mobile-dropdown">
       <a href="gare.html">→ Calendario</a>
       <a href="classifiche.html">→ Classifiche</a>
@@ -58,15 +70,15 @@
     <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
     <a href="download.html" data-i18n="nav_download">Download</a>
     <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
-
   <main class="page-content">
     <div class="content-box">
       <h1 data-i18n="albo_title">Albo d'Oro</h1>
-      <p class="subtitle" data-i18n="albo_subtitle">I trionfi e i vincitori delle competizioni storiche del Circolo Velico Italia.</p>
+      <p class="subtitle" data-i18n="albo_subtitle">I vincitori di ogni evento del Circolo Velico Italia.</p>
       <div id="albo-container">
         <p class="loading-text" data-i18n="albo_loading">Caricamento albo d'oro in corso...</p>
       </div>
@@ -103,38 +115,50 @@
 
   <script src="common.js"></script>
   <script>
-
     const extra = {
-      it: { albo_title: "Albo d'Oro", albo_subtitle: "I trionfi e i vincitori delle competizioni storiche del Circolo Velico Italia.", albo_loading: "Caricamento albo d'oro in corso...", albo_empty: "Nessun record presente nell'albo d'oro.", th_skipper: "Skipper Vincitore", th_race: "Nome Gara", th_date: "Data Gara" },
-      en: { albo_title: "Hall of Fame", albo_subtitle: "Triumphs and winners of historical competitions.", albo_loading: "Loading Hall of Fame...", albo_empty: "No records found.", th_skipper: "Winning Skipper", th_race: "Race Name", th_date: "Race Date" },
-      fr: { albo_title: "Temple de la Renommée", albo_subtitle: "Les triomphes et vainqueurs des compétitions historiques.", albo_loading: "Chargement...", albo_empty: "Aucun enregistrement.", th_skipper: "Skipper Vainqueur", th_race: "Nom de la Course", th_date: "Date" },
-      es: { albo_title: "Salón de la Fama", albo_subtitle: "Los triunfos y ganadores de las competiciones históricas.", albo_loading: "Cargando...", albo_empty: "No hay registros.", th_skipper: "Patrón Ganador", th_race: "Nombre de la Regata", th_date: "Fecha" }
+      it: { albo_title: "Albo d'Oro", albo_subtitle: "I vincitori di ogni evento del Circolo Velico Italia.", albo_loading: "Caricamento albo d'oro in corso...", albo_empty: "Nessun vincitore archiviato ancora. I vincitori vengono aggiunti automaticamente dopo l'inserimento dei risultati.", th_skipper: "Vincitore", th_race: "Evento", th_date: "Data", th_pts: "Punti" },
+      en: { albo_title: "Hall of Fame", albo_subtitle: "Winners of each Circolo Velico Italia event.", albo_loading: "Loading Hall of Fame...", albo_empty: "No winners archived yet.", th_skipper: "Winner", th_race: "Event", th_date: "Date", th_pts: "Points" },
+      fr: { albo_title: "Temple de la Renommée", albo_subtitle: "Les vainqueurs de chaque événement.", albo_loading: "Chargement...", albo_empty: "Aucun vainqueur pour le moment.", th_skipper: "Vainqueur", th_race: "Événement", th_date: "Date", th_pts: "Points" },
+      es: { albo_title: "Salón de la Fama", albo_subtitle: "Ganadores de cada evento.", albo_loading: "Cargando...", albo_empty: "Aún no hay ganadores archivados.", th_skipper: "Ganador", th_race: "Evento", th_date: "Fecha", th_pts: "Puntos" }
     };
     let vincitoriDati = [];
     function formatData(s, lang) {
-      if (!s) return '-';
+      if (!s) return '—';
       const d = new Date(s); if (isNaN(d)) return s;
       const map = { it:'it-IT', en:'en-GB', fr:'fr-FR', es:'es-ES' };
       return d.toLocaleDateString(map[lang]||'it-IT', { day:'numeric', month:'long', year:'numeric' });
     }
+    function esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+    }
     function renderizzaTabella(vincitori) {
       const t = extra[CVI.currentLang] || extra.it;
-      let html = `<table class="results-table"><thead><tr><th>${t.th_skipper}</th><th>${t.th_race}</th><th>${t.th_date}</th></tr></thead><tbody>`;
-      vincitori.forEach(item => {
-        html += `<tr>
-          <td style="font-weight:700;color:var(--accent-color);">${item.skipper || item.nome_skipper || '-'}</td>
-          <td>${item.nome_gara || item.gara || item.titolo || '-'}</td>
-          <td>${formatData(item.data_gara || item.data || '', CVI.currentLang)}</td>
-        </tr>`;
+      const sorted = [...vincitori].sort((a, b) => {
+        const da = a.data_gara ? new Date(a.data_gara).getTime() : 0;
+        const db = b.data_gara ? new Date(b.data_gara).getTime() : 0;
+        return db - da;
+      });
+      let html = '<table class="albo-table"><thead><tr><th>' + t.th_skipper + '</th><th>' + t.th_race + '</th><th>' + t.th_date + '</th><th style="text-align:right">' + t.th_pts + '</th></tr></thead><tbody>';
+      sorted.forEach(item => {
+        const skipper = item.skipper || item.nome_skipper || '—';
+        const race = item.nome_gara || item.gara || item.titolo || '—';
+        const pts = item.punti != null ? item.punti : '—';
+        html += '<tr>' +
+          '<td class="winner"><span class="albo-medal">🏆</span>' + esc(skipper) + '</td>' +
+          '<td class="event-name">' + esc(race) + '</td>' +
+          '<td>' + formatData(item.data_gara || item.data || '', CVI.currentLang) + '</td>' +
+          '<td class="pts">' + esc(pts) + '</td>' +
+          '</tr>';
       });
       html += '</tbody></table>';
       document.getElementById('albo-container').innerHTML = html;
     }
     async function loadAlbo() {
       const c = document.getElementById('albo-container');
-      const { data, error } = await CVI.supabase.from('albo_doro').select('*');
-      if (error) { c.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`; return; }
-      if (!data || !data.length) { c.innerHTML = `<p class="empty-text">${(extra[CVI.currentLang]||extra.it).albo_empty}</p>`; return; }
+      const { data, error } = await CVI.supabase.from('albo_doro').select('*').order('data_gara', { ascending: false });
+      if (error) { c.innerHTML = '<p class="empty-text" style="color:#ef4444;">Errore: ' + error.message + '</p>'; return; }
+      if (!data || !data.length) { c.innerHTML = '<p class="empty-text">' + (extra[CVI.currentLang]||extra.it).albo_empty + '</p>'; return; }
       vincitoriDati = data; renderizzaTabella(data);
     }
     const _orig = CVI.init;
