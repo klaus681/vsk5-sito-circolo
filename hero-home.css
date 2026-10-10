@@ -32,15 +32,9 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
+/* Logo sopra il titolo rimosso su richiesta */
 .hero-logo {
-  display: block;
-  width: clamp(96px, 16vw, 150px);
-  height: auto;
-  margin: 0 auto 1rem;
-  filter: drop-shadow(0 4px 24px rgba(56, 189, 248, 0.45)) drop-shadow(0 2px 12px rgba(0,0,0,0.4));
-  border-radius: 50%;
-  background: rgba(11, 15, 25, 0.35);
-  object-fit: contain;
+  display: none !important;
 }
 
 .hero-section .hero-community {
@@ -78,29 +72,32 @@
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
   margin-top: 0.25rem;
 }
-.hero-section h1 em { color: #7dd3fc !important; }
-.hero-section p:not(.hero-community) {
-  color: rgba(248, 250, 252, 0.88) !important;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
-  font-size: 1.1rem;
+.hero-section h1 em {
+  color: #7dd3fc;
+  font-style: italic;
+  -webkit-text-fill-color: #7dd3fc;
 }
+.hero-section > p:not(.hero-community) {
+  color: rgba(226, 232, 240, 0.88) !important;
+  font-size: 1.05rem !important;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.75rem;
+}
+.hero-actions .btn-primary,
 .hero-actions .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-.hero-actions .btn-secondary:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
-}
-.next-regata-card {
-  background:
-    linear-gradient(160deg, rgba(11, 15, 25, 0.6) 0%, rgba(11, 15, 25, 0.88) 100%),
-    url("https://images.unsplash.com/photo-1468581267911-ea82e6fcf92d?auto=format&fit=crop&w=1200&q=85") center/cover !important;
-}
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .hero-wrap { min-height: min(62vh, 520px); }
-  .hero-section { padding: 3rem 1rem 2.5rem; }
-  .hero-section .hero-community { letter-spacing: 0.06em; font-size: clamp(1.9rem, 9.5vw, 2.8rem) !important; }
+  .hero-section { padding: 3rem 1.15rem 2.5rem; }
 }
