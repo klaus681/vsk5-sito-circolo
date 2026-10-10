@@ -1,5 +1,25 @@
 /* CVI – Classifica generale Low Point con DNC (per anno, tutti i soci) */
 (function () {
+  let profilesReady = false;
+
+  async function ensureAllProfiles() {
+    if (profilesReady && cacheProfiles && Object.keys(cacheProfiles).length > 0) return;
+    if (!window.CVI || !CVI.supabase) return;
+    try {
+      const { data } = await CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, is_admin');
+      if (data && data.length) {
+        if (typeof cacheProfiles === 'undefined' || !cacheProfiles) window.cacheProfiles = {};
+        data.forEach(function (p) {
+          if (p.id != null) cacheProfiles[String(p.id)] = p;
+        });
+        profilesReady = true;
+        console.log('[CVI] profiles caricati per classifica:', data.length);
+      }
+    } catch (e) {
+      console.warn('[CVI] load profiles', e);
+    }
+  }
+
   const MIN_WAIT = setInterval(function () {
     if (typeof syncClassifiche !== 'function' || typeof renderClassificaGenerale !== 'function') return;
     if (typeof cacheRisultati === 'undefined') return;
@@ -17,16 +37,12 @@
       return getAnnoFromGara(gara);
     };
 
-    /** Chiave univoca di una prova: evento + numero regata */
     function provaKey(r) {
       const rn = r.regata_num != null ? r.regata_num : (r.num_regata != null ? r.num_regata : 1);
       return String(r.gara_id) + '#' + String(rn);
     }
 
-    /** Low Point con DNC: ogni PROVA conta per TUTTI i soci.
-     *  DNC = numero partecipanti a quella prova + 1 */
     window.calcolaClassificaAnno = function (anno) {
-      // raggruppa risultati per prova (gara_id + regata_num)
       const prove = {};
       (cacheRisultati || []).forEach(r => {
         if (getAnnoFromRisultato(r) !== String(anno)) return;
@@ -37,7 +53,6 @@
       const provaIds = Object.keys(prove);
       if (!provaIds.length) return [];
 
-      // tutti i soci da profiles
       let allUids = Object.keys(cacheProfiles || {});
       if (!allUids.length) {
         const s = new Set();
@@ -55,7 +70,6 @@
         const puntiProva = {};
         risultati.forEach(r => {
           const uid = String(r.user_id);
-          // se per errore ci fossero più righe, tieni il migliore (più basso)
           const pt = Number(r.punti) || 0;
           if (puntiProva[uid] == null || pt < puntiProva[uid]) puntiProva[uid] = pt;
         });
@@ -103,6 +117,7 @@
     };
 
     window.syncClassifiche = async function () {
+      await ensureAllProfiles();
       const anniSet = new Set();
       (cacheRisultati || []).forEach(r => anniSet.add(getAnnoFromRisultato(r)));
       if (!anniSet.size) anniSet.add(typeof STAGIONE !== 'undefined' ? STAGIONE : '2026');
@@ -138,13 +153,11 @@
       if (!box) return;
       const sel = document.getElementById('select-anno');
       const anno = (sel && sel.value) ? sel.value : (typeof STAGIONE !== 'undefined' ? STAGIONE : '2026');
-
       const rows = calcolaClassificaAnno(anno);
       if (!rows.length) {
         box.innerHTML = '<p class="empty-hint">Nessun risultato per il ' + anno + '.</p>';
         return;
       }
-
       let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Disputate</th><th class="pts">Punti</th></tr></thead><tbody>';
       rows.forEach(function (r, i) {
         const p = profiloLabel(r.user_id);
@@ -183,28 +196,32 @@
     }
 
     ensureAnnoSelect();
-    populateAnnoSelect();
 
-    function tryRefresh() {
+    async function tryRefresh() {
       if (!(cacheRisultati && cacheRisultati.length)) return false;
-      // aspetta i profili se possibile
-      const nProf = Object.keys(cacheProfiles || {}).length;
+      await ensureAllProfiles();
+      populateAnnoSelect();
       renderClassificaGenerale();
       if (typeof CVI !== 'undefined' && CVI.supabase) {
         syncClassifiche().catch(function (e) { console.warn('[CVI] sync', e); });
       }
-      console.log('[CVI] classifica DNC renderizzata – prove:', cacheRisultati.length, 'soci:', nProf || 'solo partecipanti');
-      return nProf > 0 || true;
+      const nProf = Object.keys(cacheProfiles || {}).length;
+      console.log('[CVI] classifica DNC – prove:', cacheRisultati.length, 'soci:', nProf);
+      return true;
     }
 
-    if (!tryRefresh()) {
+    (async function boot() {
       var n = 0;
-      var t = setInterval(function () {
+      while (n < 40) {
+        if (cacheRisultati && cacheRisultati.length) {
+          await tryRefresh();
+          break;
+        }
         n++;
-        if (tryRefresh() || n > 40) clearInterval(t);
-      }, 250);
-    }
+        await new Promise(function (r) { setTimeout(r, 250); });
+      }
+    })();
 
-    console.log('[CVI] rank-logic.js: DNC per prova attivo');
+    console.log('[CVI] rank-logic.js: DNC stabile attivo');
   }, 50);
 })();
