@@ -2,6 +2,9 @@
 (function () {
   let profilesReady = false;
 
+  const BANNER_DNC = '<strong>Classifica generale – Low Point con DNC</strong> — Ogni prova conta per <strong>tutti i soci</strong>. Chi non partecipa prende <strong>penalità = n° partecipanti + 1</strong>. Vince chi ha il totale più basso. Divisa per anno.';
+  const HERO_DNC = 'Sistema Low Point con DNC: 1° = 1 pt, 2° = 2 pt… Vince chi ha il totale più basso. Chi non disputa una prova riceve la penalità (partecipanti + 1). Classifica generale divisa per anno, con tutti i soci del circolo.';
+
   async function ensureAllProfiles() {
     if (profilesReady && cacheProfiles && Object.keys(cacheProfiles).length > 0) return;
     if (!window.CVI || !CVI.supabase) return;
@@ -18,6 +21,26 @@
     } catch (e) {
       console.warn('[CVI] load profiles', e);
     }
+  }
+
+  function updateScoringCopy() {
+    // Banner tab generale
+    const tab = document.getElementById('tab-generale');
+    if (tab) {
+      const banner = tab.querySelector('.info-banner');
+      if (banner) banner.innerHTML = BANNER_DNC;
+    }
+    // Hero sottotitolo
+    const hero = document.querySelector('.page-hero p, .hero-section p, section.page-hero p');
+    if (hero && /Low Point|punti|regata/i.test(hero.textContent || '')) {
+      hero.textContent = HERO_DNC;
+    }
+    // Badge stagione
+    document.querySelectorAll('.hero-badge').forEach(function (el) {
+      if (/Low Point/i.test(el.textContent || '')) {
+        el.textContent = (el.textContent || '').replace(/Low Point/i, 'Low Point + DNC');
+      }
+    });
   }
 
   const MIN_WAIT = setInterval(function () {
@@ -149,6 +172,7 @@
     };
 
     window.renderClassificaGenerale = function () {
+      updateScoringCopy();
       const box = document.getElementById('classifica-generale');
       if (!box) return;
       const sel = document.getElementById('select-anno');
@@ -189,18 +213,20 @@
         else if (banner) banner.after(wrap);
         else tab.prepend(wrap);
       }
-      const banner = tab.querySelector('.info-banner');
-      if (banner) {
-        banner.innerHTML = '<strong>Classifica generale – Low Point con DNC</strong> — Ogni prova conta per tutti i soci. Chi non partecipa prende <strong>penalità = partecipanti + 1</strong>. Divisa per anno.';
-      }
+      updateScoringCopy();
     }
 
     ensureAnnoSelect();
+    updateScoringCopy();
+    // ricontrolla dopo il rendering della pagina (loader CDN)
+    setTimeout(updateScoringCopy, 500);
+    setTimeout(updateScoringCopy, 1500);
 
     async function tryRefresh() {
       if (!(cacheRisultati && cacheRisultati.length)) return false;
       await ensureAllProfiles();
       populateAnnoSelect();
+      updateScoringCopy();
       renderClassificaGenerale();
       if (typeof CVI !== 'undefined' && CVI.supabase) {
         syncClassifiche().catch(function (e) { console.warn('[CVI] sync', e); });
@@ -220,8 +246,9 @@
         n++;
         await new Promise(function (r) { setTimeout(r, 250); });
       }
+      updateScoringCopy();
     })();
 
-    console.log('[CVI] rank-logic.js: DNC stabile attivo');
+    console.log('[CVI] rank-logic.js: DNC stabile + testi allineati');
   }, 50);
 })();
