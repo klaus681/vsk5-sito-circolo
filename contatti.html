@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
   <link rel="stylesheet" href="forms.css">
 </head>
 <body>
@@ -68,8 +69,17 @@
   <main class="page-content narrow">
     <section class="page-hero">
       <h1 data-i18n="contact_title">Contatti</h1>
-      <p data-i18n="contact_subtitle">Hai domande sulle nostre regate? Compila il modulo qui sotto.</p>
+      <p data-i18n="contact_subtitle">Hai domande sulle nostre regate o vuoi unirti al circolo? Scrivici.</p>
     </section>
+
+    <div class="content-box" style="margin-bottom:1.25rem;text-align:center">
+      <p style="margin:0 0 0.5rem;color:var(--text-muted);font-size:0.9rem" data-i18n="contact_email_label">Email ufficiale del circolo</p>
+      <a href="mailto:circolovelicoitalia@outlook.it" style="font-size:1.15rem;font-weight:700;color:var(--accent-color);text-decoration:none;word-break:break-all">
+        circolovelicoitalia@outlook.it
+      </a>
+      <p style="margin:0.75rem 0 0;color:var(--text-muted);font-size:0.88rem" data-i18n="contact_or_form">Oppure usa il modulo qui sotto.</p>
+    </div>
+
     <form class="contact-form content-box" id="contact-form">
       <div class="form-group">
         <label for="contact-name" data-i18n="label_name">Nome</label>
@@ -111,7 +121,9 @@
         </div>
       </div>
     </div>
-    <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
   </footer>
 
   <script src="common.js"></script>
@@ -119,7 +131,9 @@
     const extra = {
       it: {
         contact_title: "Contatti",
-        contact_subtitle: "Hai domande sulle nostre regate? Compila il modulo qui sotto.",
+        contact_subtitle: "Hai domande sulle nostre regate o vuoi unirti al circolo? Scrivici.",
+        contact_email_label: "Email ufficiale del circolo",
+        contact_or_form: "Oppure usa il modulo qui sotto.",
         label_name: "Nome", label_email: "Email", label_msg: "Messaggio",
         placeholder_name: "Il tuo nome / Nickname",
         placeholder_email: "La tua email",
@@ -128,7 +142,9 @@
       },
       en: {
         contact_title: "Contact",
-        contact_subtitle: "Have questions about our regattas? Fill out the form below.",
+        contact_subtitle: "Questions about our races or want to join? Write to us.",
+        contact_email_label: "Official club email",
+        contact_or_form: "Or use the form below.",
         label_name: "Name", label_email: "Email", label_msg: "Message",
         placeholder_name: "Your name / Nickname",
         placeholder_email: "Your email",
@@ -137,7 +153,9 @@
       },
       fr: {
         contact_title: "Contact",
-        contact_subtitle: "Des questions sur nos régates ? Remplissez le formulaire.",
+        contact_subtitle: "Des questions sur nos régates ou envie de rejoindre le club ? Écrivez-nous.",
+        contact_email_label: "Email officiel du club",
+        contact_or_form: "Ou utilisez le formulaire ci-dessous.",
         label_name: "Nom", label_email: "Email", label_msg: "Message",
         placeholder_name: "Votre nom / Pseudo",
         placeholder_email: "Votre email",
@@ -146,7 +164,9 @@
       },
       es: {
         contact_title: "Contacto",
-        contact_subtitle: "¿Preguntas sobre nuestras regatas? Rellena el formulario.",
+        contact_subtitle: "¿Preguntas sobre nuestras regatas o quieres unirte? Escríbenos.",
+        contact_email_label: "Email oficial del club",
+        contact_or_form: "O usa el formulario de abajo.",
         label_name: "Nombre", label_email: "Email", label_msg: "Mensaje",
         placeholder_name: "Tu nombre / Apodo",
         placeholder_email: "Tu email",
@@ -154,12 +174,22 @@
         btn_send: "Enviar mensaje"
       }
     };
-    document.getElementById('contact-form').addEventListener('submit', async function(e) {
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
       e.preventDefault();
+      const name = document.getElementById('contact-name').value.trim();
+      const email = document.getElementById('contact-email').value.trim();
+      const msg = document.getElementById('contact-msg').value.trim();
       const statusEl = document.getElementById('form-status');
-      statusEl.textContent = 'Messaggio inviato (demo). Ti risponderemo al più presto.';
+      if (!name || !email || !msg) {
+        statusEl.textContent = 'Compila tutti i campi.';
+        statusEl.style.color = '#f87171';
+        return;
+      }
+      const subject = encodeURIComponent('Contatto CVI Virtual – ' + name);
+      const body = encodeURIComponent('Nome: ' + name + '\nEmail: ' + email + '\n\n' + msg);
+      window.location.href = 'mailto:circolovelicoitalia@outlook.it?subject=' + subject + '&body=' + body;
+      statusEl.textContent = 'Si apre il tuo client email… Se non parte, scrivi a circolovelicoitalia@outlook.it';
       statusEl.style.color = '#34d399';
-      this.reset();
     });
     CVI.init('contatti.html', extra);
   </script>
