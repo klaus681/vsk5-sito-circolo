@@ -6,16 +6,27 @@
 <title>Circolo Velico Italia - Virtual Skipper</title>
 <script>
 (async function () {
-  const src = 'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/index.html';
-  try {
-    const res = await fetch(src);
-    let html = await res.text();
-    document.open();
-    document.write(html);
-    document.close();
-  } catch (e) {
-    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento home. Ricarica la pagina.<br><small>' + e + '</small></p>';
+  const urls = [
+    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/dca7a57c1d7081177c84d39ca324788f4b621d41/index.html',
+    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/index.html'
+  ];
+  let html = null, lastErr = null;
+  for (const src of urls) {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      html = await res.text();
+      if (html && html.indexOf('Circolo Velico') !== -1) break;
+      html = null;
+    } catch (e) { lastErr = e; }
   }
+  if (!html) {
+    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento. Ricarica.<br><small>' + lastErr + '</small></p>';
+    return;
+  }
+  document.open();
+  document.write(html);
+  document.close();
 })();
 </script>
 </head>
