@@ -95,17 +95,8 @@
           <button type="submit">Pubblica</button>
           <p id="gal-status" style="margin:0;font-size:.85rem;font-weight:500"></p>
         </form>
-        <div id="gal-sql-hint" class="sql-hint">-- Tabella
-create table if not exists gallery (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  image_url text not null,
-  caption text,
-  created_at timestamptz default now()
-);
--- Storage: crea bucket pubblico "gallery"
--- Policy storage: upload per utenti autenticati, lettura pubblica
--- Policy tabella: DELETE per authenticated</div>
+        <div id="gal-sql-hint" class="sql-hint">Se INSERT fallisce per RLS, in SQL Editor:
+create policy "gallery insert open" on gallery for insert with check (true);</div>
       </div>
       <div id="gallery-container"><p class="loading-text">Caricamento galleria...</p></div>
     </div>
@@ -188,7 +179,7 @@ create table if not exists gallery (
         renderGallery();
       } catch (err) {
         items = [];
-        box.innerHTML = '<p class="empty-text">Nessuna foto (o tabella gallery assente). Gli admin possono crearla.</p>';
+        box.innerHTML = '<p class="empty-text">Nessuna foto (o tabella gallery assente).</p>';
         if (isAdmin) document.getElementById('gal-sql-hint').style.display = 'block';
       }
     }
@@ -264,6 +255,14 @@ create table if not exists gallery (
         return;
       }
 
+      const { data: { session } } = await CVI.supabase.auth.getSession();
+      if (!session) {
+        status.textContent = 'Devi essere loggato. Esci e rientra, poi riprova.';
+        status.style.color = '#f87171';
+        return;
+      }
+      try { await CVI.supabase.auth.refreshSession(); } catch (e) {}
+
       status.textContent = file ? 'Caricamento foto…' : 'Salvataggio…';
       status.style.color = '#94a3b8';
 
@@ -283,7 +282,11 @@ create table if not exists gallery (
         e.target.reset();
         await loadGallery();
       } catch (err) {
-        status.textContent = 'Errore: ' + (err.message || err);
+        var msg = err.message || String(err);
+        if (/row-level security|RLS/i.test(msg)) {
+          msg += ' — In SQL: create policy "gallery insert open" on gallery for insert with check (true);';
+        }
+        status.textContent = 'Errore: ' + msg;
         status.style.color = '#f87171';
         document.getElementById('gal-sql-hint').style.display = 'block';
       }
@@ -293,18 +296,15 @@ create table if not exists gallery (
       if (!id || !confirm('Eliminare questa immagine dalla galleria?')) return;
       const { error } = await CVI.supabase.from('gallery').delete().eq('id', id);
       if (error) {
-        alert('Errore eliminazione: ' + error.message +
-          '\n\nIn Supabase, sulla tabella gallery serve una policy DELETE per utenti autenticati.');
+        alert('Errore eliminazione: ' + error.message);
         return;
       }
       try {
         if (imageUrl && imageUrl.indexOf('/storage/v1/object/public/gallery/') !== -1) {
           const path = imageUrl.split('/storage/v1/object/public/gallery/')[1];
-          if (path) {
-            await CVI.supabase.storage.from('gallery').remove([decodeURIComponent(path.split('?')[0])]);
-          }
+          if (path) await CVI.supabase.storage.from('gallery').remove([decodeURIComponent(path.split('?')[0])]);
         }
-      } catch (e) { console.warn('storage delete', e); }
+      } catch (e) {}
       await loadGallery();
     }
 
