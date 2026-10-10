@@ -2,6 +2,7 @@
 (function () {
   const MIN_WAIT = setInterval(function () {
     if (typeof syncClassifiche !== 'function' || typeof renderClassificaGenerale !== 'function') return;
+    if (typeof cacheRisultati === 'undefined') return;
     clearInterval(MIN_WAIT);
 
     window.getAnnoFromGara = function (gara) {
@@ -16,24 +17,30 @@
       return getAnnoFromGara(gara);
     };
 
+    /** Low Point con DNC: ogni regata conta per TUTTI i soci.
+     *  DNC = numero partecipanti a quella regata + 1 */
     window.calcolaClassificaAnno = function (anno) {
       const gareAnno = {};
       (cacheRisultati || []).forEach(r => {
-        if (getAnnoFromRisultato(r) !== anno) return;
+        if (getAnnoFromRisultato(r) !== String(anno)) return;
         const gid = String(r.gara_id);
         if (!gareAnno[gid]) gareAnno[gid] = [];
         gareAnno[gid].push(r);
       });
       const garaIds = Object.keys(gareAnno);
       if (!garaIds.length) return [];
+
+      // tutti i soci da profiles; se vuoto, almeno chi ha risultati
       let allUids = Object.keys(cacheProfiles || {});
       if (!allUids.length) {
         const s = new Set();
         (cacheRisultati || []).forEach(r => s.add(String(r.user_id)));
         allUids = [...s];
       }
+
       const totals = {}, raced = {};
       allUids.forEach(uid => { totals[uid] = 0; raced[uid] = 0; });
+
       garaIds.forEach(gid => {
         const risultati = gareAnno[gid];
         const partecipanti = new Set(risultati.map(r => String(r.user_id)));
@@ -52,9 +59,10 @@
           }
         });
       });
+
       const ranked = allUids.map(uid => ({
         user_id: uid,
-        stagione: anno,
+        stagione: String(anno),
         punti_totali: totals[uid],
         gare_disputate: raced[uid],
         gare_totali: garaIds.length,
@@ -71,13 +79,18 @@
     window.populateAnnoSelect = function () {
       const sel = document.getElementById('select-anno');
       if (!sel) return;
-      const anni = [...new Set((cacheClassifiche || []).map(r => String(r.stagione)))].sort((a, b) => b.localeCompare(a));
-      if (!anni.length) anni.push(typeof STAGIONE !== 'undefined' ? STAGIONE : '2026');
-      const current = sel.value || (typeof STAGIONE !== 'undefined' ? STAGIONE : '2026');
-      sel.innerHTML = anni.map(a => '<option value="' + a + '"' + (a === current ? ' selected' : '') + '>' + a + '</option>').join('');
+      const anniSet = new Set();
+      (cacheRisultati || []).forEach(r => anniSet.add(getAnnoFromRisultato(r)));
+      (cacheClassifiche || []).forEach(r => anniSet.add(String(r.stagione)));
+      let anni = [...anniSet].filter(Boolean).sort((a, b) => b.localeCompare(a));
+      if (!anni.length) anni = [typeof STAGIONE !== 'undefined' ? STAGIONE : '2026'];
+      const current = sel.value || anni[0];
+      sel.innerHTML = anni.map(a =>
+        '<option value="' + a + '"' + (a === current ? ' selected' : '') + '>' + a + '</option>'
+      ).join('');
       if (!sel.dataset.bound) {
         sel.dataset.bound = '1';
-        sel.addEventListener('change', () => renderClassificaGenerale());
+        sel.addEventListener('change', function () { renderClassificaGenerale(); });
       }
     };
 
@@ -106,30 +119,38 @@
           updated_at: r.updated_at
         }));
         const { error: insErr } = await CVI.supabase.from('classifiche').insert(toSave);
-        if (insErr) throw insErr;
+        if (insErr) console.error('[CVI] syncClassifiche insert', insErr);
       }
       cacheClassifiche = allRows;
       populateAnnoSelect();
     };
 
+    // SEMPRE ricalcola con DNC (non usare i totali vecchi del DB)
     window.renderClassificaGenerale = function () {
       const box = document.getElementById('classifica-generale');
       if (!box) return;
       const sel = document.getElementById('select-anno');
       const anno = (sel && sel.value) ? sel.value : (typeof STAGIONE !== 'undefined' ? STAGIONE : '2026');
-      let rows = (cacheClassifiche || []).filter(r => String(r.stagione) === String(anno));
-      if (!rows.length) rows = calcolaClassificaAnno(anno);
+
+      // ricalcolo live con DNC + tutti i soci
+      const rows = calcolaClassificaAnno(anno);
       if (!rows.length) {
         box.innerHTML = '<p class="empty-hint">Nessun risultato per il ' + anno + '.</p>';
         return;
       }
-      rows.sort((a, b) => (a.posizione || 999) - (b.posizione || 999));
+
       let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Disputate</th><th class="pts">Punti</th></tr></thead><tbody>';
-      rows.forEach((r, i) => {
+      rows.forEach(function (r, i) {
         const p = profiloLabel(r.user_id);
         const pos = r.posizione != null ? r.posizione : i + 1;
-        const disp = (r.gare_disputate != null ? r.gare_disputate : 0) + (r.gare_totali != null ? ' / ' + r.gare_totali : '');
-        html += '<tr><td class="pos">' + pos + '</td><td><div class="nick">' + esc(p.nick) + '</div>' + (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') + '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + disp + '</td><td class="pts">' + r.punti_totali + '</td></tr>';
+        const disp = (r.gare_disputate != null ? r.gare_disputate : 0) +
+          (r.gare_totali != null ? ' / ' + r.gare_totali : '');
+        html += '<tr><td class="pos">' + pos +
+          '</td><td><div class="nick">' + esc(p.nick) + '</div>' +
+          (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') +
+          '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') +
+          '</td><td>' + disp +
+          '</td><td class="pts">' + r.punti_totali + '</td></tr>';
       });
       html += '</tbody></table>';
       box.innerHTML = html;
@@ -137,20 +158,47 @@
 
     function ensureAnnoSelect() {
       const tab = document.getElementById('tab-generale');
-      if (!tab || document.getElementById('select-anno')) return;
+      if (!tab) return;
+      if (!document.getElementById('select-anno')) {
+        const banner = tab.querySelector('.info-banner');
+        const wrap = document.createElement('div');
+        wrap.className = 'gara-select-row';
+        wrap.style.marginBottom = '1rem';
+        wrap.innerHTML = '<label for="select-anno" style="font-size:0.85rem;color:var(--text-muted);font-weight:600;margin-right:0.5rem">Anno</label>' +
+          '<select id="select-anno" style="max-width:140px"><option value="2026">2026</option></select>';
+        if (banner && banner.nextSibling) tab.insertBefore(wrap, banner.nextSibling);
+        else if (banner) banner.after(wrap);
+        else tab.prepend(wrap);
+      }
       const banner = tab.querySelector('.info-banner');
-      const wrap = document.createElement('div');
-      wrap.className = 'gara-select-row';
-      wrap.style.marginBottom = '1rem';
-      wrap.innerHTML = '<label for="select-anno" style="font-size:0.85rem;color:var(--text-muted);font-weight:600;margin-right:0.5rem">Anno</label><select id="select-anno" style="max-width:140px"><option value="2026">2026</option></select>';
-      if (banner && banner.nextSibling) tab.insertBefore(wrap, banner.nextSibling);
-      else if (banner) banner.after(wrap);
-      else tab.prepend(wrap);
       if (banner) {
         banner.innerHTML = '<strong>Classifica generale – Low Point con DNC</strong> — Ogni regata conta per tutti i soci. Chi non partecipa prende <strong>penalità = partecipanti + 1</strong>. Divisa per anno.';
       }
     }
+
     ensureAnnoSelect();
-    console.log('[CVI] rank-logic.js: DNC + per anno attivo');
+    populateAnnoSelect();
+
+    // Ricalcola e ridisegna quando i dati sono pronti
+    function tryRefresh() {
+      if (!(cacheRisultati && cacheRisultati.length)) return false;
+      // aspetta anche i profili se possibile (max ~2s già passati dal load)
+      renderClassificaGenerale();
+      // salva anche su DB in background
+      if (typeof CVI !== 'undefined' && CVI.supabase) {
+        syncClassifiche().catch(function (e) { console.warn('[CVI] sync', e); });
+      }
+      return true;
+    }
+
+    if (!tryRefresh()) {
+      var n = 0;
+      var t = setInterval(function () {
+        n++;
+        if (tryRefresh() || n > 40) clearInterval(t);
+      }, 250);
+    }
+
+    console.log('[CVI] rank-logic.js: DNC attivo – ricalcolo forzato');
   }, 50);
 })();
