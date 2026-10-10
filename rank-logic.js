@@ -17,20 +17,27 @@
       return getAnnoFromGara(gara);
     };
 
-    /** Low Point con DNC: ogni regata conta per TUTTI i soci.
-     *  DNC = numero partecipanti a quella regata + 1 */
+    /** Chiave univoca di una prova: evento + numero regata */
+    function provaKey(r) {
+      const rn = r.regata_num != null ? r.regata_num : (r.num_regata != null ? r.num_regata : 1);
+      return String(r.gara_id) + '#' + String(rn);
+    }
+
+    /** Low Point con DNC: ogni PROVA conta per TUTTI i soci.
+     *  DNC = numero partecipanti a quella prova + 1 */
     window.calcolaClassificaAnno = function (anno) {
-      const gareAnno = {};
+      // raggruppa risultati per prova (gara_id + regata_num)
+      const prove = {};
       (cacheRisultati || []).forEach(r => {
         if (getAnnoFromRisultato(r) !== String(anno)) return;
-        const gid = String(r.gara_id);
-        if (!gareAnno[gid]) gareAnno[gid] = [];
-        gareAnno[gid].push(r);
+        const key = provaKey(r);
+        if (!prove[key]) prove[key] = [];
+        prove[key].push(r);
       });
-      const garaIds = Object.keys(gareAnno);
-      if (!garaIds.length) return [];
+      const provaIds = Object.keys(prove);
+      if (!provaIds.length) return [];
 
-      // tutti i soci da profiles; se vuoto, almeno chi ha risultati
+      // tutti i soci da profiles
       let allUids = Object.keys(cacheProfiles || {});
       if (!allUids.length) {
         const s = new Set();
@@ -41,18 +48,20 @@
       const totals = {}, raced = {};
       allUids.forEach(uid => { totals[uid] = 0; raced[uid] = 0; });
 
-      garaIds.forEach(gid => {
-        const risultati = gareAnno[gid];
+      provaIds.forEach(key => {
+        const risultati = prove[key];
         const partecipanti = new Set(risultati.map(r => String(r.user_id)));
         const dncScore = partecipanti.size + 1;
-        const puntiGara = {};
+        const puntiProva = {};
         risultati.forEach(r => {
           const uid = String(r.user_id);
-          puntiGara[uid] = (puntiGara[uid] || 0) + (Number(r.punti) || 0);
+          // se per errore ci fossero più righe, tieni il migliore (più basso)
+          const pt = Number(r.punti) || 0;
+          if (puntiProva[uid] == null || pt < puntiProva[uid]) puntiProva[uid] = pt;
         });
         allUids.forEach(uid => {
-          if (puntiGara[uid] != null) {
-            totals[uid] += puntiGara[uid];
+          if (puntiProva[uid] != null) {
+            totals[uid] += puntiProva[uid];
             raced[uid] += 1;
           } else {
             totals[uid] += dncScore;
@@ -65,7 +74,7 @@
         stagione: String(anno),
         punti_totali: totals[uid],
         gare_disputate: raced[uid],
-        gare_totali: garaIds.length,
+        gare_totali: provaIds.length,
         updated_at: new Date().toISOString()
       }));
       ranked.sort((a, b) => {
@@ -81,7 +90,6 @@
       if (!sel) return;
       const anniSet = new Set();
       (cacheRisultati || []).forEach(r => anniSet.add(getAnnoFromRisultato(r)));
-      (cacheClassifiche || []).forEach(r => anniSet.add(String(r.stagione)));
       let anni = [...anniSet].filter(Boolean).sort((a, b) => b.localeCompare(a));
       if (!anni.length) anni = [typeof STAGIONE !== 'undefined' ? STAGIONE : '2026'];
       const current = sel.value || anni[0];
@@ -125,14 +133,12 @@
       populateAnnoSelect();
     };
 
-    // SEMPRE ricalcola con DNC (non usare i totali vecchi del DB)
     window.renderClassificaGenerale = function () {
       const box = document.getElementById('classifica-generale');
       if (!box) return;
       const sel = document.getElementById('select-anno');
       const anno = (sel && sel.value) ? sel.value : (typeof STAGIONE !== 'undefined' ? STAGIONE : '2026');
 
-      // ricalcolo live con DNC + tutti i soci
       const rows = calcolaClassificaAnno(anno);
       if (!rows.length) {
         box.innerHTML = '<p class="empty-hint">Nessun risultato per il ' + anno + '.</p>';
@@ -172,23 +178,23 @@
       }
       const banner = tab.querySelector('.info-banner');
       if (banner) {
-        banner.innerHTML = '<strong>Classifica generale – Low Point con DNC</strong> — Ogni regata conta per tutti i soci. Chi non partecipa prende <strong>penalità = partecipanti + 1</strong>. Divisa per anno.';
+        banner.innerHTML = '<strong>Classifica generale – Low Point con DNC</strong> — Ogni prova conta per tutti i soci. Chi non partecipa prende <strong>penalità = partecipanti + 1</strong>. Divisa per anno.';
       }
     }
 
     ensureAnnoSelect();
     populateAnnoSelect();
 
-    // Ricalcola e ridisegna quando i dati sono pronti
     function tryRefresh() {
       if (!(cacheRisultati && cacheRisultati.length)) return false;
-      // aspetta anche i profili se possibile (max ~2s già passati dal load)
+      // aspetta i profili se possibile
+      const nProf = Object.keys(cacheProfiles || {}).length;
       renderClassificaGenerale();
-      // salva anche su DB in background
       if (typeof CVI !== 'undefined' && CVI.supabase) {
         syncClassifiche().catch(function (e) { console.warn('[CVI] sync', e); });
       }
-      return true;
+      console.log('[CVI] classifica DNC renderizzata – prove:', cacheRisultati.length, 'soci:', nProf || 'solo partecipanti');
+      return nProf > 0 || true;
     }
 
     if (!tryRefresh()) {
@@ -199,6 +205,6 @@
       }, 250);
     }
 
-    console.log('[CVI] rank-logic.js: DNC attivo – ricalcolo forzato');
+    console.log('[CVI] rank-logic.js: DNC per prova attivo');
   }, 50);
 })();
