@@ -1,8 +1,25 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circolo Velico Italia - Virtual Skipper</title>
-  <p>RESTORE_IN_PROGRESS - full file follows in next commit</p>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circolo Velico Italia - Virtual Skipper</title>
+<script>
+(async function () {
+  const src = 'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/index.html';
+  try {
+    const res = await fetch(src);
+    let html = await res.text();
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento home. Ricarica la pagina.<br><small>' + e + '</small></p>';
+  }
+})();
+</script>
+</head>
+<body style="background:#0b0f19;color:#94a3b8;font-family:sans-serif;padding:2rem">
+  Caricamento…
+</body>
 </html>
