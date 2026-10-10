@@ -25,7 +25,9 @@
     .admin-gallery-panel .form-row{display:grid;gap:.55rem;max-width:520px}
     .admin-gallery-panel label{font-size:.75rem;color:#94a3b8;font-weight:600}
     .admin-gallery-panel input,.admin-gallery-panel textarea{width:100%;background:#0b0f19;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.5rem .7rem;font-family:inherit;font-size:.9rem}
+    .admin-gallery-panel input[type=file]{padding:.45rem;border-style:dashed}
     .admin-gallery-panel button[type=submit]{background:#38bdf8;color:#0b0f19;border:none;padding:.55rem 1.1rem;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;margin-top:.35rem;width:fit-content}
+    .or-divider{text-align:center;color:#64748b;font-size:.8rem;margin:.15rem 0}
     .lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);align-items:center;justify-content:center;padding:1.5rem}
     .lightbox.open{display:flex}
     .lightbox img{max-width:min(96vw,1000px);max-height:85vh;border-radius:8px}
@@ -82,20 +84,26 @@
         <form id="gallery-form" class="form-row">
           <div><label for="gal-title">Titolo</label>
             <input id="gal-title" type="text" maxlength="120" placeholder="Es. Podium GP Day 2" required></div>
+          <div><label for="gal-file">Foto dal PC</label>
+            <input id="gal-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+          <div class="or-divider">— oppure —</div>
           <div><label for="gal-url">URL immagine</label>
-            <input id="gal-url" type="url" placeholder="https://..." required></div>
+            <input id="gal-url" type="url" placeholder="https://..."></div>
           <div><label for="gal-caption">Didascalia (opzionale)</label>
             <textarea id="gal-caption" rows="2" maxlength="300" placeholder="Breve descrizione..."></textarea></div>
           <button type="submit">Pubblica</button>
           <p id="gal-status" style="margin:0;font-size:.85rem;font-weight:500"></p>
         </form>
-        <div id="gal-sql-hint" class="sql-hint">create table gallery (
+        <div id="gal-sql-hint" class="sql-hint">-- Tabella
+create table if not exists gallery (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   image_url text not null,
   caption text,
   created_at timestamptz default now()
-);</div>
+);
+-- Storage: crea bucket pubblico "gallery"
+-- Policy storage: upload per utenti autenticati, lettura pubblica</div>
       </div>
       <div id="gallery-container"><p class="loading-text">Caricamento galleria...</p></div>
     </div>
@@ -119,6 +127,7 @@
   </footer>
   <script src="common.js"></script>
   <script>
+    const BUCKET = 'gallery';
     const extra = {
       it: { gal_title:'Galleria', gal_subtitle:'Screenshot regate, podi e momenti del circolo.', gal_empty:'Nessuna foto ancora. Gli admin possono aggiungerne!', nav_galleria:'Galleria', nav_discord:'Discord' },
       en: { gal_title:'Gallery', gal_subtitle:'Race screenshots, podiums and club moments.', gal_empty:'No photos yet.', nav_galleria:'Gallery', nav_discord:'Discord' },
@@ -126,70 +135,182 @@
       es: { gal_title:'Galería', gal_subtitle:'Capturas y podios.', gal_empty:'Aún no hay fotos.', nav_galleria:'Galería', nav_discord:'Discord' }
     };
     let isAdmin = false, items = [];
-    function esc(s){ if(s==null)return''; return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }
-    function renderGallery(){
-      const box=document.getElementById('gallery-container');
-      const t=extra[CVI.currentLang]||extra.it;
-      if(!items.length){ box.innerHTML='<p class="empty-text">'+t.gal_empty+'</p>'; return; }
-      box.innerHTML='<div class="gallery-grid">'+items.map(function(it,idx){
-        return '<div class="gallery-card" data-idx="'+idx+'"><img src="'+esc(it.image_url)+'" alt="'+esc(it.title)+'" loading="lazy"><div class="meta"><h3>'+esc(it.title)+'</h3>'+(it.caption?'<p>'+esc(it.caption)+'</p>':'')+(isAdmin?'<button type="button" class="del-btn" data-id="'+esc(it.id)+'">Elimina</button>':'')+'</div></div>';
-      }).join('')+'</div>';
-      box.querySelectorAll('.gallery-card').forEach(function(card){
-        card.addEventListener('click',function(e){
-          if(e.target.classList.contains('del-btn')) return;
-          const it=items[parseInt(card.getAttribute('data-idx'),10)];
-          if(!it) return;
-          document.getElementById('lightbox-img').src=it.image_url;
+
+    function esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+    }
+
+    function renderGallery() {
+      const box = document.getElementById('gallery-container');
+      const t = extra[CVI.currentLang] || extra.it;
+      if (!items.length) {
+        box.innerHTML = '<p class="empty-text">' + t.gal_empty + '</p>';
+        return;
+      }
+      box.innerHTML = '<div class="gallery-grid">' + items.map(function (it, idx) {
+        return '<div class="gallery-card" data-idx="' + idx + '">' +
+          '<img src="' + esc(it.image_url) + '" alt="' + esc(it.title) + '" loading="lazy">' +
+          '<div class="meta"><h3>' + esc(it.title) + '</h3>' +
+          (it.caption ? '<p>' + esc(it.caption) + '</p>' : '') +
+          (isAdmin ? '<button type="button" class="del-btn" data-id="' + esc(it.id) + '">Elimina</button>' : '') +
+          '</div></div>';
+      }).join('') + '</div>';
+
+      box.querySelectorAll('.gallery-card').forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('del-btn')) return;
+          const it = items[parseInt(card.getAttribute('data-idx'), 10)];
+          if (!it) return;
+          document.getElementById('lightbox-img').src = it.image_url;
           document.getElementById('lightbox').classList.add('open');
         });
       });
-      box.querySelectorAll('.del-btn').forEach(function(btn){
-        btn.addEventListener('click',function(e){ e.stopPropagation(); deleteItem(btn.getAttribute('data-id')); });
+      box.querySelectorAll('.del-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          deleteItem(btn.getAttribute('data-id'));
+        });
       });
     }
-    async function loadGallery(){
-      const box=document.getElementById('gallery-container');
-      try{
-        const {data,error}=await CVI.supabase.from('gallery').select('id, title, image_url, caption, created_at').order('created_at',{ascending:false});
-        if(error) throw error;
-        items=data||[]; renderGallery();
-      }catch(err){
-        items=[];
-        box.innerHTML='<p class="empty-text">Nessuna foto (o tabella gallery assente). Gli admin possono crearla.</p>';
-        if(isAdmin) document.getElementById('gal-sql-hint').style.display='block';
+
+    async function loadGallery() {
+      const box = document.getElementById('gallery-container');
+      try {
+        const { data, error } = await CVI.supabase
+          .from('gallery')
+          .select('id, title, image_url, caption, created_at')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        items = data || [];
+        renderGallery();
+      } catch (err) {
+        items = [];
+        box.innerHTML = '<p class="empty-text">Nessuna foto (o tabella gallery assente). Gli admin possono crearla.</p>';
+        if (isAdmin) document.getElementById('gal-sql-hint').style.display = 'block';
       }
     }
-    async function checkAdmin(){
-      const {data:{session}}=await CVI.supabase.auth.getSession();
-      if(!session) return false;
-      const {data:prof}=await CVI.supabase.from('profiles').select('is_admin').eq('id',session.user.id).maybeSingle();
-      return !!(prof&&prof.is_admin===true);
+
+    async function checkAdmin() {
+      const { data: { session } } = await CVI.supabase.auth.getSession();
+      if (!session) return false;
+      const { data: prof } = await CVI.supabase.from('profiles').select('is_admin').eq('id', session.user.id).maybeSingle();
+      return !!(prof && prof.is_admin === true);
     }
-    async function addItem(e){
+
+    /** Comprime/ridimensiona lato client prima dell'upload */
+    function compressImage(file, maxSide, quality) {
+      maxSide = maxSide || 1600;
+      quality = quality || 0.82;
+      return new Promise(function (resolve, reject) {
+        if (!file.type || !file.type.startsWith('image/')) {
+          reject(new Error('File non valido'));
+          return;
+        }
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          let w = img.width, h = img.height;
+          if (w > maxSide || h > maxSide) {
+            if (w > h) { h = Math.round(h * maxSide / w); w = maxSide; }
+            else { w = Math.round(w * maxSide / h); h = maxSide; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) {
+            if (!blob) reject(new Error('Compressione fallita'));
+            else resolve(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Immagine non leggibile')); };
+        img.src = url;
+      });
+    }
+
+    async function uploadFile(file) {
+      const blob = await compressImage(file);
+      const name = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
+      const path = name;
+      const { error: upErr } = await CVI.supabase.storage.from(BUCKET).upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: false
+      });
+      if (upErr) throw upErr;
+      const { data } = CVI.supabase.storage.from(BUCKET).getPublicUrl(path);
+      if (!data || !data.publicUrl) throw new Error('URL pubblico non disponibile');
+      return data.publicUrl;
+    }
+
+    async function addItem(e) {
       e.preventDefault();
-      const status=document.getElementById('gal-status');
-      const title=document.getElementById('gal-title').value.trim();
-      const image_url=document.getElementById('gal-url').value.trim();
-      const caption=document.getElementById('gal-caption').value.trim();
-      if(!title||!image_url) return;
-      status.textContent='Salvataggio…'; status.style.color='#94a3b8';
-      const {error}=await CVI.supabase.from('gallery').insert({title,image_url,caption:caption||null});
-      if(error){ status.textContent='Errore: '+error.message; status.style.color='#f87171'; document.getElementById('gal-sql-hint').style.display='block'; return; }
-      status.textContent='Pubblicato!'; status.style.color='#34d399'; e.target.reset(); await loadGallery();
+      const status = document.getElementById('gal-status');
+      const title = document.getElementById('gal-title').value.trim();
+      const caption = document.getElementById('gal-caption').value.trim();
+      const fileInput = document.getElementById('gal-file');
+      const urlInput = document.getElementById('gal-url');
+      const file = fileInput.files && fileInput.files[0];
+      let image_url = (urlInput.value || '').trim();
+
+      if (!title) {
+        status.textContent = 'Inserisci un titolo.';
+        status.style.color = '#f87171';
+        return;
+      }
+      if (!file && !image_url) {
+        status.textContent = 'Scegli una foto dal PC oppure inserisci un URL.';
+        status.style.color = '#f87171';
+        return;
+      }
+
+      status.textContent = file ? 'Caricamento foto…' : 'Salvataggio…';
+      status.style.color = '#94a3b8';
+
+      try {
+        if (file) {
+          if (file.size > 12 * 1024 * 1024) throw new Error('File troppo grande (max ~12 MB)');
+          image_url = await uploadFile(file);
+        }
+        const { error } = await CVI.supabase.from('gallery').insert({
+          title: title,
+          image_url: image_url,
+          caption: caption || null
+        });
+        if (error) throw error;
+        status.textContent = 'Pubblicato!';
+        status.style.color = '#34d399';
+        e.target.reset();
+        await loadGallery();
+      } catch (err) {
+        status.textContent = 'Errore: ' + (err.message || err);
+        status.style.color = '#f87171';
+        document.getElementById('gal-sql-hint').style.display = 'block';
+      }
     }
-    async function deleteItem(id){
-      if(!id||!confirm('Eliminare questa immagine?')) return;
-      const {error}=await CVI.supabase.from('gallery').delete().eq('id',id);
-      if(error){ alert('Errore: '+error.message); return; }
+
+    async function deleteItem(id) {
+      if (!id || !confirm('Eliminare questa immagine?')) return;
+      const { error } = await CVI.supabase.from('gallery').delete().eq('id', id);
+      if (error) { alert('Errore: ' + error.message); return; }
       await loadGallery();
     }
-    document.getElementById('lightbox-close').onclick=function(){ document.getElementById('lightbox').classList.remove('open'); };
-    document.getElementById('lightbox').onclick=function(e){ if(e.target.id==='lightbox') e.currentTarget.classList.remove('open'); };
+
+    document.getElementById('lightbox-close').onclick = function () {
+      document.getElementById('lightbox').classList.remove('open');
+    };
+    document.getElementById('lightbox').onclick = function (e) {
+      if (e.target.id === 'lightbox') e.currentTarget.classList.remove('open');
+    };
+
     CVI.init('galleria.html', extra);
-    (async function(){
-      isAdmin=await checkAdmin();
-      if(isAdmin){ document.getElementById('admin-gallery-panel').classList.add('visible');
-        document.getElementById('gallery-form').addEventListener('submit', addItem); }
+
+    (async function () {
+      isAdmin = await checkAdmin();
+      if (isAdmin) {
+        document.getElementById('admin-gallery-panel').classList.add('visible');
+        document.getElementById('gallery-form').addEventListener('submit', addItem);
+      }
       await loadGallery();
     })();
   </script>
