@@ -2,7 +2,28 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Classifiche - CVI Virtual</title>
-<script>window.location='https://klaus681.github.io/vsk5-sito-circolo/classifiche.html';</script>
-<p>Ripristino in corso. Ricarica tra pochi secondi oppure vai su GitHub e ripristina dal commit dca7a57.</p>
+<script>
+(async function () {
+  const src = 'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/classifiche.html';
+  try {
+    const res = await fetch(src);
+    let html = await res.text();
+    // inject rank-logic before closing body
+    if (html.indexOf('rank-logic.js') === -1) {
+      html = html.replace('</body>', '  <script src="rank-logic.js"><\/script>\n</body>');
+    }
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento classifiche. <a href="https://github.com/klaus681/vsk5-sito-circolo/blob/dca7a57c1d7081177c84d39ca324788f4b621d41/classifiche.html" style="color:#38bdf8">Apri versione originale</a><br><small>' + e + '</small></p>';
+  }
+})();
+</script>
+</head>
+<body style="background:#0b0f19;color:#94a3b8;font-family:sans-serif;padding:2rem">
+  Caricamento classifiche…
+</body>
 </html>
