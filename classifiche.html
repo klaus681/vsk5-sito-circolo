@@ -6,20 +6,30 @@
 <title>Classifiche - CVI Virtual</title>
 <script>
 (async function () {
-  const src = 'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/classifiche.html';
-  try {
-    const res = await fetch(src);
-    let html = await res.text();
-    // inject rank-logic before closing body
-    if (html.indexOf('rank-logic.js') === -1) {
-      html = html.replace('</body>', '  <script src="rank-logic.js"><\/script>\n</body>');
-    }
-    document.open();
-    document.write(html);
-    document.close();
-  } catch (e) {
-    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento classifiche. <a href="https://github.com/klaus681/vsk5-sito-circolo/blob/dca7a57c1d7081177c84d39ca324788f4b621d41/classifiche.html" style="color:#38bdf8">Apri versione originale</a><br><small>' + e + '</small></p>';
+  const urls = [
+    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/dca7a57c1d7081177c84d39ca324788f4b621d41/classifiche.html',
+    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/classifiche.html'
+  ];
+  let html = null, lastErr = null;
+  for (const src of urls) {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      html = await res.text();
+      if (html && html.indexOf('syncClassifiche') !== -1) break;
+      html = null;
+    } catch (e) { lastErr = e; }
   }
+  if (!html) {
+    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento classifiche.<br><small>' + lastErr + '</small></p>';
+    return;
+  }
+  if (html.indexOf('rank-logic.js') === -1) {
+    html = html.replace('</body>', '  <script src="rank-logic.js"><\/script>\n</body>');
+  }
+  document.open();
+  document.write(html);
+  document.close();
 })();
 </script>
 </head>
