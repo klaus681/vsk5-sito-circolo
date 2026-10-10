@@ -1,1 +1,281 @@
-PLACEHOLDER2
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regolamento - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .rules-accordion { display: flex; flex-direction: column; gap: 0.75rem; max-width: 720px; margin: 0 auto; }
+    .rule-item {
+      background: #1a2332;
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .rule-item:hover { border-color: rgba(56, 189, 248, 0.35); }
+    .rule-item.is-open {
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+    .rule-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.1rem 1.25rem;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .rule-toggle:hover { background: rgba(56, 189, 248, 0.06); }
+    .rule-toggle .rule-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.75rem;
+      height: 1.75rem;
+      margin-right: 0.65rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-color, #38bdf8);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+    .rule-toggle .chevron {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--text-muted, #94a3b8);
+      transition: transform 0.25s ease;
+    }
+    .rule-item.is-open .chevron { transform: rotate(180deg); color: var(--accent-color, #38bdf8); }
+    .rule-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .rule-item.is-open .rule-body { max-height: 900px; }
+    .rule-body-inner {
+      padding: 0 1.25rem 1.25rem 1.25rem;
+      padding-left: calc(1.25rem + 1.75rem + 0.65rem);
+      color: var(--text-muted, #94a3b8);
+      font-size: 0.95rem;
+      line-height: 1.65;
+      border-top: 1px solid transparent;
+    }
+    .rule-item.is-open .rule-body-inner {
+      border-top-color: rgba(255, 255, 255, 0.04);
+      padding-top: 0.85rem;
+    }
+    @media (max-width: 560px) {
+      .rule-body-inner { padding-left: 1.25rem; }
+      .rule-toggle { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+
+  <main class="page-content narrow">
+    <section class="page-hero">
+      <h1 data-i18n="rules_title">Regolamento Ufficiale</h1>
+      <p data-i18n="rules_subtitle">Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.</p>
+    </section>
+
+    <div class="rules-accordion" id="rulesAccordion">
+      <div class="rule-item">
+        <button type="button" class="rule-toggle" aria-expanded="false">
+          <span><span class="rule-num">1</span><span data-i18n="rule1_title">Fair Play e Condotta in Mare</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body">
+          <div class="rule-body-inner" data-i18n="rule1_desc">Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.</div>
+        </div>
+      </div>
+
+      <div class="rule-item">
+        <button type="button" class="rule-toggle" aria-expanded="false">
+          <span><span class="rule-num">2</span><span data-i18n="rule2_title">Classi di Imbarcazioni</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body">
+          <div class="rule-body-inner" data-i18n="rule2_desc">Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.</div>
+        </div>
+      </div>
+
+      <div class="rule-item">
+        <button type="button" class="rule-toggle" aria-expanded="false">
+          <span><span class="rule-num">3</span><span data-i18n="rule3_title">Punteggi e Classifiche</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body">
+          <div class="rule-body-inner" data-i18n="rule3_desc"><strong>Sistema Low Point</strong> (1° = 1 pt, 2° = 2 pt, …). Vince chi ha il totale più basso.<br><br><strong>Singole regate / eventi:</strong> punti in base all’ordine di arrivo. Eventuali scarti definiti a inizio stagione.<br><br><strong>Classifica generale (per anno):</strong> ogni regata conta per <em>tutti</em> i soci. Chi non partecipa riceve punti di penalità = <strong>numero di partecipanti alla regata + 1</strong> (peggio dell’ultimo). La classifica è la somma di tutti i punti dell’anno. Tutti i membri del circolo compaiono in classifica.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo-doro.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="download.html">Download</a>
+          <a href="contatti.html">Contatti</a>
+          <a href="unisciti.html">Unisciti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
+  </footer>
+
+  <script src="common.js"></script>
+  <script>
+    const extra = {
+      it: {
+        rules_title: "Regolamento Ufficiale",
+        rules_subtitle: "Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.",
+        rule1_title: "Fair Play e Condotta in Mare",
+        rule1_desc: "Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.",
+        rule2_title: "Classi di Imbarcazioni",
+        rule2_desc: "Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.",
+        rule3_title: "Punteggi e Classifiche",
+        rule3_desc: "<strong>Sistema Low Point</strong> (1° = 1 pt, 2° = 2 pt, …). Vince chi ha il totale più basso.<br><br><strong>Singole regate / eventi:</strong> punti in base all’ordine di arrivo. Eventuali scarti definiti a inizio stagione.<br><br><strong>Classifica generale (per anno):</strong> ogni regata conta per <em>tutti</em> i soci. Chi non partecipa riceve punti di penalità = <strong>numero di partecipanti alla regata + 1</strong> (peggio dell’ultimo). La classifica è la somma di tutti i punti dell’anno. Tutti i membri del circolo compaiono in classifica."
+      },
+      en: {
+        rules_title: "Official Rules",
+        rules_subtitle: "Guidelines, code of conduct and technical specs for Circolo Velico Italia races on Virtual Skipper 5.",
+        rule1_title: "Fair Play and Conduct at Sea",
+        rule1_desc: "Respect for virtual ISAF racing rules is the pillar of our club. Any serious misconduct or unsportsmanlike behaviour during official races will result in sanctions or disqualification from the overall standings.",
+        rule2_title: "Boat Classes",
+        rule2_desc: "Competitions are mainly held in the America's Cup Class (ACC/V5) or other classes agreed by the race committee before the season starts.",
+        rule3_title: "Scoring and Standings",
+        rule3_desc: "<strong>Low Point System</strong> (1st = 1 pt, 2nd = 2 pts…). Lowest total wins.<br><br><strong>Individual races / events:</strong> points by finishing order. Discards defined at season start.<br><br><strong>Overall standings (by year):</strong> every race counts for <em>all</em> members. Non-participants score <strong>number of race entrants + 1</strong> (worse than last). Standings are the sum of all points in the year. All club members appear in the ranking."
+      },
+      fr: {
+        rules_title: "Règlement Officiel",
+        rules_subtitle: "Lignes directrices, code de conduite et spécifications techniques pour les courses du Circolo Velico Italia sur Virtual Skipper 5.",
+        rule1_title: "Fair-play et Conduite en Mer",
+        rule1_desc: "Le respect des règles de course ISAF virtuelles est le pilier de notre club. Toute incorrection grave ou comportement antisportif lors des épreuves officielles entraînera des sanctions ou une disqualification du classement général.",
+        rule2_title: "Classes de Bateaux",
+        rule2_desc: "Les compétitions se déroulent principalement en classe America's Cup (ACC/V5) ou d'autres classes convenues par le comité de course avant le début de la saison.",
+        rule3_title: "Points et Classements",
+        rule3_desc: "<strong>Système Low Point</strong> (1er = 1 pt, 2e = 2 pts…). Le total le plus bas gagne.<br><br><strong>Courses :</strong> points selon l’ordre d’arrivée.<br><br><strong>Classement général (par année) :</strong> chaque course compte pour <em>tous</em> les membres. Absent = <strong>nombre de participants + 1</strong>. Somme de tous les points de l’année."
+      },
+      es: {
+        rules_title: "Reglamento Oficial",
+        rules_subtitle: "Directrices, normas de conducta y especificaciones técnicas para las regatas del Circolo Velico Italia en Virtual Skipper 5.",
+        rule1_title: "Juego Limpio y Conducta en el Mar",
+        rule1_desc: "El respeto a las reglas de regata ISAF virtuales es el pilar de nuestro club. Cualquier incorrección grave o comportamiento antideportivo durante las pruebas oficiales conllevará sanciones o descalificación de la clasificación general.",
+        rule2_title: "Clases de Embarcaciones",
+        rule2_desc: "Las competiciones se celebran principalmente en la clase America's Cup (ACC/V5) u otras clases acordadas por el comité de regata antes del inicio de la temporada.",
+        rule3_title: "Puntuaciones y Clasificaciones",
+        rule3_desc: "<strong>Sistema Low Point</strong> (1.º = 1 pt, 2.º = 2 pts…). Gana el total más bajo.<br><br><strong>Regatas:</strong> puntos según orden de llegada.<br><br><strong>Clasificación general (por año):</strong> cada regata cuenta para <em>todos</em> los socios. Quien no participa recibe <strong>participantes + 1</strong>. Suma de todos los puntos del año."
+      }
+    };
+
+    function initAccordion() {
+      document.querySelectorAll('.rule-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = btn.closest('.rule-item');
+          const isOpen = item.classList.contains('is-open');
+          document.querySelectorAll('.rule-item.is-open').forEach(el => {
+            el.classList.remove('is-open');
+            el.querySelector('.rule-toggle').setAttribute('aria-expanded', 'false');
+          });
+          if (!isOpen) {
+            item.classList.add('is-open');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+    }
+
+    const _orig = CVI.init;
+    CVI.init = function(a) {
+      _orig(a, extra);
+      initAccordion();
+    };
+    CVI.init('regolamento.html');
+  </script>
+</body>
+</html>
