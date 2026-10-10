@@ -77,16 +77,15 @@
       <div class="discord-card">
         <h2 data-i18n="discord_join_title">Entra nel server</h2>
         <p data-i18n="discord_join_desc">Unisciti agli skipper CVI: organizziamo regate, condividiamo setup e celebriamo i podi.</p>
-        <a id="discord-invite-btn" class="btn-discord" href="#" target="_blank" rel="noopener">
+        <a id="discord-invite-btn" class="btn-discord" href="https://discord.gg/fEF5MeF47" target="_blank" rel="noopener">
           <span data-i18n="discord_btn">Entra su Discord</span>
         </a>
-        <p id="discord-invite-hint" class="discord-note" style="display:none">Link invito non configurato.</p>
       </div>
       <div class="discord-card">
         <h2 data-i18n="discord_widget_title">Anteprima server</h2>
         <p data-i18n="discord_widget_desc">Chi è online e i canali pubblici del server CVI.</p>
         <div class="discord-widget-wrap" id="discord-widget">
-          <p style="padding:2rem;color:#94a3b8;font-size:0.9rem">Widget non configurato. Abilita Server Widget su Discord e inserisci il Server ID.</p>
+          <p style="padding:2rem;color:#94a3b8;font-size:0.9rem">Widget opzionale: abilita Server Widget su Discord e inserisci il Server ID in discord.html</p>
         </div>
       </div>
     </div>
@@ -107,10 +106,8 @@
   </footer>
   <script src="common.js"></script>
   <script>
-    // === CONFIGURA QUI ===
-    const DISCORD_INVITE = ''; // es. 'https://discord.gg/abcdef'
-    const DISCORD_SERVER_ID = ''; // es. '123456789012345678'
-    // =====================
+    const DISCORD_INVITE = 'https://discord.gg/fEF5MeF47';
+    const DISCORD_SERVER_ID = ''; // opzionale: Server ID per il widget
     const extra = {
       it: { discord_title:'Community Discord', discord_subtitle:"Chat, avvisi regate, risultati e compagnia tra una prova e l'altra.", discord_join_title:'Entra nel server', discord_join_desc:'Unisciti agli skipper CVI.', discord_btn:'Entra su Discord', discord_widget_title:'Anteprima server', discord_widget_desc:'Chi è online e i canali pubblici.', discord_bot_note:'In futuro: bot per pubblicare i risultati su #risultati.', nav_galleria:'Galleria', nav_discord:'Discord' },
       en: { discord_title:'Discord Community', discord_subtitle:'Chat, race alerts and results.', discord_join_title:'Join the server', discord_join_desc:'Meet CVI skippers.', discord_btn:'Join Discord', discord_widget_title:'Server preview', discord_widget_desc:'Who is online.', discord_bot_note:'Coming soon: results bot.', nav_galleria:'Gallery', nav_discord:'Discord' },
@@ -119,13 +116,7 @@
     };
     function setupDiscord() {
       const btn = document.getElementById('discord-invite-btn');
-      const hint = document.getElementById('discord-invite-hint');
-      if (DISCORD_INVITE) { btn.href = DISCORD_INVITE; }
-      else {
-        btn.href = '#';
-        btn.onclick = function(e){ e.preventDefault(); alert('Configura DISCORD_INVITE in discord.html'); };
-        if (hint) hint.style.display = 'block';
-      }
+      if (DISCORD_INVITE) btn.href = DISCORD_INVITE;
       if (DISCORD_SERVER_ID) {
         document.getElementById('discord-widget').innerHTML =
           '<iframe src="https://discord.com/widget?id=' + encodeURIComponent(DISCORD_SERVER_ID) + '&theme=dark" width="100%" height="400" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>';
