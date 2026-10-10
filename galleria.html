@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galleria - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+    .gallery-card{background:#1a2332;border:1px solid rgba(56,189,248,.15);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s}
+    .gallery-card:hover{border-color:rgba(56,189,248,.4);transform:translateY(-2px)}
+    .gallery-card img{width:100%;height:180px;object-fit:cover;display:block;background:#0b0f19}
+    .gallery-card .meta{padding:.75rem .9rem 1rem}
+    .gallery-card h3{margin:0 0 .25rem;font-size:.95rem;color:#fff;font-weight:700}
+    .gallery-card p{margin:0;font-size:.82rem;color:var(--text-muted,#94a3b8);line-height:1.4}
+    .gallery-card .del-btn{margin-top:.5rem;background:transparent;color:#f87171;border:1px solid rgba(248,113,113,.4);border-radius:6px;padding:.25rem .55rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit}
+    .admin-gallery-panel{display:none;margin-bottom:1.5rem;padding:1.15rem 1.25rem;background:#1a2332;border:1px solid rgba(56,189,248,.25);border-radius:12px}
+    .admin-gallery-panel.visible{display:block}
+    .admin-gallery-panel h2{margin:0 0 .75rem;font-size:1rem;color:#38bdf8}
+    .admin-gallery-panel .form-row{display:grid;gap:.55rem;max-width:520px}
+    .admin-gallery-panel label{font-size:.75rem;color:#94a3b8;font-weight:600}
+    .admin-gallery-panel input,.admin-gallery-panel textarea{width:100%;background:#0b0f19;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.5rem .7rem;font-family:inherit;font-size:.9rem}
+    .admin-gallery-panel button[type=submit]{background:#38bdf8;color:#0b0f19;border:none;padding:.55rem 1.1rem;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;margin-top:.35rem;width:fit-content}
+    .lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);align-items:center;justify-content:center;padding:1.5rem}
+    .lightbox.open{display:flex}
+    .lightbox img{max-width:min(96vw,1000px);max-height:85vh;border-radius:8px}
+    .lightbox-close{position:absolute;top:1rem;right:1.25rem;background:transparent;border:none;color:#fff;font-size:1.75rem;cursor:pointer}
+    .sql-hint{margin-top:.75rem;font-size:.78rem;color:#94a3b8;background:#0b0f19;padding:.65rem .8rem;border-radius:8px;font-family:ui-monospace,monospace;white-space:pre-wrap;display:none}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown"><a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="galleria.html" class="active" data-i18n="nav_galleria">Galleria</a></li>
+        <li><a href="discord.html" data-i18n="nav_discord">Discord</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option><option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option><option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="nav-mobile" id="navMobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="galleria.html" data-i18n="nav_galleria">Galleria</a>
+    <a href="discord.html" data-i18n="nav_discord">Discord</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+  <main class="page-content">
+    <div class="content-box">
+      <h1 data-i18n="gal_title">Galleria</h1>
+      <p class="subtitle" data-i18n="gal_subtitle">Screenshot regate, podi e momenti del circolo.</p>
+      <div id="admin-gallery-panel" class="admin-gallery-panel">
+        <h2>Aggiungi highlight (admin)</h2>
+        <form id="gallery-form" class="form-row">
+          <div><label for="gal-title">Titolo</label>
+            <input id="gal-title" type="text" maxlength="120" placeholder="Es. Podium GP Day 2" required></div>
+          <div><label for="gal-url">URL immagine</label>
+            <input id="gal-url" type="url" placeholder="https://..." required></div>
+          <div><label for="gal-caption">Didascalia (opzionale)</label>
+            <textarea id="gal-caption" rows="2" maxlength="300" placeholder="Breve descrizione..."></textarea></div>
+          <button type="submit">Pubblica</button>
+          <p id="gal-status" style="margin:0;font-size:.85rem;font-weight:500"></p>
+        </form>
+        <div id="gal-sql-hint" class="sql-hint">create table gallery (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  image_url text not null,
+  caption text,
+  created_at timestamptz default now()
+);</div>
+      </div>
+      <div id="gallery-container"><p class="loading-text">Caricamento galleria...</p></div>
+    </div>
+  </main>
+  <div class="lightbox" id="lightbox">
+    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Chiudi">×</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p></div>
+      <div class="footer-links">
+        <div class="footer-col"><h4>Circolo</h4>
+          <a href="galleria.html">Galleria</a><a href="discord.html">Discord</a><a href="team.html">Team</a></div>
+        <div class="footer-col"><h4>Gare</h4>
+          <a href="gare.html">Calendario</a><a href="contatti.html">Contatti</a></div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual</div>
+  </footer>
+  <script src="common.js"></script>
+  <script>
+    const extra = {
+      it: { gal_title:'Galleria', gal_subtitle:'Screenshot regate, podi e momenti del circolo.', gal_empty:'Nessuna foto ancora. Gli admin possono aggiungerne!', nav_galleria:'Galleria', nav_discord:'Discord' },
+      en: { gal_title:'Gallery', gal_subtitle:'Race screenshots, podiums and club moments.', gal_empty:'No photos yet.', nav_galleria:'Gallery', nav_discord:'Discord' },
+      fr: { gal_title:'Galerie', gal_subtitle:'Captures et podiums.', gal_empty:'Pas encore de photos.', nav_galleria:'Galerie', nav_discord:'Discord' },
+      es: { gal_title:'Galería', gal_subtitle:'Capturas y podios.', gal_empty:'Aún no hay fotos.', nav_galleria:'Galería', nav_discord:'Discord' }
+    };
+    let isAdmin = false, items = [];
+    function esc(s){ if(s==null)return''; return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }
+    function renderGallery(){
+      const box=document.getElementById('gallery-container');
+      const t=extra[CVI.currentLang]||extra.it;
+      if(!items.length){ box.innerHTML='<p class="empty-text">'+t.gal_empty+'</p>'; return; }
+      box.innerHTML='<div class="gallery-grid">'+items.map(function(it,idx){
+        return '<div class="gallery-card" data-idx="'+idx+'"><img src="'+esc(it.image_url)+'" alt="'+esc(it.title)+'" loading="lazy"><div class="meta"><h3>'+esc(it.title)+'</h3>'+(it.caption?'<p>'+esc(it.caption)+'</p>':'')+(isAdmin?'<button type="button" class="del-btn" data-id="'+esc(it.id)+'">Elimina</button>':'')+'</div></div>';
+      }).join('')+'</div>';
+      box.querySelectorAll('.gallery-card').forEach(function(card){
+        card.addEventListener('click',function(e){
+          if(e.target.classList.contains('del-btn')) return;
+          const it=items[parseInt(card.getAttribute('data-idx'),10)];
+          if(!it) return;
+          document.getElementById('lightbox-img').src=it.image_url;
+          document.getElementById('lightbox').classList.add('open');
+        });
+      });
+      box.querySelectorAll('.del-btn').forEach(function(btn){
+        btn.addEventListener('click',function(e){ e.stopPropagation(); deleteItem(btn.getAttribute('data-id')); });
+      });
+    }
+    async function loadGallery(){
+      const box=document.getElementById('gallery-container');
+      try{
+        const {data,error}=await CVI.supabase.from('gallery').select('id, title, image_url, caption, created_at').order('created_at',{ascending:false});
+        if(error) throw error;
+        items=data||[]; renderGallery();
+      }catch(err){
+        items=[];
+        box.innerHTML='<p class="empty-text">Nessuna foto (o tabella gallery assente). Gli admin possono crearla.</p>';
+        if(isAdmin) document.getElementById('gal-sql-hint').style.display='block';
+      }
+    }
+    async function checkAdmin(){
+      const {data:{session}}=await CVI.supabase.auth.getSession();
+      if(!session) return false;
+      const {data:prof}=await CVI.supabase.from('profiles').select('is_admin').eq('id',session.user.id).maybeSingle();
+      return !!(prof&&prof.is_admin===true);
+    }
+    async function addItem(e){
+      e.preventDefault();
+      const status=document.getElementById('gal-status');
+      const title=document.getElementById('gal-title').value.trim();
+      const image_url=document.getElementById('gal-url').value.trim();
+      const caption=document.getElementById('gal-caption').value.trim();
+      if(!title||!image_url) return;
+      status.textContent='Salvataggio…'; status.style.color='#94a3b8';
+      const {error}=await CVI.supabase.from('gallery').insert({title,image_url,caption:caption||null});
+      if(error){ status.textContent='Errore: '+error.message; status.style.color='#f87171'; document.getElementById('gal-sql-hint').style.display='block'; return; }
+      status.textContent='Pubblicato!'; status.style.color='#34d399'; e.target.reset(); await loadGallery();
+    }
+    async function deleteItem(id){
+      if(!id||!confirm('Eliminare questa immagine?')) return;
+      const {error}=await CVI.supabase.from('gallery').delete().eq('id',id);
+      if(error){ alert('Errore: '+error.message); return; }
+      await loadGallery();
+    }
+    document.getElementById('lightbox-close').onclick=function(){ document.getElementById('lightbox').classList.remove('open'); };
+    document.getElementById('lightbox').onclick=function(e){ if(e.target.id==='lightbox') e.currentTarget.classList.remove('open'); };
+    CVI.init('galleria.html', extra);
+    (async function(){
+      isAdmin=await checkAdmin();
+      if(isAdmin){ document.getElementById('admin-gallery-panel').classList.add('visible');
+        document.getElementById('gallery-form').addEventListener('submit', addItem); }
+      await loadGallery();
+    })();
+  </script>
+</body>
+</html>
