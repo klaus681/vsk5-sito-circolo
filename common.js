@@ -104,6 +104,41 @@
     });
   };
 
+  window.CVI.ensureNavLinks = function () {
+    function addDesktop(ul, href, label, afterHref) {
+      if (!ul || ul.classList.contains('dropdown-menu') || ul.closest('.dropdown-menu')) return;
+      if (ul.querySelector('a[href="' + href + '"]')) return;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = label;
+      a.setAttribute('data-i18n', href === 'galleria.html' ? 'nav_galleria' : 'nav_discord');
+      li.appendChild(a);
+      const after = afterHref && ul.querySelector('a[href="' + afterHref + '"]');
+      if (after && after.parentElement) after.parentElement.after(li);
+      else ul.appendChild(li);
+    }
+    document.querySelectorAll('nav.nav-desktop > ul').forEach(function (ul) {
+      addDesktop(ul, 'galleria.html', 'Galleria', 'albo-doro.html');
+      addDesktop(ul, 'discord.html', 'Discord', 'galleria.html');
+    });
+    const mobile = document.getElementById('navMobile');
+    if (mobile) {
+      function addMobile(href, label, afterHref) {
+        if (mobile.querySelector('a[href="' + href + '"]')) return;
+        const a = document.createElement('a');
+        a.href = href;
+        a.textContent = label;
+        a.setAttribute('data-i18n', href === 'galleria.html' ? 'nav_galleria' : 'nav_discord');
+        const after = afterHref && mobile.querySelector('a[href="' + afterHref + '"]');
+        if (after) after.after(a);
+        else mobile.appendChild(a);
+      }
+      addMobile('galleria.html', 'Galleria', 'albo-doro.html');
+      addMobile('discord.html', 'Discord', 'galleria.html');
+    }
+  };
+
   window.CVI.initFloatingDiscord = function () {
     if (document.getElementById('cvi-discord-fab')) return;
     const a = document.createElement('a');
@@ -134,6 +169,7 @@
     }
     window.CVI.applyI18n(extraI18n);
     window.CVI.aggiornaAuth();
+    window.CVI.ensureNavLinks();
     window.CVI.initFloatingDiscord();
   };
 })();
