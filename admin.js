@@ -1,2 +1,1 @@
-/* see artifacts - loading full file next */
-console.error('admin.js incomplete - reload');
+PLACEHOLDER_WILL_REPLACE
