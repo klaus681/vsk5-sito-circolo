@@ -49,7 +49,10 @@
     const dict = Object.assign({}, NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it, (extra && extra[window.CVI.currentLang]) || {});
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       const key = el.getAttribute('data-i18n');
-      if (dict[key] != null) el.textContent = dict[key];
+      if (dict[key] == null) return;
+      var val = dict[key];
+      if (/<[a-z][\s\S]*>/i.test(val)) el.innerHTML = val;
+      else el.textContent = val;
     });
   };
 
