@@ -1,19 +1,16 @@
-/* CVI admin.js – loads gzip payload from admin-data.txt */
-(async function () {
+/* CVI admin loader */
+(async function(){
   try {
-    var res = await fetch("admin-data.txt?v=1");
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    var b64 = (await res.text()).trim();
-    var bin = Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
-    var ds = new DecompressionStream("gzip");
-    var stream = new Response(bin).body.pipeThrough(ds);
-    var text = await new Response(stream).text();
+    var parts = await Promise.all([
+      fetch("admin-a.js?v=2").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
+      fetch("admin-b.js?v=2").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
+    ]);
     var s = document.createElement("script");
-    s.textContent = text;
+    s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
-  } catch (e) {
-    console.error("[CVI admin] load failed", e);
-    var el = document.getElementById("admin-status");
-    if (el) { el.textContent = "Errore caricamento admin: " + e; el.className = "admin-status err"; }
+  } catch(e) {
+    console.error("[CVI admin]", e);
+    var el = document.getElementById("admin-status") || document.getElementById("admin-gate");
+    if (el) el.insertAdjacentHTML("beforeend", "<p style=color:#f87171>Errore: "+e+"</p>");
   }
 })();
