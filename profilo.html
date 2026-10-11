@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Il mio profilo – CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .profile-page{max-width:900px;margin:0 auto}
+    .profile-hero{display:flex;flex-wrap:wrap;gap:1.5rem;align-items:center;padding:1.5rem;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:1.25rem}
+    .avatar-wrap{position:relative;flex-shrink:0}
+    .avatar{width:110px;height:110px;border-radius:50%;object-fit:cover;background:#1a2332;border:3px solid rgba(56,189,248,.35);display:flex;align-items:center;justify-content:center;font-size:2.4rem;font-weight:700;color:#38bdf8}
+    .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .avatar-edit{position:absolute;bottom:4px;right:4px;width:32px;height:32px;border-radius:50%;background:#38bdf8;color:#0b0f19;border:none;cursor:pointer;font-size:.9rem;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+    .avatar-edit.visible{display:flex}
+    .profile-info{flex:1;min-width:200px}
+    .profile-info h1{margin:0 0 .25rem;font-size:1.55rem;color:#fff}
+    .profile-info .nick{color:#38bdf8;font-weight:600;font-size:1.05rem}
+    .profile-info .meta{color:var(--text-muted);font-size:.92rem;margin-top:.35rem}
+    .team-badge{display:inline-block;margin-top:.5rem;padding:.25rem .7rem;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);border-radius:999px;color:#7dd3fc;font-size:.82rem;font-weight:600}
+    .role-pill{display:inline-block;margin-left:.4rem;padding:.15rem .5rem;background:rgba(52,211,153,.12);color:#34d399;border-radius:999px;font-size:.72rem;font-weight:700;text-transform:uppercase}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.85rem;margin-bottom:1.25rem}
+    .stat-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.1rem 1rem;text-align:center}
+    .stat-card .num{font-size:1.75rem;font-weight:800;color:#38bdf8;line-height:1.2}
+    .stat-card .lbl{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.3rem;font-weight:600}
+    .section-box{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.25rem 1.35rem;margin-bottom:1.25rem}
+    .section-box h2{margin:0 0 1rem;font-size:1.05rem;color:#38bdf8;font-weight:700}
+    .edit-form{display:grid;gap:.75rem;max-width:420px}
+    .edit-form label{font-size:.75rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:.25rem}
+    .edit-form input{width:100%;background:#0b0f19;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.55rem .75rem;font-family:inherit;font-size:.92rem}
+    .form-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.25rem}
+    .btn-save{background:#38bdf8;color:#0b0f19;border:none;padding:.5rem 1.1rem;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit}
+    .btn-save:disabled{opacity:.6;cursor:not-allowed}
+    .btn-ghost{background:transparent;color:var(--text-muted);border:1px solid rgba(255,255,255,.15);padding:.5rem .9rem;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit}
+    .status-msg{font-size:.88rem;font-weight:600;min-height:1.2rem;margin-top:.5rem}
+    .status-msg.ok{color:#34d399}.status-msg.err{color:#f87171}
+    .history-table{width:100%;border-collapse:collapse;font-size:.88rem}
+    .history-table th{text-align:left;color:var(--text-muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.08)}
+    .history-table td{padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.04)}
+    .pos-1{color:#fbbf24;font-weight:700}.pos-2{color:#94a3b8;font-weight:700}.pos-3{color:#d97706;font-weight:700}
+    .empty-hint{color:var(--text-muted);font-size:.92rem}
+    .gate-box{text-align:center;padding:3rem 1.5rem;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md)}
+    .gate-box h2{color:#fff;margin:0 0 .5rem}.gate-box p{color:var(--text-muted);margin:0 0 1.25rem}
+    .gate-box a{display:inline-block;background:#38bdf8;color:#0b0f19;padding:.55rem 1.2rem;border-radius:8px;font-weight:700;text-decoration:none}
+    #avatar-file{display:none}
+    @media(max-width:560px){.profile-hero{flex-direction:column;text-align:center}.avatar-wrap{margin:0 auto}}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown"><a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="profilo.html" class="active">Profilo</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option><option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option><option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="nav-mobile" id="navMobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="profilo.html">Profilo</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+  <main class="page-content">
+    <div class="profile-page">
+      <div id="gate" class="gate-box" style="display:none">
+        <h2>Accesso richiesto</h2>
+        <p>Devi effettuare il login per vedere il profilo.</p>
+        <a href="accedi.html">Vai al login</a>
+      </div>
+      <div id="profile-app" style="display:none">
+        <div class="profile-hero">
+          <div class="avatar-wrap">
+            <div class="avatar" id="avatar-box">?</div>
+            <button type="button" class="avatar-edit" id="btn-avatar" title="Cambia foto">📷</button>
+            <input type="file" id="avatar-file" accept="image/*">
+          </div>
+          <div class="profile-info">
+            <h1 id="prof-name">—</h1>
+            <div class="nick" id="prof-nick">—</div>
+            <div class="meta" id="prof-meta"></div>
+            <div id="prof-team-wrap"></div>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="num" id="stat-gare">—</div><div class="lbl">Gare</div></div>
+          <div class="stat-card"><div class="num" id="stat-vittorie">—</div><div class="lbl">Vittorie</div></div>
+          <div class="stat-card"><div class="num" id="stat-podi">—</div><div class="lbl">Podi</div></div>
+          <div class="stat-card"><div class="num" id="stat-punti">—</div><div class="lbl">Punti (stagione)</div></div>
+          <div class="stat-card"><div class="num" id="stat-media">—</div><div class="lbl">Media posti</div></div>
+          <div class="stat-card"><div class="num" id="stat-best">—</div><div class="lbl">Miglior posto</div></div>
+        </div>
+        <div class="section-box" id="edit-section" style="display:none">
+          <h2>Modifica profilo</h2>
+          <form class="edit-form" id="edit-form">
+            <div><label for="edit-nickname">Nickname</label><input type="text" id="edit-nickname" maxlength="40" required></div>
+            <div><label for="edit-nome">Nome</label><input type="text" id="edit-nome" maxlength="60"></div>
+            <div><label for="edit-cognome">Cognome</label><input type="text" id="edit-cognome" maxlength="60"></div>
+            <div class="form-actions"><button type="submit" class="btn-save" id="btn-save-profile">Salva</button></div>
+            <div class="status-msg" id="edit-status"></div>
+          </form>
+        </div>
+        <div class="section-box">
+          <h2>Ultime regate</h2>
+          <div id="history-box"><p class="empty-hint">Caricamento…</p></div>
+        </div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:2rem">
+          <a href="membri.html" class="btn-ghost" style="text-decoration:none;display:inline-block">← Elenco soci</a>
+          <button type="button" class="btn-ghost" id="btn-logout">Disconnetti</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner"><div class="footer-brand">
+      <span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span>
+      <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+    </div></div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
+  </footer>
+  <script src="common.js"></script>
+  <script>
+  (function(){
+    function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
+    function resolveRole(p){if(!p)return'socio';var r=String(p.role||'').toLowerCase();if(r==='admin'||r==='scorer'||r==='caposquadra'||r==='socio')return r;return p.is_admin===true?'admin':'socio';}
+    function initials(p){return((p.nickname||p.nome||'?').trim().slice(0,1)||'?').toUpperCase();}
+    function avatarUrl(p){return p.avatar_url||p.foto||p.photo_url||null;}
+    function renderAvatar(p){var box=document.getElementById('avatar-box');var url=avatarUrl(p);if(url){box.innerHTML='<img src="'+esc(url)+'" alt="Avatar">';}else{box.textContent=initials(p);}}
+    function calcStats(risultati,gare,anno){
+      var vittorie=0,podi=0,posti=[],puntiAnno=0,gareSet={};
+      risultati.forEach(function(r){
+        var gid=String(r.gara_id);gareSet[gid]=true;
+        var pos=r.posizione!=null?Number(r.posizione):null;
+        var stato=(r.stato||'ok').toLowerCase();
+        if(stato==='ok'&&pos!=null){posti.push(pos);if(pos===1)vittorie++;if(pos<=3)podi++;}
+        var g=gare.find(function(x){return String(x.id)===gid;});
+        var y=g&&g.data_gara?new Date(g.data_gara).getFullYear():null;
+        if(y===anno||anno==null)puntiAnno+=Number(r.punti)||0;
+      });
+      var media=posti.length?(posti.reduce(function(a,b){return a+b;},0)/posti.length):null;
+      var best=posti.length?Math.min.apply(null,posti):null;
+      return{gare:Object.keys(gareSet).length,vittorie:vittorie,podi:podi,punti:puntiAnno,media:media!=null?media.toFixed(1):'—',best:best!=null?best:'—'};
+    }
+    function renderHistory(risultati,gare){
+      var box=document.getElementById('history-box');
+      if(!risultati.length){box.innerHTML='<p class="empty-hint">Nessuna regata registrata ancora.</p>';return;}
+      var byGara={};
+      risultati.forEach(function(r){var k=String(r.gara_id);if(!byGara[k])byGara[k]=[];byGara[k].push(r);});
+      var rows=Object.keys(byGara).map(function(gid){
+        var g=gare.find(function(x){return String(x.id)===gid;})||{};
+        var list=byGara[gid];list.sort(function(a,b){return(a.regata_num||1)-(b.regata_num||1);});
+        var best=null;list.forEach(function(r){if(r.posizione!=null&&(best==null||r.posizione<best))best=r.posizione;});
+        var detail=list.map(function(r){return'R'+(r.regata_num||1)+': '+(r.posizione!=null?r.posizione+'°':(r.stato||'—').toUpperCase());}).join(' · ');
+        return{titolo:g.titolo||'Gara',data:g.data_gara,best:best,detail:detail,ts:g.data_gara?new Date(g.data_gara).getTime():0};
+      });
+      rows.sort(function(a,b){return b.ts-a.ts;});rows=rows.slice(0,15);
+      var html='<table class="history-table"><thead><tr><th>Gara</th><th>Data</th><th>Risultati</th></tr></thead><tbody>';
+      rows.forEach(function(r){
+        var cls=r.best===1?'pos-1':r.best===2?'pos-2':r.best===3?'pos-3':'';
+        var dataStr='—';if(r.data){try{dataStr=new Date(r.data).toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});}catch(e){}}
+        html+='<tr><td><strong class="'+cls+'">'+esc(r.titolo)+'</strong></td><td>'+esc(dataStr)+'</td><td>'+esc(r.detail)+'</td></tr>';
+      });
+      html+='</tbody></table>';box.innerHTML=html;
+    }
+    async function loadProfile(userId,isOwn){
+      var res=await CVI.supabase.from('profiles').select('*').eq('id',userId).maybeSingle();
+      var prof=res.data;if(res.error||!prof){document.getElementById('profile-app').innerHTML='<p class="empty-hint" style="color:#f87171">Profilo non trovato.</p>';return;}
+      var nome=[prof.nome,prof.cognome].filter(Boolean).join(' ').trim();
+      document.getElementById('prof-name').textContent=nome||prof.nickname||'Socio';
+      document.getElementById('prof-nick').textContent=prof.nickname?'@'+prof.nickname:'—';
+      var role=resolveRole(prof);
+      document.getElementById('prof-meta').innerHTML=(isOwn?'Il tuo profilo':'Profilo socio')+(role!=='socio'?' <span class="role-pill">'+role+'</span>':'');
+      document.getElementById('prof-team-wrap').innerHTML=prof.team?'<span class="team-badge">'+esc(prof.team)+'</span>':'<span class="team-badge" style="opacity:.6">Nessun team</span>';
+      renderAvatar(prof);
+      if(isOwn){
+        document.getElementById('edit-section').style.display='block';
+        document.getElementById('btn-avatar').classList.add('visible');
+        document.getElementById('edit-nickname').value=prof.nickname||'';
+        document.getElementById('edit-nome').value=prof.nome||'';
+        document.getElementById('edit-cognome').value=prof.cognome||'';
+      }
+      var anno=new Date().getFullYear();
+      var risRes=await CVI.supabase.from('risultati_gara').select('*').eq('user_id',userId);
+      var gareRes=await CVI.supabase.from('gare').select('id, titolo, data_gara, num_regate');
+      var risultati=risRes.data||[];var gare=gareRes.data||[];
+      var stats=calcStats(risultati,gare,anno);
+      document.getElementById('stat-gare').textContent=stats.gare;
+      document.getElementById('stat-vittorie').textContent=stats.vittorie;
+      document.getElementById('stat-podi').textContent=stats.podi;
+      document.getElementById('stat-punti').textContent=stats.punti;
+      document.getElementById('stat-media').textContent=stats.media;
+      document.getElementById('stat-best').textContent=stats.best==='—'?'—':stats.best+'°';
+      renderHistory(risultati,gare);
+    }
+    async function saveProfile(e){
+      e.preventDefault();
+      var sess=await CVI.supabase.auth.getSession();var session=sess.data&&sess.data.session;if(!session)return;
+      var nick=document.getElementById('edit-nickname').value.trim();
+      var nome=document.getElementById('edit-nome').value.trim();
+      var cognome=document.getElementById('edit-cognome').value.trim();
+      if(!nick)return alert('Nickname obbligatorio');
+      var btn=document.getElementById('btn-save-profile');var st=document.getElementById('edit-status');
+      btn.disabled=true;st.textContent='';
+      try{
+        var r=await CVI.supabase.from('profiles').update({nickname:nick,nome:nome||null,cognome:cognome||null}).eq('id',session.user.id);
+        if(r.error)throw r.error;st.textContent='Profilo aggiornato';st.className='status-msg ok';
+        await loadProfile(session.user.id,true);
+      }catch(err){st.textContent=err.message||String(err);st.className='status-msg err';}
+      finally{btn.disabled=false;}
+    }
+    async function uploadAvatar(file){
+      var sess=await CVI.supabase.auth.getSession();var session=sess.data&&sess.data.session;
+      if(!session||!file)return;var st=document.getElementById('edit-status');
+      try{
+        var ext=(file.name.split('.').pop()||'jpg').toLowerCase();if(ext==='jpeg')ext='jpg';
+        var path=session.user.id+'/avatar.'+(ext==='png'?'png':'jpg');
+        var bucket='avatars';
+        var up=await CVI.supabase.storage.from(bucket).upload(path,file,{contentType:file.type||'image/jpeg',upsert:true});
+        if(up.error){bucket='gallery';path='avatars/'+session.user.id+'-'+Date.now()+'.jpg';
+          up=await CVI.supabase.storage.from(bucket).upload(path,file,{contentType:file.type||'image/jpeg',upsert:true});
+          if(up.error)throw up.error;}
+        var pub=CVI.supabase.storage.from(bucket).getPublicUrl(path);
+        var url=pub.data&&pub.data.publicUrl;
+        var r=await CVI.supabase.from('profiles').update({avatar_url:url}).eq('id',session.user.id);
+        if(r.error){var r2=await CVI.supabase.from('profiles').update({foto:url}).eq('id',session.user.id);if(r2.error)throw r2.error;}
+        if(st){st.textContent='Foto aggiornata';st.className='status-msg ok';}
+        await loadProfile(session.user.id,true);
+      }catch(err){alert('Errore upload foto: '+(err.message||err)+'\n\nIn Supabase crea un bucket "avatars" (pubblico) oppure usa "gallery".');}
+    }
+    async function boot(){
+      if(!window.CVI||!CVI.supabase)return;
+      CVI.init('profilo.html');
+      var params=new URLSearchParams(window.location.search);
+      var viewId=params.get('id');
+      var sess=await CVI.supabase.auth.getSession();var session=sess.data&&sess.data.session;
+      if(!session&&!viewId){document.getElementById('gate').style.display='block';return;}
+      var targetId=viewId||(session&&session.user.id);
+      if(!targetId){document.getElementById('gate').style.display='block';return;}
+      if(!session){document.getElementById('gate').style.display='block';return;}
+      var isOwn=String(session.user.id)===String(targetId);
+      document.getElementById('profile-app').style.display='block';
+      await loadProfile(targetId,isOwn);
+      document.getElementById('edit-form').onsubmit=saveProfile;
+      document.getElementById('btn-logout').onclick=async function(){await CVI.supabase.auth.signOut();window.location.href='accedi.html';};
+      document.getElementById('btn-avatar').onclick=function(){document.getElementById('avatar-file').click();};
+      document.getElementById('avatar-file').onchange=function(){var f=this.files&&this.files[0];if(f)uploadAvatar(f);};
+    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  })();
+  </script>
+</body>
+</html>
