@@ -47,6 +47,17 @@
     .gate-box{text-align:center;padding:3rem 1.5rem;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md)}
     .gate-box h2{color:#fff;margin:0 0 .5rem}.gate-box p{color:var(--text-muted);margin:0 0 1.25rem}
     .gate-box a{display:inline-block;background:#38bdf8;color:#0b0f19;padding:.55rem 1.2rem;border-radius:8px;font-weight:700;text-decoration:none}
+
+    .iscr-list{display:flex;flex-direction:column;gap:.65rem}
+    .iscr-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;padding:.85rem 1rem;background:#0b0f19;border:1px solid rgba(255,255,255,.08);border-radius:10px}
+    .iscr-card.is-past{opacity:.7}
+    .iscr-card h3{margin:0;font-size:.98rem;color:#fff}
+    .iscr-card .meta{color:var(--text-muted);font-size:.82rem;margin-top:.2rem}
+    .iscr-badge{font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;text-transform:uppercase}
+    .iscr-badge.ok{background:rgba(52,211,153,.15);color:#34d399}
+    .iscr-badge.past{background:rgba(148,163,184,.15);color:#94a3b8}
+    .btn-leave-iscr{background:transparent;color:#f87171;border:1px solid rgba(248,113,113,.45);padding:.35rem .75rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+    .btn-leave-iscr:hover{background:rgba(248,113,113,.12)}
     #avatar-file{display:none}
     @media(max-width:560px){.profile-hero{flex-direction:column;text-align:center}.avatar-wrap{margin:0 auto}}
   </style>
@@ -123,6 +134,10 @@
             <div class="status-msg" id="edit-status"></div>
           </form>
         </div>
+        <div class="section-box" id="iscrizioni-section">
+          <h2>Le mie iscrizioni</h2>
+          <div id="iscrizioni-box"><p class="empty-hint">Caricamento…</p></div>
+        </div>
         <div class="section-box">
           <h2>Ultime regate</h2>
           <div id="history-box"><p class="empty-hint">Caricamento…</p></div>
@@ -185,6 +200,75 @@
       });
       html+='</tbody></table>';box.innerHTML=html;
     }
+
+    function renderIscrizioni(rows, isOwn){
+      var box=document.getElementById('iscrizioni-box');
+      if(!box)return;
+      if(!rows.length){
+        box.innerHTML='<p class="empty-hint">Nessuna iscrizione a gare future o passate.</p>';
+        return;
+      }
+      var html='<div class="iscr-list">';
+      rows.forEach(function(r){
+        var past=r.past;
+        var badge=past?'<span class="iscr-badge past">Conclusa</span>':'<span class="iscr-badge ok">Iscritto</span>';
+        var leave='';
+        if(isOwn&&!past){
+          leave='<button type="button" class="btn-leave-iscr" data-gara-id="'+esc(r.gara_id)+'">Annulla</button>';
+        }
+        html+='<div class="iscr-card'+(past?' is-past':'')+'"><div><h3>'+esc(r.titolo)+'</h3><div class="meta">'+esc(r.dataStr)+' · '+badge+'</div></div>'+leave+'</div>';
+      });
+      html+='</div>';
+      box.innerHTML=html;
+      box.querySelectorAll('.btn-leave-iscr').forEach(function(btn){
+        btn.onclick=async function(){
+          var gid=btn.getAttribute('data-gara-id');
+          if(!confirm('Annullare l\'iscrizione a questa gara?'))return;
+          btn.disabled=true;
+          try{
+            var sess=await CVI.supabase.auth.getSession();
+            var uid=sess.data&&sess.data.session&&sess.data.session.user.id;
+            if(!uid)return;
+            var res=await CVI.supabase.from('iscrizioni_gare').delete().eq('gara_id',gid).eq('user_id',uid);
+            if(res.error)throw res.error;
+            await loadIscrizioni(uid,true);
+          }catch(e){alert(e.message||e);btn.disabled=false;}
+        };
+      });
+    }
+    async function loadIscrizioni(userId,isOwn){
+      var box=document.getElementById('iscrizioni-box');
+      var sec=document.getElementById('iscrizioni-section');
+      if(!box)return;
+      try{
+        var iscrRes=await CVI.supabase.from('iscrizioni_gare').select('gara_id, created_at').eq('user_id',userId);
+        if(iscrRes.error)throw iscrRes.error;
+        var iscr=iscrRes.data||[];
+        if(!iscr.length){
+          renderIscrizioni([],isOwn);
+          return;
+        }
+        var ids=iscr.map(function(x){return x.gara_id;});
+        var gareRes=await CVI.supabase.from('gare').select('id, titolo, data_gara').in('id',ids);
+        var gare=gareRes.data||[];
+        var byId={};gare.forEach(function(g){byId[String(g.id)]=g;});
+        var now=Date.now();
+        var rows=iscr.map(function(row){
+          var g=byId[String(row.gara_id)]||{};
+          var ts=g.data_gara?new Date(g.data_gara).getTime():0;
+          var dataStr='—';
+          if(g.data_gara){
+            try{dataStr=new Date(g.data_gara).toLocaleString('it-IT',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){}
+          }
+          return{gara_id:row.gara_id,titolo:g.titolo||'Gara',dataStr:dataStr,past:ts&&ts<now,ts:ts||0};
+        });
+        rows.sort(function(a,b){return b.ts-a.ts;});
+        renderIscrizioni(rows,isOwn);
+      }catch(e){
+        box.innerHTML='<p class="empty-hint" style="color:#f87171">Errore iscrizioni: '+esc(e.message||e)+'</p>';
+      }
+    }
+
     async function loadProfile(userId,isOwn){
       var res=await CVI.supabase.from('profiles').select('*').eq('id',userId).maybeSingle();
       var prof=res.data;if(res.error||!prof){document.getElementById('profile-app').innerHTML='<p class="empty-hint" style="color:#f87171">Profilo non trovato.</p>';return;}
@@ -195,6 +279,9 @@
       document.getElementById('prof-meta').innerHTML=(isOwn?'Il tuo profilo':'Profilo socio')+(role!=='socio'?' <span class="role-pill">'+role+'</span>':'');
       document.getElementById('prof-team-wrap').innerHTML=prof.team?'<span class="team-badge">'+esc(prof.team)+'</span>':'<span class="team-badge" style="opacity:.6">Nessun team</span>';
       renderAvatar(prof);
+      var iscrTitle=document.querySelector('#iscrizioni-section h2');
+      if(iscrTitle)iscrTitle.textContent=isOwn?'Le mie iscrizioni':'Iscrizioni alle gare';
+
       if(isOwn){
         document.getElementById('edit-section').style.display='block';
         document.getElementById('btn-avatar').classList.add('visible');
@@ -214,6 +301,7 @@
       document.getElementById('stat-media').textContent=stats.media;
       document.getElementById('stat-best').textContent=stats.best==='—'?'—':stats.best+'°';
       renderHistory(risultati,gare);
+      await loadIscrizioni(userId, isOwn);
     }
     async function saveProfile(e){
       e.preventDefault();
