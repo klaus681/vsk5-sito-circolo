@@ -80,12 +80,12 @@ async function loadSoci(){
   }catch(e){box.innerHTML='<p class="empty-text" style="color:#f87171">'+esc(e.message||e)+'</p>';}
 }
 
-function resetGara(){document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
+function resetGara(){document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
 
 async function loadGare(){
   var box=document.getElementById("gare-list");box.innerHTML='<p class="loading-text">…</p>';
   try{
-    var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate").order("data_gara",{ascending:false});
+    var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore").order("data_gara",{ascending:false});
     if(res.error)throw res.error;gare=res.data||[];
     var iscrRes=await CVI.supabase.from("iscrizioni_gare").select("gara_id,user_id");
     var profRes=await CVI.supabase.from("profiles").select("id,nickname,team,nome,cognome");
@@ -104,13 +104,14 @@ async function loadGare(){
     box.innerHTML=gare.length?gare.map(function(g){
       var past=g.data_gara&&new Date(g.data_gara)<now;
       var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));
+      var chOre=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;if(isNaN(chOre)||chOre<0)chOre=2;
       var list=cacheIscrittiAdmin[String(g.id)]||[];
       var nicks=list.slice(0,12).map(function(p){return esc(p.nickname||p.nome||"?")+(p.team?" <span style=\\"color:#64748b\\">("+esc(p.team)+")</span>":"");}).join(", ");
       if(list.length>12)nicks+=" … +"+(list.length-12);
       var iscrBlock='<div style="margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="font-size:.8rem;color:#94a3b8;font-weight:600">Iscritti: <strong style="color:#7dd3fc">'+list.length+'</strong></span>'+(list.length?'<button type="button" class="btn-sm gara-dl-iscr" data-id="'+esc(g.id)+'">⬇ CSV iscritti</button>':'')+'</div>'+(list.length?'<div style="font-size:.82rem;color:#cbd5e1;line-height:1.45">'+nicks+'</div>':'<div style="font-size:.82rem;color:#64748b">Nessun iscritto</div>')+'</div>';
-      return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
+      return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate · iscr. -'+chOre+'h'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
     }).join(""):'<p class="empty-text">Nessuna gara.</p>';
-    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
+    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
     box.querySelectorAll(".gara-del").forEach(function(b){b.onclick=async function(){if(!confirm("Eliminare?"))return;await CVI.supabase.from("gare").delete().eq("id",b.getAttribute("data-id"));status("Eliminata","ok");loadGare();};});
     box.querySelectorAll(".gara-dl-iscr").forEach(function(b){b.onclick=function(){downloadIscrittiAdmin(b.getAttribute("data-id"));};});
     fillGaraSel();
@@ -135,8 +136,9 @@ function downloadIscrittiAdmin(garaId){
 async function saveGara(e){
   e.preventDefault();
   var id=document.getElementById("gara-id").value.trim(),titolo=document.getElementById("gara-titolo").value.trim(),dl=document.getElementById("gara-data").value,desc=document.getElementById("gara-desc").value.trim(),nr=Math.min(3,Math.max(1,parseInt(document.getElementById("gara-num").value,10)||1));
+  var chEl=document.getElementById("gara-chiusura");var chiusura_ore=chEl?parseInt(chEl.value,10):2;if(isNaN(chiusura_ore)||chiusura_ore<0)chiusura_ore=2;if(chiusura_ore>168)chiusura_ore=168;
   if(!titolo||!dl)return alert("Titolo e data obbligatori");
-  var payload={titolo:titolo,descrizione:desc||null,data_gara:new Date(dl).toISOString(),num_regate:nr};
+  var payload={titolo:titolo,descrizione:desc||null,data_gara:new Date(dl).toISOString(),num_regate:nr,chiusura_ore:chiusura_ore};
   var btn=document.getElementById("gara-save-btn");btn.disabled=true;
   try{if(id)await CVI.supabase.from("gare").update(payload).eq("id",id);else await CVI.supabase.from("gare").insert(payload);status(id?"Aggiornata":"Creata","ok");resetGara();loadGare();}catch(err){alert(err.message||err);}finally{btn.disabled=false;}
 }
