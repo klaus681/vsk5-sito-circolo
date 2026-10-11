@@ -14,7 +14,7 @@
       nav_gare_sub: 'Calendario', nav_classifiche: 'Classifiche',
       nav_albo: "Albo d'Oro", nav_regolamento: 'Regolamento', nav_download: 'Download',
       nav_contatti: 'Contatti', nav_membri: 'Membri', nav_unisciti: 'Unisciti',
-      nav_accedi: 'Accedi', nav_area_membri: 'Area Membri',
+      nav_accedi: 'Accedi', nav_area_membri: 'Il mio profilo',
       nav_galleria: 'Galleria', nav_discord: 'Discord'
     },
     en: {
@@ -22,7 +22,7 @@
       nav_gare_sub: 'Calendar', nav_classifiche: 'Standings',
       nav_albo: 'Hall of Fame', nav_regolamento: 'Rules', nav_download: 'Download',
       nav_contatti: 'Contact', nav_membri: 'Members', nav_unisciti: 'Join Us',
-      nav_accedi: 'Login', nav_area_membri: 'Member Area',
+      nav_accedi: 'Login', nav_area_membri: 'My profile',
       nav_galleria: 'Gallery', nav_discord: 'Discord'
     },
     fr: {
@@ -30,7 +30,7 @@
       nav_gare_sub: 'Calendrier', nav_classifiche: 'Classements',
       nav_albo: 'Temple de la Renommée', nav_regolamento: 'Règlement', nav_download: 'Téléchargements',
       nav_contatti: 'Contact', nav_membri: 'Membres', nav_unisciti: 'Rejoindre',
-      nav_accedi: 'Connexion', nav_area_membri: 'Espace Membre',
+      nav_accedi: 'Connexion', nav_area_membri: 'Mon profil',
       nav_galleria: 'Galerie', nav_discord: 'Discord'
     },
     es: {
@@ -38,7 +38,7 @@
       nav_gare_sub: 'Calendario', nav_classifiche: 'Clasificación',
       nav_albo: 'Salón de la Fama', nav_regolamento: 'Reglamento', nav_download: 'Descargas',
       nav_contatti: 'Contacto', nav_membri: 'Miembros', nav_unisciti: 'Únete',
-      nav_accedi: 'Acceder', nav_area_membri: 'Área miembros',
+      nav_accedi: 'Acceder', nav_area_membri: 'Mi perfil',
       nav_galleria: 'Galería', nav_discord: 'Discord'
     }
   };
@@ -83,8 +83,8 @@
       const links = [document.getElementById('auth-link'), document.getElementById('auth-link-mobile')].filter(Boolean);
       if (session && session.user) {
         links.forEach(function (a) {
-          a.textContent = (NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it).nav_area_membri || 'Area Membri';
-          a.href = 'membri.html';
+          a.textContent = (NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it).nav_area_membri || 'Il mio profilo';
+          a.href = 'profilo.html';
           a.setAttribute('data-i18n', 'nav_area_membri');
         });
       } else {
