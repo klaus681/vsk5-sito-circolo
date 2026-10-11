@@ -7,21 +7,29 @@
 <script>
 (async function () {
   const urls = [
-    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/dca7a57c1d7081177c84d39ca324788f4b621d41/index.html',
-    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@dca7a57c1d7081177c84d39ca324788f4b621d41/index.html'
+    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/main/index.html',
+    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@main/index.html'
   ];
   let html = null, lastErr = null;
   for (const src of urls) {
     try {
       const res = await fetch(src);
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      html = await res.text();
-      if (html && html.indexOf('Circolo Velico') !== -1) break;
-      html = null;
+      const text = await res.text();
+      // Controlla che il file scaricato contenga l'HTML vero del sito e non questo loader
+      if (text && text.indexOf('<nav') !== -1) {
+        html = text;
+        break;
+      }
     } catch (e) { lastErr = e; }
   }
   if (!html) {
-    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento. Ricarica.<br><small>' + lastErr + '</small></p>';
+    // Se non trova ancora l'HTML separato, mostra un messaggio pulito
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.style.background = '#0b0f19';
+      document.body.style.color = '#fff';
+      document.body.style.fontFamily = 'sans-serif';
+    });
     return;
   }
   document.open();
