@@ -3,7 +3,7 @@
 "use strict";
 var ROLES=["admin","scorer","caposquadra","socio"];
 var RL={admin:"Admin",scorer:"Scorer",caposquadra:"Caposquadra",socio:"Socio"};
-var user=null,role="socio",teams=[],profiles=[],gare=[],avvisi=[],gallery=[],risultati=[],iscrizioni=[];
+var user=null,role="socio",teams=[],profiles=[],gare=[],avvisi=[],gallery=[],risultati=[],iscrizioni=[],cacheIscrittiAdmin={};
 
 function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function resolveRole(p){if(!p)return"socio";var r=String(p.role||"").toLowerCase();if(ROLES.indexOf(r)>=0)return r;return p.is_admin===true?"admin":"socio";}
@@ -86,12 +86,50 @@ async function loadGare(){
   var box=document.getElementById("gare-list");box.innerHTML='<p class="loading-text">…</p>';
   try{
     var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate").order("data_gara",{ascending:false});
-    if(res.error)throw res.error;gare=res.data||[];var now=Date.now();
-    box.innerHTML=gare.length?gare.map(function(g){var past=g.data_gara&&new Date(g.data_gara)<now;var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+'</div>';}).join(""):'<p class="empty-text">Nessuna gara.</p>';
+    if(res.error)throw res.error;gare=res.data||[];
+    var iscrRes=await CVI.supabase.from("iscrizioni_gare").select("gara_id,user_id");
+    var profRes=await CVI.supabase.from("profiles").select("id,nickname,team,nome,cognome");
+    iscrizioni=iscrRes.data||[];
+    var profs=profRes.data||[];
+    var byId={};profs.forEach(function(p){byId[String(p.id)]=p;});
+    cacheIscrittiAdmin={};
+    iscrizioni.forEach(function(row){
+      var gid=String(row.gara_id),uid=String(row.user_id);
+      if(!cacheIscrittiAdmin[gid])cacheIscrittiAdmin[gid]=[];
+      var p=byId[uid]||{nickname:uid.slice(0,8),team:""};
+      if(!cacheIscrittiAdmin[gid].some(function(x){return String(x.id)===uid;}))
+        cacheIscrittiAdmin[gid].push({id:uid,nickname:p.nickname||"",team:p.team||"",nome:p.nome||"",cognome:p.cognome||""});
+    });
+    var now=Date.now();
+    box.innerHTML=gare.length?gare.map(function(g){
+      var past=g.data_gara&&new Date(g.data_gara)<now;
+      var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));
+      var list=cacheIscrittiAdmin[String(g.id)]||[];
+      var nicks=list.slice(0,12).map(function(p){return esc(p.nickname||p.nome||"?")+(p.team?" <span style=\\"color:#64748b\\">("+esc(p.team)+")</span>":"");}).join(", ");
+      if(list.length>12)nicks+=" … +"+(list.length-12);
+      var iscrBlock='<div style="margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="font-size:.8rem;color:#94a3b8;font-weight:600">Iscritti: <strong style="color:#7dd3fc">'+list.length+'</strong></span>'+(list.length?'<button type="button" class="btn-sm gara-dl-iscr" data-id="'+esc(g.id)+'">⬇ CSV iscritti</button>':'')+'</div>'+(list.length?'<div style="font-size:.82rem;color:#cbd5e1;line-height:1.45">'+nicks+'</div>':'<div style="font-size:.82rem;color:#64748b">Nessun iscritto</div>')+'</div>';
+      return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
+    }).join(""):'<p class="empty-text">Nessuna gara.</p>';
     box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
     box.querySelectorAll(".gara-del").forEach(function(b){b.onclick=async function(){if(!confirm("Eliminare?"))return;await CVI.supabase.from("gare").delete().eq("id",b.getAttribute("data-id"));status("Eliminata","ok");loadGare();};});
+    box.querySelectorAll(".gara-dl-iscr").forEach(function(b){b.onclick=function(){downloadIscrittiAdmin(b.getAttribute("data-id"));};});
     fillGaraSel();
   }catch(e){box.innerHTML='<p style="color:#f87171">'+esc(e.message)+'</p>';}
+}
+
+function downloadIscrittiAdmin(garaId){
+  var list=cacheIscrittiAdmin[String(garaId)]||[];
+  if(!list.length){alert("Nessun iscritto");return;}
+  var g=gare.find(function(x){return String(x.id)===String(garaId);});
+  var titolo=g&&g.titolo?g.titolo:"gara";
+  var lines=["N;Nickname;Nome;Cognome;Team"];
+  list.forEach(function(p,i){
+    lines.push([i+1,'"'+String(p.nickname||"").replace(/"/g,'""')+'"','"'+String(p.nome||"").replace(/"/g,'""')+'"','"'+String(p.cognome||"").replace(/"/g,'""')+'"','"'+String(p.team||"").replace(/"/g,'""')+'"'].join(";"));
+  });
+  var safe=String(titolo).replace(/[^\w\-]+/g,"_").slice(0,40);
+  var blob=new Blob(["\uFEFF"+lines.join("\n")],{type:"text/csv;charset=utf-8;"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="iscritti-"+safe+".csv";a.click();
+  status("CSV iscritti scaricato","ok");
 }
 
 async function saveGara(e){
