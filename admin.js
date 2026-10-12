@@ -8,12 +8,19 @@
     var s = document.createElement("script");
     s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
-    // Download management module
+    // Download management
     var dl = await fetch("downloads-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (dl) {
       var s2 = document.createElement("script");
       s2.textContent = dl;
       document.head.appendChild(s2);
+    }
+    // Site settings (YouTube banner)
+    var st = await fetch("settings-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (st) {
+      var s3 = document.createElement("script");
+      s3.textContent = st;
+      document.head.appendChild(s3);
     }
   } catch(e) {
     console.error("[CVI admin]", e);

@@ -24,30 +24,64 @@
     document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento admin. Ricarica.<br><small>' + lastErr + '</small></p>';
     return;
   }
-  // Inietta tab Download se manca
+
+  // Tab Download + Impostazioni
   if (html.indexOf('data-tab="download"') === -1) {
     html = html.replace(
       'data-tab="galleria">Galleria</button>',
-      'data-tab="galleria">Galleria</button>\n        <button type="button" class="admin-tab" data-tab="download">Download</button>'
+      'data-tab="galleria">Galleria</button>\n        <button type="button" class="admin-tab" data-tab="download">Download</button>\n        <button type="button" class="admin-tab" data-tab="impostazioni">Impostazioni</button>'
     );
-    if (html.indexOf('panel-download') === -1) {
-      var panel = '<div id="panel-download" class="admin-panel">' +
-        '<div id="dl-sql-hint" class="sql-hint" style="display:none">Crea tabella downloads in Supabase (vedi istruzioni nel pannello).</div>' +
-        '<div class="admin-card"><h3 id="dl-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo download</h3>' +
-        '<form id="dl-form" class="form-grid">' +
-        '<input type="hidden" id="dl-id">' +
-        '<div><label class="adm-label" for="dl-titolo">Titolo</label><input class="adm-input" id="dl-titolo" required style="width:100%"></div>' +
-        '<div><label class="adm-label" for="dl-desc">Descrizione</label><textarea class="adm-input" id="dl-desc" rows="2" style="width:100%"></textarea></div>' +
-        '<div><label class="adm-label" for="dl-url">URL file</label><input class="adm-input" id="dl-url" type="url" required style="width:100%"></div>' +
-        '<div style="display:flex;gap:0.75rem;flex-wrap:wrap">' +
-        '<div><label class="adm-label" for="dl-tipo">Tipo</label><select class="adm-select" id="dl-tipo"><option value="pdf">PDF</option><option value="zip">ZIP</option><option value="exe">EXE</option><option value="link">Link</option><option value="file">Altro</option></select></div>' +
-        '<div><label class="adm-label" for="dl-ordine">Ordine</label><input type="number" class="adm-input" id="dl-ordine" value="0" style="width:5rem"></div>' +
-        '<div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:0.4rem;color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="dl-attivo" checked> Attivo</label></div></div>' +
-        '<div class="form-actions"><button type="submit" class="btn-primary" id="dl-save-btn">Salva</button><button type="button" class="btn-ghost" id="dl-cancel-btn" style="display:none">Annulla</button></div>' +
-        '</form></div><div id="dl-list"><p class="loading-text">Caricamento…</p></div></div>';
-      html = html.replace('<div id="panel-export" class="admin-panel">', panel + '<div id="panel-export" class="admin-panel">');
-    }
+  } else if (html.indexOf('data-tab="impostazioni"') === -1) {
+    html = html.replace(
+      'data-tab="download">Download</button>',
+      'data-tab="download">Download</button>\n        <button type="button" class="admin-tab" data-tab="impostazioni">Impostazioni</button>'
+    );
   }
+
+  if (html.indexOf('panel-download') === -1) {
+    var panelDl = '<div id="panel-download" class="admin-panel">' +
+      '<div id="dl-sql-hint" class="sql-hint" style="display:none">Crea tabella downloads in Supabase (vedi istruzioni nel pannello).</div>' +
+      '<div class="admin-card"><h3 id="dl-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo download</h3>' +
+      '<form id="dl-form" class="form-grid">' +
+      '<input type="hidden" id="dl-id">' +
+      '<div><label class="adm-label" for="dl-titolo">Titolo</label><input class="adm-input" id="dl-titolo" required style="width:100%"></div>' +
+      '<div><label class="adm-label" for="dl-desc">Descrizione</label><textarea class="adm-input" id="dl-desc" rows="2" style="width:100%"></textarea></div>' +
+      '<div><label class="adm-label" for="dl-url">URL file</label><input class="adm-input" id="dl-url" type="url" required style="width:100%"></div>' +
+      '<div style="display:flex;gap:0.75rem;flex-wrap:wrap">' +
+      '<div><label class="adm-label" for="dl-tipo">Tipo</label><select class="adm-select" id="dl-tipo"><option value="pdf">PDF</option><option value="zip">ZIP</option><option value="exe">EXE</option><option value="link">Link</option><option value="file">Altro</option></select></div>' +
+      '<div><label class="adm-label" for="dl-ordine">Ordine</label><input type="number" class="adm-input" id="dl-ordine" value="0" style="width:5rem"></div>' +
+      '<div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:0.4rem;color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="dl-attivo" checked> Attivo</label></div></div>' +
+      '<div class="form-actions"><button type="submit" class="btn-primary" id="dl-save-btn">Salva</button><button type="button" class="btn-ghost" id="dl-cancel-btn" style="display:none">Annulla</button></div>' +
+      '</form></div><div id="dl-list"><p class="loading-text">Caricamento…</p></div></div>';
+    html = html.replace('<div id="panel-export" class="admin-panel">', panelDl + '<div id="panel-export" class="admin-panel">');
+  }
+
+  if (html.indexOf('panel-impostazioni') === -1) {
+    var panelSet = '<div id="panel-impostazioni" class="admin-panel">' +
+      '<div id="set-sql-hint" class="sql-hint" style="display:none">Crea la tabella in Supabase SQL Editor:<br>' +
+      'create table if not exists site_settings (<br>' +
+      '&nbsp;&nbsp;key text primary key,<br>' +
+      '&nbsp;&nbsp;value text,<br>' +
+      '&nbsp;&nbsp;updated_at timestamptz default now()<br>' +
+      ');<br>' +
+      'alter table site_settings enable row level security;<br>' +
+      'create policy "settings read all" on site_settings for select using (true);<br>' +
+      'create policy "settings admin write" on site_settings for all using (<br>' +
+      '&nbsp;&nbsp;exists (select 1 from profiles p where p.id = auth.uid() and (p.is_admin = true or p.role = \'admin\'))<br>' +
+      ');</div>' +
+      '<div class="admin-card">' +
+      '<h3 style="margin:0 0 0.75rem;color:#7dd3fc">Video YouTube in Home</h3>' +
+      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Questo video compare nella sezione «Ultime Regate &amp; Highlights» della home page. Puoi incollare un URL completo o solo l\'ID del video.</p>' +
+      '<form id="settings-form" class="form-grid">' +
+      '<div><label class="adm-label" for="set-youtube">URL o ID YouTube</label>' +
+      '<input class="adm-input" id="set-youtube" style="width:100%" placeholder="https://www.youtube.com/watch?v=... oppure solo ID"></div>' +
+      '<div class="form-actions"><button type="submit" class="btn-primary" id="set-save-btn">Salva video</button></div>' +
+      '</form>' +
+      '<div id="set-youtube-preview" style="margin-top:1rem"></div>' +
+      '</div></div>';
+    html = html.replace('<div id="panel-export" class="admin-panel">', panelSet + '<div id="panel-export" class="admin-panel">');
+  }
+
   document.open();
   document.write(html);
   document.close();
