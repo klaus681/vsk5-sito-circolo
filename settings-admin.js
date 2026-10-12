@@ -1,8 +1,10 @@
-/* CVI Admin – impostazioni sito (video home, banner hero) */
+/* CVI Admin – impostazioni sito (video home, banner hero, stats) */
 (function(){
 "use strict";
 
 var HERO_KEYS=["home_community","home_title","home_subtitle","home_cta1_text","home_cta1_href","home_cta2_text","home_cta2_href"];
+var STAT_KEYS=["home_stat_soci_label","home_stat_soci_value","home_stat_squadre_label","home_stat_squadre_value","home_stat_regate_label","home_stat_regate_value","home_stat_dal_label","home_stat_dal_value"];
+var ALL_SETTING_KEYS=HERO_KEYS.concat(STAT_KEYS);
 
 function esc(s){
   if(s==null)return"";
@@ -38,7 +40,7 @@ window.loadSettings=async function loadSettings(){
   var input=document.getElementById("set-youtube");
   var hint=document.getElementById("set-sql-hint");
   try{
-    var allKeys=["home_youtube"].concat(HERO_KEYS);
+    var allKeys=["home_youtube"].concat(ALL_SETTING_KEYS);
     var res=await CVI.supabase.from("site_settings").select("key,value").in("key",allKeys);
     if(res.error)throw res.error;
     if(hint)hint.style.display="none";
@@ -48,7 +50,7 @@ window.loadSettings=async function loadSettings(){
       input.value=map.home_youtube||"";
       updatePreview(map.home_youtube||"");
     }
-    HERO_KEYS.forEach(function(k){
+    ALL_SETTING_KEYS.forEach(function(k){
       var el=document.getElementById("set-"+k);
       if(el) el.value=map[k]||"";
     });
@@ -114,11 +116,33 @@ async function saveHero(e){
   }finally{if(btn)btn.disabled=false;}
 }
 
+async function saveStats(e){
+  if(e)e.preventDefault();
+  var btn=document.getElementById("set-stats-save-btn");
+  if(btn)btn.disabled=true;
+  try{
+    for(var i=0;i<STAT_KEYS.length;i++){
+      var k=STAT_KEYS[i];
+      var el=document.getElementById("set-"+k);
+      var val=el?el.value.trim():"";
+      var r=await upsertSetting(k,val);
+      if(r.error)throw r.error;
+    }
+    notify("Statistiche home aggiornate","ok");
+  }catch(err){
+    notify(err.message||String(err),"err");
+    var hint=document.getElementById("set-sql-hint");
+    if(hint)hint.style.display="block";
+  }finally{if(btn)btn.disabled=false;}
+}
+
 function wireSettingsUI(){
   var form=document.getElementById("settings-form");
   if(form&&!form._wired){form._wired=true;form.onsubmit=saveYoutube;}
   var heroForm=document.getElementById("settings-hero-form");
   if(heroForm&&!heroForm._wired){heroForm._wired=true;heroForm.onsubmit=saveHero;}
+  var statsForm=document.getElementById("settings-stats-form");
+  if(statsForm&&!statsForm._wired){statsForm._wired=true;statsForm.onsubmit=saveStats;}
   var input=document.getElementById("set-youtube");
   if(input&&!input._wired){
     input._wired=true;
