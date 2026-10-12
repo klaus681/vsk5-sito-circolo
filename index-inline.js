@@ -1,5 +1,8 @@
 const STAGIONE = '2026';
 
+let isLoggedIn = false;
+let isAdminHome = false;
+
 const extra = {
   it: {
     home_community: "Circolo Velico Italia",
@@ -158,25 +161,103 @@ async function caricaStats() {
   } catch (e) { console.warn('stats', e); }
 }
 
-async function caricaBacheca() {
-  const section = document.getElementById('bacheca');
-  const lista = document.getElementById('lista-avvisi');
-  if (!section || !lista) return;
+async function checkSessionAndRole() {
   try {
-    const { data, error } = await CVI.supabase.from('avvisi').select('id, titolo, testo, created_at').order('created_at', { ascending: false }).limit(10);
+    const { data: { session } } = await CVI.supabase.auth.getSession();
+    if (!session) return { loggedIn: false, isAdmin: false };
+    const { data: prof } = await CVI.supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).maybeSingle();
+    const role = (window.CVI && CVI.resolveRole) ? CVI.resolveRole(prof) : (prof && prof.role) || 'socio';
+    const isAdmin = (window.CVI && CVI.canAccessAdmin) ? CVI.canAccessAdmin(role) : !!(prof && (prof.is_admin || role === 'admin' || role === 'scorer'));
+    return { loggedIn: true, isAdmin: !!isAdmin };
+  } catch (e) {
+    return { loggedIn: false, isAdmin: false };
+  }
+}
+
+async function caricaBacheca() {
+  const box = document.getElementById('bacheca');
+  const lista = document.getElementById('lista-avvisi');
+  if (!box || !lista) return;
+
+  // Solo utenti loggati vedono la bacheca
+  if (!isLoggedIn) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = '';
+
+  try {
+    const { data, error } = await CVI.supabase
+      .from('avvisi')
+      .select('id, titolo, testo, created_at')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
     if (error) throw error;
-    section.style.display = '';
-    if (!data || !data.length) {
+    const rows = data || [];
+    if (!rows.length) {
       lista.innerHTML = '<p class="avviso-empty">Nessun avviso al momento.</p>';
       return;
     }
-    lista.innerHTML = data.map(a => {
-      const d = a.created_at ? new Date(a.created_at).toLocaleDateString('it-IT') : '';
-      return `<div class="avviso-item"><div class="avviso-meta"><span class="avviso-titolo">${a.titolo || 'Avviso'}</span><span class="avviso-data">${d}</span></div><div class="avviso-testo">${a.testo || ''}</div></div>`;
+    lista.innerHTML = rows.map(a => {
+      const dataFmt = a.created_at
+        ? new Date(a.created_at).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' })
+        : '';
+      const delBtn = isAdminHome
+        ? `<button type="button" class="btn-avviso-del" data-id="${a.id}">Elimina</button>`
+        : '';
+      return `<div class="avviso-item">
+        <div class="avviso-meta">
+          <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'<')}</span>
+          <div class="avviso-actions">
+            <span class="avviso-data">${dataFmt}</span>
+            ${delBtn}
+          </div>
+        </div>
+        <div class="avviso-testo">${(a.testo || '').replace(/</g,'<')}</div>
+      </div>`;
     }).join('');
+
+    lista.querySelectorAll('.btn-avviso-del').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Eliminare questo avviso?')) return;
+        const { error } = await CVI.supabase.from('avvisi').delete().eq('id', btn.dataset.id);
+        if (error) alert(error.message);
+        else caricaBacheca();
+      };
+    });
   } catch (e) {
-    console.warn('bacheca', e);
-    section.style.display = 'none';
+    console.warn(e);
+    lista.innerHTML = '<p class="avviso-empty">Impossibile caricare gli avvisi.</p>';
+  }
+}
+
+function setupBachecaAdmin() {
+  if (!isAdminHome) return;
+  const btn = document.getElementById('btn-nuovo-avviso');
+  if (btn) {
+    btn.style.display = 'inline-block';
+    btn.onclick = () => document.getElementById('form-avviso').classList.toggle('open');
+  }
+  const annulla = document.getElementById('btn-annulla-avviso');
+  if (annulla) {
+    annulla.onclick = () => document.getElementById('form-avviso').classList.remove('open');
+  }
+  const salva = document.getElementById('btn-salva-avviso');
+  if (salva) {
+    salva.onclick = async () => {
+      const titolo = (document.getElementById('avviso-titolo').value || '').trim();
+      const testo = (document.getElementById('avviso-testo').value || '').trim();
+      if (!titolo || !testo) { alert('Titolo e messaggio obbligatori'); return; }
+      const { error } = await CVI.supabase.from('avvisi').insert({ titolo, testo });
+      if (error) alert(error.message);
+      else {
+        document.getElementById('avviso-titolo').value = '';
+        document.getElementById('avviso-testo').value = '';
+        document.getElementById('form-avviso').classList.remove('open');
+        caricaBacheca();
+      }
+    };
   }
 }
 
@@ -186,5 +267,17 @@ async function caricaBacheca() {
     console.warn('Supabase non disponibile');
     return;
   }
-  await Promise.all([caricaProssimaGara(), caricaClassificaHome(), caricaStats(), caricaBacheca()]);
+
+  const auth = await checkSessionAndRole();
+  isLoggedIn = auth.loggedIn;
+  isAdminHome = auth.isAdmin;
+
+  setupBachecaAdmin();
+
+  await Promise.all([
+    caricaProssimaGara(),
+    caricaClassificaHome(),
+    caricaStats(),
+    caricaBacheca()
+  ]);
 })();
