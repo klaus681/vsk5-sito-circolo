@@ -2,8 +2,8 @@
 (async function(){
   try {
     var parts = await Promise.all([
-      fetch("admin-a.js?v=2").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
-      fetch("admin-b.js?v=2").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
+      fetch("admin-a.js?v=3").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
+      fetch("admin-b.js?v=3").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
     ]);
     var s = document.createElement("script");
     s.textContent = parts[0] + parts[1];
