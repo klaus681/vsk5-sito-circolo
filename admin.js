@@ -15,8 +15,8 @@
       s2.textContent = dl;
       document.head.appendChild(s2);
     }
-    // Site settings (YouTube banner)
-    var st = await fetch("settings-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    // Site settings (YouTube + Hero banner)
+    var st = await fetch("settings-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (st) {
       var s3 = document.createElement("script");
       s3.textContent = st;

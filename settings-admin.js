@@ -1,6 +1,8 @@
-/* CVI Admin – impostazioni sito (video home, ecc.) */
+/* CVI Admin – impostazioni sito (video home, banner hero) */
 (function(){
 "use strict";
+
+var HERO_KEYS=["home_community","home_title","home_subtitle","home_cta1_text","home_cta1_href","home_cta2_text","home_cta2_href"];
 
 function esc(s){
   if(s==null)return"";
@@ -24,18 +26,32 @@ function extractYoutubeId(raw){
   return m?m[1]:"";
 }
 
+async function upsertSetting(key, value){
+  var existing=await CVI.supabase.from("site_settings").select("key").eq("key",key).maybeSingle();
+  if(existing.data){
+    return CVI.supabase.from("site_settings").update({value:value,updated_at:new Date().toISOString()}).eq("key",key);
+  }
+  return CVI.supabase.from("site_settings").insert({key:key,value:value});
+}
+
 window.loadSettings=async function loadSettings(){
   var input=document.getElementById("set-youtube");
-  var preview=document.getElementById("set-youtube-preview");
   var hint=document.getElementById("set-sql-hint");
-  if(!input)return;
   try{
-    var res=await CVI.supabase.from("site_settings").select("key,value").eq("key","home_youtube").maybeSingle();
+    var allKeys=["home_youtube"].concat(HERO_KEYS);
+    var res=await CVI.supabase.from("site_settings").select("key,value").in("key",allKeys);
     if(res.error)throw res.error;
     if(hint)hint.style.display="none";
-    var val=(res.data&&res.data.value)||"";
-    input.value=val;
-    updatePreview(val);
+    var map={};
+    (res.data||[]).forEach(function(r){ if(r&&r.key) map[r.key]=r.value||""; });
+    if(input){
+      input.value=map.home_youtube||"";
+      updatePreview(map.home_youtube||"");
+    }
+    HERO_KEYS.forEach(function(k){
+      var el=document.getElementById("set-"+k);
+      if(el) el.value=map[k]||"";
+    });
   }catch(e){
     if(hint)hint.style.display="block";
     notify(e.message||String(e),"err");
@@ -55,7 +71,7 @@ function updatePreview(raw){
     '<p style="color:#94a3b8;font-size:0.8rem;margin:0.5rem 0 0">ID: <code style="color:#7dd3fc">'+esc(id)+'</code></p>';
 }
 
-async function saveSettings(e){
+async function saveYoutube(e){
   if(e)e.preventDefault();
   var input=document.getElementById("set-youtube");
   if(!input)return;
@@ -66,17 +82,31 @@ async function saveSettings(e){
   var btn=document.getElementById("set-save-btn");
   if(btn)btn.disabled=true;
   try{
-    var existing=await CVI.supabase.from("site_settings").select("key").eq("key","home_youtube").maybeSingle();
-    var r;
-    if(existing.data){
-      r=await CVI.supabase.from("site_settings").update({value:value,updated_at:new Date().toISOString()}).eq("key","home_youtube");
-    }else{
-      r=await CVI.supabase.from("site_settings").insert({key:"home_youtube",value:value});
-    }
+    var r=await upsertSetting("home_youtube",value);
     if(r.error)throw r.error;
     input.value=value?("https://www.youtube.com/watch?v="+value):"";
     updatePreview(value);
-    notify(value?"Video aggiornato":"Video rimosso (verrà usato il default)","ok");
+    notify(value?"Video aggiornato":"Video rimosso (default)","ok");
+  }catch(err){
+    notify(err.message||String(err),"err");
+    var hint=document.getElementById("set-sql-hint");
+    if(hint)hint.style.display="block";
+  }finally{if(btn)btn.disabled=false;}
+}
+
+async function saveHero(e){
+  if(e)e.preventDefault();
+  var btn=document.getElementById("set-hero-save-btn");
+  if(btn)btn.disabled=true;
+  try{
+    for(var i=0;i<HERO_KEYS.length;i++){
+      var k=HERO_KEYS[i];
+      var el=document.getElementById("set-"+k);
+      var val=el?el.value.trim():"";
+      var r=await upsertSetting(k,val);
+      if(r.error)throw r.error;
+    }
+    notify("Banner home aggiornato","ok");
   }catch(err){
     notify(err.message||String(err),"err");
     var hint=document.getElementById("set-sql-hint");
@@ -86,7 +116,9 @@ async function saveSettings(e){
 
 function wireSettingsUI(){
   var form=document.getElementById("settings-form");
-  if(form&&!form._wired){form._wired=true;form.onsubmit=saveSettings;}
+  if(form&&!form._wired){form._wired=true;form.onsubmit=saveYoutube;}
+  var heroForm=document.getElementById("settings-hero-form");
+  if(heroForm&&!heroForm._wired){heroForm._wired=true;heroForm.onsubmit=saveHero;}
   var input=document.getElementById("set-youtube");
   if(input&&!input._wired){
     input._wired=true;
@@ -102,7 +134,7 @@ function wireSettingsUI(){
 }
 
 function tryWire(){
-  if(!document.getElementById("settings-form"))return;
+  if(!document.getElementById("settings-form")&&!document.getElementById("settings-hero-form"))return;
   wireSettingsUI();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(tryWire,800);});
