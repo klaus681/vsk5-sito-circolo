@@ -152,6 +152,21 @@
       gap: 0.6rem;
       flex-wrap: wrap;
     }
+
+    .regata-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.35rem; }
+    .badge-stato {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-stato.is-aperte { background: rgba(52,211,153,0.15); color: #34d399; }
+    .badge-stato.is-chiuse { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-stato.is-corso { background: rgba(56,189,248,0.2); color: #7dd3fc; }
+    .badge-stato.is-conclusa { background: rgba(148,163,184,0.2); color: #94a3b8; }
   </style>
 </head>
 <body>
@@ -250,7 +265,10 @@
 
       <a href="gare.html" id="next-regata-card" class="next-regata-card">
         <div>
-          <span class="badge-tag">Prossima gara</span>
+          <div class="regata-badges" id="regata-badges">
+            <span class="badge-tag" id="regata-badge-tipo">Prossima gara</span>
+            <span class="badge-stato" id="regata-badge-stato" style="display:none"></span>
+          </div>
           <h2 id="regata-titolo">Caricamento da database...</h2>
         </div>
         <div class="regata-meta">
@@ -365,44 +383,90 @@
       }
     };
 
+    function statoGara(gara) {
+      if (!gara || !gara.data_gara) return { key: 'none', label: '', tipo: 'Prossima gara' };
+      const start = new Date(gara.data_gara).getTime();
+      if (isNaN(start)) return { key: 'none', label: '', tipo: 'Prossima gara' };
+      const now = Date.now();
+      let chiusuraOre = gara.chiusura_ore != null ? parseInt(gara.chiusura_ore, 10) : 2;
+      if (isNaN(chiusuraOre) || chiusuraOre < 0) chiusuraOre = 2;
+      const nr = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));
+      const durataMs = Math.max(2, nr * 1.5) * 60 * 60 * 1000;
+
+      if (now >= start + durataMs) {
+        return { key: 'conclusa', label: 'Conclusa', tipo: 'Ultima gara' };
+      }
+      if (now >= start) {
+        return { key: 'corso', label: 'In corso', tipo: 'Gara in corso' };
+      }
+      if (now >= start - chiusuraOre * 60 * 60 * 1000) {
+        return { key: 'chiuse', label: 'Iscrizioni chiuse', tipo: 'Prossima gara' };
+      }
+      return { key: 'aperte', label: 'Iscrizioni aperte', tipo: 'Prossima gara' };
+    }
+
     async function caricaProssimaGara() {
       try {
         const now = new Date().toISOString();
-        const { data, error } = await CVI.supabase
+        let { data, error } = await CVI.supabase
           .from('gare')
-          .select('id, titolo, descrizione, data_gara')
+          .select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate')
           .gte('data_gara', now)
           .order('data_gara', { ascending: true })
           .limit(1);
 
         if (error) {
-          const fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara').order('data_gara', { ascending: true }).limit(1);
-          if (fb.error || !fb.data?.length) {
-            document.getElementById('regata-titolo').textContent = "Nessuna gara in programma";
+          console.warn('gare future:', error.message);
+          data = null;
+        }
+
+        if (!data || !data.length) {
+          const past = await CVI.supabase
+            .from('gare')
+            .select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate')
+            .order('data_gara', { ascending: false })
+            .limit(1);
+          if (past.error || !past.data || !past.data.length) {
+            document.getElementById('regata-titolo').textContent = 'Nessuna gara in programma';
+            document.getElementById('regata-data').textContent = '📅 --';
+            document.getElementById('regata-descrizione').textContent = 'Controlla più tardi per nuovi eventi.';
+            const bs = document.getElementById('regata-badge-stato');
+            const bt = document.getElementById('regata-badge-tipo');
+            if (bs) { bs.style.display = 'none'; bs.textContent = ''; }
+            if (bt) bt.textContent = 'Calendario';
             return;
           }
-          fillRegata(fb.data[0]);
+          fillRegata(past.data[0]);
           return;
         }
-        if (data && data.length > 0) {
-          fillRegata(data[0]);
-        } else {
-          document.getElementById('regata-titolo').textContent = "Nessuna gara in programma";
-          document.getElementById('regata-data').textContent = "📅 --";
-          document.getElementById('regata-descrizione').textContent = "Controlla più tardi per nuovi eventi.";
-        }
+        fillRegata(data[0]);
       } catch (err) {
         console.error(err);
       }
     }
 
     function fillRegata(gara) {
-      document.getElementById('regata-titolo').textContent = gara.titolo || "Gara senza titolo";
+      document.getElementById('regata-titolo').textContent = gara.titolo || 'Gara senza titolo';
       const dataFmt = gara.data_gara
         ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' })
         : 'Data da definirsi';
       document.getElementById('regata-data').textContent = `📅 ${dataFmt}`;
       document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
+
+      const st = statoGara(gara);
+      const badgeTipo = document.getElementById('regata-badge-tipo');
+      const badgeStato = document.getElementById('regata-badge-stato');
+      if (badgeTipo) badgeTipo.textContent = st.tipo;
+      if (badgeStato) {
+        if (st.label) {
+          badgeStato.textContent = st.label;
+          badgeStato.style.display = '';
+          badgeStato.className = 'badge-stato is-' + st.key;
+        } else {
+          badgeStato.style.display = 'none';
+          badgeStato.textContent = '';
+        }
+      }
     }
 
     async function caricaClassificaHome() {
