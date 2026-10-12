@@ -486,6 +486,7 @@
     }
 
     let isAdminHome = false;
+    let isLoggedIn = false;
 
     function escHtml(s) {
       if (s == null) return '';
@@ -502,6 +503,11 @@
     async function caricaBacheca() {
       const lista = document.getElementById('lista-avvisi');
       const bacheca = document.getElementById('bacheca');
+      // Visibile solo agli utenti loggati
+      if (!isLoggedIn) {
+        if (bacheca) bacheca.style.display = 'none';
+        return;
+      }
       try {
         const { data, error } = await CVI.supabase
           .from('avvisi')
@@ -540,20 +546,26 @@
       }
     }
 
-    async function checkAdminHome() {
+    async function checkSessionAndRole() {
       try {
         const { data: { session } } = await CVI.supabase.auth.getSession();
-        if (!session) return false;
+        if (!session) return { loggedIn: false, isAdmin: false };
         const { data: prof } = await CVI.supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).maybeSingle();
         const role = CVI.resolveRole(prof);
-        return CVI.canAccessAdmin(role) || !!(prof && prof.is_admin);
-      } catch (e) { return false; }
+        const isAdmin = CVI.canAccessAdmin(role) || !!(prof && prof.is_admin);
+        return { loggedIn: true, isAdmin: isAdmin };
+      } catch (e) {
+        return { loggedIn: false, isAdmin: false };
+      }
     }
 
     CVI.init('index.html', extra);
 
     (async function () {
-      isAdminHome = await checkAdminHome();
+      const auth = await checkSessionAndRole();
+      isLoggedIn = auth.loggedIn;
+      isAdminHome = auth.isAdmin;
+
       if (isAdminHome) {
         const btn = document.getElementById('btn-nuovo-avviso');
         if (btn) {
