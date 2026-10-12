@@ -25,7 +25,6 @@
     return;
   }
 
-  // Tab Download + Impostazioni
   if (html.indexOf('data-tab="download"') === -1) {
     html = html.replace(
       'data-tab="galleria">Galleria</button>',
@@ -40,7 +39,7 @@
 
   if (html.indexOf('panel-download') === -1) {
     var panelDl = '<div id="panel-download" class="admin-panel">' +
-      '<div id="dl-sql-hint" class="sql-hint" style="display:none">Crea tabella downloads in Supabase (vedi istruzioni nel pannello).</div>' +
+      '<div id="dl-sql-hint" class="sql-hint" style="display:none">Crea tabella downloads in Supabase.</div>' +
       '<div class="admin-card"><h3 id="dl-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo download</h3>' +
       '<form id="dl-form" class="form-grid">' +
       '<input type="hidden" id="dl-id">' +
@@ -58,39 +57,49 @@
 
   if (html.indexOf('panel-impostazioni') === -1) {
     var panelSet = '<div id="panel-impostazioni" class="admin-panel">' +
-      '<div id="set-sql-hint" class="sql-hint" style="display:none">Crea la tabella site_settings in Supabase (vedi istruzioni precedenti).</div>' +
+      '<div id="set-sql-hint" class="sql-hint" style="display:none">Crea la tabella site_settings in Supabase.</div>' +
       '<div class="admin-card">' +
       '<h3 style="margin:0 0 0.75rem;color:#7dd3fc">Banner Home (Hero)</h3>' +
-      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Testi e pulsanti della sezione in alto nella home. Lascia vuoto un campo per mantenere il default. Nel titolo puoi usare &lt;br&gt; e &lt;em&gt;...&lt;/em&gt;.</p>' +
+      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Testi e pulsanti della sezione in alto. Lascia vuoto per il default. Titolo: HTML &lt;br&gt; e &lt;em&gt; consentiti.</p>' +
       '<form id="settings-hero-form" class="form-grid">' +
       '<div><label class="adm-label" for="set-home_community">Etichetta sopra il titolo</label>' +
       '<input class="adm-input" id="set-home_community" style="width:100%" placeholder="Circolo Velico Italia"></div>' +
-      '<div><label class="adm-label" for="set-home_title">Titolo (HTML consentito)</label>' +
+      '<div><label class="adm-label" for="set-home_title">Titolo (HTML)</label>' +
       '<input class="adm-input" id="set-home_title" style="width:100%" placeholder="Regate vere,&lt;br&gt;&lt;em&gt;mari virtuali.&lt;/em&gt;"></div>' +
       '<div><label class="adm-label" for="set-home_subtitle">Sottotitolo</label>' +
-      '<textarea class="adm-input" id="set-home_subtitle" rows="2" style="width:100%" placeholder="Squadre, regate settimanali..."></textarea></div>' +
+      '<textarea class="adm-input" id="set-home_subtitle" rows="2" style="width:100%"></textarea></div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">' +
-      '<div><label class="adm-label" for="set-home_cta1_text">Pulsante 1 – testo</label>' +
-      '<input class="adm-input" id="set-home_cta1_text" style="width:100%" placeholder="Calendario Regate"></div>' +
-      '<div><label class="adm-label" for="set-home_cta1_href">Pulsante 1 – link</label>' +
-      '<input class="adm-input" id="set-home_cta1_href" style="width:100%" placeholder="gare.html"></div>' +
-      '<div><label class="adm-label" for="set-home_cta2_text">Pulsante 2 – testo</label>' +
-      '<input class="adm-input" id="set-home_cta2_text" style="width:100%" placeholder="Unisciti al Circolo"></div>' +
-      '<div><label class="adm-label" for="set-home_cta2_href">Pulsante 2 – link</label>' +
-      '<input class="adm-input" id="set-home_cta2_href" style="width:100%" placeholder="unisciti.html"></div>' +
+      '<div><label class="adm-label" for="set-home_cta1_text">Pulsante 1 – testo</label><input class="adm-input" id="set-home_cta1_text" style="width:100%" placeholder="Calendario Regate"></div>' +
+      '<div><label class="adm-label" for="set-home_cta1_href">Pulsante 1 – link</label><input class="adm-input" id="set-home_cta1_href" style="width:100%" placeholder="gare.html"></div>' +
+      '<div><label class="adm-label" for="set-home_cta2_text">Pulsante 2 – testo</label><input class="adm-input" id="set-home_cta2_text" style="width:100%" placeholder="Unisciti al Circolo"></div>' +
+      '<div><label class="adm-label" for="set-home_cta2_href">Pulsante 2 – link</label><input class="adm-input" id="set-home_cta2_href" style="width:100%" placeholder="unisciti.html"></div>' +
       '</div>' +
       '<div class="form-actions"><button type="submit" class="btn-primary" id="set-hero-save-btn">Salva banner</button></div>' +
       '</form></div>' +
       '<div class="admin-card" style="margin-top:1rem">' +
+      '<h3 style="margin:0 0 0.75rem;color:#7dd3fc">Statistiche Home</h3>' +
+      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Box Soci / Squadre / Regate / Dal. Lascia <strong>vuoto il valore</strong> per il conteggio automatico dal database.</p>' +
+      '<form id="settings-stats-form" class="form-grid">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">' +
+      '<div><label class="adm-label" for="set-home_stat_soci_label">Etichetta Soci</label><input class="adm-input" id="set-home_stat_soci_label" style="width:100%" placeholder="Soci"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_soci_value">Valore Soci (opz.)</label><input class="adm-input" id="set-home_stat_soci_value" style="width:100%" placeholder="auto dal DB"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_squadre_label">Etichetta Squadre</label><input class="adm-input" id="set-home_stat_squadre_label" style="width:100%" placeholder="Squadre"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_squadre_value">Valore Squadre (opz.)</label><input class="adm-input" id="set-home_stat_squadre_value" style="width:100%" placeholder="auto dal DB"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_regate_label">Etichetta Regate</label><input class="adm-input" id="set-home_stat_regate_label" style="width:100%" placeholder="Regate 2026"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_regate_value">Valore Regate (opz.)</label><input class="adm-input" id="set-home_stat_regate_value" style="width:100%" placeholder="auto dal DB"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_dal_label">Etichetta Dal</label><input class="adm-input" id="set-home_stat_dal_label" style="width:100%" placeholder="Dal"></div>' +
+      '<div><label class="adm-label" for="set-home_stat_dal_value">Valore Dal (opz.)</label><input class="adm-input" id="set-home_stat_dal_value" style="width:100%" placeholder="2003"></div>' +
+      '</div>' +
+      '<div class="form-actions"><button type="submit" class="btn-primary" id="set-stats-save-btn">Salva statistiche</button></div>' +
+      '</form></div>' +
+      '<div class="admin-card" style="margin-top:1rem">' +
       '<h3 style="margin:0 0 0.75rem;color:#7dd3fc">Video YouTube in Home</h3>' +
-      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Sezione «Ultime Regate &amp; Highlights». URL completo o solo ID.</p>' +
+      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Sezione «Ultime Regate &amp; Highlights».</p>' +
       '<form id="settings-form" class="form-grid">' +
       '<div><label class="adm-label" for="set-youtube">URL o ID YouTube</label>' +
-      '<input class="adm-input" id="set-youtube" style="width:100%" placeholder="https://www.youtube.com/watch?v=... oppure solo ID"></div>' +
+      '<input class="adm-input" id="set-youtube" style="width:100%" placeholder="https://www.youtube.com/watch?v=..."></div>' +
       '<div class="form-actions"><button type="submit" class="btn-primary" id="set-save-btn">Salva video</button></div>' +
-      '</form>' +
-      '<div id="set-youtube-preview" style="margin-top:1rem"></div>' +
-      '</div></div>';
+      '</form><div id="set-youtube-preview" style="margin-top:1rem"></div></div></div>';
     html = html.replace('<div id="panel-export" class="admin-panel">', panelSet + '<div id="panel-export" class="admin-panel">');
   }
 
