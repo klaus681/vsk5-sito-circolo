@@ -1,4 +1,4 @@
-/* CVI Admin – impostazioni sito (video home, banner hero, stats) */
+/* CVI Admin – impostazioni sito (video, banner, stats, discord) */
 (function(){
 "use strict";
 
@@ -40,7 +40,7 @@ window.loadSettings=async function loadSettings(){
   var input=document.getElementById("set-youtube");
   var hint=document.getElementById("set-sql-hint");
   try{
-    var allKeys=["home_youtube"].concat(ALL_SETTING_KEYS);
+    var allKeys=["home_youtube","discord_webhook"].concat(ALL_SETTING_KEYS);
     var res=await CVI.supabase.from("site_settings").select("key,value").in("key",allKeys);
     if(res.error)throw res.error;
     if(hint)hint.style.display="none";
@@ -50,6 +50,8 @@ window.loadSettings=async function loadSettings(){
       input.value=map.home_youtube||"";
       updatePreview(map.home_youtube||"");
     }
+    var dw=document.getElementById("set-discord-webhook");
+    if(dw) dw.value=map.discord_webhook||"";
     ALL_SETTING_KEYS.forEach(function(k){
       var el=document.getElementById("set-"+k);
       if(el) el.value=map[k]||"";
@@ -136,6 +138,49 @@ async function saveStats(e){
   }finally{if(btn)btn.disabled=false;}
 }
 
+async function saveDiscord(e){
+  if(e)e.preventDefault();
+  var input=document.getElementById("set-discord-webhook");
+  if(!input)return;
+  var val=input.value.trim();
+  if(val && !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//i.test(val)){
+    alert("URL webhook Discord non valido. Deve iniziare con https://discord.com/api/webhooks/...");
+    return;
+  }
+  var btn=document.getElementById("set-discord-save-btn");
+  if(btn)btn.disabled=true;
+  try{
+    var r=await upsertSetting("discord_webhook",val);
+    if(r.error)throw r.error;
+    if(window.CVIDiscord) CVIDiscord.clearCache();
+    notify(val?"Webhook Discord salvato":"Webhook rimosso","ok");
+  }catch(err){
+    notify(err.message||String(err),"err");
+  }finally{if(btn)btn.disabled=false;}
+}
+
+async function testDiscord(e){
+  if(e)e.preventDefault();
+  if(!window.CVIDiscord){alert("Modulo Discord non caricato");return;}
+  var btn=document.getElementById("set-discord-test-btn");
+  if(btn)btn.disabled=true;
+  try{
+    var input=document.getElementById("set-discord-webhook");
+    if(input&&input.value.trim()){
+      await upsertSetting("discord_webhook",input.value.trim());
+      CVIDiscord.clearCache();
+    }
+    var ok=await CVIDiscord.sendEmbed({
+      title:"✅ Test notifica CVI",
+      description:"Il webhook Discord è configurato correttamente.",
+      color:0x34d399
+    });
+    notify(ok?"Messaggio di test inviato su Discord":"Invio fallito — controlla l'URL del webhook","ok");
+  }catch(err){
+    notify(err.message||String(err),"err");
+  }finally{if(btn)btn.disabled=false;}
+}
+
 function wireSettingsUI(){
   var form=document.getElementById("settings-form");
   if(form&&!form._wired){form._wired=true;form.onsubmit=saveYoutube;}
@@ -143,6 +188,10 @@ function wireSettingsUI(){
   if(heroForm&&!heroForm._wired){heroForm._wired=true;heroForm.onsubmit=saveHero;}
   var statsForm=document.getElementById("settings-stats-form");
   if(statsForm&&!statsForm._wired){statsForm._wired=true;statsForm.onsubmit=saveStats;}
+  var discForm=document.getElementById("settings-discord-form");
+  if(discForm&&!discForm._wired){discForm._wired=true;discForm.onsubmit=saveDiscord;}
+  var testBtn=document.getElementById("set-discord-test-btn");
+  if(testBtn&&!testBtn._wired){testBtn._wired=true;testBtn.onclick=testDiscord;}
   var input=document.getElementById("set-youtube");
   if(input&&!input._wired){
     input._wired=true;
