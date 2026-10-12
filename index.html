@@ -216,12 +216,12 @@
   <div class="hero-wrap">
     <section class="hero-section">
       <img src="logo-cvi.png" alt="Logo Circolo Velico Italia" class="hero-logo" width="140" height="140">
-      <p class="hero-community" data-i18n="home_community">Circolo Velico Italia</p>
-      <h1 data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
-      <p data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
+      <p class="hero-community" id="hero-community" data-i18n="home_community">Circolo Velico Italia</p>
+      <h1 id="hero-title" data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
+      <p id="hero-subtitle" data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
       <div class="hero-actions">
-        <a href="gare.html" class="btn-primary">Calendario Regate</a>
-        <a href="unisciti.html" class="btn-secondary" data-i18n="nav_unisciti">Unisciti al Circolo</a>
+        <a href="gare.html" class="btn-primary" id="hero-cta1">Calendario Regate</a>
+        <a href="unisciti.html" class="btn-secondary" id="hero-cta2" data-i18n="nav_unisciti">Unisciti al Circolo</a>
       </div>
     </section>
   </div>
@@ -338,6 +338,7 @@
   </footer>
 
   <script src="common.js"></script>
+  <script src="home-hero.js?v=1"></script>
   <script>
     const STAGIONE = '2026';
 
@@ -522,13 +523,13 @@
             : '';
           return `<div class="avviso-item">
             <div class="avviso-meta">
-              <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'&lt;')}</span>
+              <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'<')}</span>
               <div class="avviso-actions">
                 <span class="avviso-data">${dataFmt}</span>
                 ${delBtn}
               </div>
             </div>
-            <div class="avviso-testo">${(a.testo || '').replace(/</g,'&lt;')}</div>
+            <div class="avviso-testo">${(a.testo || '').replace(/</g,'<')}</div>
           </div>`;
         }).join('');
 
@@ -590,24 +591,7 @@
         };
       }
 
-      async function caricaVideoHome() {
-        try {
-          const { data, error } = await CVI.supabase
-            .from('site_settings')
-            .select('value')
-            .eq('key', 'home_youtube')
-            .maybeSingle();
-          if (error || !data || !data.value) return;
-          const raw = String(data.value).trim();
-          let id = raw;
-          const m = raw.match(/(?:youtu\.be\/|v=|embed\/)([A-Za-z0-9_-]{6,})/) || raw.match(/^([A-Za-z0-9_-]{6,})$/);
-          if (m) id = m[1];
-          const iframe = document.getElementById('home-youtube');
-          if (iframe && id) iframe.src = 'https://www.youtube.com/embed/' + id;
-        } catch (e) { console.warn('video home', e); }
-      }
-
-      await Promise.all([caricaProssimaGara(), caricaClassificaHome(), caricaStats(), caricaBacheca(), caricaVideoHome()]);
+      await Promise.all([caricaProssimaGara(), caricaClassificaHome(), caricaStats(), caricaBacheca()]);
     })();
   </script>
 </body>
