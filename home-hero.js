@@ -1,21 +1,31 @@
-/* CVI – carica banner hero e video da site_settings */
+/* CVI – carica banner hero, video e stats da site_settings */
 (async function () {
-  if (!window.CVI || !CVI.supabase) return;
-  // Attendi init CVI se necessario
   function waitCVI(maxMs) {
     return new Promise(function (resolve) {
       var t0 = Date.now();
       (function tick() {
         if (window.CVI && CVI.supabase) return resolve(true);
-        if (Date.now() - t0 > (maxMs || 5000)) return resolve(false);
+        if (Date.now() - t0 > (maxMs || 6000)) return resolve(false);
         setTimeout(tick, 50);
       })();
     });
   }
   await waitCVI(6000);
   if (!window.CVI || !CVI.supabase) return;
+
+  var STAT_KEYS = [
+    'home_stat_soci_label', 'home_stat_soci_value',
+    'home_stat_squadre_label', 'home_stat_squadre_value',
+    'home_stat_regate_label', 'home_stat_regate_value',
+    'home_stat_dal_label', 'home_stat_dal_value'
+  ];
+  var HERO_KEYS = [
+    'home_youtube', 'home_community', 'home_title', 'home_subtitle',
+    'home_cta1_text', 'home_cta1_href', 'home_cta2_text', 'home_cta2_href'
+  ];
+
   try {
-    var keys = ['home_youtube','home_community','home_title','home_subtitle','home_cta1_text','home_cta1_href','home_cta2_text','home_cta2_href'];
+    var keys = HERO_KEYS.concat(STAT_KEYS);
     var res = await CVI.supabase.from('site_settings').select('key, value').in('key', keys);
     if (res.error || !res.data) return;
     var map = {};
@@ -46,6 +56,30 @@
       if (map.home_cta2_text) cta2.textContent = map.home_cta2_text;
       if (map.home_cta2_href) cta2.setAttribute('href', map.home_cta2_href);
     }
+
+    function setLabel(id, val) {
+      var el = document.getElementById(id);
+      if (el && val) el.textContent = val;
+    }
+    setLabel('stat-soci-label', map.home_stat_soci_label);
+    setLabel('stat-squadre-label', map.home_stat_squadre_label);
+    setLabel('stat-regate-label', map.home_stat_regate_label);
+    setLabel('stat-fondazione-label', map.home_stat_dal_label);
+
+    function applyValueOverrides() {
+      function setNum(id, val) {
+        if (val == null || String(val).trim() === '') return;
+        var el = document.getElementById(id);
+        if (el) el.textContent = String(val).trim();
+      }
+      setNum('stat-soci', map.home_stat_soci_value);
+      setNum('stat-squadre', map.home_stat_squadre_value);
+      setNum('stat-regate', map.home_stat_regate_value);
+      setNum('stat-fondazione', map.home_stat_dal_value);
+    }
+    applyValueOverrides();
+    setTimeout(applyValueOverrides, 800);
+    setTimeout(applyValueOverrides, 2000);
   } catch (e) {
     console.warn('home-hero', e);
   }

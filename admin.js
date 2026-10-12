@@ -8,15 +8,13 @@
     var s = document.createElement("script");
     s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
-    // Download management
     var dl = await fetch("downloads-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (dl) {
       var s2 = document.createElement("script");
       s2.textContent = dl;
       document.head.appendChild(s2);
     }
-    // Site settings (YouTube + Hero banner)
-    var st = await fetch("settings-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
+    var st = await fetch("settings-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (st) {
       var s3 = document.createElement("script");
       s3.textContent = st;
