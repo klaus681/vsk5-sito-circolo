@@ -1,1 +1,60 @@
-PLACEHOLDER_ADMIN_HTML
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – CVI Virtual</title>
+<script>
+(async function () {
+  const urls = [
+    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/eda97525872d1a510b8e08f493eceb7c59971bfd/admin.html',
+    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@eda97525872d1a510b8e08f493eceb7c59971bfd/admin.html'
+  ];
+  let html = null, lastErr = null;
+  for (const src of urls) {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      html = await res.text();
+      if (html && html.indexOf('Pannello Admin') !== -1) break;
+      html = null;
+    } catch (e) { lastErr = e; }
+  }
+  if (!html) {
+    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento admin. Ricarica.<br><small>' + lastErr + '</small></p>';
+    return;
+  }
+  // Inietta tab Download se manca
+  if (html.indexOf('data-tab="download"') === -1) {
+    html = html.replace(
+      'data-tab="galleria">Galleria</button>',
+      'data-tab="galleria">Galleria</button>\n        <button type="button" class="admin-tab" data-tab="download">Download</button>'
+    );
+    if (html.indexOf('panel-download') === -1) {
+      var panel = '<div id="panel-download" class="admin-panel">' +
+        '<div id="dl-sql-hint" class="sql-hint" style="display:none">Crea tabella downloads in Supabase (vedi istruzioni nel pannello).</div>' +
+        '<div class="admin-card"><h3 id="dl-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo download</h3>' +
+        '<form id="dl-form" class="form-grid">' +
+        '<input type="hidden" id="dl-id">' +
+        '<div><label class="adm-label" for="dl-titolo">Titolo</label><input class="adm-input" id="dl-titolo" required style="width:100%"></div>' +
+        '<div><label class="adm-label" for="dl-desc">Descrizione</label><textarea class="adm-input" id="dl-desc" rows="2" style="width:100%"></textarea></div>' +
+        '<div><label class="adm-label" for="dl-url">URL file</label><input class="adm-input" id="dl-url" type="url" required style="width:100%"></div>' +
+        '<div style="display:flex;gap:0.75rem;flex-wrap:wrap">' +
+        '<div><label class="adm-label" for="dl-tipo">Tipo</label><select class="adm-select" id="dl-tipo"><option value="pdf">PDF</option><option value="zip">ZIP</option><option value="exe">EXE</option><option value="link">Link</option><option value="file">Altro</option></select></div>' +
+        '<div><label class="adm-label" for="dl-ordine">Ordine</label><input type="number" class="adm-input" id="dl-ordine" value="0" style="width:5rem"></div>' +
+        '<div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:0.4rem;color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="dl-attivo" checked> Attivo</label></div></div>' +
+        '<div class="form-actions"><button type="submit" class="btn-primary" id="dl-save-btn">Salva</button><button type="button" class="btn-ghost" id="dl-cancel-btn" style="display:none">Annulla</button></div>' +
+        '</form></div><div id="dl-list"><p class="loading-text">Caricamento…</p></div></div>';
+      html = html.replace('<div id="panel-export" class="admin-panel">', panel + '<div id="panel-export" class="admin-panel">');
+    }
+  }
+  document.open();
+  document.write(html);
+  document.close();
+})();
+</script>
+</head>
+<body style="background:#0b0f19;color:#94a3b8;font-family:sans-serif;padding:2rem">
+  Caricamento pannello admin…
+</body>
+</html>
