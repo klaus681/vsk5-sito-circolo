@@ -92,4 +92,65 @@
       });
     }
   };
+
+  function wireHomeAvviso() {
+    var btn = document.getElementById("btn-salva-avviso");
+    if (!btn || btn._cviDiscord) return;
+    btn._cviDiscord = true;
+    btn.addEventListener("click", function () {
+      var t = document.getElementById("avviso-titolo");
+      var x = document.getElementById("avviso-testo");
+      btn._pendingTitolo = t ? t.value.trim() : "";
+      btn._pendingTesto = x ? x.value.trim() : "";
+      setTimeout(async function () {
+        var form = document.getElementById("form-avviso");
+        if (form && !form.classList.contains("open") && btn._pendingTitolo && btn._pendingTesto) {
+          try {
+            await window.CVIDiscord.notifyAvviso(btn._pendingTitolo, btn._pendingTesto);
+          } catch (e) { console.warn(e); }
+          btn._pendingTitolo = "";
+          btn._pendingTesto = "";
+        }
+      }, 1200);
+    }, true);
+  }
+
+  function wireGareForm() {
+    var btn = document.getElementById("admin-save-btn") || document.getElementById("gara-save-btn");
+    if (!btn || btn._cviDiscord) return;
+    btn._cviDiscord = true;
+    btn.addEventListener("click", function () {
+      var idEl = document.getElementById("admin-gara-id") || document.getElementById("gara-id");
+      var isNew = !idEl || !String(idEl.value || "").trim();
+      if (!isNew) return;
+      var titoloEl = document.getElementById("admin-titolo") || document.getElementById("gara-titolo");
+      var dataEl = document.getElementById("admin-data") || document.getElementById("gara-data");
+      var descEl = document.getElementById("admin-descrizione") || document.getElementById("gara-desc");
+      var numEl = document.getElementById("admin-num-regate") || document.getElementById("gara-num");
+      var payload = {
+        titolo: titoloEl ? titoloEl.value.trim() : "",
+        descrizione: descEl ? descEl.value.trim() : "",
+        data_gara: dataEl && dataEl.value ? new Date(dataEl.value).toISOString() : null,
+        num_regate: numEl ? numEl.value : 1
+      };
+      setTimeout(async function () {
+        if (!payload.titolo) return;
+        try { await window.CVIDiscord.notifyGara(payload); } catch (e) { console.warn(e); }
+      }, 1500);
+    }, true);
+  }
+
+  function tryWireAll() {
+    wireHomeAvviso();
+    wireGareForm();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(tryWireAll, 1000);
+      setTimeout(tryWireAll, 3000);
+    });
+  } else {
+    setTimeout(tryWireAll, 1000);
+    setTimeout(tryWireAll, 3000);
+  }
 })();
