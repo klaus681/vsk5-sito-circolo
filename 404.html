@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagina non trovata – Circolo Velico Italia</title>
+  <meta name="description" content="La pagina che cerchi non esiste. Torna alla home del Circolo Velico Italia – Virtual Skipper.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="logo-cvi.png">
+  <style>
+    .error-page {
+      min-height: calc(100vh - var(--header-h) - 180px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+    }
+    .error-code {
+      font-family: var(--font-display);
+      font-size: clamp(5rem, 15vw, 8rem);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--accent-color);
+      letter-spacing: -0.04em;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(56, 189, 248, 0.35);
+    }
+    .error-page h1 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+    .error-page p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 420px;
+      margin: 0 auto 2rem;
+      line-height: 1.65;
+    }
+    .error-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-cvi.png" alt="CVI" class="logo-img" width="32" height="32">
+      <span class="logo-text">CVI <span>Virtual</span></span>
+    </a>
+    <div class="header-actions">
+      <a href="accedi.html" class="btn-accedi">Accedi</a>
+    </div>
+  </header>
+
+  <main class="error-page">
+    <div class="error-code">404</div>
+    <h1>Pagina non trovata</h1>
+    <p>Ops! Questa pagina non esiste o è stata spostata.<br>Forse la regata è partita senza di te?</p>
+    <div class="error-actions">
+      <a href="index.html" class="btn-primary">Torna alla Home</a>
+      <a href="gare.html" class="btn-secondary">Calendario Regate</a>
+      <a href="discord.html" class="btn-secondary">Discord</a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-bottom" style="border:none;margin:0;padding:1.5rem">
+      © 2003–2026 Circolo Velico Italia · Virtual Skipper
+    </div>
+  </footer>
+</body>
+</html>
