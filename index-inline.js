@@ -92,43 +92,69 @@ async function caricaClassificaHome() {
   if (!list) return;
   try {
     const [classRes, profRes] = await Promise.all([
-      CVI.supabase.from('classifiche').select('user_id, punti, posizione').eq('stagione', STAGIONE).order('punti', { ascending: true }).limit(5),
+      CVI.supabase
+        .from('classifiche')
+        .select('user_id, punti_totali, gare_disputate, posizione')
+        .eq('stagione', STAGIONE)
+        .order('posizione', { ascending: true })
+        .limit(5),
       CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome')
     ]);
-    if (classRes.error) throw classRes.error;
-    const rows = classRes.data || [];
-    const profiles = {};
-    (profRes.data || []).forEach(p => { if (p.id) profiles[String(p.id)] = p; });
-    if (!rows.length) {
-      list.innerHTML = '<li class="empty-text">Nessuna classifica disponibile.</li>';
+
+    if (classRes.error) {
+      console.warn('classifiche:', classRes.error.message);
+      list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
       return;
     }
+
+    const rows = classRes.data || [];
+    if (!rows.length) {
+      list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
+      return;
+    }
+
+    const profiles = {};
+    (profRes.data || []).forEach(p => { if (p.id) profiles[String(p.id)] = p; });
+
     list.innerHTML = rows.map((r, i) => {
       const p = profiles[String(r.user_id)] || {};
-      const nick = (p.nickname || '').trim() || [p.nome, p.cognome].filter(Boolean).join(' ') || 'Skipper';
+      const nome = [p.nome, p.cognome].filter(Boolean).join(' ').trim();
+      const nick = (p.nickname || '').trim() || nome || 'Skipper';
       const team = (p.team || '').trim();
       const pos = r.posizione != null ? r.posizione : (i + 1);
-      return `<li><span class="rank-pos">${pos}</span><div class="rank-info"><strong>${nick}</strong>${team ? `<span>${team}</span>` : ''}</div><span class="rank-points">${r.punti ?? '—'}</span></li>`;
+      return `<li>
+        <span class="rank-pos">${pos}</span>
+        <div class="rank-info"><strong>${nick}</strong>${nome ? `<span>${nome}</span>` : ''}</div>
+        ${team ? `<span class="team-badge">${team}</span>` : ''}
+        <span class="rank-points">${r.punti_totali ?? '—'}</span>
+      </li>`;
     }).join('');
   } catch (err) {
     console.error(err);
-    list.innerHTML = '<li class="error-text">Errore caricamento classifica</li>';
+    list.innerHTML = '<li><div class="rank-info"><strong>Errore caricamento</strong></div></li>';
   }
 }
 
 async function caricaStats() {
   try {
-    const [soci, squadre, gare] = await Promise.all([
-      CVI.supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      CVI.supabase.from('teams').select('id', { count: 'exact', head: true }),
-      CVI.supabase.from('gare').select('id', { count: 'exact', head: true }).gte('data_gara', STAGIONE + '-01-01')
+    const [profRes, teamsRes, gareRes] = await Promise.all([
+      CVI.supabase.from('profiles').select('id'),
+      CVI.supabase.from('teams').select('id'),
+      CVI.supabase.from('gare').select('id, data_gara')
     ]);
+    if (profRes.error) console.warn('profiles:', profRes.error.message);
+    if (teamsRes.error) console.warn('teams:', teamsRes.error.message);
+    if (gareRes.error) console.warn('gare:', gareRes.error.message);
+
     const elSoci = document.getElementById('stat-soci');
     const elSq = document.getElementById('stat-squadre');
     const elReg = document.getElementById('stat-regate');
-    if (elSoci && soci.count != null) elSoci.textContent = soci.count;
-    if (elSq && squadre.count != null) elSq.textContent = squadre.count;
-    if (elReg && gare.count != null) elReg.textContent = gare.count;
+    if (elSoci) elSoci.textContent = (profRes.data || []).length;
+    if (elSq) elSq.textContent = (teamsRes.data || []).length;
+    if (elReg) {
+      const gare2026 = (gareRes.data || []).filter(g => g.data_gara && String(g.data_gara).startsWith(STAGIONE));
+      elReg.textContent = gare2026.length;
+    }
   } catch (e) { console.warn('stats', e); }
 }
 
