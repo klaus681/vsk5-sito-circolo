@@ -165,5 +165,12 @@
     window.CVI.ensureNavLinks();
     window.CVI.initFloatingDiscord();
     window.CVI.ensureAdminNavLink();
+    // Carica notifiche Discord (avvisi / gare)
+    try {
+      var s = document.createElement('script');
+      s.src = 'discord-notify.js?v=1';
+      s.async = true;
+      document.head.appendChild(s);
+    } catch (e) {}
   };
 })();
