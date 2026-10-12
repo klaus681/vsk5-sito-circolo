@@ -8,6 +8,13 @@
     var s = document.createElement("script");
     s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
+    // Download management module
+    var dl = await fetch("downloads-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (dl) {
+      var s2 = document.createElement("script");
+      s2.textContent = dl;
+      document.head.appendChild(s2);
+    }
   } catch(e) {
     console.error("[CVI admin]", e);
     var el = document.getElementById("admin-status") || document.getElementById("admin-gate");
