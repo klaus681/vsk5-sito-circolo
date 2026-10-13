@@ -5,7 +5,7 @@ var ROLES=["admin","scorer","caposquadra","socio"];
 var RL={admin:"Admin",scorer:"Scorer",caposquadra:"Caposquadra",socio:"Socio"};
 var user=null,role="socio",teams=[],profiles=[],gare=[],avvisi=[],gallery=[],risultati=[],iscrizioni=[],cacheIscrittiAdmin={};
 
-function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
+function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&"+"amp;").replace(/</g,"&"+"lt;").replace(/>/g,"&"+"gt;").replace(/"/g,"&"+"quot;");}
 function resolveRole(p){if(!p)return"socio";var r=String(p.role||"").toLowerCase();if(ROLES.indexOf(r)>=0)return r;return p.is_admin===true?"admin":"socio";}
 function can(r,f){if(f==="members"||f==="avvisi"||f==="gallery"||f==="roles"||f==="team")return r==="admin";return r==="admin"||r==="scorer";}
 function status(m,t){var el=document.getElementById("admin-status");if(!el)return;el.textContent=m||"";el.className="admin-status"+(t?" "+t:"");clearTimeout(status._t);if(m)status._t=setTimeout(function(){el.textContent="";el.className="admin-status";},4000);}
