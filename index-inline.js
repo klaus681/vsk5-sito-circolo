@@ -88,6 +88,16 @@ function fillRegata(gara) {
       badgeStato.textContent = '';
     }
   }
+  var card = document.getElementById('next-regata-card');
+  if (card && gara && gara.id) {
+    var st2 = statoGara(gara);
+    var startT = new Date(gara.data_gara).getTime();
+    var nr2 = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));
+    var durataMs2 = Math.max(2, nr2 * 1.5) * 60 * 60 * 1000;
+    var now2 = Date.now();
+    var inLive = !isNaN(startT) && now2 >= startT - 6*60*60*1000 && now2 <= startT + durataMs2 + 2*60*60*1000;
+    card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + gara.id) : 'gare.html';
+  }
 }
 
 async function caricaClassificaHome() {
@@ -179,7 +189,6 @@ async function caricaBacheca() {
   const lista = document.getElementById('lista-avvisi');
   if (!box || !lista) return;
 
-  // Solo utenti loggati vedono la bacheca
   if (!isLoggedIn) {
     box.style.display = 'none';
     return;
