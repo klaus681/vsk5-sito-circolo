@@ -2,7 +2,7 @@
 (async function(){
   try {
     var parts = await Promise.all([
-      fetch("admin-a.js?v=3").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
+      fetch("admin-a.js?v=4").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
       fetch("admin-b.js?v=3").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
     ]);
     var s = document.createElement("script");
@@ -20,6 +20,12 @@
       var s3 = document.createElement("script");
       s3.textContent = st;
       document.head.appendChild(s3);
+    }
+    var tm = await fetch("teams-panel-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (tm) {
+      var s5 = document.createElement("script");
+      s5.textContent = tm;
+      document.head.appendChild(s5);
     }
     var dc = await fetch("discord-notify.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
     if (dc) {
