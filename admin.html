@@ -25,6 +25,13 @@
     return;
   }
 
+  // --- Tabs: team, download, impostazioni ---
+  if (html.indexOf('data-tab="team"') === -1) {
+    html = html.replace(
+      'data-tab="soci">Soci</button>',
+      'data-tab="soci">Soci</button>\n        <button type="button" class="admin-tab" data-tab="team">Team</button>'
+    );
+  }
   if (html.indexOf('data-tab="download"') === -1) {
     html = html.replace(
       'data-tab="galleria">Galleria</button>',
@@ -35,6 +42,37 @@
       'data-tab="download">Download</button>',
       'data-tab="download">Download</button>\n        <button type="button" class="admin-tab" data-tab="impostazioni">Impostazioni</button>'
     );
+  }
+
+  // --- Panel Team ---
+  if (html.indexOf('panel-team') === -1) {
+    var panelTeam =
+      '<div id="panel-team" class="admin-panel">' +
+      '<div id="tm-sql-hint" class="sql-hint" style="display:none">Verifica tabella <code>teams</code> e policy RLS su Supabase (insert/update/delete per admin).</div>' +
+      '<div class="admin-card">' +
+      '<h3 id="tm-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo team</h3>' +
+      '<form id="tm-form" class="form-grid">' +
+      '<input type="hidden" id="tm-id">' +
+      '<div><label class="adm-label" for="tm-nome">Nome team *</label><input class="adm-input" id="tm-nome" required maxlength="80" style="width:100%" placeholder="Es. Red Moon"></div>' +
+      '<div><label class="adm-label" for="tm-capitano">Capitano</label><input class="adm-input" id="tm-capitano" maxlength="80" style="width:100%" placeholder="Nickname o nome"></div>' +
+      '<div><label class="adm-label" for="tm-desc">Descrizione</label><textarea class="adm-input" id="tm-desc" rows="3" maxlength="500" style="width:100%" placeholder="Breve descrizione del team"></textarea></div>' +
+      '<div class="form-actions">' +
+      '<button type="submit" class="btn-primary" id="tm-save-btn">Salva team</button>' +
+      '<button type="button" class="btn-ghost" id="tm-cancel-btn" style="display:none">Annulla</button>' +
+      '</div></form></div>' +
+      '<div id="tm-members-panel" class="admin-card" style="display:none;margin-top:1rem">' +
+      '<h3 style="margin:0 0 0.65rem;color:#7dd3fc">Membri di: <span id="tm-mp-name" style="color:#fff"></span></h3>' +
+      '<div id="tm-mp-list" style="margin-bottom:0.85rem"></div>' +
+      '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">' +
+      '<select id="tm-mp-add-select" class="adm-select" style="flex:1;min-width:180px"></select>' +
+      '<button type="button" class="btn-primary" id="tm-mp-add-btn" style="padding:0.45rem 0.9rem">Aggiungi</button>' +
+      '<button type="button" class="btn-ghost" id="tm-mp-close">Chiudi</button>' +
+      '</div>' +
+      '<p id="tm-mp-status" style="margin:0.5rem 0 0;font-size:0.85rem;font-weight:500"></p>' +
+      '</div>' +
+      '<div id="tm-list" style="margin-top:1rem"><p class="loading-text">Caricamento…</p></div>' +
+      '</div>';
+    html = html.replace('<div id="panel-gare" class="admin-panel">', panelTeam + '<div id="panel-gare" class="admin-panel">');
   }
 
   if (html.indexOf('panel-download') === -1) {
@@ -63,7 +101,7 @@
       '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Testi e pulsanti della sezione in alto. Lascia vuoto per il default.</p>' +
       '<form id="settings-hero-form" class="form-grid">' +
       '<div><label class="adm-label" for="set-home_community">Etichetta sopra il titolo</label><input class="adm-input" id="set-home_community" style="width:100%" placeholder="Circolo Velico Italia"></div>' +
-      '<div><label class="adm-label" for="set-home_title">Titolo (HTML)</label><input class="adm-input" id="set-home_title" style="width:100%" placeholder="Regate vere,&lt;br&gt;&lt;em&gt;mari virtuali.&lt;/em&gt;"></div>' +
+      '<div><label class="adm-label" for="set-home_title">Titolo (HTML)</label><input class="adm-input" id="set-home_title" style="width:100%" placeholder="Regate vere,<br><em>mari virtuali.</em>"></div>' +
       '<div><label class="adm-label" for="set-home_subtitle">Sottotitolo</label><textarea class="adm-input" id="set-home_subtitle" rows="2" style="width:100%"></textarea></div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">' +
       '<div><label class="adm-label" for="set-home_cta1_text">Pulsante 1 – testo</label><input class="adm-input" id="set-home_cta1_text" style="width:100%" placeholder="Calendario Regate"></div>' +
@@ -91,7 +129,7 @@
       '</form></div>' +
       '<div class="admin-card" style="margin-top:1rem">' +
       '<h3 style="margin:0 0 0.75rem;color:#7dd3fc">Video YouTube in Home</h3>' +
-      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Sezione «Ultime Regate &amp; Highlights».</p>' +
+      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Sezione «Ultime Regate & Highlights».</p>' +
       '<form id="settings-form" class="form-grid">' +
       '<div><label class="adm-label" for="set-youtube">URL o ID YouTube</label><input class="adm-input" id="set-youtube" style="width:100%" placeholder="https://www.youtube.com/watch?v=..."></div>' +
       '<div class="form-actions"><button type="submit" class="btn-primary" id="set-save-btn">Salva video</button></div>' +
