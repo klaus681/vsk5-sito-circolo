@@ -53,6 +53,8 @@ async function caricaProssimaGara() {
         document.getElementById('regata-data').textContent = '📅 --';
         document.getElementById('regata-descrizione').textContent = 'Controlla più tardi per nuovi eventi.';
         const bs = document.getElementById('regata-badge-stato');
+  const badgeLive = document.getElementById('regata-badge-live');
+  const liveBtnEl = document.getElementById('regata-live-btn');
         const bt = document.getElementById('regata-badge-tipo');
         if (bs) { bs.style.display = 'none'; bs.textContent = ''; }
         if (bt) bt.textContent = 'Calendario';
@@ -96,7 +98,10 @@ function fillRegata(gara) {
     var durataMs2 = Math.max(2, nr2 * 1.5) * 60 * 60 * 1000;
     var now2 = Date.now();
     var inLive = !isNaN(startT) && now2 >= startT - 6*60*60*1000 && now2 <= startT + durataMs2 + 2*60*60*1000;
-    card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + gara.id) : 'gare.html';
+    card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + encodeURIComponent(gara.id)) : 'gare.html';
+    if (badgeLive) badgeLive.style.display = (inLive || st2.key === 'corso') ? '' : 'none';
+    if (liveBtnEl) liveBtnEl.style.display = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? '' : 'none';
+    card.classList.toggle('is-live', !!(inLive || st2.key === 'corso'));
   }
 }
 

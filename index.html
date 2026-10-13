@@ -58,7 +58,7 @@
     .badge-stato.is-chiuse { background: rgba(251,191,36,0.15); color: #fbbf24; }
     .badge-stato.is-corso { background: rgba(56,189,248,0.2); color: #7dd3fc; }
     .badge-stato.is-conclusa { background: rgba(148,163,184,0.2); color: #94a3b8; }
-  </style>
+  .badge-live{display:inline-block;font-size:.72rem;font-weight:800;padding:.2rem .6rem;border-radius:999px;background:rgba(239,68,68,.2);color:#f87171;animation:lp 1.5s infinite}@keyframes lp{0%,100%{opacity:1}50%{opacity:.55}}.btn-segui-live{display:inline-flex;margin-top:.75rem;background:#ef4444;color:#fff;font-weight:800;padding:.5rem 1rem;border-radius:8px;text-decoration:none}.next-regata-card.is-live{border-color:rgba(248,113,113,.45)}</style>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
@@ -75,6 +75,7 @@
           <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" href="live.html">Live</a></li>
             <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
           </ul>
         </li>
@@ -146,12 +147,14 @@
           <div class="regata-badges" id="regata-badges">
             <span class="badge-tag" id="regata-badge-tipo">Prossima gara</span>
             <span class="badge-stato" id="regata-badge-stato" style="display:none"></span>
+            <span class="badge-live" id="regata-badge-live" style="display:none">LIVE</span>
           </div>
           <h2 id="regata-titolo">Caricamento da database...</h2>
         </div>
         <div class="regata-meta">
           <span id="regata-data">📅 --</span>
           <span id="regata-descrizione">--</span>
+        <span class="btn-segui-live" id="regata-live-btn" style="display:none">Segui LIVE</span>
         </div>
       </a>
     </div>
@@ -215,6 +218,6 @@
 
   <script src="common.js"></script>
   <script src="home-hero.js?v=2"></script>
-  <script src="index-inline.js?v=3"></script>
+  <script src="index-inline.js?v=9"></script>
 </body>
 </html>
