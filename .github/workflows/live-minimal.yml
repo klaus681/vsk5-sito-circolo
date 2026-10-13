@@ -1,0 +1,54 @@
+name: live-minimal
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/live-minimal.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sed patch
+        run: |
+          set -eux
+          # Add Live to desktop nav (index)
+          if ! grep -q 'href="live.html">Live' index.html; then
+            sed -i 's|data-i18n="nav_classifiche">Classifiche</a></li>|<a href="live.html">Live</a></li>\n            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>|' index.html || true
+            # fix if we broke the li - do a cleaner replace
+          fi
+          # Badge span
+          if ! grep -q 'regata-badge-live' index.html; then
+            sed -i 's|id="regata-badge-stato" style="display:none"></span>|id="regata-badge-stato" style="display:none"></span><span class="badge-live" id="regata-badge-live" style="display:none">LIVE</span>|' index.html
+          fi
+          # Button
+          if ! grep -q 'regata-live-btn' index.html; then
+            sed -i 's|id="regata-descrizione">--|id="regata-descrizione">--</span><span class="btn-segui-live" id="regata-live-btn" style="display:none">Segui LIVE|' index.html || true
+          fi
+          # CSS
+          if ! grep -q 'badge-live' index.html; then
+            sed -i 's|</style>|.badge-live{display:inline-block;font-size:.72rem;font-weight:800;padding:.2rem .6rem;border-radius:999px;background:rgba(239,68,68,.2);color:#f87171;animation:live-pulse 1.5s infinite}@keyframes live-pulse{0%,100%{opacity:1}50%{opacity:.55}}.btn-segui-live{display:inline-flex;margin-top:.75rem;background:#ef4444;color:#fff;font-weight:800;padding:.5rem 1rem;border-radius:8px}</style>|' index.html
+          fi
+          # JS logic
+          if ! grep -q 'badgeLive' index-inline.js; then
+            sed -i "s|const badgeStato = document.getElementById('regata-badge-stato');|const badgeStato = document.getElementById('regata-badge-stato'); const badgeLive = document.getElementById('regata-badge-live'); const liveBtnEl = document.getElementById('regata-live-btn');|" index-inline.js
+            sed -i "s|card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + gara.id) : 'gare.html';|card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + encodeURIComponent(gara.id)) : 'gare.html'; if (badgeLive) badgeLive.style.display = (inLive || st2.key === 'corso') ? '' : 'none'; if (liveBtnEl) liveBtnEl.style.display = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? '' : 'none'; card.classList.toggle('is-live', !!(inLive || st2.key === 'corso'));|" index-inline.js
+          fi
+          # Gare nav
+          if ! grep -q 'href="live.html">Live' gare.html; then
+            sed -i 's|data-i18n="nav_classifiche">Classifiche</a></li>|<a href="live.html">Live</a></li><li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>|' gare.html
+          fi
+          sed -i 's|index-inline.js?v=3|index-inline.js?v=8|g' index.html || true
+          sed -i 's|index-inline.js?v=4|index-inline.js?v=8|g' index.html || true
+          sed -i 's|index-inline.js?v=5|index-inline.js?v=8|g' index.html || true
+          sed -i 's|index-inline.js?v=6|index-inline.js?v=8|g' index.html || true
+          sed -i 's|index-inline.js?v=7|index-inline.js?v=8|g' index.html || true
+          git config user.name klaus681
+          git config user.email klaus68@hotmail.it
+          git add -A
+          git status
+          git diff --cached --stat || true
+          git commit -m "Live minimal UI" || echo "nothing to commit"
+          git push
