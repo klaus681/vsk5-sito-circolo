@@ -5,9 +5,9 @@ var ROLES=["admin","scorer","caposquadra","socio"];
 var RL={admin:"Admin",scorer:"Scorer",caposquadra:"Caposquadra",socio:"Socio"};
 var user=null,role="socio",teams=[],profiles=[],gare=[],avvisi=[],gallery=[],risultati=[],iscrizioni=[],cacheIscrittiAdmin={};
 
-function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
 function resolveRole(p){if(!p)return"socio";var r=String(p.role||"").toLowerCase();if(ROLES.indexOf(r)>=0)return r;return p.is_admin===true?"admin":"socio";}
-function can(r,f){if(f==="members"||f==="avvisi"||f==="gallery"||f==="roles")return r==="admin";return r==="admin"||r==="scorer";}
+function can(r,f){if(f==="members"||f==="avvisi"||f==="gallery"||f==="roles"||f==="team")return r==="admin";return r==="admin"||r==="scorer";}
 function status(m,t){var el=document.getElementById("admin-status");if(!el)return;el.textContent=m||"";el.className="admin-status"+(t?" "+t:"");clearTimeout(status._t);if(m)status._t=setTimeout(function(){el.textContent="";el.className="admin-status";},4000);}
 function setGate(mode,detail){var g=document.getElementById("admin-gate"),a=document.getElementById("admin-app");if(!g||!a)return;if(mode==="ok"){g.style.display="none";a.style.display="block";return;}g.style.display="block";a.style.display="none";var t=document.getElementById("gate-title"),x=document.getElementById("gate-text");if(mode==="login"){if(t)t.textContent="Accesso richiesto";if(x)x.textContent="Devi effettuare il login per accedere al pannello.";}else{if(t)t.textContent="Accesso negato";if(x)x.textContent=detail||"Serve ruolo Admin o Scorer.";}}
 function profileLabel(p){if(!p)return"?";var n=(p.nickname||"").trim(),nm=[p.nome,p.cognome].filter(Boolean).join(" ");return n&&nm?n+" ("+nm+")":n||nm||String(p.id).slice(0,8);}
@@ -34,6 +34,7 @@ function initTabs(){
   tabs.forEach(function(tab){
     var id=tab.getAttribute("data-tab");
     if(id==="soci"&&!can(role,"members"))tab.style.display="none";
+    if(id==="team"&&!can(role,"team"))tab.style.display="none";
     if((id==="avvisi"||id==="galleria")&&!can(role,"avvisi"))tab.style.display="none";
     if((id==="gare"||id==="risultati"||id==="export")&&!can(role,"admin"))tab.style.display="none";
     tab.onclick=function(){
@@ -42,6 +43,7 @@ function initTabs(){
       tab.classList.add("active");
       var p=document.getElementById("panel-"+id);if(p)p.classList.add("active");
       if(id==="soci")loadSoci();
+      if(id==="team"&&typeof loadTeamsAdmin==="function")loadTeamsAdmin();
       if(id==="gare")loadGare();
       if(id==="risultati")loadRis();
       if(id==="avvisi")loadAvvisi();
