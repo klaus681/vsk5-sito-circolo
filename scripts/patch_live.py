@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from pathlib import Path
+import re
+
+ARROW = "\u2192"
+BULLET = "\u25cf"
 
 def patch_index_html():
     p = Path("index.html")
@@ -40,16 +44,16 @@ def patch_index_html():
         changed = True
         print("+ nav Live desktop")
 
-    mob = '<a href="gare.html">\u2192 Calendario</a>\n      <a href="classifiche.html">\u2192 Classifiche</a>'
-    mob_new = '<a href="gare.html">\u2192 Calendario</a>\n      <a href="live.html">\u2192 Live</a>\n      <a href="classifiche.html">\u2192 Classifiche</a>'
-    if "\u2192 Live" not in t and mob in t:
+    mob = '<a href="gare.html">' + ARROW + ' Calendario</a>\n      <a href="classifiche.html">' + ARROW + ' Classifiche</a>'
+    mob_new = '<a href="gare.html">' + ARROW + ' Calendario</a>\n      <a href="live.html">' + ARROW + ' Live</a>\n      <a href="classifiche.html">' + ARROW + ' Classifiche</a>'
+    if (ARROW + " Live") not in t and mob in t:
         t = t.replace(mob, mob_new, 1)
         changed = True
         print("+ nav Live mobile")
 
     if 'id="regata-badge-live"' not in t:
         old = '<span class="badge-stato" id="regata-badge-stato" style="display:none"></span>'
-        new = old + '\n            <span class="badge-live" id="regata-badge-live" style="display:none">\u25cf LIVE</span>'
+        new = old + '\n            <span class="badge-live" id="regata-badge-live" style="display:none">' + BULLET + ' LIVE</span>'
         if old in t:
             t = t.replace(old, new, 1)
             changed = True
@@ -57,13 +61,12 @@ def patch_index_html():
 
     if 'id="regata-live-btn"' not in t:
         old = '<span id="regata-descrizione">--</span>\n        </div>\n      </a>'
-        new = '<span id="regata-descrizione">--</span>\n        </div>\n        <span class="btn-segui-live" id="regata-live-btn" style="display:none">\u25cf Segui LIVE</span>\n      </a>'
+        new = '<span id="regata-descrizione">--</span>\n        </div>\n        <span class="btn-segui-live" id="regata-live-btn" style="display:none">' + BULLET + ' Segui LIVE</span>\n      </a>'
         if old in t:
             t = t.replace(old, new, 1)
             changed = True
             print("+ Segui LIVE button")
 
-    import re
     t2 = re.sub(r"index-inline\.js(\?v=\d+)?", "index-inline.js?v=6", t)
     if t2 != t:
         t = t2
@@ -129,11 +132,11 @@ def patch_gare():
         changed = True
         print("+ gare nav Live")
 
-    mob = '<div class="mobile-dropdown"><a href="gare.html">\u2192 Calendario</a><a href="classifiche.html">\u2192 Classifiche</a></div>'
-    if "\u2192 Live" not in t and mob in t:
+    mob = '<div class="mobile-dropdown"><a href="gare.html">' + ARROW + ' Calendario</a><a href="classifiche.html">' + ARROW + ' Classifiche</a></div>'
+    if (ARROW + " Live") not in t and mob in t:
         t = t.replace(
             mob,
-            '<div class="mobile-dropdown"><a href="gare.html">\u2192 Calendario</a><a href="live.html">\u2192 Live</a><a href="classifiche.html">\u2192 Classifiche</a></div>',
+            '<div class="mobile-dropdown"><a href="gare.html">' + ARROW + ' Calendario</a><a href="live.html">' + ARROW + ' Live</a><a href="classifiche.html">' + ARROW + ' Classifiche</a></div>',
             1,
         )
         changed = True
@@ -144,44 +147,48 @@ def patch_gare():
         helper = (
             old
             + "\nfunction inLiveWindowGara(g){if(!g||!g.data_gara)return false;var start=new Date(g.data_gara).getTime();"
-            "if(isNaN(start))return false;var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));"
-            "var durataMs=Math.max(2,nr*1.5)*60*60*1000;var now=Date.now();"
-            "return now>=start-6*60*60*1000&&now<=start+durataMs+2*60*60*1000}"
+            + "if(isNaN(start))return false;var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));"
+            + "var durataMs=Math.max(2,nr*1.5)*60*60*1000;var now=Date.now();"
+            + "return now>=start-6*60*60*1000&&now<=start+durataMs+2*60*60*1000}"
             + "\nfunction statoKeyGara(g){if(!g||!g.data_gara)return'none';var start=new Date(g.data_gara).getTime();"
-            "if(isNaN(start))return'none';var now=Date.now();var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));"
-            "var durataMs=Math.max(2,nr*1.5)*60*60*1000;if(now>=start+durataMs)return'conclusa';"
-            "if(now>=start)return'corso';return'upcoming'}"
+            + "if(isNaN(start))return'none';var now=Date.now();var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));"
+            + "var durataMs=Math.max(2,nr*1.5)*60*60*1000;if(now>=start+durataMs)return'conclusa';"
+            + "if(now>=start)return'corso';return'upcoming'}"
         )
         if old in t:
             t = t.replace(old, helper, 1)
             changed = True
             print("+ inLiveWindowGara helpers")
 
-    old_card = 'return`<div class="gara-card${conclusa?\' is-conclusa\':\'\''}" data-gara-id="${g.id}">'
-    if "inLiveWindowGara(g);const stKey" not in t and old_card in t:
-        new_card = (
-            "const live=inLiveWindowGara(g);const stKey=statoKeyGara(g);"
-            + 'return`<div class="gara-card${conclusa?\' is-conclusa\':\'\''}${live||stKey===\'corso\'?\' is-live\':\'\''}" data-gara-id="${g.id}">'
+    marker = 'return`<div class="gara-card${conclusa?'
+    if "inLiveWindowGara(g);const stKey" not in t and marker in t:
+        t = t.replace(
+            'return`<div class="gara-card${conclusa?',
+            "const live=inLiveWindowGara(g);const stKey=statoKeyGara(g);return`<div class="gara-card${conclusa?',
+            1,
         )
-        t = t.replace(old_card, new_card, 1)
-        changed = True
-        print("+ gara-card is-live")
+        frag = "${conclusa?' is-conclusa':''}\" data-gara-id="
+        frag_new = "${conclusa?' is-conclusa':''}${live||stKey==='corso'?' is-live':''}\" data-gara-id="
+        if frag in t:
+            t = t.replace(frag, frag_new, 1)
+            changed = True
+            print("+ gara-card is-live")
 
     oldb = '<span class="badge-regate">${badgeRegate(nr)}</span>${conclusa?'
-    if "\u25cf LIVE" not in t and oldb in t:
+    if BULLET + " LIVE" not in t and oldb in t:
         newb = (
             '<span class="badge-regate">${badgeRegate(nr)}</span>'
-            + "${live||stKey==='corso'?`<span class=\"badge-live\">\u25cf LIVE</span>`:''}${conclusa?"
+            + "${live||stKey==='corso'?`<span class=\"badge-live\">" + BULLET + " LIVE</span>`:''}${conclusa?"
         )
         t = t.replace(oldb, newb, 1)
         changed = True
         print("+ LIVE badge on cards")
 
     olda = '<div class="gara-actions">${renderActionButton(g.id,conclusa,g.data_gara)}'
-    if 'href="live.html?id=${encodeURIComponent' not in t and olda in t:
+    if "live.html?id=${encodeURIComponent" not in t and olda in t:
         newa = (
             '<div class="gara-actions">'
-            + "${(live||stKey==='corso')?`<a class=\"btn-live-gara\" href=\"live.html?id=${encodeURIComponent(g.id)}\">\u25cf Segui LIVE</a>`:''}"
+            + "${(live||stKey==='corso')?`<a class=\"btn-live-gara\" href=\"live.html?id=${encodeURIComponent(g.id)}\">" + BULLET + " Segui LIVE</a>`:''}"
             + "${renderActionButton(g.id,conclusa,g.data_gara)}"
         )
         t = t.replace(olda, newa, 1)
