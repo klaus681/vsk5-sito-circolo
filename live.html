@@ -1,1 +1,151 @@
-PLACEHOLDER_LIVE_HTML
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Gara - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .live-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
+    .live-badges { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:.5rem; }
+    .live-badge { display:inline-block; font-size:.72rem; font-weight:700; padding:.2rem .55rem; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; }
+    .live-badge.aperte { background:rgba(52,211,153,.15); color:#34d399; }
+    .live-badge.chiuse { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .live-badge.corso { background:rgba(56,189,248,.2); color:#7dd3fc; animation: pulse 1.6s ease-in-out infinite; }
+    .live-badge.conclusa { background:rgba(148,163,184,.2); color:#94a3b8; }
+    .live-badge.vs { background:rgba(129,140,248,.15); color:#a5b4fc; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+    .live-meta { color:#94a3b8; font-size:.92rem; margin:0.25rem 0 0; }
+    .live-refresh { font-size:.78rem; color:#64748b; margin:0; }
+    .live-grid { display:grid; grid-template-columns:1fr; gap:1.25rem; }
+    @media(min-width:800px){ .live-grid { grid-template-columns:1fr 1fr; } }
+    .live-panel { background:rgba(15,23,42,.65); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:1rem 1.1rem; }
+    .live-panel h2 { margin:0 0 .75rem; font-size:1rem; color:#e2e8f0; }
+    .live-count { color:#7dd3fc; font-weight:700; }
+    .iscritti-chips { display:flex; flex-wrap:wrap; gap:.4rem; list-style:none; margin:0; padding:0; }
+    .iscritti-chips li { background:rgba(56,189,248,.1); border:1px solid rgba(56,189,248,.28); border-radius:999px; padding:.25rem .7rem; font-size:.85rem; color:#e2e8f0; }
+    .iscritti-chips .team { color:#94a3b8; font-size:.78rem; }
+    .live-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+    .live-table th { text-align:left; color:#94a3b8; font-weight:600; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; padding:.4rem .35rem; border-bottom:1px solid rgba(255,255,255,.08); }
+    .live-table td { padding:.5rem .35rem; border-bottom:1px solid rgba(255,255,255,.05); color:#e2e8f0; }
+    .live-table tr:last-child td { border-bottom:none; }
+    .pos { font-weight:800; color:#7dd3fc; width:2.5rem; }
+    .live-empty { color:#64748b; font-size:.9rem; margin:0; }
+    .live-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; }
+    .live-actions a { display:inline-flex; align-items:center; padding:.45rem .9rem; border-radius:8px; font-size:.85rem; font-weight:600; text-decoration:none; }
+    .btn-live-primary { background:#38bdf8; color:#0b0f19; }
+    .btn-live-ghost { background:transparent; color:#7dd3fc; border:1px solid rgba(56,189,248,.35); }
+    .live-updated { margin-top:1rem; font-size:.75rem; color:#475569; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html">Calendario</a></li>
+            <li><a href="live.html" class="active">Live</a></li>
+            <li><a href="classifiche.html">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html">Home</a>
+    <a href="team.html">Team</a>
+    <a href="gare.html">Calendario gare</a>
+    <a href="live.html" class="active">Live gara</a>
+    <a href="classifiche.html">Classifiche</a>
+    <a href="membri.html">Membri</a>
+    <a href="accedi.html" id="auth-link-mobile">Accedi</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="content-box">
+      <div class="live-header">
+        <div>
+          <div class="live-badges" id="live-badges">
+            <span class="live-badge vs">Virtual Skipper</span>
+          </div>
+          <h1 id="live-title">Live gara</h1>
+          <p class="live-meta" id="live-meta">Caricamento…</p>
+          <p class="live-refresh" id="live-desc"></p>
+        </div>
+        <div>
+          <p class="live-refresh" id="live-tick">Aggiornamento automatico ogni 20s</p>
+        </div>
+      </div>
+
+      <div id="live-empty" style="display:none">
+        <p class="live-empty">Nessuna gara in finestra live al momento.</p>
+        <div class="live-actions">
+          <a class="btn-live-primary" href="gare.html">Vai al calendario</a>
+        </div>
+      </div>
+
+      <div id="live-content" style="display:none">
+        <div class="live-grid">
+          <section class="live-panel">
+            <h2>Iscritti · <span class="live-count" id="live-n-iscritti">0</span></h2>
+            <ul class="iscritti-chips" id="live-iscritti"></ul>
+            <p class="live-empty" id="live-iscritti-empty" style="display:none">Nessun iscritto.</p>
+          </section>
+          <section class="live-panel">
+            <h2>Risultati</h2>
+            <div id="live-risultati-wrap">
+              <p class="live-empty" id="live-risultati-empty">Ancora nessun risultato pubblicato.</p>
+            </div>
+          </section>
+        </div>
+        <div class="live-actions">
+          <a class="btn-live-primary" href="gare.html">Calendario gare</a>
+          <a class="btn-live-ghost" href="classifiche.html">Classifiche</a>
+          <a class="btn-live-ghost" id="live-self-link" href="live.html">Link a questa live</a>
+        </div>
+        <p class="live-updated" id="live-updated"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Live gara — iscritti e risultati in aggiornamento</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="common.js"></script>
+  <script src="live.js?v=1"></script>
+</body>
+</html>
