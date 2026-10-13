@@ -1,0 +1,23 @@
+name: restore-files
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restore.yml'
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore from good commit
+        run: |
+          git checkout 7c6c01b00a759fe6d9d3adf836b143b2b4260952 -- index.html index-inline.js gare.html
+          git config user.name "klaus681"
+          git config user.email "klaus68@hotmail.it"
+          git add index.html index-inline.js gare.html
+          git diff --cached --quiet || git commit -m "CI: restore index.html, index-inline.js, gare.html from 7c6c01b"
+          git push
