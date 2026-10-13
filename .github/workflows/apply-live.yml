@@ -1,0 +1,109 @@
+name: apply-live
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-live.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply Live patches
+        run: |
+          python3 << 'PY'
+          from pathlib import Path
+          import re
+
+          # --- index.html ---
+          p = Path('index.html')
+          t = p.read_text(encoding='utf-8')
+          css = '''\n    .badge-live {\n      display: inline-block; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem;\n      border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em;\n      background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(248,113,113,0.45);\n      animation: live-pulse 1.5s ease-in-out infinite;\n    }\n    @keyframes live-pulse { 0%,100%{ opacity:1 } 50%{ opacity:0.55 } }\n    .next-regata-card.is-live {\n      border-color: rgba(248,113,113,0.45);\n      box-shadow: 0 0 0 1px rgba(248,113,113,0.2), 0 8px 28px rgba(239,68,68,0.12);\n    }\n    .btn-segui-live {\n      display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.75rem;\n      background: #ef4444; color: #fff; font-weight: 800; font-size: 0.88rem;\n      padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none;\n      box-shadow: 0 4px 14px rgba(239,68,68,0.35);\n    }\n    .btn-segui-live:hover { background: #f87171; color: #fff; }\n'''
+          if '.badge-live' not in t:
+            t = t.replace(
+              '    .badge-stato.is-conclusa { background: rgba(148,163,184,0.2); color: #94a3b8; }\n  </style>',
+              '    .badge-stato.is-conclusa { background: rgba(148,163,184,0.2); color: #94a3b8; }\n' + css + '  </style>'
+            )
+          if 'href="live.html">Live' not in t:
+            t = t.replace(
+              '<li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>',
+              '<li><a href="live.html">Live</a></li>\n            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>',
+              1
+            )
+            t = t.replace(
+              '<a href="gare.html">→ Calendario</a>\n      <a href="classifiche.html">→ Classifiche</a>',
+              '<a href="gare.html">→ Calendario</a>\n      <a href="live.html">→ Live</a>\n      <a href="classifiche.html">→ Classifiche</a>',
+              1
+            )
+          if 'regata-badge-live' not in t:
+            t = t.replace(
+              '''            <span class="badge-stato" id="regata-badge-stato" style="display:none"></span>\n          </div>\n          <h2 id="regata-titolo">Caricamento da database...</h2>\n        </div>\n        <div class="regata-meta">\n          <span id="regata-data">📅 --</span>\n          <span id="regata-descrizione">--</span>\n        </div>\n      </a>''',
+              '''            <span class="badge-stato" id="regata-badge-stato" style="display:none"></span>\n            <span class="badge-live" id="regata-badge-live" style="display:none">● LIVE</span>\n          </div>\n          <h2 id="regata-titolo">Caricamento da database...</h2>\n        </div>\n        <div class="regata-meta">\n          <span id="regata-data">📅 --</span>\n          <span id="regata-descrizione">--</span>\n        </div>\n        <span class="btn-segui-live" id="regata-live-btn" style="display:none">● Segui LIVE</span>\n      </a>'''
+            )
+          t = t.replace('index-inline.js?v=3', 'index-inline.js?v=5')
+          t = t.replace('index-inline.js?v=4', 'index-inline.js?v=5')
+          p.write_text(t, encoding='utf-8')
+          print('index.html patched', len(t))
+
+          # --- index-inline.js ---
+          js_path = Path('index-inline.js')
+          js = js_path.read_text(encoding='utf-8')
+          if 'function inLiveWindow' not in js:
+            insert = '''\nfunction inLiveWindow(gara) {\n  if (!gara || !gara.data_gara) return false;\n  const start = new Date(gara.data_gara).getTime();\n  if (isNaN(start)) return false;\n  const nr = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));\n  const durataMs = Math.max(2, nr * 1.5) * 60 * 60 * 1000;\n  const now = Date.now();\n  return now >= start - 6 * 60 * 60 * 1000 && now <= start + durataMs + 2 * 60 * 60 * 1000;\n}\n\nfunction pickHomeGara(list) {\n  if (!list || !list.length) return null;\n  const live = list.filter(inLiveWindow);\n  if (live.length) {\n    live.sort(function (a, b) { return new Date(a.data_gara) - new Date(b.data_gara); });\n    const corso = live.filter(function (g) { return statoGara(g).key === 'corso'; });\n    if (corso.length) return corso[0];\n    return live[0];\n  }\n  const now = Date.now();\n  const future = list.filter(function (g) { return new Date(g.data_gara).getTime() >= now; }).sort(function (a, b) { return new Date(a.data_gara) - new Date(b.data_gara); });\n  if (future.length) return future[0];\n  return list.slice().sort(function (a, b) { return new Date(b.data_gara) - new Date(a.data_gara); })[0] || null;\n}\n'''
+            js = js.replace('async function caricaProssimaGara()', insert + 'async function caricaProssimaGara()')
+            # Replace caricaProssimaGara body to use pickHomeGara
+            old_carica = re.search(r'async function caricaProssimaGara\(\) \{[\s\S]*?^\}', js, re.M)
+            new_carica = '''async function caricaProssimaGara() {\n  try {\n    const { data, error } = await CVI.supabase\n      .from('gare')\n      .select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate')\n      .order('data_gara', { ascending: false })\n      .limit(40);\n    if (error) { console.warn('gare:', error.message); }\n    const gara = pickHomeGara(data || []);\n    if (!gara) {\n      document.getElementById('regata-titolo').textContent = 'Nessuna gara in programma';\n      document.getElementById('regata-data').textContent = '📅 --';\n      document.getElementById('regata-descrizione').textContent = 'Controlla più tardi per nuovi eventi.';\n      const bs = document.getElementById('regata-badge-stato');\n      const bt = document.getElementById('regata-badge-tipo');\n      if (bs) { bs.style.display = 'none'; bs.textContent = ''; }\n      if (bt) bt.textContent = 'Calendario';\n      const liveBtn = document.getElementById('regata-live-btn');\n      if (liveBtn) liveBtn.style.display = 'none';\n      const card = document.getElementById('next-regata-card');\n      if (card) { card.href = 'gare.html'; card.classList.remove('is-live'); }\n      return;\n    }\n    fillRegata(gara);\n  } catch (err) {\n    console.error(err);\n    const el = document.getElementById('regata-titolo');\n    if (el) el.textContent = 'Impossibile caricare le gare';\n  }\n}'''
+            if old_carica:
+              js = js[:old_carica.start()] + new_carica + js[old_carica.end():]
+            # Enhance fillRegata
+            if 'badgeLive' not in js:
+              js = js.replace(
+                '''  const st = statoGara(gara);\n  const badgeTipo = document.getElementById('regata-badge-tipo');\n  const badgeStato = document.getElementById('regata-badge-stato');\n  if (badgeTipo) badgeTipo.textContent = st.tipo;\n  if (badgeStato) {\n    if (st.label) {\n      badgeStato.textContent = st.label;\n      badgeStato.style.display = '';\n      badgeStato.className = 'badge-stato is-' + st.key;\n    } else {\n      badgeStato.style.display = 'none';\n      badgeStato.textContent = '';\n    }\n  }\n  var card = document.getElementById('next-regata-card');\n  if (card && gara && gara.id) {\n    var st2 = statoGara(gara);\n    var startT = new Date(gara.data_gara).getTime();\n    var nr2 = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));\n    var durataMs2 = Math.max(2, nr2 * 1.5) * 60 * 60 * 1000;\n    var now2 = Date.now();\n    var inLive = !isNaN(startT) && now2 >= startT - 6*60*60*1000 && now2 <= startT + durataMs2 + 2*60*60*1000;\n    card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + gara.id) : 'gare.html';\n  }\n}''',
+                '''  const st = statoGara(gara);\n  const live = inLiveWindow(gara);\n  const badgeTipo = document.getElementById('regata-badge-tipo');\n  const badgeStato = document.getElementById('regata-badge-stato');\n  const badgeLive = document.getElementById('regata-badge-live');\n  if (badgeTipo) badgeTipo.textContent = st.tipo;\n  if (badgeStato) {\n    if (st.label) {\n      badgeStato.textContent = st.label;\n      badgeStato.style.display = '';\n      badgeStato.className = 'badge-stato is-' + st.key;\n    } else {\n      badgeStato.style.display = 'none';\n      badgeStato.textContent = '';\n    }\n  }\n  if (badgeLive) badgeLive.style.display = (live || st.key === 'corso') ? '' : 'none';\n  const liveBtn = document.getElementById('regata-live-btn');\n  if (liveBtn) liveBtn.style.display = (live || st.key === 'corso' || st.key === 'chiuse') ? '' : 'none';\n  const card = document.getElementById('next-regata-card');\n  if (card && gara && gara.id) {\n    card.href = (live || st.key === 'corso' || st.key === 'chiuse') ? ('live.html?id=' + encodeURIComponent(gara.id)) : 'gare.html';\n    card.classList.toggle('is-live', !!(live || st.key === 'corso'));\n  }\n}'''
+              )
+          js_path.write_text(js, encoding='utf-8')
+          print('index-inline.js patched', len(js))
+
+          # --- gare.html ---
+          g = Path('gare.html').read_text(encoding='utf-8')
+          css_g = '''\n.badge-live{display:inline-block;background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(248,113,113,.45);font-size:.72rem;font-weight:800;padding:.2rem .55rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;animation:live-pulse 1.5s ease-in-out infinite}\n@keyframes live-pulse{0%,100%{opacity:1}50%{opacity:.55}}\n.btn-live-gara{display:inline-flex;align-items:center;background:#ef4444;color:#fff;padding:.55rem 1.15rem;border-radius:8px;font-weight:800;font-size:.88rem;text-decoration:none;box-shadow:0 4px 12px rgba(239,68,68,.3)}\n.btn-live-gara:hover{background:#f87171;color:#fff}\n.gara-card.is-live{border-color:rgba(248,113,113,.4);box-shadow:0 0 0 1px rgba(248,113,113,.15)}\n'''
+          if '.badge-live{' not in g:
+            g = g.replace('.admin-card-actions{display:flex;gap:.4rem;margin-left:auto}', '.admin-card-actions{display:flex;gap:.4rem;margin-left:auto}' + css_g)
+          if 'href="live.html">Live' not in g:
+            g = g.replace('<li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>', '<li><a href="live.html">Live</a></li>\n<li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>', 1)
+            g = g.replace('<div class="mobile-dropdown"><a href="gare.html">→ Calendario</a><a href="classifiche.html">→ Classifiche</a></div>', '<div class="mobile-dropdown"><a href="gare.html">→ Calendario</a><a href="live.html">→ Live</a><a href="classifiche.html">→ Classifiche</a></div>', 1)
+          if 'inLiveWindowGara' not in g:
+            g = g.replace(
+              "function isGaraConclusa(dataGara){if(!dataGara)return false;return new Date(dataGara).getTime()<Date.now()}",
+              "function isGaraConclusa(dataGara){if(!dataGara)return false;return new Date(dataGara).getTime()<Date.now()}\nfunction inLiveWindowGara(g){if(!g||!g.data_gara)return false;var start=new Date(g.data_gara).getTime();if(isNaN(start))return false;var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));var durataMs=Math.max(2,nr*1.5)*60*60*1000;var now=Date.now();return now>=start-6*60*60*1000&&now<=start+durataMs+2*60*60*1000}\nfunction statoKeyGara(g){if(!g||!g.data_gara)return'none';var start=new Date(g.data_gara).getTime();if(isNaN(start))return'none';var now=Date.now();var nr=Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1));var durataMs=Math.max(2,nr*1.5)*60*60*1000;if(now>=start+durataMs)return'conclusa';if(now>=start)return'corso';return'upcoming'}"
+            )
+          needle = 'return`<div class="gara-card${conclusa?\' is-conclusa\':\'\''}" data-gara-id="${g.id}"><div class="gara-card-header"><h3>${g.titolo||\'Gara\'}</h3><div class="gara-card-badges"><span class="badge-regate">${badgeRegate(nr)}</span>${conclusa?`<span class="badge-conclusa">${t(\'badge_conclusa\')}</span>`:(isIscrizioniChiuse(g.data_gara)?`<span class="badge-iscr-chiuse">${t(\'badge_iscr_chiuse\')}</span>`:\'\'')}</div></div>'
+          # Use simpler approach for gare card
+          if 'inLiveWindowGara(g)' not in g or 'badge-live' not in g.split('loadGare')[-1] if 'loadGare' in g else True:
+            g = g.replace(
+              "return`<div class=\"gara-card${conclusa?' is-conclusa':''}\" data-gara-id=\"${g.id}\">",
+              "const live=inLiveWindowGara(g);const stKey=statoKeyGara(g);return`<div class=\"gara-card${conclusa?' is-conclusa':''}${live||stKey==='corso'?' is-live':''}\" data-gara-id=\"${g.id}\">",
+              1
+            )
+            g = g.replace(
+              "<span class=\"badge-regate\">${badgeRegate(nr)}</span>${conclusa?",
+              "<span class=\"badge-regate\">${badgeRegate(nr)}</span>${live||stKey==='corso'?`<span class=\"badge-live\">● LIVE</span>`:''}${conclusa?",
+              1
+            )
+            g = g.replace(
+              '<div class="gara-actions">${renderActionButton(g.id,conclusa,g.data_gara)}',
+              '<div class="gara-actions">${(live||stKey===\'corso\')?`<a class="btn-live-gara" href="live.html?id=${encodeURIComponent(g.id)}">● Segui LIVE</a>`:\'\''}${renderActionButton(g.id,conclusa,g.data_gara)}',
+              1
+            )
+          Path('gare.html').write_text(g, encoding='utf-8')
+          print('gare.html patched', len(g))
+          print('ALL DONE')
+          PY
+          git config user.name "klaus681"
+          git config user.email "klaus68@hotmail.it"
+          git add index.html index-inline.js gare.html
+          git diff --cached --quiet || git commit -m "Live: badge LIVE e Segui LIVE su Home e Gare"
+          git push
