@@ -43,6 +43,10 @@ function statoGara(gara) {
 
 async function caricaProssimaGara() {
   try {
+    if (!CVI.supabase) {
+      document.getElementById('regata-titolo').textContent = 'Nessuna gara in programma';
+      return;
+    }
     const now = new Date().toISOString();
     let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
     if (error) { console.warn('gare future:', error.message); data = null; }
@@ -53,10 +57,12 @@ async function caricaProssimaGara() {
         document.getElementById('regata-data').textContent = '📅 --';
         document.getElementById('regata-descrizione').textContent = 'Controlla più tardi per nuovi eventi.';
         const bs = document.getElementById('regata-badge-stato');
-  const badgeLive = document.getElementById('regata-badge-live');
-  const liveBtnEl = document.getElementById('regata-live-btn');
+        const badgeLive = document.getElementById('regata-badge-live');
+        const liveBtnEl = document.getElementById('regata-live-btn');
         const bt = document.getElementById('regata-badge-tipo');
         if (bs) { bs.style.display = 'none'; bs.textContent = ''; }
+        if (badgeLive) badgeLive.style.display = 'none';
+        if (liveBtnEl) liveBtnEl.style.display = 'none';
         if (bt) bt.textContent = 'Calendario';
         return;
       }
@@ -72,13 +78,20 @@ async function caricaProssimaGara() {
 }
 
 function fillRegata(gara) {
-  document.getElementById('regata-titolo').textContent = gara.titolo || 'Gara senza titolo';
+  const titoloEl = document.getElementById('regata-titolo');
+  const dataEl = document.getElementById('regata-data');
+  const descEl = document.getElementById('regata-descrizione');
+  if (titoloEl) titoloEl.textContent = gara.titolo || 'Gara senza titolo';
   const dataFmt = gara.data_gara ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' }) : 'Data da definirsi';
-  document.getElementById('regata-data').textContent = `📅 ${dataFmt}`;
-  document.getElementById('regata-descrizione').textContent = gara.descrizione || '';
+  if (dataEl) dataEl.textContent = `📅 ${dataFmt}`;
+  if (descEl) descEl.textContent = gara.descrizione || '';
+
   const st = statoGara(gara);
   const badgeTipo = document.getElementById('regata-badge-tipo');
   const badgeStato = document.getElementById('regata-badge-stato');
+  const badgeLive = document.getElementById('regata-badge-live');
+  const liveBtnEl = document.getElementById('regata-live-btn');
+
   if (badgeTipo) badgeTipo.textContent = st.tipo;
   if (badgeStato) {
     if (st.label) {
@@ -90,6 +103,7 @@ function fillRegata(gara) {
       badgeStato.textContent = '';
     }
   }
+
   var card = document.getElementById('next-regata-card');
   if (card && gara && gara.id) {
     var st2 = statoGara(gara);
@@ -97,7 +111,7 @@ function fillRegata(gara) {
     var nr2 = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));
     var durataMs2 = Math.max(2, nr2 * 1.5) * 60 * 60 * 1000;
     var now2 = Date.now();
-    var inLive = !isNaN(startT) && now2 >= startT - 6*60*60*1000 && now2 <= startT + durataMs2 + 2*60*60*1000;
+    var inLive = !isNaN(startT) && now2 >= startT - 6 * 60 * 60 * 1000 && now2 <= startT + durataMs2 + 2 * 60 * 60 * 1000;
     card.href = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? ('live.html?id=' + encodeURIComponent(gara.id)) : 'gare.html';
     if (badgeLive) badgeLive.style.display = (inLive || st2.key === 'corso') ? '' : 'none';
     if (liveBtnEl) liveBtnEl.style.display = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? '' : 'none';
@@ -167,12 +181,15 @@ async function caricaStats() {
     const elSoci = document.getElementById('stat-soci');
     const elSq = document.getElementById('stat-squadre');
     const elReg = document.getElementById('stat-regate');
+    const elFond = document.getElementById('stat-fondazione');
     if (elSoci) elSoci.textContent = (profRes.data || []).length;
     if (elSq) elSq.textContent = (teamsRes.data || []).length;
     if (elReg) {
       const gare2026 = (gareRes.data || []).filter(g => g.data_gara && String(g.data_gara).startsWith(STAGIONE));
       elReg.textContent = gare2026.length;
     }
+    // Fondazione circolo: sempre 2003
+    if (elFond) elFond.textContent = '2003';
   } catch (e) { console.warn('stats', e); }
 }
 
@@ -222,13 +239,13 @@ async function caricaBacheca() {
         : '';
       return `<div class="avviso-item">
         <div class="avviso-meta">
-          <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'<')}</span>
+          <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'&lt;')}</span>
           <div class="avviso-actions">
             <span class="avviso-data">${dataFmt}</span>
             ${delBtn}
           </div>
         </div>
-        <div class="avviso-testo">${(a.testo || '').replace(/</g,'<')}</div>
+        <div class="avviso-testo">${(a.testo || '').replace(/</g,'&lt;')}</div>
       </div>`;
     }).join('');
 

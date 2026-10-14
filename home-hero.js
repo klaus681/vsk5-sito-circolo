@@ -75,7 +75,9 @@
       setNum('stat-soci', map.home_stat_soci_value);
       setNum('stat-squadre', map.home_stat_squadre_value);
       setNum('stat-regate', map.home_stat_regate_value);
-      setNum('stat-fondazione', map.home_stat_dal_value);
+      // Fondazione: sempre 2003 (non sovrascrivere con valori errati da admin)
+      var elFond = document.getElementById('stat-fondazione');
+      if (elFond) elFond.textContent = '2003';
     }
     applyValueOverrides();
     setTimeout(applyValueOverrides, 800);
