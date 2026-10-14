@@ -94,14 +94,54 @@
     });
   };
 
-  window.CVI.upgradeHeaderLogo = function () {};
+  /** Logo header uniforme: immagine + testo su tutte le pagine */
+  window.CVI.upgradeHeaderLogo = function () {
+    var container = document.querySelector('header .logo-container');
+    if (!container) return;
+
+    if (!container.querySelector('img.logo-img')) {
+      var img = document.createElement('img');
+      img.src = 'logo-cvi.png';
+      img.alt = 'Logo Circolo Velico Italia';
+      img.className = 'logo-img';
+      img.width = 32;
+      img.height = 32;
+      img.loading = 'eager';
+      img.decoding = 'async';
+      container.insertBefore(img, container.firstChild);
+    }
+
+    var textEl = container.querySelector('.logo-text');
+    if (!textEl) {
+      textEl = document.createElement('span');
+      textEl.className = 'logo-text';
+      container.appendChild(textEl);
+    }
+    // Rimuove emoji ancora se presente e uniforma testo
+    textEl.innerHTML = 'CVI <span>Virtual</span>';
+  };
+
+  /** Footer: naming uniforme Circolo Velico Italia */
+  window.CVI.ensureFooter = function () {
+    document.querySelectorAll('.footer-bottom').forEach(function (el) {
+      el.textContent = '© 2003–2026 Circolo Velico Italia · Virtual Skipper';
+    });
+    document.querySelectorAll('.footer-brand p').forEach(function (p) {
+      if (/Virtual Skipper/i.test(p.textContent) || /skipper/i.test(p.textContent)) {
+        p.textContent = 'Circolo Velico Italia · Virtual Skipper dal 2003.';
+      }
+    });
+    document.querySelectorAll('.footer-brand .logo-text').forEach(function (el) {
+      el.innerHTML = 'CVI <span style="color: var(--accent-color)">Virtual</span>';
+    });
+  };
+
   window.CVI.ensureNavAlign = function () {};
 
   /** Inserisce Galleria e Discord nel menu se mancano (desktop + mobile) */
   window.CVI.ensureNavLinks = function () {
     var dict = NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it;
 
-    // Desktop
     var ul = document.querySelector('nav.nav-desktop ul');
     if (ul) {
       function insertAfterAlbo(href, label, i18nKey) {
@@ -123,7 +163,6 @@
       insertAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
     }
 
-    // Mobile
     var mobile = document.getElementById('navMobile');
     if (mobile) {
       function insertMobileAfterAlbo(href, label, i18nKey) {
@@ -218,6 +257,7 @@
     window.CVI.upgradeHeaderLogo();
     window.CVI.ensureNavAlign();
     window.CVI.ensureNavLinks();
+    window.CVI.ensureFooter();
     const sel = document.getElementById('languageSelect');
     if (sel) {
       sel.value = window.CVI.currentLang;
