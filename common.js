@@ -66,13 +66,10 @@
     const btn = document.getElementById('navToggle');
     const mobile = document.getElementById('navMobile');
     if (!btn || !mobile) return;
-
-    btn.addEventListener('click', function () {
-      const isOpen = mobile.classList.toggle('is-open');
-      btn.classList.toggle('is-open', isOpen);
-      document.body.classList.toggle('menu-open', isOpen);
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
+    btn.onclick = function () {
+      const open = mobile.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
   };
 
   window.CVI.upgradeHeaderLogo = function () {};
@@ -168,6 +165,7 @@
     window.CVI.ensureNavLinks();
     window.CVI.initFloatingDiscord();
     window.CVI.ensureAdminNavLink();
+    // Carica notifiche Discord (avvisi / gare)
     try {
       var s = document.createElement('script');
       s.src = 'discord-notify.js?v=1';
