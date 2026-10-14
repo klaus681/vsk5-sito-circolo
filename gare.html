@@ -1,1 +1,45 @@
-FILE_FROM_ARTIFACTS
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gare - CVI Virtual</title>
+<script>
+(async function () {
+  const urls = [
+    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/575b4a5241a867a2f5aa0f98560b4646a12cd2c0/gare.html',
+    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@575b4a5241a867a2f5aa0f98560b4646a12cd2c0/gare.html'
+  ];
+  let html = null, lastErr = null;
+  for (const src of urls) {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      html = await res.text();
+      if (html && html.indexOf('loadGare') !== -1) break;
+      html = null;
+    } catch (e) { lastErr = e; }
+  }
+  if (!html) {
+    document.body.innerHTML = '<p style="color:#fff;padding:2rem;font-family:sans-serif">Errore caricamento Gare.<br><small>' + lastErr + '</small></p>';
+    return;
+  }
+  // Patch: Scarica iscritti solo admin
+  html = html.replace(
+    'iscritti.length?`<button type="button" class="btn-dl-iscritti" data-dl-gara="${g.id}">⬇ ${t(\'btn_dl_iscritti\')}</button>`:\'\'',
+    '(isAdmin&&iscritti.length)?`<button type="button" class="btn-dl-iscritti" data-dl-gara="${g.id}">⬇ ${t(\'btn_dl_iscritti\')}</button>`:\'\''
+  );
+  html = html.replace(
+    'function downloadIscrittiCSV(garaId){\n  const gid=String(garaId);',
+    'function downloadIscrittiCSV(garaId){\n  if(!isAdmin){alert(\'Solo gli amministratori possono scaricare gli iscritti.\');return;}\n  const gid=String(garaId);'
+  );
+  document.open();
+  document.write(html);
+  document.close();
+})();
+</script>
+</head>
+<body style="background:#0b0f19;color:#94a3b8;font-family:sans-serif;padding:2rem">
+  Caricamento calendario gare…
+</body>
+</html>
