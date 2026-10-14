@@ -1,7 +1,7 @@
 /* CVI Virtual – shared nav, i18n helpers, mobile menu */
 (function () {
   const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PN[...]';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
   window.CVI = window.CVI || {};
   window.CVI.supabase = window.supabase
@@ -104,7 +104,7 @@
     a.href = 'discord.html';
     a.title = 'Community Discord';
     a.setAttribute('aria-label', 'Discord');
-    a.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.44[...';
+    a.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.44[...]';
     a.style.cssText = 'position:fixed;bottom:1.25rem;right:1.25rem;z-index:9000;width:52px;height:52px;border-radius:50%;background:#5865F2;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 28px rgba(88,101,242,.35);text-decoration:none;transition:transform .2s ease,background .2s ease;';
     a.onmouseenter = function () { a.style.transform = 'scale(1.08)'; a.style.background = '#4752c4'; };
     a.onmouseleave = function () { a.style.transform = 'scale(1)'; a.style.background = '#5865F2'; };
