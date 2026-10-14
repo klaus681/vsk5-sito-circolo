@@ -24,7 +24,6 @@
     document.body.innerHTML = '<p style="color:#fff;padding:2rem">Errore caricamento Admin.<br><small>' + lastErr + '</small></p>';
     return;
   }
-  // Inject Proteste tab if missing
   if (html.indexOf('data-tab="proteste"') === -1) {
     html = html.replace(
       '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>',
@@ -34,6 +33,48 @@
       '<div id="panel-soci" class="admin-panel">',
       '<div id="panel-proteste" class="admin-panel">\n        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:0.85rem">\n          <label class="adm-label" for="proteste-filter" style="margin:0">Filtro</label>\n          <select id="proteste-filter" class="adm-select">\n            <option value="all">Tutte</option>\n            <option value="pending">In attesa</option>\n            <option value="in_esame">In esame</option>\n            <option value="accolta">Accolta</option>\n            <option value="respinta">Respinta</option>\n            <option value="ritirata">Ritirata</option>\n          </select>\n          <button type="button" class="btn-ghost" onclick="if(typeof loadProtesteAdmin===\'function\')loadProtesteAdmin()">Aggiorna</button>\n        </div>\n        <div id="proteste-admin-list"><p class="loading-text">Apri questa scheda per caricare le proteste.</p></div>\n      </div>\n      <div id="panel-soci" class="admin-panel">'
     );
+  }
+  if (html.indexOf('data-tab="eventi-aperti"') === -1) {
+    html = html.replace(
+      '<button type="button" class="admin-tab" data-tab="proteste">Proteste</button>',
+      '<button type="button" class="admin-tab" data-tab="proteste">Proteste</button>\n        <button type="button" class="admin-tab" data-tab="eventi-aperti">Eventi aperti</button>'
+    );
+    if (html.indexOf('data-tab="eventi-aperti"') === -1) {
+      html = html.replace(
+        '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>',
+        '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>\n        <button type="button" class="admin-tab" data-tab="eventi-aperti">Eventi aperti</button>'
+      );
+    }
+    var eaPanel = '<div id="panel-eventi-aperti" class="admin-panel">' +
+      '<div class="admin-card">' +
+      '<h3 id="ea-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo evento aperto</h3>' +
+      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.75rem">Classifica manuale per regate con skipper non soci. Non tocca la classifica ufficiale.</p>' +
+      '<form id="ea-form" class="form-grid">' +
+      '<input type="hidden" id="ea-id">' +
+      '<div><label class="adm-label" for="ea-titolo">Titolo *</label><input class="adm-input" id="ea-titolo" required style="width:100%"></div>' +
+      '<div><label class="adm-label" for="ea-data">Data evento</label><input type="datetime-local" class="adm-input" id="ea-data" style="width:100%"></div>' +
+      '<div><label class="adm-label" for="ea-desc">Descrizione</label><textarea class="adm-input" id="ea-desc" rows="2" style="width:100%"></textarea></div>' +
+      '<div style="display:flex;gap:1rem;flex-wrap:wrap">' +
+      '<label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="ea-pub"> Pubblicato</label>' +
+      '<label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="ea-home"> Mostra in Home</label>' +
+      '</div>' +
+      '<div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">' +
+      '<label class="adm-label" style="margin:0">Risultati (posizione / nickname)</label>' +
+      '<button type="button" class="btn-sm" id="ea-add-row">+ Riga</button>' +
+      '</div>' +
+      '<table class="admin-table"><thead><tr><th>#</th><th>Nickname</th><th>Team</th><th>Note</th><th></th></tr></thead>' +
+      '<tbody id="ea-ris-body"></tbody></table>' +
+      '</div>' +
+      '<div class="form-actions">' +
+      '<button type="submit" class="btn-primary" id="ea-save">Salva evento</button>' +
+      '<button type="button" class="btn-ghost" id="ea-cancel" style="display:none">Annulla</button>' +
+      '</div></form></div>' +
+      '<div id="eventi-aperti-list" style="margin-top:1rem"><p class="loading-text">Apri questa scheda per caricare.</p></div>' +
+      '</div>';
+    if (html.indexOf('panel-eventi-aperti') === -1) {
+      html = html.replace('<div id="panel-soci" class="admin-panel">', eaPanel + '<div id="panel-soci" class="admin-panel">');
+    }
   }
   document.open();
   document.write(html);
