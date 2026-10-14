@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proteste di Regata - CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <link rel="stylesheet" href="forms.css">
+  <style>
+    .protest-layout{max-width:820px;margin:0 auto}
+    .protest-card{background:var(--card-bg,#1a2332);border:1px solid rgba(56,189,248,.15);border-radius:12px;padding:1.25rem 1.35rem;margin-bottom:1rem}
+    .protest-card h2{margin:0 0 .85rem;font-size:1.15rem;color:#7dd3fc;font-weight:700}
+    .status-pill{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.2rem .55rem;border-radius:999px}
+    .st-pending{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
+    .st-in_esame{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.35)}
+    .st-accolta{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.35)}
+    .st-respinta{background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.35)}
+    .st-ritirata{background:rgba(148,163,184,.15);color:#94a3b8;border:1px solid rgba(148,163,184,.3)}
+    .protest-meta{color:#94a3b8;font-size:.82rem;margin-top:.35rem}
+    .protest-body{color:#cbd5e1;font-size:.92rem;line-height:1.55;margin-top:.55rem;white-space:pre-wrap}
+    .gate-box{text-align:center;padding:2.5rem 1.5rem;background:#1a2332;border:1px solid rgba(56,189,248,.2);border-radius:14px;margin:1.5rem auto;max-width:480px}
+    .gate-box h2{color:#fff;margin:0 0 .5rem}
+    .gate-box p{color:#94a3b8;margin:0 0 1rem}
+    .hint-box{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:.85rem 1rem;color:#94a3b8;font-size:.88rem;line-height:1.5;margin-bottom:1.25rem}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+    @media(max-width:560px){.form-row-2{grid-template-columns:1fr}}
+    select.adm-like{width:100%;padding:.8rem 1rem;background:#0f1524;border:1px solid var(--border-color,rgba(255,255,255,.12));border-radius:8px;color:#fff;font-family:inherit;font-size:.95rem}
+    #form-status{margin-top:.75rem;font-weight:600;font-size:.9rem;min-height:1.25rem}
+    .btn-outline{background:transparent;color:#94a3b8;border:1px solid rgba(255,255,255,.15);padding:.4rem .85rem;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+            <li><a href="proteste.html" data-i18n="nav_proteste">Proteste</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option><option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option><option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+      <a href="proteste.html">→ Proteste</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+  <main class="page-content">
+    <div class="protest-layout">
+      <section class="page-hero">
+        <h1>Proteste di Regata</h1>
+        <p>Presenta una protesta formale. Solo i soci autenticati possono inviare e consultare le proprie proteste.</p>
+      </section>
+      <div id="auth-gate" class="gate-box" style="display:none">
+        <h2>Accesso richiesto</h2>
+        <p>Devi essere socio e aver effettuato il login.</p>
+        <a href="accedi.html" class="btn-submit" style="display:inline-block;width:auto;padding:.7rem 1.4rem;text-decoration:none">Accedi</a>
+      </div>
+      <div id="protest-app" style="display:none">
+        <div class="hint-box">Presenta la protesta il prima possibile dopo la regata. Descrivi i fatti in modo chiaro e oggettivo.</div>
+        <div class="protest-card">
+          <h2>Nuova protesta</h2>
+          <form id="protest-form" class="contact-form">
+            <div class="form-group"><label for="pr-gara">Gara / Evento *</label><select id="pr-gara" class="adm-like" required><option value="">— Seleziona gara —</option></select></div>
+            <div class="form-group"><label for="pr-protestante">Protestante</label><input type="text" id="pr-protestante" readonly style="opacity:.85;cursor:not-allowed"></div>
+            <div class="form-row-2">
+              <div class="form-group"><label for="pr-protestato">Protestato (nickname) *</label><input type="text" id="pr-protestato" required maxlength="80" placeholder="Nickname del concorrente"></div>
+              <div class="form-group"><label for="pr-regola">Regola contestata</label><input type="text" id="pr-regola" maxlength="120" placeholder="Es. RRS 10, 11, 14…"></div>
+            </div>
+            <div class="form-group"><label for="pr-momento">Momento / orario</label><input type="text" id="pr-momento" maxlength="120" placeholder="Es. 3° giro, boa 1"></div>
+            <div class="form-group"><label for="pr-desc">Descrizione dei fatti *</label><textarea id="pr-desc" required maxlength="4000" placeholder="Descrivi i fatti…" style="min-height:140px"></textarea></div>
+            <div class="form-group"><label for="pr-testimoni">Testimoni (opzionale)</label><input type="text" id="pr-testimoni" maxlength="200"></div>
+            <div class="form-group"><label for="pr-allegati">Link allegati (opzionale)</label><input type="url" id="pr-allegati" maxlength="500" placeholder="https://…"></div>
+            <button type="submit" class="btn-submit" id="pr-submit">Invia protesta</button>
+            <p id="form-status"></p>
+          </form>
+        </div>
+        <div class="protest-card">
+          <h2>Le tue proteste</h2>
+          <div id="my-protests"><p style="color:#94a3b8">Caricamento…</p></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span><p>Circolo Velico Italia · Virtual Skipper dal 2003.</p></div>
+      <div class="footer-links">
+        <div class="footer-col"><h4>Circolo</h4><a href="team.html">Team</a><a href="classifiche.html">Classifiche</a><a href="regolamento.html">Regolamento</a></div>
+        <div class="footer-col"><h4>Gare</h4><a href="gare.html">Calendario</a><a href="proteste.html">Proteste</a><a href="contatti.html">Contatti</a></div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
+  </footer>
+  <script src="common.js"></script>
+  <script src="discord-notify.js?v=2"></script>
+  <script src="proteste-page.js?v=1"></script>
+</body>
+</html>
