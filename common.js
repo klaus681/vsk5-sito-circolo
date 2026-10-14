@@ -81,14 +81,12 @@
       setOpen(!mobile.classList.contains('is-open'));
     };
 
-    // Chiudi menu al click su un link
     mobile.querySelectorAll('a').forEach(function (link) {
       link.addEventListener('click', function () {
         setOpen(false);
       });
     });
 
-    // Chiudi con Escape
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && mobile.classList.contains('is-open')) {
         setOpen(false);
@@ -98,7 +96,50 @@
 
   window.CVI.upgradeHeaderLogo = function () {};
   window.CVI.ensureNavAlign = function () {};
-  window.CVI.ensureNavLinks = function () {};
+
+  /** Inserisce Galleria e Discord nel menu se mancano (desktop + mobile) */
+  window.CVI.ensureNavLinks = function () {
+    var dict = NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it;
+
+    // Desktop
+    var ul = document.querySelector('nav.nav-desktop ul');
+    if (ul) {
+      function insertAfterAlbo(href, label, i18nKey) {
+        if (ul.querySelector('a[href="' + href + '"]')) return;
+        var albo = ul.querySelector('a[href="albo-doro.html"]');
+        var li = document.createElement('li');
+        var a = document.createElement('a');
+        a.href = href;
+        a.setAttribute('data-i18n', i18nKey);
+        a.textContent = label;
+        li.appendChild(a);
+        if (albo && albo.parentElement && albo.parentElement.parentElement === ul) {
+          albo.parentElement.insertAdjacentElement('afterend', li);
+        } else {
+          ul.appendChild(li);
+        }
+      }
+      insertAfterAlbo('galleria.html', dict.nav_galleria || 'Galleria', 'nav_galleria');
+      insertAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
+    }
+
+    // Mobile
+    var mobile = document.getElementById('navMobile');
+    if (mobile) {
+      function insertMobileAfterAlbo(href, label, i18nKey) {
+        if (mobile.querySelector('a[href="' + href + '"]')) return;
+        var a = document.createElement('a');
+        a.href = href;
+        a.setAttribute('data-i18n', i18nKey);
+        a.textContent = label;
+        var albo = mobile.querySelector('a[href="albo-doro.html"]');
+        if (albo) albo.insertAdjacentElement('afterend', a);
+        else mobile.appendChild(a);
+      }
+      insertMobileAfterAlbo('galleria.html', dict.nav_galleria || 'Galleria', 'nav_galleria');
+      insertMobileAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
+    }
+  };
 
   window.CVI.aggiornaAuth = async function () {
     try {
@@ -176,6 +217,7 @@
     window.CVI.initMobileNav();
     window.CVI.upgradeHeaderLogo();
     window.CVI.ensureNavAlign();
+    window.CVI.ensureNavLinks();
     const sel = document.getElementById('languageSelect');
     if (sel) {
       sel.value = window.CVI.currentLang;
@@ -186,10 +228,8 @@
     }
     window.CVI.applyI18n(extraI18n);
     window.CVI.aggiornaAuth();
-    window.CVI.ensureNavLinks();
     window.CVI.initFloatingDiscord();
     window.CVI.ensureAdminNavLink();
-    // Carica notifiche Discord (avvisi / gare)
     try {
       var s = document.createElement('script');
       s.src = 'discord-notify.js?v=1';
