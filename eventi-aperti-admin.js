@@ -507,6 +507,26 @@
       tplBtn._eaWired = true;
       tplBtn.onclick = downloadCsvTemplate;
     }
+    var textTa = document.getElementById("ea-csv-text");
+    var textBtn = document.getElementById("ea-import-csv-text");
+    if (textBtn && !textBtn._eaWired) {
+      textBtn._eaWired = true;
+      textBtn.onclick = function () {
+        var val = textTa ? textTa.value : "";
+        if (!val.trim()) { alert("Incolla prima il testo CSV (es. Posizione;Nickname;Team;Note)."); return; }
+        var n = importEventoCsv(val);
+        var hint = document.getElementById("ea-csv-hint");
+        if (n && hint) {
+          hint.textContent = "Importati " + n + " skipper dal testo incollato. Controlla le righe e premi Salva evento.";
+          hint.style.color = "#34d399";
+        }
+      };
+    }
+    var textClear = document.getElementById("ea-clear-csv-text");
+    if (textClear && !textClear._eaWired) {
+      textClear._eaWired = true;
+      textClear.onclick = function () { if (textTa) textTa.value = ""; };
+    }
     var cancel = document.getElementById("ea-cancel");
     if (cancel && !cancel._eaWired) {
       cancel._eaWired = true;
