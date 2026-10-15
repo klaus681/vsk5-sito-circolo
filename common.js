@@ -54,15 +54,55 @@
     s.textContent = code + "\n;" + patch;
     document.head.appendChild(s);
   }
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", SRC, false);
-  try {
-    xhr.send(null);
-    if (xhr.status >= 200 && xhr.status < 300) inject(xhr.responseText);
-    else console.error("[CVI] common.js restore failed", xhr.status);
-  } catch (e) {
-    console.error("[CVI] common.js restore", e);
+
+  // Fallback inserter if remote patch cannot be fetched/applied
+  function addFallbackLinks() {
+    function addDrop(href, label) {
+      try {
+        var drop = document.querySelector('nav.nav-desktop .dropdown-menu');
+        if (drop && !drop.querySelector('a[href="' + href + '"]')) {
+          var li = document.createElement('li');
+          var a = document.createElement('a');
+          a.href = href; a.textContent = label;
+          li.appendChild(a); drop.appendChild(li);
+        }
+        var mob = document.querySelector('#navMobile .mobile-dropdown');
+        if (mob && !mob.querySelector('a[href="' + href + '"]')) {
+          var am = document.createElement('a');
+          am.href = href; am.textContent = '→ ' + label;
+          mob.appendChild(am);
+        }
+        var navMobile = document.getElementById('navMobile');
+        if (navMobile && !navMobile.querySelector('a[href="' + href + '"]')) {
+          var an = document.createElement('a');
+          an.href = href; an.textContent = label;
+          navMobile.appendChild(an);
+        }
+      } catch (e) { /* ignore */ }
+    }
+    var lang = (window.CVI && window.CVI.currentLang) || 'it';
+    var pr = ({ it: 'Proteste', en: 'Protests', fr: 'Réclamations', es: 'Protestas' })[lang] || 'Proteste';
+    addDrop('proteste.html', pr);
+    addDrop('eventi-aperti.html', 'Eventi aperti');
   }
+
+  // Use fetch (async) instead of synchronous XHR to avoid blocking the main thread
+  fetch(SRC).then(function (r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.text();
+  }).then(function (txt) {
+    try {
+      inject(txt);
+    } catch (e) {
+      console.error('[CVI] common.js restore inject error', e);
+      // apply fallback to ensure nav links are present
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addFallbackLinks); else addFallbackLinks();
+    }
+  }).catch(function (e) {
+    console.error('[CVI] common.js restore', e);
+    // fetch failed; ensure fallback links are added
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addFallbackLinks); else addFallbackLinks();
+  });
 
   /* —— Eventi aperti: box Home migliorato (podio) —— */
   function escH(s) {
@@ -129,26 +169,26 @@
           var m = medalStyle(Number(r.posizione) || 0);
           podiumHtml +=
             '<div style="background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:.85rem .6rem;text-align:center">' +
-            '<div style="width:2.1rem;height:2.1rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;margin-bottom:.45rem;box-shadow:0 4px 12px rgba(0,0,0,.25);background:' + m.bg + ";color:" + m.color + '">' + m.label + "</div>" +
-            '<div style="color:#fff;font-weight:700;font-size:.95rem;line-height:1.25;word-break:break-word">' + escH(r.nickname) + "</div>" +
-            (r.team ? '<div style="color:#94a3b8;font-size:.78rem;margin-top:.2rem">' + escH(r.team) + "</div>" : "") +
-            "</div>";
+            '<div style="width:2.1rem;height:2.1rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;margin-bottom:.45rem;box-shado...';
+          podiumHtml += '<div style="color:#fff;font-weight:700;font-size:.95rem;line-height:1.25;word-break:break-word">' + escH(r.nickname) + '</div>' +
+            (r.team ? '<div style="color:#94a3b8;font-size:.78rem;margin-top:.2rem">' + escH(r.team) + '</div>' : '') +
+            '</div>';
         });
         podiumHtml += "</div>";
       }
 
       var restHtml = "";
       if (rest.length) {
-        restHtml = '<ol style="list-style:none;padding:0;margin:0 0 .75rem;display:flex;flex-direction:column;gap:.35rem">';
+        restHtml = '<ol style="list-style:none;padding:0;margin:0 0 .75rem;display:flex;flex-direction:column;gap:.35rem' + '\"' + '>';
         rest.forEach(function (r) {
           restHtml +=
             '<li style="display:flex;align-items:baseline;gap:.4rem;font-size:.9rem;color:#e2e8f0;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.04)">' +
-            '<span style="color:#7dd3fc;font-weight:700;min-width:1.4rem">' + escH(r.posizione) + ".</span> " +
-            "<strong>" + escH(r.nickname) + "</strong>" +
-            (r.team ? ' <span style="color:#94a3b8;font-size:.85rem">(' + escH(r.team) + ")</span>" : "") +
-            "</li>";
+            '<span style="color:#7dd3fc;font-weight:700;min-width:1.4rem">' + escH(r.posizione) + '.</span> ' +
+            '<strong>' + escH(r.nickname) + '</strong>' +
+            (r.team ? ' <span style="color:#94a3b8;font-size:.85rem">(' + escH(r.team) + ')</span>' : '') +
+            '</li>';
         });
-        restHtml += "</ol>";
+        restHtml += '</ol>';
       } else if (!rows.length) {
         restHtml = '<p style="color:#64748b;margin:.5rem 0;font-size:.9rem">Classifica in aggiornamento</p>';
       }
@@ -158,17 +198,17 @@
         '<div style="background:var(--card-bg,#111827);border:1px solid rgba(56,189,248,.28);border-radius:14px;padding:1.35rem 1.5rem;box-shadow:0 8px 28px rgba(0,0,0,.28)">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem">' +
         "<div>" +
-        '<span style="display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#38bdf8,#7dd3fc);padding:.22rem .65rem;border-radius:999px;margin-bottom:.4rem">Evento aperto</span>' +
-        '<h2 style="margin:0;color:#fff;font-size:1.28rem;font-weight:700;line-height:1.25">' + escH(e.titolo) + "</h2>" +
-        (dateStr ? '<div style="color:#94a3b8;font-size:.88rem;margin-top:.3rem">📅 ' + escH(dateStr) + "</div>" : "") +
-        "</div>" +
+        '<span style="display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#38bdf8,#7dd3fc);padding:...';
+      html += '<h2 style="margin:0;color:#fff;font-size:1.28rem;font-weight:700;line-height:1.25">' + escH(e.titolo) + '</h2>' +
+        (dateStr ? '<div style="color:#94a3b8;font-size:.88rem;margin-top:.3rem">📅 ' + escH(dateStr) + '</div>' : '') +
+        '</div>' +
         '<a href="eventi-aperti.html" style="color:#7dd3fc;font-weight:700;font-size:.9rem;white-space:nowrap;align-self:center">Vedi tutto →</a>' +
-        "</div>" +
-        (e.descrizione ? '<p style="color:#cbd5e1;font-size:.92rem;margin:0 0 1rem;line-height:1.5">' + escH(e.descrizione) + "</p>" : "") +
+        '</div>' +
+        (e.descrizione ? '<p style="color:#cbd5e1;font-size:.92rem;margin:0 0 1rem;line-height:1.5">' + escH(e.descrizione) + '</p>' : '') +
         podiumHtml +
         restHtml +
         '<p style="margin:.5rem 0 0;font-size:.78rem;color:#64748b">Classifica separata · non ufficiale soci</p>' +
-        "</div></section>";
+        '</div></section>';
 
       var main = document.getElementById("main-content") || document.querySelector("main.page-content");
       var anchor = main && main.querySelector(".content-row");
