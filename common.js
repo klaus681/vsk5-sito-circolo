@@ -64,7 +64,7 @@
   }
   try {
     var hs = document.createElement("script");
-    hs.src = "eventi-aperti-home.js?v=1";
+    hs.src = "eventi-aperti-home.js?v=2";
     hs.async = true;
     document.head.appendChild(hs);
   } catch (e2) {}
