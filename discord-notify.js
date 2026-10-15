@@ -2,24 +2,40 @@
 (function () {
   "use strict";
   var SITE = "https://www.circolovelicoitalia.it";
-  var CACHE = null;
-  var CACHE_AT = 0;
-  async function getWebhook() {
+  var CACHE = {};
+  var CACHE_AT = {};
+
+  async function getWebhook(key) {
+    key = key || "discord_webhook";
     if (!window.CVI || !CVI.supabase) return "";
-    if (CACHE && Date.now() - CACHE_AT < 60000) return CACHE;
+    if (CACHE[key] && Date.now() - (CACHE_AT[key] || 0) < 60000) return CACHE[key];
     try {
-      var res = await CVI.supabase.from("site_settings").select("value").eq("key", "discord_webhook").maybeSingle();
+      var res = await CVI.supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", key)
+        .maybeSingle();
       if (res.error) return "";
-      CACHE = (res.data && res.data.value) ? String(res.data.value).trim() : "";
-      CACHE_AT = Date.now();
-      return CACHE;
-    } catch (e) { return ""; }
+      CACHE[key] = res.data && res.data.value ? String(res.data.value).trim() : "";
+      CACHE_AT[key] = Date.now();
+      return CACHE[key];
+    } catch (e) {
+      return "";
+    }
   }
+
   function isValidWebhook(url) {
-    return url && /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//i.test(url);
+    return (
+      url &&
+      /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//i.test(url)
+    );
   }
-  async function sendEmbed(opts) {
-    var webhook = await getWebhook();
+
+  async function sendEmbed(opts, webhookKey) {
+    var webhook = await getWebhook(webhookKey || "discord_webhook");
+    if (!isValidWebhook(webhook) && webhookKey && webhookKey !== "discord_webhook") {
+      webhook = await getWebhook("discord_webhook");
+    }
     if (!isValidWebhook(webhook)) return false;
     var embed = {
       title: String(opts.title || "").slice(0, 256),
@@ -37,81 +53,192 @@
         body: JSON.stringify({ username: "CVI Virtual", embeds: [embed] })
       });
       return r.ok || r.status === 204;
-    } catch (e) { console.warn("[CVI Discord]", e); return false; }
+    } catch (e) {
+      console.warn("[CVI Discord]", e);
+      return false;
+    }
   }
+
   window.CVIDiscord = {
-    clearCache: function () { CACHE = null; CACHE_AT = 0; },
+    clearCache: function () {
+      CACHE = {};
+      CACHE_AT = {};
+    },
     sendEmbed: sendEmbed,
     notifyAvviso: function (titolo, testo) {
-      return sendEmbed({ title: "📌 Nuovo avviso: " + (titolo || ""), description: testo || "", color: 0x38bdf8, url: SITE + "/index.html" });
+      return sendEmbed({
+        title: "📌 Nuovo avviso: " + (titolo || ""),
+        description: testo || "",
+        color: 0x38bdf8,
+        url: SITE + "/index.html"
+      });
     },
     notifyGara: function (gara) {
       gara = gara || {};
       var dataFmt = "";
       if (gara.data_gara) {
-        try { dataFmt = new Date(gara.data_gara).toLocaleString("it-IT", { dateStyle: "full", timeStyle: "short" }); }
-        catch (e) { dataFmt = String(gara.data_gara); }
+        try {
+          dataFmt = new Date(gara.data_gara).toLocaleString("it-IT", {
+            dateStyle: "full",
+            timeStyle: "short"
+          });
+        } catch (e) {
+          dataFmt = String(gara.data_gara);
+        }
       }
       var fields = [];
       if (dataFmt) fields.push({ name: "📅 Data", value: dataFmt, inline: true });
-      if (gara.num_regate) fields.push({ name: "Regate", value: String(gara.num_regate), inline: true });
-      return sendEmbed({ title: "🏁 Nuova gara: " + (gara.titolo || "Gara"), description: gara.descrizione || "Iscrizioni aperte sul sito.", color: 0x34d399, url: SITE + "/gare.html", fields: fields });
+      if (gara.num_regate)
+        fields.push({
+          name: "Regate",
+          value: String(gara.num_regate),
+          inline: true
+        });
+      return sendEmbed({
+        title: "🏁 Nuova gara: " + (gara.titolo || "Gara"),
+        description: gara.descrizione || "Iscrizioni aperte sul sito.",
+        color: 0x34d399,
+        url: SITE + "/gare.html",
+        fields: fields
+      });
     },
     notifyProtesta: function (p) {
       p = p || {};
       var fields = [];
-      if (p.protestante) fields.push({ name: "Protestante", value: String(p.protestante).slice(0, 100), inline: true });
-      if (p.protestato) fields.push({ name: "Protestato", value: String(p.protestato).slice(0, 100), inline: true });
-      if (p.gara) fields.push({ name: "Gara", value: String(p.gara).slice(0, 150), inline: false });
-      if (p.regola) fields.push({ name: "Regola", value: String(p.regola).slice(0, 80), inline: true });
+      if (p.protestante)
+        fields.push({
+          name: "Protestante",
+          value: String(p.protestante).slice(0, 100),
+          inline: true
+        });
+      if (p.protestato)
+        fields.push({
+          name: "Protestato",
+          value: String(p.protestato).slice(0, 100),
+          inline: true
+        });
+      if (p.gara)
+        fields.push({
+          name: "Gara",
+          value: String(p.gara).slice(0, 150),
+          inline: false
+        });
+      if (p.regola)
+        fields.push({
+          name: "Regola",
+          value: String(p.regola).slice(0, 80),
+          inline: true
+        });
       var desc = String(p.descrizione || "").slice(0, 800);
-      return sendEmbed({ title: "⚖️ Nuova protesta di regata", description: desc || "Nuova protesta presentata sul sito.", color: 0xfbbf24, url: SITE + "/proteste.html", fields: fields });
+      return sendEmbed(
+        {
+          title: "⚖️ Nuova protesta di regata",
+          description: desc || "Nuova protesta presentata sul sito.",
+          color: 0xfbbf24,
+          url: SITE + "/proteste.html",
+          fields: fields
+        },
+        "discord_webhook_proteste"
+      );
     }
   };
+
   function wireHomeAvviso() {
     var btn = document.getElementById("btn-salva-avviso");
     if (!btn || btn._cviDiscord) return;
     btn._cviDiscord = true;
-    btn.addEventListener("click", function () {
-      var t = document.getElementById("avviso-titolo");
-      var x = document.getElementById("avviso-testo");
-      btn._pendingTitolo = t ? t.value.trim() : "";
-      btn._pendingTesto = x ? x.value.trim() : "";
-      setTimeout(async function () {
-        var form = document.getElementById("form-avviso");
-        if (form && !form.classList.contains("open") && btn._pendingTitolo && btn._pendingTesto) {
-          try { await window.CVIDiscord.notifyAvviso(btn._pendingTitolo, btn._pendingTesto); } catch (e) { console.warn(e); }
-          btn._pendingTitolo = ""; btn._pendingTesto = "";
-        }
-      }, 1200);
-    }, true);
+    btn.addEventListener(
+      "click",
+      function () {
+        var t = document.getElementById("avviso-titolo");
+        var x = document.getElementById("avviso-testo");
+        btn._pendingTitolo = t ? t.value.trim() : "";
+        btn._pendingTesto = x ? x.value.trim() : "";
+        setTimeout(async function () {
+          var form = document.getElementById("form-avviso");
+          if (
+            form &&
+            !form.classList.contains("open") &&
+            btn._pendingTitolo &&
+            btn._pendingTesto
+          ) {
+            try {
+              await window.CVIDiscord.notifyAvviso(
+                btn._pendingTitolo,
+                btn._pendingTesto
+              );
+            } catch (e) {
+              console.warn(e);
+            }
+            btn._pendingTitolo = "";
+            btn._pendingTesto = "";
+          }
+        }, 1200);
+      },
+      true
+    );
   }
+
   function wireGareForm() {
-    var btn = document.getElementById("admin-save-btn") || document.getElementById("gara-save-btn");
+    var btn =
+      document.getElementById("admin-save-btn") ||
+      document.getElementById("gara-save-btn");
     if (!btn || btn._cviDiscord) return;
     btn._cviDiscord = true;
-    btn.addEventListener("click", function () {
-      var idEl = document.getElementById("admin-gara-id") || document.getElementById("gara-id");
-      var isNew = !idEl || !String(idEl.value || "").trim();
-      if (!isNew) return;
-      var titoloEl = document.getElementById("admin-titolo") || document.getElementById("gara-titolo");
-      var dataEl = document.getElementById("admin-data") || document.getElementById("gara-data");
-      var descEl = document.getElementById("admin-descrizione") || document.getElementById("gara-desc");
-      var numEl = document.getElementById("admin-num-regate") || document.getElementById("gara-num");
-      var payload = {
-        titolo: titoloEl ? titoloEl.value.trim() : "",
-        descrizione: descEl ? descEl.value.trim() : "",
-        data_gara: dataEl && dataEl.value ? new Date(dataEl.value).toISOString() : null,
-        num_regate: numEl ? numEl.value : 1
-      };
-      setTimeout(async function () {
-        if (!payload.titolo) return;
-        try { await window.CVIDiscord.notifyGara(payload); } catch (e) { console.warn(e); }
-      }, 1500);
-    }, true);
+    btn.addEventListener(
+      "click",
+      function () {
+        var idEl =
+          document.getElementById("admin-gara-id") ||
+          document.getElementById("gara-id");
+        var isNew = !idEl || !String(idEl.value || "").trim();
+        if (!isNew) return;
+        var titoloEl =
+          document.getElementById("admin-titolo") ||
+          document.getElementById("gara-titolo");
+        var dataEl =
+          document.getElementById("admin-data") ||
+          document.getElementById("gara-data");
+        var descEl =
+          document.getElementById("admin-descrizione") ||
+          document.getElementById("gara-desc");
+        var numEl =
+          document.getElementById("admin-num-regate") ||
+          document.getElementById("gara-num");
+        var payload = {
+          titolo: titoloEl ? titoloEl.value.trim() : "",
+          descrizione: descEl ? descEl.value.trim() : "",
+          data_gara:
+            dataEl && dataEl.value
+              ? new Date(dataEl.value).toISOString()
+              : null,
+          num_regate: numEl ? numEl.value : 1
+        };
+        setTimeout(async function () {
+          if (!payload.titolo) return;
+          try {
+            await window.CVIDiscord.notifyGara(payload);
+          } catch (e) {
+            console.warn(e);
+          }
+        }, 1500);
+      },
+      true
+    );
   }
-  function tryWireAll() { wireHomeAvviso(); wireGareForm(); }
+
+  function tryWireAll() {
+    wireHomeAvviso();
+    wireGareForm();
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { setTimeout(tryWireAll, 1000); setTimeout(tryWireAll, 3000); });
-  } else { setTimeout(tryWireAll, 1000); setTimeout(tryWireAll, 3000); }
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(tryWireAll, 1000);
+      setTimeout(tryWireAll, 3000);
+    });
+  } else {
+    setTimeout(tryWireAll, 1000);
+    setTimeout(tryWireAll, 3000);
+  }
 })();
