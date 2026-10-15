@@ -132,3 +132,44 @@ create policy "proteste_storage_delete_own"
     bucket_id = 'proteste'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ============================================
+-- ELIMINAZIONE PROTESTE  (aggiunta successiva)
+-- Se la tabella "proteste" esiste gia', esegui SOLO questo blocco.
+-- Serve per far funzionare i pulsanti "Elimina" e "Elimina risolte"
+-- nel pannello Admin -> Proteste.
+-- ============================================
+
+-- 1) Permesso di cancellazione per admin / scorer
+drop policy if exists "proteste_admin_delete" on public.proteste;
+create policy "proteste_admin_delete" on public.proteste
+  for delete to authenticated
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and (
+          p.is_admin = true
+          or lower(coalesce(p.role, '')) in ('admin', 'scorer')
+        )
+    )
+  );
+
+grant delete on public.proteste to authenticated;
+
+-- 2) Consenti agli admin / scorer di eliminare anche gli allegati su Storage
+drop policy if exists "proteste_storage_delete_admin" on storage.objects;
+create policy "proteste_storage_delete_admin"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'proteste'
+    and exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and (
+          p.is_admin = true
+          or lower(coalesce(p.role, '')) in ('admin', 'scorer')
+        )
+    )
+  );
+
