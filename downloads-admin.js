@@ -4,6 +4,9 @@
 var TIPO_LABEL={pdf:"PDF",zip:"ZIP",exe:"EXE",link:"Link",file:"File"};
 var downloadsCache=[];
 
+var DL_URL_HINT="Incolla un link esterno: i link Dropbox vengono convertiti automaticamente in download diretto. In alternativa carica un file su Supabase qui sotto.";
+var DL_UPLOAD_HINT="Il file viene salvato su Supabase Storage e compila automaticamente l'URL qui sopra (link permanente, senza scadenza).";
+
 function esc(s){
   if(s==null)return"";
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -36,11 +39,43 @@ function resetDlForm(){
   var fileEl=document.getElementById("dl-file");
   if(fileEl)fileEl.value="";
   var st=document.getElementById("dl-upload-status");
-  if(st){st.textContent="Caricando qui il file viene salvato su Supabase Storage e l'URL viene compilato automaticamente (niente link a scadenza).";st.style.color="#94a3b8";}
+  if(st){st.textContent=DL_UPLOAD_HINT;st.style.color="#94a3b8";}
+  var uh=document.getElementById("dl-url-hint");
+  if(uh){uh.textContent=DL_URL_HINT;uh.style.color="#94a3b8";}
 }
 
 var EXT_TIPO={pdf:"pdf",zip:"zip",exe:"exe"};
 var MAX_UPLOAD_MB=50;
+
+function detectTipoFromUrl(u){
+  var m=String(u||"").split("?")[0].split("#")[0].match(/\.([a-z0-9]{2,5})$/i);
+  var ext=m?m[1].toLowerCase():"";
+  if(ext==="pdf")return "pdf";
+  if(ext==="zip"||ext==="rar"||ext==="7z")return "zip";
+  if(ext==="exe"||ext==="msi")return "exe";
+  return "";
+}
+
+/* Normalizza un link esterno: Dropbox dl=0 -> dl=1, Google Drive -> download diretto */
+function normalizeDownloadUrl(raw){
+  var u=String(raw||"").trim();
+  if(!u)return {url:"",tipo:"",note:"",warn:false};
+  var note="",warn=false;
+  if(!/^https?:\/\//i.test(u))u="https://"+u;
+  var host="";
+  try{host=new URL(u).hostname.toLowerCase();}catch(e){host="";}
+  if(/(^|\.)dropbox\.com$/.test(host)){
+    if(/[?&]dl=0(&|$)/.test(u)){u=u.replace(/([?&])dl=0(&|$)/,"$1dl=1$2");note="Link Dropbox convertito in download diretto (dl=1).";}
+    else if(/[?&]raw=1(&|$)/.test(u)){note="Link Dropbox già impostato su raw=1.";}
+    else if(!/[?&](dl|raw)=/.test(u)){u+=(u.indexOf("?")>=0?"&":"?")+"dl=1";note="Aggiunto dl=1 al link Dropbox (download diretto).";}
+    if(/\/scl\/transfer\//.test(u)){note="Attenzione: sembra un link Dropbox Transfer, che scade dopo pochi giorni. Usa un link condiviso normale.";warn=true;}
+  }else if(/(^|\.)discord(app)?\.com$/.test(host)){
+    note="Attenzione: i link Discord scadono in circa 24 ore. Meglio caricare il file su Supabase (Opzione B).";warn=true;
+  }
+  var gd=u.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/);
+  if(gd){u="https://drive.google.com/uc?export=download&id="+gd[1];note="Link Google Drive convertito in download diretto.";warn=false;}
+  return {url:u,tipo:detectTipoFromUrl(u),note:note,warn:warn};
+}
 
 async function uploadDownloadFile(file){
   var st=document.getElementById("dl-upload-status");
@@ -71,6 +106,8 @@ async function uploadDownloadFile(file){
     if(urlEl)urlEl.value=url;
     var tipoSel=document.getElementById("dl-tipo");
     if(tipoSel&&EXT_TIPO[ext])tipoSel.value=EXT_TIPO[ext];
+    var uh=document.getElementById("dl-url-hint");
+    if(uh){uh.textContent="URL compilato dal file caricato su Supabase Storage («"+bucket+"»).";uh.style.color="#34d399";}
     setSt("File caricato su «"+bucket+"» · URL compilato. Ora premi Salva.","#34d399");
   }catch(err){
     setSt("Errore upload: "+(err.message||err)+" (verifica che il bucket «downloads» o «gallery» sia pubblico e con policy di upload per gli admin).","#f87171");
@@ -95,6 +132,9 @@ window.loadDownloads=async function loadDownloads(){
     downloadsCache.map(function(d){
       var tipo=TIPO_LABEL[d.tipo]||(d.tipo||"File");
       var off=d.attivo===false;
+      var host="";try{host=new URL(d.url).hostname.replace(/^www\./,"");}catch(e){}
+      var isSb=/supabase\.co$/i.test(host);
+      var srcBadge='<span style="display:inline-block;font-size:.68rem;font-weight:700;padding:.1rem .45rem;border-radius:999px;margin-right:.4rem;'+(isSb?'background:rgba(52,211,153,.15);color:#34d399':'background:rgba(56,189,248,.15);color:#7dd3fc')+'">'+(isSb?'Supabase Storage':'Link esterno'+(host?' · '+esc(host):''))+'</span>';
       return '<div class="admin-card'+(off?' is-past':'')+'" style="margin-bottom:0.75rem">'+
         '<div class="admin-card-head">'+
           '<div><strong>'+esc(d.titolo)+'</strong>'+
@@ -105,7 +145,7 @@ window.loadDownloads=async function loadDownloads(){
           '</div>'+
         '</div>'+
         (d.descrizione?'<p class="card-desc">'+esc(d.descrizione)+'</p>':'')+
-        '<div class="meta" style="margin-top:.4rem;word-break:break-all"><a href="'+esc(d.url)+'" target="_blank" rel="noopener" style="color:#7dd3fc">'+esc(d.url)+'</a></div>'+
+        '<div class="meta" style="margin-top:.4rem;word-break:break-all">'+srcBadge+'<a href="'+esc(d.url)+'" target="_blank" rel="noopener" style="color:#7dd3fc">'+esc(d.url)+'</a></div>'+
       '</div>';
     }).join("");
 
@@ -117,6 +157,11 @@ window.loadDownloads=async function loadDownloads(){
         document.getElementById("dl-titolo").value=d.titolo||"";
         document.getElementById("dl-desc").value=d.descrizione||"";
         document.getElementById("dl-url").value=d.url||"";
+        (function(){var h="";try{h=new URL(d.url).hostname.replace(/^www\./,"");}catch(e){}
+          var isSb=/supabase\.co$/i.test(h);
+          var uh=document.getElementById("dl-url-hint");
+          if(uh){uh.textContent=isSb?"File ospitato su Supabase Storage.":("Link esterno: "+(h||"?")+" (Dropbox viene convertito in download diretto al salvataggio).");uh.style.color="#94a3b8";}
+        })();
         document.getElementById("dl-tipo").value=d.tipo||"file";
         document.getElementById("dl-ordine").value=String(d.ordine!=null?d.ordine:0);
         document.getElementById("dl-attivo").checked=d.attivo!==false;
@@ -160,7 +205,7 @@ async function saveDownload(e){
   var id=document.getElementById("dl-id").value.trim();
   var titolo=document.getElementById("dl-titolo").value.trim();
   var desc=document.getElementById("dl-desc").value.trim();
-  var url=document.getElementById("dl-url").value.trim();
+  var url=normalizeDownloadUrl(document.getElementById("dl-url").value).url;
   var tipo=document.getElementById("dl-tipo").value||"file";
   var ordine=parseInt(document.getElementById("dl-ordine").value,10);if(isNaN(ordine))ordine=0;
   var attivo=document.getElementById("dl-attivo").checked;
@@ -192,6 +237,19 @@ function wireDownloadUI(){
   if(fileInput&&!fileInput._wired){
     fileInput._wired=true;
     fileInput.onchange=function(){ var f=this.files&&this.files[0]; if(f)uploadDownloadFile(f); };
+  }
+  var urlInput=document.getElementById("dl-url");
+  if(urlInput&&!urlInput._wired){
+    urlInput._wired=true;
+    var applyUrl=function(){
+      var r=normalizeDownloadUrl(urlInput.value);
+      if(r.url!==urlInput.value)urlInput.value=r.url;
+      if(r.tipo){var ts=document.getElementById("dl-tipo");if(ts)ts.value=r.tipo;}
+      var uh=document.getElementById("dl-url-hint");
+      if(uh){uh.textContent=r.note||DL_URL_HINT;uh.style.color=r.warn?"#fbbf24":"#94a3b8";}
+    };
+    urlInput.addEventListener("blur",applyUrl);
+    urlInput.addEventListener("paste",function(){ setTimeout(applyUrl,0); });
   }
   document.querySelectorAll('.admin-tab[data-tab="download"]').forEach(function(tab){
     if(tab._dlWired)return;
