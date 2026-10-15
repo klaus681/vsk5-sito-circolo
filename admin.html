@@ -133,6 +133,14 @@
         </span>
         </div>
         <p id="ea-csv-hint" style="margin:0 0 .5rem;font-size:.78rem;color:#94a3b8">Importa un CSV con le colonne <strong>Posizione;Nickname;Team;Note</strong> (come quelli esportati con ⬇ CSV) per compilare la classifica in automatico. L'import sostituisce le righe attuali.</p>
+        <details id="ea-paste-wrap" style="margin:0 0 .6rem">
+          <summary style="cursor:pointer;font-size:.8rem;color:#7dd3fc;font-weight:600">…oppure incolla direttamente il testo CSV (copia/incolla da Excel o Sheets)</summary>
+          <textarea id="ea-csv-text" class="adm-input" rows="6" style="width:100%;margin-top:.5rem;font-family:ui-monospace,monospace;font-size:.82rem" placeholder="Posizione;Nickname;Team;Note&#10;1;Skipper Uno;Team A;&#10;2;Skipper Due;Team B;&#10;3;Skipper Tre;;"></textarea>
+          <div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn-sm" id="ea-import-csv-text">Compila dalle righe incollate</button>
+            <button type="button" class="btn-sm" id="ea-clear-csv-text">Svuota</button>
+          </div>
+        </details>
         <table class="admin-table"><thead><tr><th>#</th><th>Nickname</th><th>Team</th><th>Note</th><th></th></tr></thead>
         <tbody id="ea-ris-body"></tbody></table>
         </div>
