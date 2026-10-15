@@ -125,8 +125,14 @@
         <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
         <label class="adm-label" style="margin:0">Risultati (posizione / nickname)</label>
-        <button type="button" class="btn-sm" id="ea-add-row">+ Riga</button>
+        <span style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+          <input type="file" id="ea-csv-file" accept=".csv,text/csv,text/plain" style="display:none">
+          <button type="button" class="btn-sm" id="ea-import-csv">⬆ Importa CSV</button>
+          <button type="button" class="btn-sm" id="ea-csv-template">Modello CSV</button>
+          <button type="button" class="btn-sm" id="ea-add-row">+ Riga</button>
+        </span>
         </div>
+        <p id="ea-csv-hint" style="margin:0 0 .5rem;font-size:.78rem;color:#94a3b8">Importa un CSV con le colonne <strong>Posizione;Nickname;Team;Note</strong> (come quelli esportati con ⬇ CSV) per compilare la classifica in automatico. L'import sostituisce le righe attuali.</p>
         <table class="admin-table"><thead><tr><th>#</th><th>Nickname</th><th>Team</th><th>Note</th><th></th></tr></thead>
         <tbody id="ea-ris-body"></tbody></table>
         </div>

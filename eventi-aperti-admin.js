@@ -247,6 +247,101 @@
     };
   }
 
+  /* ---- Import CSV classifica ---- */
+  function parseCSVText(text) {
+    text = String(text || "").replace(/^\uFEFF/, "");
+    var firstLine = text.split(/\r?\n/)[0] || "";
+    var sep = firstLine.split(";").length >= firstLine.split(",").length ? ";" : ",";
+    var rows = [], row = [], cur = "", inQ = false, i = 0;
+    while (i < text.length) {
+      var c = text[i];
+      if (inQ) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { cur += '"'; i += 2; continue; }
+          inQ = false; i++; continue;
+        }
+        cur += c; i++; continue;
+      }
+      if (c === '"') { inQ = true; i++; continue; }
+      if (c === sep) { row.push(cur); cur = ""; i++; continue; }
+      if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cur); cur = ""; rows.push(row); row = []; i++; continue;
+      }
+      cur += c; i++;
+    }
+    row.push(cur); rows.push(row);
+    return rows.filter(function (r) {
+      return r.some(function (x) { return String(x).trim() !== ""; });
+    });
+  }
+
+  function importEventoCsv(text) {
+    var rows = parseCSVText(text);
+    if (!rows.length) { alert("CSV vuoto o non leggibile."); return 0; }
+    var idx = { pos: 0, nick: 1, team: 2, note: 3 };
+    var start = 0;
+    var h = rows[0].map(function (x) { return String(x).trim().toLowerCase(); });
+    var hasHeader =
+      h.some(function (x) { return /posiz|^pos\b|pos\.|rank|^#$/.test(x); }) ||
+      h.some(function (x) { return /nick|skipper/.test(x); });
+    if (hasHeader) {
+      start = 1;
+      var find = function (re, def) {
+        for (var k = 0; k < h.length; k++) if (re.test(h[k])) return k;
+        return def;
+      };
+      idx.pos = find(/posiz|^pos\b|pos\.|rank|^#$/, 0);
+      idx.nick = find(/nick|skipper|nome/, 1);
+      idx.team = find(/team|squadra/, 2);
+      idx.note = find(/note|nota|comment/, 3);
+    }
+    var parsed = [];
+    for (var i = start; i < rows.length; i++) {
+      var r = rows[i];
+      var nick = String(r[idx.nick] == null ? "" : r[idx.nick]).trim();
+      if (!nick) continue;
+      var pos = parseInt(String(r[idx.pos] == null ? "" : r[idx.pos]).replace(/[^0-9]/g, ""), 10);
+      parsed.push({
+        pos: isNaN(pos) ? null : pos,
+        nick: nick,
+        team: String(r[idx.team] == null ? "" : r[idx.team]).trim(),
+        note: String(r[idx.note] == null ? "" : r[idx.note]).trim()
+      });
+    }
+    if (!parsed.length) {
+      alert("Nessuno skipper trovato nel CSV: serve una colonna Nickname (es. Posizione;Nickname;Team;Note).");
+      return 0;
+    }
+    if (parsed.some(function (p) { return p.pos != null; })) {
+      parsed.sort(function (a, b) {
+        return (a.pos == null ? 9999 : a.pos) - (b.pos == null ? 9999 : b.pos);
+      });
+    }
+    var body = document.getElementById("ea-ris-body");
+    if (body) body.innerHTML = "";
+    parsed.forEach(function (p, i) {
+      addRisRow(p.pos != null ? p.pos : i + 1, p.nick, p.team, p.note);
+    });
+    return parsed.length;
+  }
+
+  function downloadCsvTemplate() {
+    var lines = [
+      "Posizione;Nickname;Team;Note",
+      "1;Skipper Uno;Team A;",
+      "2;Skipper Due;Team B;",
+      "3;Skipper Tre;;",
+      "4;Skipper Quattro;;"
+    ];
+    var blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "modello-classifica-evento.csv";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
   function resetForm() {
     fillForm(
       {
@@ -381,6 +476,36 @@
           ""
         );
       };
+    }
+    var impBtn = document.getElementById("ea-import-csv");
+    var csvFile = document.getElementById("ea-csv-file");
+    if (impBtn && !impBtn._eaWired) {
+      impBtn._eaWired = true;
+      impBtn.onclick = function () { if (csvFile) csvFile.click(); };
+    }
+    if (csvFile && !csvFile._eaWired) {
+      csvFile._eaWired = true;
+      csvFile.onchange = function () {
+        var f = this.files && this.files[0];
+        if (!f) return;
+        var hint = document.getElementById("ea-csv-hint");
+        var reader = new FileReader();
+        reader.onload = function () {
+          var n = importEventoCsv(reader.result);
+          if (n && hint) {
+            hint.textContent = "Importati " + n + " skipper dal file \u00ab" + f.name + "\u00bb. Controlla le righe e premi Salva evento.";
+            hint.style.color = "#34d399";
+          }
+          csvFile.value = "";
+        };
+        reader.onerror = function () { alert("Impossibile leggere il file."); csvFile.value = ""; };
+        reader.readAsText(f, "UTF-8");
+      };
+    }
+    var tplBtn = document.getElementById("ea-csv-template");
+    if (tplBtn && !tplBtn._eaWired) {
+      tplBtn._eaWired = true;
+      tplBtn.onclick = downloadCsvTemplate;
     }
     var cancel = document.getElementById("ea-cancel");
     if (cancel && !cancel._eaWired) {
