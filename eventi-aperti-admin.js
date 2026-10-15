@@ -1,4 +1,4 @@
-/* CVI Admin – Eventi aperti (con auto-unica mostra_home) */
+/* CVI Admin – Eventi aperti (con auto-unica mostra_home + CSV) */
 (function () {
   "use strict";
 
@@ -44,6 +44,37 @@
       ":" +
       p(d.getMinutes())
     );
+  }
+
+  function downloadEventoCSV(evento, rows) {
+    var titolo = (evento && evento.titolo) || "evento";
+    var lines = ["Posizione;Nickname;Team;Note"];
+    (rows || []).forEach(function (r) {
+      lines.push(
+        [
+          r.posizione != null ? r.posizione : "",
+          '"' + String(r.nickname || "").replace(/"/g, '""') + '"',
+          '"' + String(r.team || "").replace(/"/g, '""') + '"',
+          '"' + String(r.note || "").replace(/"/g, '""') + '"'
+        ].join(";")
+      );
+    });
+    var safe = String(titolo).replace(/[^\w\-]+/g, "_").slice(0, 40);
+    var blob = new Blob(["\uFEFF" + lines.join("\n")], {
+      type: "text/csv;charset=utf-8;"
+    });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "classifica-evento-" + safe + ".csv";
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+    }, 2000);
+    var st = document.getElementById("admin-status");
+    if (st) {
+      st.textContent = "CSV scaricato";
+      st.className = "admin-status ok";
+    }
   }
 
   async function loadEventiApertiAdmin() {
@@ -114,9 +145,14 @@
             esc(fmt(e.data_evento)) +
             " · " +
             flags.join(" · ") +
-            '</div></div><div><button type="button" class="btn-sm ea-edit" data-id="' +
+            '</div></div><div style="display:flex;gap:.35rem;flex-wrap:wrap">' +
+            '<button type="button" class="btn-sm ea-csv" data-id="' +
             esc(e.id) +
-            '">Modifica</button> <button type="button" class="btn-danger-sm ea-del" data-id="' +
+            '">⬇ CSV</button> ' +
+            '<button type="button" class="btn-sm ea-edit" data-id="' +
+            esc(e.id) +
+            '">Modifica</button> ' +
+            '<button type="button" class="btn-danger-sm ea-del" data-id="' +
             esc(e.id) +
             '">Elimina</button></div></div>' +
             (e.descrizione
@@ -128,6 +164,16 @@
           );
         })
         .join("");
+      box.querySelectorAll(".ea-csv").forEach(function (b) {
+        b.onclick = function () {
+          var eid = b.getAttribute("data-id");
+          var e = eventi.find(function (x) {
+            return String(x.id) === eid;
+          });
+          if (!e) return;
+          downloadEventoCSV(e, byEv[String(e.id)] || []);
+        };
+      });
       box.querySelectorAll(".ea-edit").forEach(function (b) {
         b.onclick = function () {
           var e = eventi.find(function (x) {
