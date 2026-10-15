@@ -225,6 +225,11 @@
             <div><label class="adm-label" for="dl-titolo">Titolo</label><input class="adm-input" id="dl-titolo" required style="width:100%"></div>
             <div><label class="adm-label" for="dl-desc">Descrizione</label><textarea class="adm-input" id="dl-desc" rows="2" style="width:100%"></textarea></div>
             <div><label class="adm-label" for="dl-url">URL file</label><input class="adm-input" id="dl-url" type="url" required style="width:100%"></div>
+            <div>
+              <label class="adm-label" for="dl-file">…oppure carica un file dal PC (link permanente)</label>
+              <input class="adm-input" id="dl-file" type="file" style="width:100%">
+              <p id="dl-upload-status" style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Caricando qui il file viene salvato su Supabase Storage e l'URL viene compilato automaticamente (niente link a scadenza).</p>
+            </div>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
               <div><label class="adm-label" for="dl-tipo">Tipo</label><select class="adm-select" id="dl-tipo"><option value="pdf">PDF</option><option value="zip">ZIP</option><option value="exe">EXE</option><option value="link">Link</option><option value="file">Altro</option></select></div>
               <div><label class="adm-label" for="dl-ordine">Ordine</label><input type="number" class="adm-input" id="dl-ordine" value="0" style="width:5rem"></div>
