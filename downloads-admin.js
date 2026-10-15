@@ -33,6 +33,48 @@ function resetDlForm(){
   document.getElementById("dl-save-btn").textContent="Salva";
   var cancel=document.getElementById("dl-cancel-btn");
   if(cancel)cancel.style.display="none";
+  var fileEl=document.getElementById("dl-file");
+  if(fileEl)fileEl.value="";
+  var st=document.getElementById("dl-upload-status");
+  if(st){st.textContent="Caricando qui il file viene salvato su Supabase Storage e l'URL viene compilato automaticamente (niente link a scadenza).";st.style.color="#94a3b8";}
+}
+
+var EXT_TIPO={pdf:"pdf",zip:"zip",exe:"exe"};
+var MAX_UPLOAD_MB=50;
+
+async function uploadDownloadFile(file){
+  var st=document.getElementById("dl-upload-status");
+  function setSt(msg,color){ if(st){st.textContent=msg||""; st.style.color=color||"#94a3b8";} }
+  if(!file)return;
+  if(!window.CVI||!CVI.supabase){ setSt("Supabase non disponibile.","#f87171"); return; }
+  if(file.size>MAX_UPLOAD_MB*1024*1024){ setSt("File troppo grande (max "+MAX_UPLOAD_MB+" MB).","#f87171"); return; }
+  setSt("Caricamento «"+file.name+"»…","#94a3b8");
+  try{
+    var sess=await CVI.supabase.auth.getSession();
+    var session=sess.data&&sess.data.session;
+    if(!session){ setSt("Devi essere loggato come admin.","#f87171"); return; }
+    var ext=(file.name.split(".").pop()||"bin").toLowerCase();
+    var safeName=file.name.replace(/[^\w.\-]+/g,"_").slice(-80)||("file."+ext);
+    var path="downloads/"+Date.now()+"-"+safeName;
+    var contentType=file.type||"application/octet-stream";
+    var bucket="downloads";
+    var up=await CVI.supabase.storage.from(bucket).upload(path,file,{contentType:contentType,upsert:false});
+    if(up.error){
+      bucket="gallery";
+      up=await CVI.supabase.storage.from(bucket).upload(path,file,{contentType:contentType,upsert:false});
+      if(up.error)throw up.error;
+    }
+    var pub=CVI.supabase.storage.from(bucket).getPublicUrl(path);
+    var url=pub.data&&pub.data.publicUrl;
+    if(!url)throw new Error("URL pubblico non disponibile");
+    var urlEl=document.getElementById("dl-url");
+    if(urlEl)urlEl.value=url;
+    var tipoSel=document.getElementById("dl-tipo");
+    if(tipoSel&&EXT_TIPO[ext])tipoSel.value=EXT_TIPO[ext];
+    setSt("File caricato su «"+bucket+"» · URL compilato. Ora premi Salva.","#34d399");
+  }catch(err){
+    setSt("Errore upload: "+(err.message||err)+" (verifica che il bucket «downloads» o «gallery» sia pubblico e con policy di upload per gli admin).","#f87171");
+  }
 }
 
 window.loadDownloads=async function loadDownloads(){
@@ -146,6 +188,11 @@ function wireDownloadUI(){
   if(form&&!form._wired){form._wired=true;form.onsubmit=saveDownload;}
   var cancel=document.getElementById("dl-cancel-btn");
   if(cancel&&!cancel._wired){cancel._wired=true;cancel.onclick=resetDlForm;}
+  var fileInput=document.getElementById("dl-file");
+  if(fileInput&&!fileInput._wired){
+    fileInput._wired=true;
+    fileInput.onchange=function(){ var f=this.files&&this.files[0]; if(f)uploadDownloadFile(f); };
+  }
   document.querySelectorAll('.admin-tab[data-tab="download"]').forEach(function(tab){
     if(tab._dlWired)return;
     tab._dlWired=true;

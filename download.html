@@ -150,25 +150,25 @@
       {
         titolo: "Regolamento Ufficiale di Circolo VSK5",
         descrizione: "Documento PDF con tutte le direttive e specifiche di navigazione.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1556009117057818654/Regolamento_Regata_C.V.I_GP_1.pdf?backend=b2&ex=6ac7372a&is=6ac5e5aa&hm=27e59bc6ab110754ea2ba1e975d26e[...]",
+        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1556009117057818654/Regolamento_Regata_C.V.I_GP_1.pdf?backend=b2&ex=6ac7372a&is=6ac5e5aa&hm=27e59bc6ab110754ea2ba1e975d26ea9e268d7bf6c1eb8d5f11d3e4e784c3493&",
         tipo: "pdf"
       },
       {
         titolo: "Regolamento RRS (Racing Rules of Sailing) 2025–2028",
         descrizione: "Regole ufficiali di regata World Sailing (RRS / RSS). Edizione corrente 2025–2028.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1557651364677681192/le_regole_di_regata_2025-2028-2.pdf?ex=6ac89361&is=6ac741e1&hm=22cfb521a2cb95725d31f7b23768d170630a8ca[...]",
+        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1557651364677681192/le_regole_di_regata_2025-2028-2.pdf?ex=6ac89361&is=6ac741e1&hm=22cfb521a2cb95725d31f7b23768d170630a8ca219fee3cb90953964715a37db&",
         tipo: "pdf"
       },
       {
         titolo: "Skin e Livree Ufficiali CVI",
         descrizione: "Pacchetto grafico personalizzato per le barche del team.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1554762599936295033/c.v.i._friend.zip?backend=b2&ex=6ac6a2c1&is=6ac55141&hm=d38af0ea9deb04078e1ff4b5afba42f4a409779e449833[...]",
+        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1554762599936295033/c.v.i._friend.zip?backend=b2&ex=6ac6a2c1&is=6ac55141&hm=d38af0ea9deb04078e1ff4b5afba42f4a409779e4498330dcf0213a67178b38c&",
         tipo: "zip"
       },
       {
         titolo: "Mappe Ufficiali C.V.I.",
         descrizione: "Setup mappe VSK5 ufficiali del Circolo Velico Italiano GP.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1554814389042024459/VSK5_Maps_c.v.i.GP_Setup.exe?backend=b2&ex=6ac6d2fd&is=6ac5817d&hm=9061b20ebf785e03667c94106d51ade9cd0[...]",
+        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1554814389042024459/VSK5_Maps_c.v.i.GP_Setup.exe?backend=b2&ex=6ac6d2fd&is=6ac5817d&hm=9061b20ebf785e03667c94106d51ade9cd06cbf822b5665670ad57b173594a8f&",
         tipo: "exe"
       }
     ];
@@ -242,7 +242,7 @@
         if (window.CVI && CVI.supabase) {
           const { data, error } = await CVI.supabase
             .from('downloads')
-            .select('id, titolo, descrizione, url, tipo, ordine, attivo, private_path, bucket')
+            .select('id, titolo, descrizione, url, tipo, ordine, attivo, created_at')
             .eq('attivo', true)
             .order('ordine', { ascending: true })
             .order('created_at', { ascending: false });
