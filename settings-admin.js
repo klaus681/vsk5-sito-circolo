@@ -206,7 +206,7 @@ function wireSettings(){
   if(testBtn&&!testBtn._wired){testBtn._wired=true;testBtn.onclick=testDiscord;}
   var input=document.getElementById("set-youtube");
   if(input&&!input._wired){input._wired=true;input.addEventListener("input",function(){updatePreview(input.value);});}
-  var tab=document.querySelector('.admin-tab[data-tab="settings"]');
+  var tab=document.querySelector('.admin-tab[data-tab="settings"], .admin-tab[data-tab="impostazioni"]');
   if(tab&&!tab._settingsWired){
     tab._settingsWired=true;
     tab.addEventListener("click",function(){ setTimeout(loadSettings, 200); });

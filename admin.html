@@ -1,86 +1,326 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin – CVI Virtual</title>
-<script>
-(async function(){
-  var urls = [
-    'https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@13591de807901bdfebe584db659d788ecd1d2bb1/admin.html',
-    'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/13591de807901bdfebe584db659d788ecd1d2bb1/admin.html'
-  ];
-  var html = null, lastErr = null;
-  for (var i = 0; i < urls.length; i++) {
-    try {
-      var res = await fetch(urls[i]);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      html = await res.text();
-      if (html && html.indexOf('admin-tabs') !== -1) break;
-      html = null;
-    } catch (e) { lastErr = e; }
-  }
-  if (!html) {
-    document.body.innerHTML = '<p style="color:#fff;padding:2rem">Errore caricamento Admin.<br><small>' + lastErr + '</small></p>';
-    return;
-  }
-  if (html.indexOf('data-tab="proteste"') === -1) {
-    html = html.replace(
-      '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>',
-      '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>\n        <button type="button" class="admin-tab" data-tab="proteste">Proteste</button>'
-    );
-    html = html.replace(
-      '<div id="panel-soci" class="admin-panel">',
-      '<div id="panel-proteste" class="admin-panel">\n        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:0.85rem">\n          <label class="adm-label" for="proteste-filter" style="margin:0">Filtro</label>\n          <select id="proteste-filter" class="adm-select">\n            <option value="all">Tutte</option>\n            <option value="pending">In attesa</option>\n            <option value="in_esame">In esame</option>\n            <option value="accolta">Accolta</option>\n            <option value="respinta">Respinta</option>\n            <option value="ritirata">Ritirata</option>\n          </select>\n          <button type="button" class="btn-ghost" onclick="if(typeof loadProtesteAdmin===\'function\')loadProtesteAdmin()">Aggiorna</button>\n        </div>\n        <div id="proteste-admin-list"><p class="loading-text">Apri questa scheda per caricare le proteste.</p></div>\n      </div>\n      <div id="panel-soci" class="admin-panel">'
-    );
-  }
-  if (html.indexOf('data-tab="eventi-aperti"') === -1) {
-    html = html.replace(
-      '<button type="button" class="admin-tab" data-tab="proteste">Proteste</button>',
-      '<button type="button" class="admin-tab" data-tab="proteste">Proteste</button>\n        <button type="button" class="admin-tab" data-tab="eventi-aperti">Eventi aperti</button>'
-    );
-    if (html.indexOf('data-tab="eventi-aperti"') === -1) {
-      html = html.replace(
-        '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>',
-        '<button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>\n        <button type="button" class="admin-tab" data-tab="eventi-aperti">Eventi aperti</button>'
-      );
-    }
-    var eaPanel = '<div id="panel-eventi-aperti" class="admin-panel">' +
-      '<div class="admin-card">' +
-      '<h3 id="ea-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo evento aperto</h3>' +
-      '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.75rem">Classifica manuale per regate con skipper non soci. Non tocca la classifica ufficiale.</p>' +
-      '<form id="ea-form" class="form-grid">' +
-      '<input type="hidden" id="ea-id">' +
-      '<div><label class="adm-label" for="ea-titolo">Titolo *</label><input class="adm-input" id="ea-titolo" required style="width:100%"></div>' +
-      '<div><label class="adm-label" for="ea-data">Data evento</label><input type="datetime-local" class="adm-input" id="ea-data" style="width:100%"></div>' +
-      '<div><label class="adm-label" for="ea-desc">Descrizione</label><textarea class="adm-input" id="ea-desc" rows="2" style="width:100%"></textarea></div>' +
-      '<div style="display:flex;gap:1rem;flex-wrap:wrap">' +
-      '<label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="ea-pub"> Pubblicato</label>' +
-      '<label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="ea-home"> Mostra in Home</label>' +
-      '</div>' +
-      '<div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">' +
-      '<label class="adm-label" style="margin:0">Risultati (posizione / nickname)</label>' +
-      '<button type="button" class="btn-sm" id="ea-add-row">+ Riga</button>' +
-      '</div>' +
-      '<table class="admin-table"><thead><tr><th>#</th><th>Nickname</th><th>Team</th><th>Note</th><th></th></tr></thead>' +
-      '<tbody id="ea-ris-body"></tbody></table>' +
-      '</div>' +
-      '<div class="form-actions">' +
-      '<button type="submit" class="btn-primary" id="ea-save">Salva evento</button>' +
-      '<button type="button" class="btn-ghost" id="ea-cancel" style="display:none">Annulla</button>' +
-      '</div></form></div>' +
-      '<div id="eventi-aperti-list" style="margin-top:1rem"><p class="loading-text">Apri questa scheda per caricare.</p></div>' +
-      '</div>';
-    if (html.indexOf('panel-eventi-aperti') === -1) {
-      html = html.replace('<div id="panel-soci" class="admin-panel">', eaPanel + '<div id="panel-soci" class="admin-panel">');
-    }
-  }
-  document.open();
-  document.write(html);
-  document.close();
-})();
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <style>
+    .admin-page { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .admin-header h1 { margin: 0; font-size: 1.55rem; color: #fff; font-family: 'Playfair Display', Georgia, serif; }
+    .admin-header .sub { color: #94a3b8; font-size: 0.9rem; margin-top: 0.2rem; }
+    .admin-who-box { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .role-badge { background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.35); font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .admin-status { min-height: 1.25rem; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .admin-status.ok { color: #34d399; }
+    .admin-status.err { color: #f87171; }
+    .admin-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.65rem; }
+    .admin-tab { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 0.45rem 0.9rem; border-radius: 8px; font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .admin-tab:hover { color: #e2e8f0; border-color: rgba(56,189,248,0.35); }
+    .admin-tab.active { background: rgba(56,189,248,0.15); color: #7dd3fc; border-color: rgba(56,189,248,0.45); }
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+    .admin-gate { text-align: center; padding: 3rem 1.5rem; background: #1a2332; border: 1px solid rgba(56,189,248,0.2); border-radius: 14px; margin-top: 2rem; }
+    .admin-gate h2 { color: #fff; margin: 0 0 0.5rem; }
+    .admin-gate p { color: #94a3b8; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .admin-table th { text-align: left; color: #94a3b8; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .admin-table td { padding: 0.55rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .admin-card { background: #1a2332; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 0.85rem; }
+    .admin-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+    .meta { color: #94a3b8; font-size: 0.82rem; margin-top: 0.2rem; }
+    .card-desc { color: #cbd5e1; font-size: 0.9rem; margin: 0.5rem 0 0; }
+    .adm-label { display: block; font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .adm-input, .adm-select { background: #0b0f19; color: #fff; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 0.55rem 0.75rem; font-family: inherit; font-size: 0.9rem; }
+    .form-grid { display: grid; gap: 0.75rem; }
+    .form-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem; }
+    .btn-sm { background: transparent; color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-danger-sm { background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,0.4); padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 600; font-size: 0.88rem; cursor: pointer; font-family: inherit; }
+    .loading-text, .empty-text { color: #94a3b8; }
+    .sql-hint { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); color: #fbbf24; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; margin-bottom: 1rem; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); background: #0b0f19; }
+    .logo-text { font-weight: 700; color: #fff; }
+    .logo-text span { color: #38bdf8; }
+    .nav-desktop ul { list-style: none; display: flex; gap: 1rem; margin: 0; padding: 0; }
+    .nav-desktop a { color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+    body { background: #0b0f19; color: #e2e8f0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; margin: 0; }
+  </style>
 </head>
-<body style="background:#0b0f19;color:#94a3b8;font-family:sans-serif;padding:2rem">Caricamento pannello admin…</body>
+<body>
+  <header>
+    <a href="index.html" style="text-decoration:none"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+    <nav class="nav-desktop"><ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="membri.html">Membri</a></li>
+      <li><a href="gare.html">Gare</a></li>
+      <li><a href="admin.html" style="color:#38bdf8;font-weight:700">Admin</a></li>
+    </ul></nav>
+    <a href="accedi.html" id="auth-link" class="btn-ghost" style="text-decoration:none">Accedi</a>
+  </header>
+  <main class="admin-page">
+    <div id="admin-gate" class="admin-gate" style="display:block">
+      <h2 id="gate-title">Caricamento…</h2>
+      <p id="gate-text">Verifica accesso al pannello admin.</p>
+      <a href="accedi.html" class="btn-primary" id="gate-login-link" style="margin-top:1rem;display:inline-block">Vai al login</a>
+    </div>
+    <div id="admin-app" style="display:none">
+      <div class="admin-header">
+        <div><h1>Pannello Admin</h1><div class="sub">Gestione centralizzata del Circolo Velico Italia</div></div>
+        <div class="admin-who-box">
+          <span id="admin-who" style="color:#e2e8f0;font-weight:600"></span>
+          <span class="role-badge" id="admin-role-badge">Admin</span>
+          <button type="button" class="btn-ghost" id="admin-logout-btn">Disconnetti</button>
+        </div>
+      </div>
+      <div id="admin-status" class="admin-status"></div>
+      <div class="admin-tabs" role="tablist">
+        <button type="button" class="admin-tab" data-tab="soci">Soci</button>
+        <button type="button" class="admin-tab" data-tab="team">Team</button>
+        <button type="button" class="admin-tab" data-tab="gare">Gare</button>
+        <button type="button" class="admin-tab" data-tab="risultati">Risultati</button>
+        <button type="button" class="admin-tab" data-tab="avvisi">Avvisi</button>
+        <button type="button" class="admin-tab" data-tab="proteste">Proteste</button>
+        <button type="button" class="admin-tab" data-tab="eventi-aperti">Eventi aperti</button>
+        <button type="button" class="admin-tab" data-tab="galleria">Galleria</button>
+        <button type="button" class="admin-tab" data-tab="download">Download</button>
+        <button type="button" class="admin-tab" data-tab="impostazioni">Impostazioni</button>
+        <button type="button" class="admin-tab" data-tab="export">Export</button>
+      </div>
+      <div id="panel-proteste" class="admin-panel">
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:0.85rem">
+        <label class="adm-label" for="proteste-filter" style="margin:0">Filtro</label>
+        <select id="proteste-filter" class="adm-select">
+        <option value="all">Tutte</option>
+        <option value="pending">In attesa</option>
+        <option value="in_esame">In esame</option>
+        <option value="accolta">Accolta</option>
+        <option value="respinta">Respinta</option>
+        <option value="ritirata">Ritirata</option>
+        </select>
+        <button type="button" class="btn-ghost" onclick="if(typeof loadProtesteAdmin==='function')loadProtesteAdmin()">Aggiorna</button>
+        </div>
+        <div id="proteste-admin-list"><p class="loading-text">Apri questa scheda per caricare le proteste.</p></div>
+        </div>
+        <div id="panel-eventi-aperti" class="admin-panel">
+        <div class="admin-card">
+        <h3 id="ea-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo evento aperto</h3>
+        <p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.75rem">Classifica manuale per regate con skipper non soci. Non tocca la classifica ufficiale.</p>
+        <form id="ea-form" class="form-grid">
+        <input type="hidden" id="ea-id">
+        <div><label class="adm-label" for="ea-titolo">Titolo *</label><input class="adm-input" id="ea-titolo" required style="width:100%"></div>
+        <div><label class="adm-label" for="ea-data">Data evento</label><input type="datetime-local" class="adm-input" id="ea-data" style="width:100%"></div>
+        <div><label class="adm-label" for="ea-desc">Descrizione</label><textarea class="adm-input" id="ea-desc" rows="2" style="width:100%"></textarea></div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+        <label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="ea-pub"> Pubblicato</label>
+        <label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="ea-home"> Mostra in Home</label>
+        </div>
+        <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+        <label class="adm-label" style="margin:0">Risultati (posizione / nickname)</label>
+        <button type="button" class="btn-sm" id="ea-add-row">+ Riga</button>
+        </div>
+        <table class="admin-table"><thead><tr><th>#</th><th>Nickname</th><th>Team</th><th>Note</th><th></th></tr></thead>
+        <tbody id="ea-ris-body"></tbody></table>
+        </div>
+        <div class="form-actions">
+        <button type="submit" class="btn-primary" id="ea-save">Salva evento</button>
+        <button type="button" class="btn-ghost" id="ea-cancel" style="display:none">Annulla</button>
+        </div></form></div>
+        <div id="eventi-aperti-list" style="margin-top:1rem"><p class="loading-text">Apri questa scheda per caricare.</p></div>
+        </div>
+        <div id="panel-soci" class="admin-panel">
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem">
+          <input type="search" id="soci-search" class="adm-input" placeholder="Cerca socio…" style="max-width:260px">
+          <span id="soci-count" style="color:#94a3b8;font-size:0.85rem"></span>
+        </div>
+        <div id="soci-table-wrap"><p class="loading-text">Caricamento…</p></div>
+      </div>
+      <div id="panel-team" class="admin-panel">
+        <div id="tm-sql-hint" class="sql-hint" style="display:none">Verifica tabella teams e policy RLS.</div>
+        <div class="admin-card">
+          <h3 id="tm-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo team</h3>
+          <form id="tm-form" class="form-grid">
+            <input type="hidden" id="tm-id">
+            <div><label class="adm-label" for="tm-nome">Nome team *</label><input class="adm-input" id="tm-nome" required maxlength="80" style="width:100%" placeholder="Es. Red Moon"></div>
+            <div><label class="adm-label" for="tm-capitano">Capitano</label><input class="adm-input" id="tm-capitano" maxlength="80" style="width:100%"></div>
+            <div><label class="adm-label" for="tm-desc">Descrizione</label><textarea class="adm-input" id="tm-desc" rows="3" maxlength="500" style="width:100%"></textarea></div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="tm-save-btn">Salva team</button>
+              <button type="button" class="btn-ghost" id="tm-cancel-btn" style="display:none">Annulla</button>
+            </div>
+          </form>
+        </div>
+        <div id="tm-members-panel" class="admin-card" style="display:none;margin-top:1rem">
+          <h3 style="margin:0 0 0.65rem;color:#7dd3fc">Membri di: <span id="tm-mp-name" style="color:#fff"></span></h3>
+          <div id="tm-mp-list" style="margin-bottom:0.85rem"></div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+            <select id="tm-mp-add-select" class="adm-select" style="flex:1;min-width:180px"></select>
+            <button type="button" class="btn-primary" id="tm-mp-add-btn">Aggiungi</button>
+            <button type="button" class="btn-ghost" id="tm-mp-close">Chiudi</button>
+          </div>
+          <p id="tm-mp-status" style="margin:0.5rem 0 0;font-size:0.85rem;font-weight:500"></p>
+        </div>
+        <div id="tm-list" style="margin-top:1rem"><p class="loading-text">Caricamento…</p></div>
+      </div>
+      <div id="panel-gare" class="admin-panel">
+        <div class="admin-card">
+          <h3 id="gara-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuova gara</h3>
+          <form id="gara-form" class="form-grid">
+            <input type="hidden" id="gara-id">
+            <div><label class="adm-label" for="gara-titolo">Titolo</label><input class="adm-input" id="gara-titolo" required style="width:100%"></div>
+            <div><label class="adm-label" for="gara-data">Data e ora</label><input type="datetime-local" class="adm-input" id="gara-data" required style="width:100%"></div>
+            <div><label class="adm-label" for="gara-desc">Descrizione</label><textarea class="adm-input" id="gara-desc" rows="3" style="width:100%"></textarea></div>
+            <div><label class="adm-label" for="gara-num">Numero regate (1–3)</label><input type="number" min="1" max="3" class="adm-input" id="gara-num" value="1" style="width:6rem"></div>
+            <div><label class="adm-label" for="gara-chiusura">Chiusura iscrizioni (ore prima)</label><input type="number" min="0" max="168" class="adm-input" id="gara-chiusura" value="2" style="width:6rem"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="gara-save-btn">Salva gara</button>
+              <button type="button" class="btn-ghost" id="gara-cancel-btn" style="display:none">Annulla</button>
+            </div>
+          </form>
+        </div>
+        <div id="gare-list"></div>
+      </div>
+      <div id="panel-risultati" class="admin-panel">
+        <div style="margin-bottom:0.75rem">
+          <label class="adm-label" for="ris-gara-select">Seleziona gara</label>
+          <select id="ris-gara-select" class="adm-select" style="min-width:280px"></select>
+        </div>
+        <div id="ris-form-wrap"><p class="empty-text">Seleziona una gara.</p></div>
+      </div>
+      <div id="panel-avvisi" class="admin-panel">
+        <div class="admin-card">
+          <form id="avviso-form" class="form-grid">
+            <div><label class="adm-label" for="avviso-titolo">Titolo</label><input class="adm-input" id="avviso-titolo" required style="width:100%"></div>
+            <div><label class="adm-label" for="avviso-testo">Testo</label><textarea class="adm-input" id="avviso-testo" rows="3" required style="width:100%"></textarea></div>
+            <div class="form-actions"><button type="submit" class="btn-primary" id="avviso-save-btn">Pubblica</button></div>
+          </form>
+        </div>
+        <div id="avvisi-list"></div>
+      </div>
+      <div id="panel-galleria" class="admin-panel">
+        <div class="admin-card">
+          <form id="gallery-form" class="form-grid">
+            <div><label class="adm-label" for="gal-file">Immagine</label><input type="file" id="gal-file" accept="image/*" required></div>
+            <div><label class="adm-label" for="gal-title">Titolo</label><input class="adm-input" id="gal-title" style="width:100%"></div>
+            <div><label class="adm-label" for="gal-caption">Didascalia</label><input class="adm-input" id="gal-caption" style="width:100%"></div>
+            <div class="form-actions"><button type="submit" class="btn-primary" id="gal-save-btn">Carica foto</button></div>
+          </form>
+        </div>
+        <div id="gallery-admin-list"></div>
+      </div>
+      <div id="panel-download" class="admin-panel">
+        <div id="dl-sql-hint" class="sql-hint" style="display:none">Crea tabella downloads.</div>
+        <div class="admin-card">
+          <h3 id="dl-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo download</h3>
+          <form id="dl-form" class="form-grid">
+            <input type="hidden" id="dl-id">
+            <div><label class="adm-label" for="dl-titolo">Titolo</label><input class="adm-input" id="dl-titolo" required style="width:100%"></div>
+            <div><label class="adm-label" for="dl-desc">Descrizione</label><textarea class="adm-input" id="dl-desc" rows="2" style="width:100%"></textarea></div>
+            <div><label class="adm-label" for="dl-url">URL file</label><input class="adm-input" id="dl-url" type="url" required style="width:100%"></div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+              <div><label class="adm-label" for="dl-tipo">Tipo</label><select class="adm-select" id="dl-tipo"><option value="pdf">PDF</option><option value="zip">ZIP</option><option value="exe">EXE</option><option value="link">Link</option><option value="file">Altro</option></select></div>
+              <div><label class="adm-label" for="dl-ordine">Ordine</label><input type="number" class="adm-input" id="dl-ordine" value="0" style="width:5rem"></div>
+              <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:0.4rem;color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="dl-attivo" checked> Attivo</label></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="dl-save-btn">Salva</button>
+              <button type="button" class="btn-ghost" id="dl-cancel-btn" style="display:none">Annulla</button>
+            </div>
+          </form>
+        </div>
+        <div id="dl-list"><p class="loading-text">Caricamento…</p></div>
+      </div>
+      <div id="panel-impostazioni" class="admin-panel">
+        <div id="set-sql-hint" class="sql-hint" style="display:none">Crea site_settings.</div>
+        <div class="admin-card">
+          <h3 style="margin:0 0 0.75rem;color:#7dd3fc">Banner Home</h3>
+          <form id="settings-hero-form" class="form-grid">
+            <div><label class="adm-label" for="set-home_community">Etichetta</label><input class="adm-input" id="set-home_community" style="width:100%"></div>
+            <div><label class="adm-label" for="set-home_title">Titolo</label><input class="adm-input" id="set-home_title" style="width:100%"></div>
+            <div><label class="adm-label" for="set-home_subtitle">Sottotitolo</label><textarea class="adm-input" id="set-home_subtitle" rows="2" style="width:100%"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+              <div><label class="adm-label" for="set-home_cta1_text">CTA1 testo</label><input class="adm-input" id="set-home_cta1_text" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_cta1_href">CTA1 link</label><input class="adm-input" id="set-home_cta1_href" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_cta2_text">CTA2 testo</label><input class="adm-input" id="set-home_cta2_text" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_cta2_href">CTA2 link</label><input class="adm-input" id="set-home_cta2_href" style="width:100%"></div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn-primary" id="set-hero-save-btn">Salva banner</button></div>
+          </form>
+        </div>
+        <div class="admin-card" style="margin-top:1rem">
+          <h3 style="margin:0 0 0.75rem;color:#7dd3fc">Statistiche Home</h3>
+          <form id="settings-stats-form" class="form-grid">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+              <div><label class="adm-label" for="set-home_stat_soci_label">Etichetta Soci</label><input class="adm-input" id="set-home_stat_soci_label" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_soci_value">Valore Soci</label><input class="adm-input" id="set-home_stat_soci_value" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_squadre_label">Etichetta Squadre</label><input class="adm-input" id="set-home_stat_squadre_label" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_squadre_value">Valore Squadre</label><input class="adm-input" id="set-home_stat_squadre_value" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_regate_label">Etichetta Regate</label><input class="adm-input" id="set-home_stat_regate_label" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_regate_value">Valore Regate</label><input class="adm-input" id="set-home_stat_regate_value" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_dal_label">Etichetta Dal</label><input class="adm-input" id="set-home_stat_dal_label" style="width:100%"></div>
+              <div><label class="adm-label" for="set-home_stat_dal_value">Valore Dal</label><input class="adm-input" id="set-home_stat_dal_value" style="width:100%"></div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn-primary" id="set-stats-save-btn">Salva statistiche</button></div>
+          </form>
+        </div>
+        <div class="admin-card" style="margin-top:1rem">
+          <h3 style="margin:0 0 0.75rem;color:#7dd3fc">Video YouTube</h3>
+          <form id="settings-form" class="form-grid">
+            <div><label class="adm-label" for="set-youtube">URL o ID YouTube</label><input class="adm-input" id="set-youtube" style="width:100%"></div>
+            <div class="form-actions"><button type="submit" class="btn-primary" id="set-save-btn">Salva video</button></div>
+          </form>
+          <div id="set-youtube-preview" style="margin-top:1rem"></div>
+        </div>
+        <div class="admin-card" style="margin-top:1rem">
+          <h3 style="margin:0 0 0.75rem;color:#7dd3fc">Notifiche Discord</h3>
+          <form id="settings-discord-form" class="form-grid">
+            <div><label class="adm-label" for="set-discord-webhook">URL Webhook</label><input class="adm-input" id="set-discord-webhook" style="width:100%" autocomplete="off"></div>
+            <div class="form-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button type="submit" class="btn-primary" id="set-discord-save-btn">Salva webhook</button>
+              <button type="button" class="btn-ghost" id="set-discord-test-btn">Invia test</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div id="panel-export" class="admin-panel">
+        <div class="admin-card">
+          <p id="export-info" style="color:#94a3b8;margin:0 0 0.75rem">—</p>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+            <label class="adm-label" for="export-anno" style="margin:0">Stagione</label>
+            <select id="export-anno" class="adm-select"></select>
+            <button type="button" class="btn-primary" id="btn-export-csv">Scarica CSV</button>
+            <button type="button" class="btn-ghost" id="btn-export-pdf">Stampa / PDF</button>
+          </div>
+        </div>
+      </div>
+      <div id="sql-hint" class="sql-hint">Se alcune operazioni falliscono, verifica le policy RLS su Supabase.</div>
+    </div>
+  </main>
+  <script src="common.js"></script>
+  <script src="admin.js?v=5"></script>
+  <script>
+  (function(){
+    function wireLogout(){
+      var btn = document.getElementById('admin-logout-btn');
+      if (!btn || btn._wired) return;
+      btn._wired = true;
+      btn.addEventListener('click', async function(){
+        try { if (window.CVI && CVI.supabase) await CVI.supabase.auth.signOut(); } catch (e) {}
+        window.location.href = 'accedi.html';
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireLogout);
+    else wireLogout();
+    setTimeout(wireLogout, 1500);
+  })();
+  </script>
+</body>
 </html>

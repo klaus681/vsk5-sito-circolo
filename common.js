@@ -1,109 +1,317 @@
-/* CVI Virtual – shared nav bootstrap (Proteste + Eventi aperti + home box) */
+/* CVI Virtual – shared nav, i18n helpers, mobile menu */
 (function () {
-  var SRC = "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@13591de807901bdfebe584db659d788ecd1d2bb1/common.js";
-  function inject(code) {
-    code = code.replace(
-      "nav_gare_sub: 'Calendario', nav_classifiche: 'Classifiche',",
-      "nav_gare_sub: 'Calendario', nav_classifiche: 'Classifiche', nav_proteste: 'Proteste',"
-    );
-    code = code.replace(
-      "nav_gare_sub: 'Calendar', nav_classifiche: 'Standings',",
-      "nav_gare_sub: 'Calendar', nav_classifiche: 'Standings', nav_proteste: 'Protests',"
-    );
-    code = code.replace(
-      "nav_gare_sub: 'Calendrier', nav_classifiche: 'Classements',",
-      "nav_gare_sub: 'Calendrier', nav_classifiche: 'Classements', nav_proteste: 'Réclamations',"
-    );
-    code = code.replace(
-      "nav_gare_sub: 'Calendario', nav_classifiche: 'Clasificación',",
-      "nav_gare_sub: 'Calendario', nav_classifiche: 'Clasificación', nav_proteste: 'Protestas',"
-    );
-    code = code.replace("discord-notify.js?v=1", "discord-notify.js?v=3");
-    code = code.replace("discord-notify.js?v=2", "discord-notify.js?v=3");
-    var patch = [
-      "",
-      "  var _ens = window.CVI && window.CVI.ensureNavLinks;",
-      "  if (_ens) {",
-      "    var _orig = _ens;",
-      "    window.CVI.ensureNavLinks = function () {",
-      "      _orig();",
-      "      function addDrop(href, label) {",
-      "        var drop = document.querySelector('nav.nav-desktop .dropdown-menu');",
-      "        if (drop && !drop.querySelector('a[href=\"' + href + '\"]')) {",
-      "          var li = document.createElement('li');",
-      "          var a = document.createElement('a');",
-      "          a.href = href; a.textContent = label;",
-      "          li.appendChild(a); drop.appendChild(li);",
-      "        }",
-      "        var mob = document.querySelector('#navMobile .mobile-dropdown');",
-      "        if (mob && !mob.querySelector('a[href=\"' + href + '\"]')) {",
-      "          var am = document.createElement('a');",
-      "          am.href = href; am.textContent = '→ ' + label;",
-      "          mob.appendChild(am);",
-      "        }",
-      "      }",
-      "      var lang = window.CVI.currentLang || 'it';",
-      "      var pr = ({ it: 'Proteste', en: 'Protests', fr: 'Réclamations', es: 'Protestas' })[lang] || 'Proteste';",
-      "      addDrop('proteste.html', pr);",
-      "      addDrop('eventi-aperti.html', 'Eventi aperti');",
-      "    };",
-      "  }",
-      ""
-    ].join("\n");
-    var s = document.createElement("script");
-    s.textContent = code + "\n;" + patch;
-    document.head.appendChild(s);
-  }
+  const SUPABASE_URL = 'https://kisffsyerranniypkcqa.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtpc2Zmc3llcnJhbm5peXBrY3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTgxMTgsImV4cCI6MjEwNjQ5NDExOH0.1PNoShPUl32yN3aQenRNan_SCTxtKacr_VVwi5uaELs';
 
-  // Fallback inserter if remote patch cannot be fetched/applied
-  function addFallbackLinks() {
-    function addDrop(href, label) {
-      try {
-        var drop = document.querySelector('nav.nav-desktop .dropdown-menu');
+  window.CVI = window.CVI || {};
+  window.CVI.supabase = window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
+  const NAV_KEYS = {
+    it: {
+      nav_home: 'Home', nav_team: 'Team', nav_gare: 'Gare & Eventi ▾',
+      nav_gare_sub: 'Calendario', nav_classifiche: 'Classifiche', nav_proteste: 'Proteste',
+      nav_albo: "Albo d'Oro", nav_regolamento: 'Regolamento', nav_download: 'Download',
+      nav_contatti: 'Contatti', nav_membri: 'Membri', nav_unisciti: 'Unisciti',
+      nav_accedi: 'Accedi', nav_area_membri: 'Il mio profilo',
+      nav_galleria: 'Galleria', nav_discord: 'Discord'
+    },
+    en: {
+      nav_home: 'Home', nav_team: 'Teams', nav_gare: 'Races & Events ▾',
+      nav_gare_sub: 'Calendar', nav_classifiche: 'Standings', nav_proteste: 'Protests',
+      nav_albo: 'Hall of Fame', nav_regolamento: 'Rules', nav_download: 'Download',
+      nav_contatti: 'Contact', nav_membri: 'Members', nav_unisciti: 'Join Us',
+      nav_accedi: 'Login', nav_area_membri: 'My profile',
+      nav_galleria: 'Gallery', nav_discord: 'Discord'
+    },
+    fr: {
+      nav_home: 'Accueil', nav_team: 'Équipes', nav_gare: 'Courses & Événements ▾',
+      nav_gare_sub: 'Calendrier', nav_classifiche: 'Classements', nav_proteste: 'Réclamations',
+      nav_albo: 'Temple de la Renommée', nav_regolamento: 'Règlement', nav_download: 'Téléchargements',
+      nav_contatti: 'Contact', nav_membri: 'Membres', nav_unisciti: 'Rejoindre',
+      nav_accedi: 'Connexion', nav_area_membri: 'Mon profil',
+      nav_galleria: 'Galerie', nav_discord: 'Discord'
+    },
+    es: {
+      nav_home: 'Inicio', nav_team: 'Equipos', nav_gare: 'Regatas y Eventos ▾',
+      nav_gare_sub: 'Calendario', nav_classifiche: 'Clasificación', nav_proteste: 'Protestas',
+      nav_albo: 'Salón de la Fama', nav_regolamento: 'Reglamento', nav_download: 'Descargas',
+      nav_contatti: 'Contacto', nav_membri: 'Miembros', nav_unisciti: 'Únete',
+      nav_accedi: 'Acceder', nav_area_membri: 'Mi perfil',
+      nav_galleria: 'Galería', nav_discord: 'Discord'
+    }
+  };
+
+  window.CVI.currentLang = localStorage.getItem('cvi_lang') || 'it';
+
+  window.CVI.applyI18n = function (extra) {
+    const dict = Object.assign({}, NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it, (extra && extra[window.CVI.currentLang]) || {});
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key] == null) return;
+      var val = dict[key];
+      if (/<[a-z][\s\S]*>/i.test(val)) el.innerHTML = val;
+      else el.textContent = val;
+    });
+  };
+
+  window.CVI.cambiaLingua = function (lang, extra) {
+    window.CVI.currentLang = lang;
+    localStorage.setItem('cvi_lang', lang);
+    window.CVI.applyI18n(extra);
+  };
+
+  window.CVI.initMobileNav = function () {
+    const btn = document.getElementById('navToggle');
+    const mobile = document.getElementById('navMobile');
+    if (!btn || !mobile) return;
+
+    function setOpen(open) {
+      mobile.classList.toggle('is-open', open);
+      btn.classList.toggle('is-open', open);
+      document.body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? 'Chiudi menu' : 'Apri menu');
+    }
+
+    btn.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(!mobile.classList.contains('is-open'));
+    };
+
+    mobile.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        setOpen(false);
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && mobile.classList.contains('is-open')) {
+        setOpen(false);
+      }
+    });
+  };
+
+  /** Logo header uniforme: immagine + testo su tutte le pagine */
+  window.CVI.upgradeHeaderLogo = function () {
+    var container = document.querySelector('header .logo-container');
+    if (!container) return;
+
+    if (!container.querySelector('img.logo-img')) {
+      var img = document.createElement('img');
+      img.src = 'logo-cvi.png';
+      img.alt = 'Logo Circolo Velico Italia';
+      img.className = 'logo-img';
+      img.width = 32;
+      img.height = 32;
+      img.loading = 'eager';
+      img.decoding = 'async';
+      container.insertBefore(img, container.firstChild);
+    }
+
+    var textEl = container.querySelector('.logo-text');
+    if (!textEl) {
+      textEl = document.createElement('span');
+      textEl.className = 'logo-text';
+      container.appendChild(textEl);
+    }
+    // Rimuove emoji ancora se presente e uniforma testo
+    textEl.innerHTML = 'CVI <span>Virtual</span>';
+  };
+
+  /** Footer: naming uniforme Circolo Velico Italia */
+  window.CVI.ensureFooter = function () {
+    document.querySelectorAll('.footer-bottom').forEach(function (el) {
+      el.textContent = '© 2003–2026 Circolo Velico Italia · Virtual Skipper';
+    });
+    document.querySelectorAll('.footer-brand p').forEach(function (p) {
+      if (/Virtual Skipper/i.test(p.textContent) || /skipper/i.test(p.textContent)) {
+        p.textContent = 'Circolo Velico Italia · Virtual Skipper dal 2003.';
+      }
+    });
+    document.querySelectorAll('.footer-brand .logo-text').forEach(function (el) {
+      el.innerHTML = 'CVI <span style="color: var(--accent-color)">Virtual</span>';
+    });
+  };
+
+  window.CVI.ensureNavAlign = function () {};
+
+  /** Inserisce Galleria e Discord nel menu se mancano (desktop + mobile) */
+  window.CVI.ensureNavLinks = function () {
+    var dict = NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it;
+
+    var ul = document.querySelector('nav.nav-desktop ul');
+    if (ul) {
+      function insertAfterAlbo(href, label, i18nKey) {
+        if (ul.querySelector('a[href="' + href + '"]')) return;
+        var albo = ul.querySelector('a[href="albo-doro.html"]');
+        var li = document.createElement('li');
+        var a = document.createElement('a');
+        a.href = href;
+        a.setAttribute('data-i18n', i18nKey);
+        a.textContent = label;
+        li.appendChild(a);
+        if (albo && albo.parentElement && albo.parentElement.parentElement === ul) {
+          albo.parentElement.insertAdjacentElement('afterend', li);
+        } else {
+          ul.appendChild(li);
+        }
+      }
+      insertAfterAlbo('galleria.html', dict.nav_galleria || 'Galleria', 'nav_galleria');
+      insertAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
+    }
+
+    var mobile = document.getElementById('navMobile');
+    if (mobile) {
+      function insertMobileAfterAlbo(href, label, i18nKey) {
+        if (mobile.querySelector('a[href="' + href + '"]')) return;
+        var a = document.createElement('a');
+        a.href = href;
+        a.setAttribute('data-i18n', i18nKey);
+        a.textContent = label;
+        var albo = mobile.querySelector('a[href="albo-doro.html"]');
+        if (albo) albo.insertAdjacentElement('afterend', a);
+        else mobile.appendChild(a);
+      }
+      insertMobileAfterAlbo('galleria.html', dict.nav_galleria || 'Galleria', 'nav_galleria');
+      insertMobileAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
+    }
+  };
+
+  window.CVI.aggiornaAuth = async function () {
+    try {
+      if (!CVI.supabase) return;
+      const { data: { session } } = await CVI.supabase.auth.getSession();
+      const links = [document.getElementById('auth-link'), document.getElementById('auth-link-mobile')].filter(Boolean);
+      if (session && session.user) {
+        links.forEach(function (a) {
+          a.textContent = (NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it).nav_area_membri || 'Il mio profilo';
+          a.href = 'profilo.html';
+          a.setAttribute('data-i18n', 'nav_area_membri');
+        });
+      } else {
+        links.forEach(function (a) {
+          a.textContent = (NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it).nav_accedi || 'Accedi';
+          a.href = 'accedi.html';
+          a.setAttribute('data-i18n', 'nav_accedi');
+        });
+      }
+    } catch (e) { console.warn('[CVI] auth', e); }
+  };
+
+  window.CVI.initFloatingDiscord = function () {
+    if (document.getElementById('cvi-discord-fab')) return;
+    const a = document.createElement('a');
+    a.id = 'cvi-discord-fab';
+    a.href = 'discord.html';
+    a.title = 'Community Discord';
+    a.setAttribute('aria-label', 'Discord');
+    a.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.688-.608 1.024a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.024.077.077 0 0 0-.078-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>';
+    a.style.cssText = 'position:fixed;bottom:1.25rem;right:1.25rem;z-index:9000;width:52px;height:52px;border-radius:50%;background:#5865F2;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 28px rgba(88,101,242,.35);text-decoration:none;transition:transform .2s ease,background .2s ease;';
+    a.onmouseenter = function () { a.style.transform = 'scale(1.08)'; a.style.background = '#4752c4'; };
+    a.onmouseleave = function () { a.style.transform = 'scale(1)'; a.style.background = '#5865F2'; };
+    document.body.appendChild(a);
+  };
+
+  window.CVI.resolveRole = function (prof) {
+    if (!prof) return 'socio';
+    var r = (prof.role || '').toString().toLowerCase();
+    if (r === 'admin' || r === 'scorer' || r === 'caposquadra' || r === 'socio') return r;
+    if (prof.is_admin === true) return 'admin';
+    return 'socio';
+  };
+
+  window.CVI.canAccessAdmin = function (role) {
+    return role === 'admin' || role === 'scorer';
+  };
+
+  window.CVI.ensureAdminNavLink = async function () {
+    try {
+      if (!CVI.supabase) return;
+      var res = await CVI.supabase.auth.getSession();
+      var session = res.data && res.data.session;
+      if (!session || !session.user) return;
+      var pr = await CVI.supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).maybeSingle();
+      var role = CVI.resolveRole(pr.data);
+      if (!CVI.canAccessAdmin(role)) return;
+      function addLink(container, isMobile) {
+        if (!container) return;
+        if (container.querySelector('a[href="admin.html"]')) return;
+        var a = document.createElement('a');
+        a.href = 'admin.html';
+        a.textContent = 'Admin';
+        a.style.color = '#38bdf8';
+        a.style.fontWeight = '700';
+        if (isMobile) { container.appendChild(a); }
+        else { var li = document.createElement('li'); li.appendChild(a); container.appendChild(li); }
+      }
+      addLink(document.querySelector('nav.nav-desktop ul'), false);
+      addLink(document.getElementById('navMobile'), true);
+    } catch (e) { console.warn('[CVI] ensureAdminNavLink', e); }
+  };
+
+  window.CVI.init = function (activePage, extraI18n) {
+    window.CVI.initMobileNav();
+    window.CVI.upgradeHeaderLogo();
+    window.CVI.ensureNavAlign();
+    window.CVI.ensureNavLinks();
+    window.CVI.ensureFooter();
+    const sel = document.getElementById('languageSelect');
+    if (sel) {
+      sel.value = window.CVI.currentLang;
+      sel.onchange = function () { window.CVI.cambiaLingua(sel.value, extraI18n); };
+    }
+    if (activePage) {
+      document.querySelectorAll('a[href="' + activePage + '"]').forEach(function (a) { a.classList.add('active'); });
+    }
+    window.CVI.applyI18n(extraI18n);
+    window.CVI.aggiornaAuth();
+    window.CVI.initFloatingDiscord();
+    window.CVI.ensureAdminNavLink();
+    try {
+      var s = document.createElement('script');
+      s.src = 'discord-notify.js?v=3';
+      s.async = true;
+      document.head.appendChild(s);
+    } catch (e) {}
+  };
+})();
+
+
+/* —— Extra CVI: link Proteste / Eventi aperti nel menu a tendina —— */
+(function () {
+  "use strict";
+  var _ens = window.CVI && window.CVI.ensureNavLinks;
+  if (_ens) {
+    window.CVI.ensureNavLinks = function () {
+      _ens();
+      function addDrop(href, label) {
+        var drop = document.querySelector("nav.nav-desktop .dropdown-menu");
         if (drop && !drop.querySelector('a[href="' + href + '"]')) {
-          var li = document.createElement('li');
-          var a = document.createElement('a');
+          var li = document.createElement("li");
+          var a = document.createElement("a");
           a.href = href; a.textContent = label;
           li.appendChild(a); drop.appendChild(li);
         }
-        var mob = document.querySelector('#navMobile .mobile-dropdown');
+        var mob = document.querySelector("#navMobile .mobile-dropdown");
         if (mob && !mob.querySelector('a[href="' + href + '"]')) {
-          var am = document.createElement('a');
-          am.href = href; am.textContent = '→ ' + label;
+          var am = document.createElement("a");
+          am.href = href; am.textContent = "\u2192 " + label;
           mob.appendChild(am);
         }
-        var navMobile = document.getElementById('navMobile');
-        if (navMobile && !navMobile.querySelector('a[href="' + href + '"]')) {
-          var an = document.createElement('a');
-          an.href = href; an.textContent = label;
-          navMobile.appendChild(an);
-        }
-      } catch (e) { /* ignore */ }
-    }
-    var lang = (window.CVI && window.CVI.currentLang) || 'it';
-    var pr = ({ it: 'Proteste', en: 'Protests', fr: 'Réclamations', es: 'Protestas' })[lang] || 'Proteste';
-    addDrop('proteste.html', pr);
-    addDrop('eventi-aperti.html', 'Eventi aperti');
+      }
+      var lang = window.CVI.currentLang || "it";
+      var pr = ({ it: "Proteste", en: "Protests", fr: "R\u00e9clamations", es: "Protestas" })[lang] || "Proteste";
+      addDrop("proteste.html", pr);
+      addDrop("eventi-aperti.html", "Eventi aperti");
+    };
   }
+})();
 
-  // Use fetch (async) instead of synchronous XHR to avoid blocking the main thread
-  fetch(SRC).then(function (r) {
-    if (!r.ok) throw new Error(r.status);
-    return r.text();
-  }).then(function (txt) {
-    try {
-      inject(txt);
-    } catch (e) {
-      console.error('[CVI] common.js restore inject error', e);
-      // apply fallback to ensure nav links are present
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addFallbackLinks); else addFallbackLinks();
-    }
-  }).catch(function (e) {
-    console.error('[CVI] common.js restore', e);
-    // fetch failed; ensure fallback links are added
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addFallbackLinks); else addFallbackLinks();
-  });
-
+/* —— Box Eventi aperti in Home —— */
+(function () {
   /* —— Eventi aperti: box Home migliorato (podio) —— */
   function escH(s) {
     if (s == null) return "";
