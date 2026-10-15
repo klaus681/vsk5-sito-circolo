@@ -224,11 +224,15 @@
             <input type="hidden" id="dl-id">
             <div><label class="adm-label" for="dl-titolo">Titolo</label><input class="adm-input" id="dl-titolo" required style="width:100%"></div>
             <div><label class="adm-label" for="dl-desc">Descrizione</label><textarea class="adm-input" id="dl-desc" rows="2" style="width:100%"></textarea></div>
-            <div><label class="adm-label" for="dl-url">URL file</label><input class="adm-input" id="dl-url" type="url" required style="width:100%"></div>
             <div>
-              <label class="adm-label" for="dl-file">…oppure carica un file dal PC (link permanente)</label>
+              <label class="adm-label" for="dl-url">Opzione A — Incolla un link esterno</label>
+              <input class="adm-input" id="dl-url" type="url" required style="width:100%" placeholder="https://… (Dropbox, Discord, Google Drive, …)">
+              <p id="dl-url-hint" style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Incolla un link esterno: i link Dropbox vengono convertiti automaticamente in download diretto. In alternativa carica un file su Supabase qui sotto.</p>
+            </div>
+            <div>
+              <label class="adm-label" for="dl-file">Opzione B — Carica un file su Supabase Storage</label>
               <input class="adm-input" id="dl-file" type="file" style="width:100%">
-              <p id="dl-upload-status" style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Caricando qui il file viene salvato su Supabase Storage e l'URL viene compilato automaticamente (niente link a scadenza).</p>
+              <p id="dl-upload-status" style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Il file viene salvato su Supabase Storage e compila automaticamente l'URL qui sopra (link permanente, senza scadenza).</p>
             </div>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
               <div><label class="adm-label" for="dl-tipo">Tipo</label><select class="adm-select" id="dl-tipo"><option value="pdf">PDF</option><option value="zip">ZIP</option><option value="exe">EXE</option><option value="link">Link</option><option value="file">Altro</option></select></div>
