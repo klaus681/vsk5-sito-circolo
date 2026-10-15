@@ -1,5 +1,6 @@
 -- ============================================
 -- CVI Virtual – tabella proteste di regata
+-- + Storage bucket per allegati
 -- Esegui questo SQL nel SQL Editor di Supabase
 -- ============================================
 
@@ -85,3 +86,49 @@ create policy "proteste_admin_update" on public.proteste
   );
 
 grant select, insert, update on public.proteste to authenticated;
+
+-- ============================================
+-- Storage: bucket allegati proteste
+-- ============================================
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'proteste',
+  'proteste',
+  true,
+  8388608,
+  array['image/jpeg','image/png','image/webp','image/gif','application/pdf']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "proteste_storage_public_read" on storage.objects;
+create policy "proteste_storage_public_read"
+  on storage.objects for select
+  using (bucket_id = 'proteste');
+
+drop policy if exists "proteste_storage_insert_own" on storage.objects;
+create policy "proteste_storage_insert_own"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'proteste'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "proteste_storage_update_own" on storage.objects;
+create policy "proteste_storage_update_own"
+  on storage.objects for update to authenticated
+  using (
+    bucket_id = 'proteste'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "proteste_storage_delete_own" on storage.objects;
+create policy "proteste_storage_delete_own"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'proteste'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
