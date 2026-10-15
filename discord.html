@@ -108,20 +108,79 @@
   <script src="common.js"></script>
   <script>
     const DISCORD_INVITE = 'https://discord.gg/fEF5MeF47';
-    const DISCORD_SERVER_ID = ''; // opzionale: Server ID per il widget
+    const DISCORD_SERVER_ID = '1311290813053145099'; // Circolo Velico Italia (per il widget)
+    const DISCORD_API = 'https://discord.com/api/v10';
     const extra = {
       it: { discord_title:'Community Discord', discord_subtitle:"Chat, avvisi regate, risultati e compagnia tra una prova e l'altra.", discord_join_title:'Entra nel server', discord_join_desc:'Unisciti agli skipper CVI.', discord_btn:'Entra su Discord', discord_widget_title:'Anteprima server', discord_widget_desc:'Chi è online e i canali pubblici.', discord_bot_note:'In futuro: bot per pubblicare i risultati su #risultati.', nav_galleria:'Galleria', nav_discord:'Discord' },
       en: { discord_title:'Discord Community', discord_subtitle:'Chat, race alerts and results.', discord_join_title:'Join the server', discord_join_desc:'Meet CVI skippers.', discord_btn:'Join Discord', discord_widget_title:'Server preview', discord_widget_desc:'Who is online.', discord_bot_note:'Coming soon: results bot.', nav_galleria:'Gallery', nav_discord:'Discord' },
       fr: { discord_title:'Communauté Discord', discord_subtitle:'Chat et résultats.', discord_join_title:'Rejoindre', discord_join_desc:'Rejoignez les skippers CVI.', discord_btn:'Rejoindre Discord', discord_widget_title:'Aperçu', discord_widget_desc:'Membres en ligne.', discord_bot_note:'Bientôt: bot résultats.', nav_galleria:'Galerie', nav_discord:'Discord' },
       es: { discord_title:'Comunidad Discord', discord_subtitle:'Chat y resultados.', discord_join_title:'Entrar', discord_join_desc:'Únete a los skippers CVI.', discord_btn:'Entrar en Discord', discord_widget_title:'Vista del servidor', discord_widget_desc:'Quién está online.', discord_bot_note:'Pronto: bot de resultados.', nav_galleria:'Galería', nav_discord:'Discord' }
     };
-    function setupDiscord() {
-      const btn = document.getElementById('discord-invite-btn');
-      if (DISCORD_INVITE) btn.href = DISCORD_INVITE;
-      if (DISCORD_SERVER_ID) {
-        document.getElementById('discord-widget').innerHTML =
-          '<iframe src="https://discord.com/widget?id=' + encodeURIComponent(DISCORD_SERVER_ID) + '&theme=dark" width="100%" height="400" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>';
+    function renderServerCard(info) {
+      var wrap = document.getElementById('discord-widget');
+      if (!wrap) return;
+      var name = (info && info.name) || 'Circolo Velico Italia';
+      var stats = '';
+      if (info && info.member_count != null) {
+        stats =
+          '<div style="font-size:.9rem;color:#cbd5e1;margin-top:.4rem">' +
+          '<strong style="color:#fff;font-size:1.2rem">' + info.member_count + '</strong> membri' +
+          (info.online_count != null
+            ? ' · <strong style="color:#34d399">' + info.online_count + '</strong> online'
+            : '') +
+          '</div>';
       }
+      wrap.innerHTML =
+        '<div style="height:100%;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem 1.25rem">' +
+        '<div style="width:60px;height:60px;border-radius:16px;background:#5865F2;display:flex;align-items:center;justify-content:center;font-size:1.7rem">\uD83D\uDCAC</div>' +
+        '<h3 style="margin:.7rem 0 0;color:#fff;font-size:1.1rem">' + (window.CVI && CVI.esc ? CVI.esc(name) : name) + '</h3>' +
+        stats +
+        '<a href="' + DISCORD_INVITE + '" target="_blank" rel="noopener" class="btn-discord" style="margin-top:1rem">Entra su Discord</a>' +
+        '<p style="margin:.85rem 0 0;font-size:.75rem;color:#64748b">Anteprima in tempo reale attivabile con il Widget del server</p>' +
+        '</div>';
+    }
+
+    async function setupDiscord() {
+      const btn = document.getElementById('discord-invite-btn');
+      if (btn && DISCORD_INVITE) btn.href = DISCORD_INVITE;
+      const wrap = document.getElementById('discord-widget');
+      if (!wrap) return;
+
+      // 1) Se il Widget del server è attivo, mostralo davvero
+      if (DISCORD_SERVER_ID) {
+        try {
+          const res = await fetch(
+            'https://discord.com/api/guilds/' + DISCORD_SERVER_ID + '/widget.json',
+            { cache: 'no-store' }
+          );
+          if (res.ok) {
+            wrap.innerHTML =
+              '<iframe src="https://discord.com/widget?id=' + encodeURIComponent(DISCORD_SERVER_ID) + '&theme=dark" width="100%" height="400" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts" title="Discord server widget"></iframe>';
+            return;
+          }
+        } catch (e) { /* widget non disponibile: passo alla card */ }
+      }
+
+      // 2) Altrimenti: card informativa (nome + membri) dal link d'invito
+      let info = null;
+      if (DISCORD_INVITE) {
+        try {
+          const code = DISCORD_INVITE.split('/').pop();
+          const res = await fetch(
+            DISCORD_API + '/invites/' + encodeURIComponent(code) + '?with_counts=true',
+            { cache: 'no-store' }
+          );
+          if (res.ok) {
+            const d = await res.json();
+            info = {
+              name: d.guild && d.guild.name,
+              member_count: d.approximate_member_count,
+              online_count: d.approximate_presence_count
+            };
+          }
+        } catch (e) { /* ignore */ }
+      }
+      renderServerCard(info);
     }
     CVI.init('discord.html', extra);
     setupDiscord();
