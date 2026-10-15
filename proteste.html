@@ -33,6 +33,7 @@
     select.adm-like{width:100%;padding:.8rem 1rem;background:#0f1524;border:1px solid var(--border-color,rgba(255,255,255,.12));border-radius:8px;color:#fff;font-family:inherit;font-size:.95rem}
     #form-status{margin-top:.75rem;font-weight:600;font-size:.9rem;min-height:1.25rem}
     .btn-outline{background:transparent;color:#94a3b8;border:1px solid rgba(255,255,255,.15);padding:.4rem .85rem;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit}
+    input[type=file]{width:100%;padding:.65rem .75rem;background:#0f1524;border:1px solid var(--border-color,rgba(255,255,255,.12));border-radius:8px;color:#e2e8f0;font-family:inherit;font-size:.9rem}
   </style>
 </head>
 <body>
@@ -95,7 +96,7 @@
         <a href="accedi.html" class="btn-submit" style="display:inline-block;width:auto;padding:.7rem 1.4rem;text-decoration:none">Accedi</a>
       </div>
       <div id="protest-app" style="display:none">
-        <div class="hint-box">Presenta la protesta il prima possibile dopo la regata. Descrivi i fatti in modo chiaro e oggettivo.</div>
+        <div class="hint-box">Presenta la protesta il prima possibile dopo la regata. Descrivi i fatti in modo chiaro e oggettivo. Puoi allegare uno screenshot o un PDF.</div>
         <div class="protest-card">
           <h2>Nuova protesta</h2>
           <form id="protest-form" class="contact-form">
@@ -108,7 +109,12 @@
             <div class="form-group"><label for="pr-momento">Momento / orario</label><input type="text" id="pr-momento" maxlength="120" placeholder="Es. 3° giro, boa 1"></div>
             <div class="form-group"><label for="pr-desc">Descrizione dei fatti *</label><textarea id="pr-desc" required maxlength="4000" placeholder="Descrivi i fatti…" style="min-height:140px"></textarea></div>
             <div class="form-group"><label for="pr-testimoni">Testimoni (opzionale)</label><input type="text" id="pr-testimoni" maxlength="200"></div>
-            <div class="form-group"><label for="pr-allegati">Link allegati (opzionale)</label><input type="url" id="pr-allegati" maxlength="500" placeholder="https://…"></div>
+            <div class="form-group">
+              <label for="pr-file">Allegato dal PC (opzionale)</label>
+              <input type="file" id="pr-file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.jpg,.jpeg,.png,.webp,.gif,.pdf">
+              <p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Max 8 MB · immagini o PDF</p>
+            </div>
+            <div class="form-group"><label for="pr-allegati">Oppure link esterno (opzionale)</label><input type="url" id="pr-allegati" maxlength="500" placeholder="https://…"></div>
             <button type="submit" class="btn-submit" id="pr-submit">Invia protesta</button>
             <p id="form-status"></p>
           </form>
@@ -132,6 +138,6 @@
   </footer>
   <script src="common.js"></script>
   <script src="discord-notify.js?v=2"></script>
-  <script src="proteste-page.js?v=1"></script>
+  <script src="proteste-page.js?v=2"></script>
 </body>
 </html>
