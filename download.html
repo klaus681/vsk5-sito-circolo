@@ -175,15 +175,15 @@
 
     function esc(s) {
       if (s == null) return "";
-      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;");
     }
 
     // renderDownloads now accepts isLoggedIn and shows download controls only to authenticated users
     function renderDownloads(items, isLoggedIn) {
       const list = document.getElementById("download-list");
-      const t = extra[CVI.currentLang] || extra.it;
+      const t = (window.CVI && extra[(CVI.currentLang || 'it')]) ? extra[CVI.currentLang] : extra.it;
       if (!items || !items.length) {
-        list.innerHTML = '<p class="empty-text" style="color:var(--text-muted)'> + esc(t.empty_downloads) + "</p>";
+        list.innerHTML = '<p class="empty-text" style="color:var(--text-muted)">' + esc(t.empty_downloads) + "</p>";
         return;
       }
       list.innerHTML = items.map(function (d) {
@@ -212,7 +212,7 @@
             const privatePath = btn.dataset.path;
             const bucket = btn.dataset.bucket || 'downloads';
             try {
-              if (privatePath) {
+              if (privatePath && window.CVI && CVI.supabase && CVI.supabase.storage) {
                 // Try to get a signed URL from Supabase storage (requires that files are stored privately)
                 const { data: signed, error } = await CVI.supabase.storage.from(bucket).createSignedUrl(privatePath, 60);
                 if (error) throw error;
@@ -239,16 +239,21 @@
     // loadDownloadsList returns the data it loaded
     async function loadDownloadsList() {
       try {
-        const { data, error } = await CVI.supabase
-          .from('downloads')
-          .select('id, titolo, descrizione, url, tipo, ordine, attivo, private_path, bucket')
-          .eq('attivo', true)
-          .order('ordine', { ascending: true })
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        if (data && data.length) {
-          return data;
+        if (window.CVI && CVI.supabase) {
+          const { data, error } = await CVI.supabase
+            .from('downloads')
+            .select('id, titolo, descrizione, url, tipo, ordine, attivo, private_path, bucket')
+            .eq('attivo', true)
+            .order('ordine', { ascending: true })
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          if (data && data.length) {
+            return data;
+          } else {
+            return FALLBACK;
+          }
         } else {
+          // No supabase available (CVI not initialized) - return fallback
           return FALLBACK;
         }
       } catch (e) {
@@ -257,30 +262,39 @@
       }
     }
 
-    async function checkAuthAndShow() {
-      const { data: { session } } = await CVI.supabase.auth.getSession();
-      const isLoggedIn = !!session;
-      // Show the page even if not logged in
+    async function safeCheckAuthAndShow() {
       document.getElementById('protected-content').style.display = '';
+      // default: not logged in
+      let isLoggedIn = false;
 
-      // If logged in, wire logout button
+      if (window.CVI && CVI.supabase && CVI.supabase.auth) {
+        try {
+          const { data: { session } } = await CVI.supabase.auth.getSession();
+          isLoggedIn = !!session;
+        } catch (e) {
+          console.warn('auth check failed', e);
+          isLoggedIn = false;
+        }
+      }
+
+      // show/hide logout button
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
         if (!isLoggedIn) logoutBtn.style.display = 'none';
         else {
           logoutBtn.style.display = '';
           logoutBtn.addEventListener('click', async () => {
-            await CVI.supabase.auth.signOut();
+            if (window.CVI && CVI.supabase && CVI.supabase.auth) {
+              await CVI.supabase.auth.signOut();
+            }
             window.location.href = 'accedi.html';
           });
         }
       }
 
-      // Load downloads and render with appropriate permissions
       const items = await loadDownloadsList();
       renderDownloads(items, isLoggedIn);
 
-      // If not logged in, show a small banner prompting to login for downloads
       if (!isLoggedIn) {
         const content = document.querySelector('.content-box');
         if (content && !document.getElementById('download-login-banner')) {
@@ -293,14 +307,30 @@
       }
     }
 
-    // Keep overriding CVI.init behaviour as before
-    const _orig = CVI.init;
-    CVI.init = function (a) {
-      _orig(a, extra);
-      checkAuthAndShow();
-    };
+    // Start logic: if CVI.init exists, override to inject behavior; otherwise run safe flow
+    function startDownloadPage() {
+      try {
+        if (window.CVI && typeof CVI.init === 'function') {
+          const _orig = CVI.init;
+          CVI.init = function (a) {
+            try { _orig(a, extra); } catch (e) { console.warn('CVI.init wrapper error', e); }
+            safeCheckAuthAndShow();
+          };
+          try { CVI.init('download.html'); } catch (e) { console.warn('CVI.init call failed', e); safeCheckAuthAndShow(); }
+        } else {
+          // No CVI.init available: just run the safe flow (will use fallback if no supabase)
+          safeCheckAuthAndShow();
+        }
+      } catch (e) {
+        console.error('startDownloadPage error', e);
+        // fallback: show fallback items without login
+        document.getElementById('protected-content').style.display = '';
+        renderDownloads(FALLBACK, false);
+      }
+    }
 
-    CVI.init("download.html");
+    // Kick off after a short delay so common.js can possibly initialize CVI
+    setTimeout(startDownloadPage, 350);
   </script>
 </body>
 </html>
