@@ -44,3 +44,16 @@
   background: var(--accent-soft, rgba(56, 189, 248, 0.12));
   color: var(--accent-color, #38bdf8);
 }
+
+/* Ponte invisibile tra la voce "Gare & Eventi" e la tendina:
+   copre lo spazio vuoto (6px) tra il link e il sottomenu, così il cursore
+   non "esce" dall'area in :hover mentre scende verso le voci della tendina. */
+.dropdown-menu::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -7px;
+  height: 8px;
+  background: transparent;
+}
