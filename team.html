@@ -84,6 +84,34 @@
     }
     .no-members{font-size:.85rem;color:var(--text-muted);font-style:italic}
 
+    /* Testata: avatar affiancato a nome + capitano */
+    .team-card-head{display:flex;align-items:center;gap:.9rem}
+    .team-card-head .team-avatar{margin-bottom:0;flex-shrink:0}
+    .team-card-heading{min-width:0;flex:1}
+    .team-card-heading h3{margin:0 0 .35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .team-card-heading .team-captain-badge{margin:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .team-card-head + .team-desc{margin-top:.85rem}
+
+    /* Riga statistiche squadra */
+    .team-stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid rgba(255,255,255,.05)}
+    .team-stat{padding:.85rem .4rem;text-align:center}
+    .team-stat + .team-stat{border-left:1px solid rgba(255,255,255,.05)}
+    .ts-val{display:block;font-size:1.2rem;font-weight:800;color:#fff;line-height:1.1;font-variant-numeric:tabular-nums}
+    .ts-val.is-accent{color:var(--team-1)}
+    .ts-lab{display:block;font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:.25rem}
+
+    /* Ribbon posizione nella classifica a squadre */
+    .team-rank-badge{
+      position:absolute;top:0;right:0;z-index:1;display:inline-flex;align-items:center;gap:.3rem;
+      background:linear-gradient(135deg,var(--team-1),var(--team-2));color:#0b0f19;
+      font-size:.72rem;font-weight:800;padding:.32rem .7rem;border-radius:0 16px 0 12px;
+      box-shadow:0 4px 12px var(--team-glow);
+    }
+
+    /* Capitano evidenziato nell'equipaggio */
+    .members-chips li.is-captain{border-color:var(--team-glow);background:var(--team-soft)}
+    .cap-crown{font-size:.82rem;line-height:1}
+
     @media (prefers-reduced-motion: reduce){
       .team-card,.members-chips li{transition:none}
     }
@@ -184,16 +212,17 @@
   <script src="common.js"></script>
   <script>
     const extra = {
-      it: { team_title: "Team & Equipaggi", team_subtitle: "Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.", team_loading: "Caricamento team in corso...", team_empty: "Nessuna squadra registrata.", captain_label: "Capitano: ", members_label: "Membri", no_members: "Nessun membro associato.", no_desc: "Nessuna descrizione disponibile." },
-      en: { team_title: "Teams & Crews", team_subtitle: "Official teams of Circolo Velico Italia and their crews.", team_loading: "Loading teams...", team_empty: "No teams registered.", captain_label: "Captain: ", members_label: "Members", no_members: "No members.", no_desc: "No description available." },
-      fr: { team_title: "Équipes & Équipages", team_subtitle: "Les équipes officielles du Circolo Velico Italia.", team_loading: "Chargement des équipes...", team_empty: "Aucune équipe enregistrée.", captain_label: "Capitaine: ", members_label: "Membres", no_members: "Aucun membre.", no_desc: "Aucune description disponible." },
-      es: { team_title: "Equipos y Tripulaciones", team_subtitle: "Los equipos oficiales del Circolo Velico Italia.", team_loading: "Cargando equipos...", team_empty: "No hay equipos registrados.", captain_label: "Capitán: ", members_label: "Miembros", no_members: "Ningún miembro.", no_desc: "Sin descripción disponible." }
+      it: { team_title: "Team & Equipaggi", team_subtitle: "Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.", team_loading: "Caricamento team in corso...", team_empty: "Nessuna squadra registrata.", captain_label: "Capitano: ", members_label: "Membri", no_members: "Nessun membro associato.", no_desc: "Nessuna descrizione disponibile.", stat_regate: "Regate", stat_punti: "Punti", stat_pos: "Pos." },
+      en: { team_title: "Teams & Crews", team_subtitle: "Official teams of Circolo Velico Italia and their crews.", team_loading: "Loading teams...", team_empty: "No teams registered.", captain_label: "Captain: ", members_label: "Members", no_members: "No members.", no_desc: "No description available.", stat_regate: "Races", stat_punti: "Points", stat_pos: "Rank" },
+      fr: { team_title: "Équipes & Équipages", team_subtitle: "Les équipes officielles du Circolo Velico Italia.", team_loading: "Chargement des équipes...", team_empty: "Aucune équipe enregistrée.", captain_label: "Capitaine: ", members_label: "Membres", no_members: "Aucun membre.", no_desc: "Aucune description disponible.", stat_regate: "Courses", stat_punti: "Points", stat_pos: "Rang" },
+      es: { team_title: "Equipos y Tripulaciones", team_subtitle: "Los equipos oficiales del Circolo Velico Italia.", team_loading: "Cargando equipos...", team_empty: "No hay equipos registrados.", captain_label: "Capitán: ", members_label: "Miembros", no_members: "Ningún miembro.", no_desc: "Sin descripción disponible.", stat_regate: "Regatas", stat_punti: "Puntos", stat_pos: "Pos." }
     };
-    let cachedTeams = [], cachedProfiles = [];
+    const STAGIONE = '2026';
+    let cachedTeams = [], cachedProfiles = [], cachedClass = [], cachedRis = [];
 
     function esc(s) {
       if (s == null) return '';
-      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     function initials(name) {
@@ -220,29 +249,98 @@
       return n.slice(0, 2).toUpperCase();
     }
 
-    function renderizzaTeams(teams, allProfiles) {
+    function teamKey(name) { return String(name || '').trim().toLowerCase(); }
+
+    // Aggrega statistiche per squadra: membri, regate disputate (uniche) e punti stagione
+    function buildTeamStats(teams, allProfiles, classRows, risRows) {
+      const classByUser = {};
+      (classRows || []).forEach(r => { if (r && r.user_id != null) classByUser[String(r.user_id)] = r; });
+
+      const racesByUser = {};
+      (risRows || []).forEach(r => {
+        if (!r || r.user_id == null || r.gara_id == null) return;
+        const k = String(r.user_id);
+        (racesByUser[k] || (racesByUser[k] = new Set())).add(String(r.gara_id));
+      });
+
+      const stats = {};
+      (teams || []).forEach(team => {
+        const name = team.nome_team || team.nome || '';
+        const key = teamKey(name);
+        const members = (allProfiles || []).filter(p => p.team && teamKey(p.team) === key);
+        let points = 0;
+        const races = new Set();
+        members.forEach(m => {
+          const c = classByUser[String(m.id)];
+          if (c && c.punti_totali != null) points += Number(c.punti_totali) || 0;
+          const rs = racesByUser[String(m.id)];
+          if (rs) rs.forEach(g => races.add(g));
+        });
+        stats[key] = { members: members, points: points, races: races.size, rank: null };
+      });
+
+      // Classifica a squadre (solo chi ha punti)
+      const ranked = Object.keys(stats)
+        .map(k => ({ key: k, points: stats[k].points }))
+        .filter(x => x.points > 0)
+        .sort((a, b) => b.points - a.points);
+      ranked.forEach((x, i) => { stats[x.key].rank = i + 1; });
+
+      return stats;
+    }
+
+    const MEDALS = ['🥇', '🥈', '🥉'];
+
+    function renderizzaTeams(teams, allProfiles, classRows, risRows) {
       const container = document.getElementById('teams-container');
       const t = (window.CVI && CVI.currentLang) ? extra[CVI.currentLang] : extra.it;
       if (!teams || !teams.length) { container.innerHTML = '<p class="empty-text">' + t.team_empty + '</p>'; return; }
+      const stats = buildTeamStats(teams, allProfiles, classRows, risRows);
       container.innerHTML = teams.map(team => {
         const teamName = team.nome_team || team.nome || '';
+        const key = teamKey(teamName);
+        const st = stats[key] || { members: [], points: 0, races: 0, rank: null };
+        const members = st.members || [];
         const captainName = team.capitano || team.skipper || '';
-        const members = (allProfiles || []).filter(p => p.team && p.team.trim().toLowerCase() === teamName.trim().toLowerCase());
+        const capKey = teamKey(captainName);
+
         const membersHtml = members.length
           ? '<ul class="members-chips">' + members.map(m => {
-              let label = (m.nome || '').trim();
-              if (m.nickname) label += label ? ' (' + m.nickname.trim() + ')' : m.nickname.trim();
+              const nick = (m.nickname || '').trim();
+              const nome = (m.nome || '').trim();
+              const full = (nome + ' ' + (m.cognome || '')).trim();
+              let label = nome;
+              if (nick) label += label ? ' (' + nick + ')' : nick;
               label = label || m.email || 'Membro';
-              return '<li><span class="member-dot">' + esc(memberInitials(m)) + '</span>' + esc(label) + '</li>';
+              const isCap = !!capKey && (teamKey(nick) === capKey || teamKey(nome) === capKey || teamKey(full) === capKey);
+              return '<li' + (isCap ? ' class="is-captain"' : '') + '>' +
+                '<span class="member-dot">' + esc(memberInitials(m)) + '</span>' +
+                esc(label) + (isCap ? ' <span class="cap-crown" title="' + esc(t.captain_label) + '">👑</span>' : '') +
+                '</li>';
             }).join('') + '</ul>'
           : '<span class="no-members">' + t.no_members + '</span>';
+
+        const rankBadge = st.rank
+          ? '<div class="team-rank-badge">' + (MEDALS[st.rank - 1] || '') + ' ' + st.rank + '°</div>'
+          : '';
+
         return (
           '<div class="team-card" data-theme="' + teamTheme(teamName) + '">' +
             '<div class="team-card-top">' +
-              '<div class="team-avatar">' + esc(initials(teamName)) + '</div>' +
-              '<h3>' + esc(teamName) + '</h3>' +
-              (captainName ? '<span class="team-captain-badge">' + t.captain_label + esc(captainName) + '</span>' : '') +
+              rankBadge +
+              '<div class="team-card-head">' +
+                '<div class="team-avatar">' + esc(initials(teamName)) + '</div>' +
+                '<div class="team-card-heading">' +
+                  '<h3>' + esc(teamName) + '</h3>' +
+                  (captainName ? '<span class="team-captain-badge">' + t.captain_label + esc(captainName) + '</span>' : '') +
+                '</div>' +
+              '</div>' +
               '<p class="team-desc">' + esc(team.descrizione || t.no_desc) + '</p>' +
+            '</div>' +
+            '<div class="team-stats">' +
+              '<div class="team-stat"><span class="ts-val">' + st.races + '</span><span class="ts-lab">' + t.stat_regate + '</span></div>' +
+              '<div class="team-stat"><span class="ts-val is-accent">' + st.points + '</span><span class="ts-lab">' + t.stat_punti + '</span></div>' +
+              '<div class="team-stat"><span class="ts-val' + (st.rank ? ' is-accent' : '') + '">' + (st.rank ? st.rank + '°' : '—') + '</span><span class="ts-lab">' + t.stat_pos + '</span></div>' +
             '</div>' +
             '<div class="team-members-section">' +
               '<div class="team-members-title">' + t.members_label + ' <span class="count-pill">' + members.length + '</span></div>' +
@@ -262,9 +360,20 @@
       const { data: teams, error } = await CVI.supabase.from('teams').select('*');
       if (error) { container.innerHTML = '<p class="empty-text" style="color:#ef4444">Errore: ' + error.message + '</p>'; return; }
       if (!teams || !teams.length) { container.innerHTML = '<p class="empty-text">' + (extra[(CVI.currentLang||'it')]).team_empty + '</p>'; return; }
-      const { data: profiles } = await CVI.supabase.from('profiles').select('*');
-      cachedTeams = teams; cachedProfiles = profiles || [];
-      renderizzaTeams(cachedTeams, cachedProfiles);
+
+      const [profRes, classRes, risRes] = await Promise.all([
+        CVI.supabase.from('profiles').select('*'),
+        CVI.supabase.from('classifiche').select('user_id,punti_totali,gare_disputate,posizione').eq('stagione', STAGIONE),
+        CVI.supabase.from('risultati_gara').select('gara_id,user_id')
+      ]);
+      if (classRes && classRes.error) console.warn('classifiche:', classRes.error.message);
+      if (risRes && risRes.error) console.warn('risultati_gara:', risRes.error.message);
+
+      cachedTeams = teams;
+      cachedProfiles = (profRes && profRes.data) || [];
+      cachedClass = (classRes && classRes.data) || [];
+      cachedRis = (risRes && risRes.data) || [];
+      renderizzaTeams(cachedTeams, cachedProfiles, cachedClass, cachedRis);
     }
 
     function setupCVIInitOverride() {
@@ -274,7 +383,7 @@
         CVI.init = function(a) {
           try { _orig(a, extra); } catch(e) { console.warn('CVI.init wrapper error', e); }
           const sel = document.getElementById('languageSelect');
-          if (sel) sel.onchange = () => { CVI.cambiaLingua(sel.value, extra); if (cachedTeams.length) renderizzaTeams(cachedTeams, cachedProfiles); };
+          if (sel) sel.onchange = () => { CVI.cambiaLingua(sel.value, extra); if (cachedTeams.length) renderizzaTeams(cachedTeams, cachedProfiles, cachedClass, cachedRis); };
           loadTeams();
         };
         // call original init safely
