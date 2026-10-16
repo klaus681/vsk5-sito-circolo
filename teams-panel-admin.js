@@ -65,6 +65,10 @@
     document.getElementById("tm-nome").value = "";
     document.getElementById("tm-capitano").value = "";
     document.getElementById("tm-desc").value = "";
+    var lf = document.getElementById("tm-logo"); if (lf) lf.value = "";
+    var lff = document.getElementById("tm-logo-file"); if (lff) lff.value = "";
+    renderLogoPreview("");
+    setLogoStatus("");
     document.getElementById("tm-form-title").textContent = "Nuovo team";
     document.getElementById("tm-save-btn").textContent = "Salva team";
     var cancel = document.getElementById("tm-cancel-btn");
@@ -83,6 +87,87 @@
     return cols;
   }
 
+  // ---- Logo squadra (campo iniettato nel form tm-form) ----
+  function setLogoStatus(msg, color) {
+    var el = document.getElementById("tm-logo-status");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.style.color = color || "#94a3b8";
+  }
+
+  function renderLogoPreview(url) {
+    var box = document.getElementById("tm-logo-preview");
+    if (!box) return;
+    var u = (url || "").trim();
+    if (!u) {
+      box.innerHTML = '<span style="color:#64748b;font-size:0.8rem">Nessun logo — verranno mostrate le iniziali.</span>';
+      return;
+    }
+    box.innerHTML = '<img src="' + esc(u) + '" alt="Anteprima logo" ' +
+      'style="width:64px;height:64px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:#0b0f19" ' +
+      'onerror="this.style.display=\'none\';document.getElementById(\'tm-logo-err\').style.display=\'inline\'">' +
+      '<span id="tm-logo-err" style="display:none;color:#f87171;font-size:0.8rem;margin-left:0.5rem">Immagine non valida</span>';
+  }
+
+  async function uploadTeamLogo(file) {
+    if (!file) return;
+    if (!window.CVI || !CVI.supabase) { setLogoStatus("Supabase non disponibile.", "#f87171"); return; }
+    if (file.size > 2 * 1024 * 1024) { setLogoStatus("Immagine troppo grande (max 2 MB).", "#f87171"); return; }
+    setLogoStatus("Caricamento «" + file.name + "»…", "#94a3b8");
+    try {
+      var sess = await CVI.supabase.auth.getSession();
+      var session = sess.data && sess.data.session;
+      if (!session) { setLogoStatus("Devi essere loggato come admin.", "#f87171"); return; }
+      var ext = (file.name.split(".").pop() || "png").toLowerCase();
+      var safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-60) || ("logo." + ext);
+      var path = session.user.id + "/" + Date.now() + "-" + safe;
+      var up = await CVI.supabase.storage.from("team-logos").upload(path, file, { contentType: file.type || "image/png", upsert: false });
+      if (up.error) throw up.error;
+      var pub = CVI.supabase.storage.from("team-logos").getPublicUrl(path);
+      var url = pub.data && pub.data.publicUrl;
+      if (!url) throw new Error("URL pubblico non disponibile");
+      var l = document.getElementById("tm-logo"); if (l) l.value = url;
+      renderLogoPreview(url);
+      setLogoStatus("Logo caricato. Ora premi Salva per applicarlo.", "#34d399");
+    } catch (err) {
+      setLogoStatus("Errore upload: " + (err.message || err) + " (verifica il bucket «team-logos» — vedi teams-logo-sql.sql).", "#f87171");
+    }
+  }
+
+  function ensureLogoField() {
+    var form = document.getElementById("tm-form");
+    if (!form || document.getElementById("tm-logo")) return;
+    var desc = document.getElementById("tm-desc");
+    var wrap = document.createElement("div");
+    wrap.innerHTML =
+      '<label class="adm-label" for="tm-logo">Logo squadra (URL immagine)</label>' +
+      '<input class="adm-input" id="tm-logo" type="text" placeholder="https://… (oppure carica un file qui sotto)" style="width:100%">' +
+      '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-top:0.5rem">' +
+        '<input id="tm-logo-file" type="file" accept="image/*" class="adm-input" style="padding:0.35rem">' +
+        '<button type="button" id="tm-logo-clear" class="btn-ghost">Rimuovi logo</button>' +
+      '</div>' +
+      '<div id="tm-logo-preview" style="margin-top:0.6rem"></div>' +
+      '<p id="tm-logo-status" style="margin:0.35rem 0 0;font-size:0.8rem"></p>';
+    if (desc && desc.parentNode) desc.parentNode.insertBefore(wrap, desc.nextSibling);
+    else form.appendChild(wrap);
+
+    var fileEl = document.getElementById("tm-logo-file");
+    if (fileEl) fileEl.onchange = function () {
+      var f = this.files && this.files[0];
+      if (f) uploadTeamLogo(f);
+    };
+    var clr = document.getElementById("tm-logo-clear");
+    if (clr) clr.onclick = function () {
+      var l = document.getElementById("tm-logo"); if (l) l.value = "";
+      var f = document.getElementById("tm-logo-file"); if (f) f.value = "";
+      renderLogoPreview("");
+      setLogoStatus("Logo rimosso. Ricorda di salvare.", "#fbbf24");
+    };
+    var logoEl = document.getElementById("tm-logo");
+    if (logoEl) logoEl.addEventListener("input", function () { renderLogoPreview(this.value); });
+    renderLogoPreview("");
+  }
+
   async function upsertTeam(row, isUpdate, id) {
     var sample = (teamsCache && teamsCache[0]) || null;
     if (isUpdate && id) {
@@ -99,6 +184,7 @@
     }
     payload.descrizione = row.descrizione;
     payload.capitano = row.capitano;
+    if (row.logo_url !== undefined) payload.logo_url = row.logo_url;
 
     var r;
     if (isUpdate) {
@@ -210,10 +296,12 @@
           var name = teamNameOf(t);
           var members = membersOfTeam(t);
           var cap = t.capitano || t.skipper || "";
+          var logo = (t.logo_url || "").trim();
+          var thumb = logo ? '<img src="' + esc(logo) + '" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.12);vertical-align:middle;margin-right:0.5rem;background:#0b0f19" onerror="this.style.display=\'none\'">' : '';
           var memberNicks = members.slice(0, 8).map(function (m) { return esc(profileLabel(m)); }).join(", ");
           if (members.length > 8) memberNicks += " … +" + (members.length - 8);
           return '<div class="admin-card" style="margin-bottom:0.75rem">' +
-            '<div class="admin-card-head"><div><strong>' + esc(name) + '</strong>' +
+            '<div class="admin-card-head"><div>' + thumb + '<strong>' + esc(name) + '</strong>' +
             '<div class="meta">' + (cap ? "Capitano: " + esc(cap) + " · " : "") + members.length + ' membri</div></div>' +
             '<div class="admin-card-actions" style="display:flex;gap:0.4rem;flex-wrap:wrap">' +
             '<button type="button" class="btn-sm tm-members" data-id="' + esc(t.id) + '">Membri</button>' +
@@ -236,6 +324,9 @@
           document.getElementById("tm-nome").value = teamNameOf(t);
           document.getElementById("tm-capitano").value = t.capitano || t.skipper || "";
           document.getElementById("tm-desc").value = t.descrizione || "";
+          var lg = document.getElementById("tm-logo"); if (lg) lg.value = t.logo_url || "";
+          renderLogoPreview(t.logo_url || "");
+          setLogoStatus("");
           document.getElementById("tm-form-title").textContent = "Modifica team";
           document.getElementById("tm-save-btn").textContent = "Aggiorna";
           var cancel = document.getElementById("tm-cancel-btn");
@@ -387,6 +478,8 @@
     var nome = document.getElementById("tm-nome").value.trim();
     var capitano = document.getElementById("tm-capitano").value.trim();
     var descrizione = document.getElementById("tm-desc").value.trim();
+    var logoEl = document.getElementById("tm-logo");
+    var logo_url = logoEl ? logoEl.value.trim() : "";
     var id = document.getElementById("tm-id").value.trim();
     if (!nome) return alert("Il nome del team è obbligatorio");
 
@@ -402,7 +495,8 @@
       var r = await upsertTeam({
         nome: nome,
         descrizione: descrizione || null,
-        capitano: capitano || null
+        capitano: capitano || null,
+        logo_url: logo_url || null
       }, !!id, id);
       if (r.error) throw r.error;
 
@@ -438,6 +532,7 @@
   function wireTeamUI() {
     var form = document.getElementById("tm-form");
     if (!form) return;
+    ensureLogoField();
     if (!form._wired) { form._wired = true; form.onsubmit = saveTeam; }
     var cancel = document.getElementById("tm-cancel-btn");
     if (cancel && !cancel._wired) { cancel._wired = true; cancel.onclick = resetTeamForm; }

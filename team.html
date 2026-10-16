@@ -45,7 +45,10 @@
       font-weight:800;font-size:1.2rem;color:#0b0f19;
       background:linear-gradient(135deg,var(--team-1) 0%,var(--team-2) 100%);
       box-shadow:0 6px 18px var(--team-glow);margin-bottom:.9rem;letter-spacing:-.02em;
+      position:relative;overflow:hidden;
     }
+    .team-avatar-initials{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+    .team-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0b0f19}
     .team-card h3{margin:0 0 .4rem;font-size:1.3rem;font-weight:750;color:#fff;letter-spacing:-.01em}
 
     /* Badge capitano (prima non stilizzato) */
@@ -234,6 +237,16 @@
 
     function teamKey(name) { return String(name || '').trim().toLowerCase(); }
 
+    // Avatar: logo della squadra se presente, altrimenti iniziali (fallback automatico se l'immagine non carica)
+    function teamAvatarInner(name, logoUrl) {
+      var html = '<span class="team-avatar-initials">' + esc(initials(name)) + '</span>';
+      var url = (logoUrl || '').trim();
+      if (url) {
+        html += '<img class="team-logo" src="' + esc(url) + '" alt="Logo ' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\'">';
+      }
+      return html;
+    }
+
     function renderizzaTeams(teams, allProfiles) {
       const container = document.getElementById('teams-container');
       const t = (window.CVI && CVI.currentLang) ? extra[CVI.currentLang] : extra.it;
@@ -265,7 +278,7 @@
           '<div class="team-card" data-theme="' + teamTheme(teamName) + '">' +
             '<div class="team-card-top">' +
               '<div class="team-card-head">' +
-                '<div class="team-avatar">' + esc(initials(teamName)) + '</div>' +
+                '<div class="team-avatar">' + teamAvatarInner(teamName, team.logo_url) + '</div>' +
                 '<div class="team-card-heading">' +
                   '<h3>' + esc(teamName) + '</h3>' +
                   (captainName ? '<span class="team-captain-badge">' + t.captain_label + esc(captainName) + '</span>' : '') +
