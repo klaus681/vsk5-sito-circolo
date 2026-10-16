@@ -24,18 +24,15 @@
   }
 
   function updateScoringCopy() {
-    // Banner tab generale
     const tab = document.getElementById('tab-generale');
     if (tab) {
       const banner = tab.querySelector('.info-banner');
       if (banner) banner.innerHTML = BANNER_DNC;
     }
-    // Hero sottotitolo
     const hero = document.querySelector('.page-hero p, .hero-section p, section.page-hero p');
     if (hero && /Low Point|punti|regata/i.test(hero.textContent || '')) {
       hero.textContent = HERO_DNC;
     }
-    // Badge stagione
     document.querySelectorAll('.hero-badge').forEach(function (el) {
       if (/Low Point/i.test(el.textContent || '')) {
         el.textContent = (el.textContent || '').replace(/Low Point/i, 'Low Point + DNC');
@@ -69,6 +66,9 @@
       const prove = {};
       (cacheRisultati || []).forEach(r => {
         if (getAnnoFromRisultato(r) !== String(anno)) return;
+        // Escludi gare tipo "aperto" dalla classifica generale
+        const gara = (cacheGare || []).find(g => String(g.id) === String(r.gara_id));
+        if (gara && String(gara.tipo || 'ufficiale').toLowerCase() === 'aperto') return;
         const key = provaKey(r);
         if (!prove[key]) prove[key] = [];
         prove[key].push(r);
@@ -218,7 +218,6 @@
 
     ensureAnnoSelect();
     updateScoringCopy();
-    // ricontrolla dopo il rendering della pagina (loader CDN)
     setTimeout(updateScoringCopy, 500);
     setTimeout(updateScoringCopy, 1500);
 
