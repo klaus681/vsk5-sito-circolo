@@ -65,6 +65,94 @@ function statoGara(gara) {
   return { key: 'aperte', label: 'Iscrizioni aperte', tipo: 'Prossima gara' };
 }
 
+var _cviCountdownTimer = null;
+var _cviCountdownGara = null;
+
+function ensureCountdownStyles() {
+  if (document.getElementById('cvi-countdown-css')) return;
+  var s = document.createElement('style');
+  s.id = 'cvi-countdown-css';
+  s.textContent = [
+    '#regata-countdown{display:flex;align-items:center;gap:.45rem;margin:.35rem 0 .15rem;font-size:.95rem;font-weight:700;color:#7dd3fc;letter-spacing:.02em}',
+    '#regata-countdown .cd-icon{font-size:1.05rem}',
+    '#regata-countdown .cd-label{color:#94a3b8;font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}',
+    '#regata-countdown .cd-time{font-variant-numeric:tabular-nums;color:#e2e8f0}',
+    '#regata-countdown.is-live{color:#f87171}',
+    '#regata-countdown.is-live .cd-time{color:#f87171}',
+    '#regata-countdown.is-done{color:#94a3b8;font-weight:600}'
+  ].join('');
+  document.head.appendChild(s);
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return null;
+  var totalSec = Math.floor(ms / 1000);
+  var d = Math.floor(totalSec / 86400);
+  var h = Math.floor((totalSec % 86400) / 3600);
+  var m = Math.floor((totalSec % 3600) / 60);
+  var s = totalSec % 60;
+  var parts = [];
+  if (d > 0) parts.push(d + 'g');
+  parts.push(String(h).padStart(2, '0') + 'h');
+  parts.push(String(m).padStart(2, '0') + 'm');
+  parts.push(String(s).padStart(2, '0') + 's');
+  return parts.join(' ');
+}
+
+function ensureCountdownEl() {
+  var el = document.getElementById('regata-countdown');
+  if (el) return el;
+  var dataEl = document.getElementById('regata-data');
+  if (!dataEl || !dataEl.parentNode) return null;
+  el = document.createElement('div');
+  el.id = 'regata-countdown';
+  el.setAttribute('aria-live', 'polite');
+  if (dataEl.nextSibling) dataEl.parentNode.insertBefore(el, dataEl.nextSibling);
+  else dataEl.parentNode.appendChild(el);
+  return el;
+}
+
+function tickCountdown() {
+  var el = document.getElementById('regata-countdown');
+  var gara = _cviCountdownGara;
+  if (!el || !gara || !gara.data_gara) {
+    if (el) el.style.display = 'none';
+    return;
+  }
+  var start = new Date(gara.data_gara).getTime();
+  if (isNaN(start)) { el.style.display = 'none'; return; }
+  var now = Date.now();
+  var nr = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));
+  var durataMs = Math.max(2, nr * 1.5) * 60 * 60 * 1000;
+  var end = start + durataMs;
+
+  ensureCountdownStyles();
+  el.style.display = '';
+
+  if (now >= end) {
+    el.className = 'is-done';
+    el.innerHTML = '<span class="cd-icon">✓</span><span class="cd-time">Gara conclusa</span>';
+    if (_cviCountdownTimer) { clearInterval(_cviCountdownTimer); _cviCountdownTimer = null; }
+    return;
+  }
+  if (now >= start) {
+    el.className = 'is-live';
+    el.innerHTML = '<span class="cd-icon">🔴</span><span class="cd-label">Stato</span><span class="cd-time">In corso</span>';
+    return;
+  }
+  var left = formatCountdown(start - now);
+  el.className = '';
+  el.innerHTML = '<span class="cd-icon">⏱️</span><span class="cd-label">Parte tra</span><span class="cd-time">' + left + '</span>';
+}
+
+function startCountdown(gara) {
+  _cviCountdownGara = gara;
+  if (_cviCountdownTimer) { clearInterval(_cviCountdownTimer); _cviCountdownTimer = null; }
+  ensureCountdownEl();
+  tickCountdown();
+  _cviCountdownTimer = setInterval(tickCountdown, 1000);
+}
+
 async function caricaProssimaGara() {
   try {
     if (!CVI.supabase) {
@@ -75,7 +163,6 @@ async function caricaProssimaGara() {
     let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
     if (error) {
       console.warn('gare future:', error.message);
-      // fallback senza colonna tipo
       var fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
       data = fb.data; error = fb.error;
       if (error) { console.warn('gare future fallback:', error.message); data = null; }
@@ -101,6 +188,8 @@ async function caricaProssimaGara() {
         if (liveBtnEl) liveBtnEl.style.display = 'none';
         if (bt) bt.textContent = 'Calendario';
         if (ba) ba.style.display = 'none';
+        var cd=document.getElementById('regata-countdown');if(cd)cd.style.display='none';
+        if(_cviCountdownTimer){clearInterval(_cviCountdownTimer);_cviCountdownTimer=null;}
         return;
       }
       fillRegata(pastData[0]);
@@ -158,6 +247,9 @@ function fillRegata(gara) {
     badgeAud.style.display = '';
     badgeAud.className = 'badge-stato is-audience is-' + aud.key;
   }
+
+  // Countdown automatico dalla data_gara
+  startCountdown(gara);
 
   var card = document.getElementById('next-regata-card');
   if (card && gara && gara.id) {
