@@ -69,6 +69,10 @@
     var lff = document.getElementById("tm-logo-file"); if (lff) lff.value = "";
     renderLogoPreview("");
     setLogoStatus("");
+    var tsel = document.getElementById("tm-tema"); if (tsel) tsel.value = "";
+    var thex = document.getElementById("tm-tema-hex"); if (thex) thex.value = "";
+    var tcol = document.getElementById("tm-tema-color"); if (tcol) tcol.value = "#38bdf8";
+    updateTemaCustomVisibility();
     document.getElementById("tm-form-title").textContent = "Nuovo team";
     document.getElementById("tm-save-btn").textContent = "Salva team";
     var cancel = document.getElementById("tm-cancel-btn");
@@ -175,6 +179,60 @@
     renderLogoPreview("");
   }
 
+  // ---- Colore squadra (campo iniettato nel form tm-form) ----
+  var PALETTE = { sky: "#38bdf8", teal: "#2dd4bf", amber: "#fbbf24", violet: "#a78bfa", red: "#f87171" };
+
+  function updateTemaCustomVisibility() {
+    var sel = document.getElementById("tm-tema");
+    var wrap = document.getElementById("tm-tema-custom-wrap");
+    if (!sel || !wrap) return;
+    var isCustom = sel.value === "custom";
+    wrap.style.display = isCustom ? "flex" : "none";
+    if (isCustom) {
+      var hexEl = document.getElementById("tm-tema-hex");
+      var colorEl = document.getElementById("tm-tema-color");
+      if (hexEl && !hexEl.value && colorEl) hexEl.value = colorEl.value;
+    }
+  }
+
+  function ensureColorField() {
+    var form = document.getElementById("tm-form");
+    if (!form || document.getElementById("tm-tema")) return;
+    var logoEl = document.getElementById("tm-logo");
+    var anchor = logoEl ? logoEl.parentNode : document.getElementById("tm-desc");
+    var wrap = document.createElement("div");
+    wrap.innerHTML =
+      '<label class="adm-label" for="tm-tema">Colore squadra</label>' +
+      '<select class="adm-input" id="tm-tema" style="width:100%">' +
+        '<option value="">Automatico (dal nome)</option>' +
+        '<option value="sky">Azzurro</option>' +
+        '<option value="teal">Turchese</option>' +
+        '<option value="amber">Ambra</option>' +
+        '<option value="violet">Viola</option>' +
+        '<option value="red">Rosso</option>' +
+        '<option value="custom">Personalizzato…</option>' +
+      '</select>' +
+      '<div id="tm-tema-custom-wrap" style="display:none;margin-top:0.5rem;align-items:center;gap:0.5rem">' +
+        '<input type="color" id="tm-tema-color" value="#38bdf8" style="width:48px;height:36px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;background:#0b0f19;cursor:pointer;padding:2px">' +
+        '<input class="adm-input" id="tm-tema-hex" type="text" placeholder="#38bdf8" maxlength="7" style="width:9rem">' +
+      '</div>';
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+    else form.appendChild(wrap);
+
+    var sel = document.getElementById("tm-tema");
+    if (sel) sel.onchange = updateTemaCustomVisibility;
+    var colorEl = document.getElementById("tm-tema-color");
+    var hexEl = document.getElementById("tm-tema-hex");
+    if (colorEl && hexEl) colorEl.oninput = function () { hexEl.value = this.value; };
+    if (hexEl && colorEl) hexEl.oninput = function () {
+      var v = this.value.trim();
+      if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) {
+        colorEl.value = v.length === 4 ? ("#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]) : v;
+      }
+    };
+    updateTemaCustomVisibility();
+  }
+
   async function upsertTeam(row, isUpdate, id) {
     var sample = (teamsCache && teamsCache[0]) || null;
     if (isUpdate && id) {
@@ -192,6 +250,7 @@
     payload.descrizione = row.descrizione;
     payload.capitano = row.capitano;
     if (row.logo_url !== undefined) payload.logo_url = row.logo_url;
+    if (row.tema !== undefined) payload.tema = row.tema;
 
     var r;
     if (isUpdate) {
@@ -305,10 +364,13 @@
           var cap = t.capitano || t.skipper || "";
           var logo = (t.logo_url || "").trim();
           var thumb = logo ? '<img src="' + esc(logo) + '" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.12);vertical-align:middle;margin-right:0.5rem;background:#0b0f19" onerror="this.style.display=\'none\'">' : '';
+          var temaVal = (t.tema || "").trim();
+          var temaColor = /^#/.test(temaVal) ? temaVal : (PALETTE[temaVal] || "");
+          var swatch = temaColor ? '<span title="Colore impostato: ' + esc(temaVal) + '" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + temaColor + ';border:1px solid rgba(255,255,255,0.25);vertical-align:middle;margin-right:0.4rem"></span>' : '';
           var memberNicks = members.slice(0, 8).map(function (m) { return esc(profileLabel(m)); }).join(", ");
           if (members.length > 8) memberNicks += " … +" + (members.length - 8);
           return '<div class="admin-card" style="margin-bottom:0.75rem">' +
-            '<div class="admin-card-head"><div>' + thumb + '<strong>' + esc(name) + '</strong>' +
+            '<div class="admin-card-head"><div>' + thumb + swatch + '<strong>' + esc(name) + '</strong>' +
             '<div class="meta">' + (cap ? "Capitano: " + esc(cap) + " · " : "") + members.length + ' membri</div></div>' +
             '<div class="admin-card-actions" style="display:flex;gap:0.4rem;flex-wrap:wrap">' +
             '<button type="button" class="btn-sm tm-members" data-id="' + esc(t.id) + '">Membri</button>' +
@@ -334,6 +396,18 @@
           var lg = document.getElementById("tm-logo"); if (lg) lg.value = t.logo_url || "";
           renderLogoPreview(t.logo_url || "");
           setLogoStatus("");
+          var tsel2 = document.getElementById("tm-tema");
+          var tv = (t.tema || "").trim();
+          var hexEl2 = document.getElementById("tm-tema-hex");
+          var colEl2 = document.getElementById("tm-tema-color");
+          if (/^#/.test(tv)) {
+            if (tsel2) tsel2.value = "custom";
+            if (hexEl2) hexEl2.value = tv;
+            if (colEl2 && /^#[0-9a-f]{6}$/i.test(tv)) colEl2.value = tv;
+          } else if (tsel2) {
+            tsel2.value = tv;
+          }
+          updateTemaCustomVisibility();
           document.getElementById("tm-form-title").textContent = "Modifica team";
           document.getElementById("tm-save-btn").textContent = "Aggiorna";
           var cancel = document.getElementById("tm-cancel-btn");
@@ -487,6 +561,14 @@
     var descrizione = document.getElementById("tm-desc").value.trim();
     var logoEl = document.getElementById("tm-logo");
     var logo_url = logoEl ? logoEl.value.trim() : "";
+    var temaSel = document.getElementById("tm-tema");
+    var tema = temaSel ? temaSel.value : "";
+    if (tema === "custom") {
+      var hexEl0 = document.getElementById("tm-tema-hex");
+      var hex0 = hexEl0 ? hexEl0.value.trim() : "";
+      if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex0)) { alert("Colore personalizzato non valido: usa un esadecimale tipo #38bdf8"); return; }
+      tema = hex0.toLowerCase();
+    }
     var id = document.getElementById("tm-id").value.trim();
     if (!nome) return alert("Il nome del team è obbligatorio");
 
@@ -503,7 +585,8 @@
         nome: nome,
         descrizione: descrizione || null,
         capitano: capitano || null,
-        logo_url: logo_url || null
+        logo_url: logo_url || null,
+        tema: tema || null
       }, !!id, id);
       if (r.error) throw r.error;
 
@@ -540,6 +623,7 @@
     var form = document.getElementById("tm-form");
     if (!form) return;
     ensureLogoField();
+    ensureColorField();
     if (!form._wired) { form._wired = true; form.onsubmit = saveTeam; }
     var cancel = document.getElementById("tm-cancel-btn");
     if (cancel && !cancel._wired) { cancel._wired = true; cancel.onclick = resetTeamForm; }
