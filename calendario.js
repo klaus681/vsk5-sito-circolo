@@ -4,10 +4,10 @@
   "use strict";
 
   var state = {
-    view: "month",          // "month" | "week"
-    filter: "all",          // "all" | "ufficiali" | "aperti"
-    cursor: new Date(),     // mese/settimana corrente
-    events: [],             // { id, type, title, date, desc, link }
+    view: "month",
+    filter: "all",
+    cursor: new Date(),
+    events: [],
     loading: true
   };
 
@@ -40,7 +40,7 @@
 
   function mondayOf(d) {
     var x = startOfDay(d);
-    var day = x.getDay(); // 0=Dom … 6=Sab
+    var day = x.getDay();
     var diff = day === 0 ? -6 : 1 - day;
     x.setDate(x.getDate() + diff);
     return x;
@@ -79,8 +79,9 @@
 
   function filteredEvents() {
     var list = state.events;
-    if (state.filter === "ufficiali") list = list.filter(function (e) { return e.type === "ufficiale"; });
+    if (state.filter === "ufficiali") list = list.filter(function (e) { return e.type === "ufficiale" || e.type === "speciale"; });
     if (state.filter === "aperti") list = list.filter(function (e) { return e.type === "aperto"; });
+    if (state.filter === "speciali") list = list.filter(function (e) { return e.type === "speciale"; });
     return list;
   }
 
@@ -90,8 +91,6 @@
       return isSameDay(new Date(e.date), dayDate);
     });
   }
-
-  /* ---------- Data loading (read-only) ---------- */
 
   async function loadEvents() {
     state.loading = true;
@@ -107,7 +106,7 @@
       var results = await Promise.all([
         CVI.supabase
           .from("gare")
-          .select("id, titolo, descrizione, data_gara")
+          .select("id, titolo, descrizione, data_gara, tipo")
           .order("data_gara", { ascending: true }),
         CVI.supabase
           .from("eventi_aperti")
@@ -126,9 +125,11 @@
 
       gare.forEach(function (g) {
         if (!g.data_gara) return;
+        var gTipo = (g.tipo || "ufficiale").toLowerCase();
+        var calType = gTipo === "aperto" ? "aperto" : (gTipo === "speciale" ? "speciale" : "ufficiale");
         events.push({
           id: "g-" + g.id,
-          type: "ufficiale",
+          type: calType,
           title: g.titolo || "Gara",
           date: g.data_gara,
           desc: g.descrizione || "",
@@ -157,8 +158,6 @@
     state.loading = false;
     render();
   }
-
-  /* ---------- Rendering ---------- */
 
   function renderTitle() {
     var el = document.getElementById("cal-title");
@@ -225,7 +224,7 @@
     var mon = mondayOf(state.cursor);
     var today = startOfDay(new Date());
     var hours = [];
-    for (var h = 8; h <= 22; h++) hours.push(h); // fascia oraria tipica regate
+    for (var h = 8; h <= 22; h++) hours.push(h);
 
     var html = '<div class="cal-week-grid">';
     html += '<div class="cal-week-corner"></div>';
@@ -239,7 +238,6 @@
         "</div>";
     }
 
-    // Raccogli eventi della settimana e mettili nella cella dell'ora
     hours.forEach(function (hour) {
       html += '<div class="cal-week-hour">' + String(hour).padStart(2, "0") + ":00</div>";
       for (var d = 0; d < 7; d++) {
@@ -249,7 +247,6 @@
           var t = new Date(ev.date);
           return t.getHours() === hour;
         });
-        // eventi senza ora precisa (mezzanotte) li mettiamo alle 10 se non matchano
         if (hour === 10) {
           eventsOnDay(day).forEach(function (ev) {
             var t = new Date(ev.date);
@@ -288,7 +285,6 @@
     if (state.view === "month") renderMonth(box);
     else renderWeek(box);
 
-    // wire event clicks
     box.querySelectorAll("[data-id]").forEach(function (el) {
       el.addEventListener("click", function (e) {
         e.preventDefault();
@@ -297,26 +293,22 @@
     });
   }
 
-  /* ---------- Modal ---------- */
-
   function openModal(id) {
     var ev = state.events.find(function (x) { return x.id === id; });
     if (!ev) return;
     document.getElementById("cal-modal-title").textContent = ev.title;
     document.getElementById("cal-modal-meta").textContent =
-      (ev.type === "ufficiale" ? "Gara ufficiale · " : "Evento aperto · ") + fmtFull(ev.date);
+      (ev.type === "aperto" ? "Evento aperto · " : (ev.type === "speciale" ? "Evento speciale · " : "Gara ufficiale · ")) + fmtFull(ev.date);
     document.getElementById("cal-modal-desc").textContent = ev.desc || "Nessuna descrizione.";
     var link = document.getElementById("cal-modal-link");
     link.href = ev.link;
-    link.textContent = ev.type === "ufficiale" ? "Vai a Calendario gare" : "Vai a Eventi aperti";
+    link.textContent = ev.type === "ufficiale" || ev.type === "speciale" ? "Vai a Calendario gare" : "Vai a Eventi aperti";
     document.getElementById("cal-modal").classList.add("open");
   }
 
   function closeModal() {
     document.getElementById("cal-modal").classList.remove("open");
   }
-
-  /* ---------- Navigation ---------- */
 
   function goPrev() {
     if (state.view === "month") {
@@ -353,8 +345,6 @@
     state.filter = f;
     render();
   }
-
-  /* ---------- Init ---------- */
 
   function wire() {
     var prev = document.getElementById("cal-prev");
