@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Regolamento - CVI Virtual</title>
+  <meta name="description" content="Regolamento ufficiale del Circolo Velico Italia: fair play, iscrizioni, tipi di evento, formato delle regate, punteggi, proteste e sanzioni.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -12,79 +13,86 @@
   <link rel="stylesheet" href="mobile.css">
   <link rel="stylesheet" href="fix-nav.css?v=2">
   <style>
-    .rules-accordion { display: flex; flex-direction: column; gap: 0.75rem; max-width: 720px; margin: 0 auto; }
+    .narrow { max-width: 720px; margin-left: auto; margin-right: auto; }
+
+    .rules-meta { color: var(--text-muted, #94a3b8); font-size: 0.85rem; margin: 0.75rem 0 0; }
+
+    .rules-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 1.25rem 0 1rem; }
+    .rules-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(56, 189, 248, 0.1); color: var(--accent-color, #38bdf8);
+      border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px;
+      padding: 0.45rem 0.9rem; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .rules-btn:hover { background: rgba(56, 189, 248, 0.18); border-color: rgba(56, 189, 248, 0.6); }
+
+    .rules-toc { background: #1a2332; border: 1px solid rgba(56, 189, 248, 0.18); border-radius: 12px; padding: 1rem 1.25rem; margin: 0 0 1.25rem; }
+    .rules-toc h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #94a3b8); margin: 0 0 0.65rem; font-weight: 700; }
+    .rules-toc ol { margin: 0; padding-left: 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.35rem 1.25rem; }
+    .rules-toc li { color: var(--text-muted, #94a3b8); font-size: 0.9rem; }
+    .rules-toc a { color: #cbd5e1; text-decoration: none; }
+    .rules-toc a:hover { color: var(--accent-color, #38bdf8); text-decoration: underline; }
+
+    .rules-accordion { display: flex; flex-direction: column; gap: 0.75rem; }
     .rule-item {
       background: #1a2332;
       border: 1px solid rgba(56, 189, 248, 0.18);
       border-radius: 12px;
       overflow: hidden;
       transition: border-color 0.2s, box-shadow 0.2s;
+      scroll-margin-top: calc(var(--header-h, 72px) + 1rem);
     }
     .rule-item:hover { border-color: rgba(56, 189, 248, 0.35); }
-    .rule-item.is-open {
-      border-color: rgba(56, 189, 248, 0.4);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    }
+    .rule-item.is-open { border-color: rgba(56, 189, 248, 0.4); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); }
     .rule-toggle {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 1.1rem 1.25rem;
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-family: inherit;
-      font-size: 1.05rem;
-      font-weight: 700;
-      text-align: left;
-      cursor: pointer;
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.1rem 1.25rem; background: transparent; border: none; color: #fff;
+      font-family: inherit; font-size: 1.05rem; font-weight: 700; text-align: left; cursor: pointer;
       transition: background 0.2s;
     }
     .rule-toggle:hover { background: rgba(56, 189, 248, 0.06); }
+    .rule-toggle > span:first-child { display: flex; align-items: center; min-width: 0; }
     .rule-toggle .rule-num {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 1.75rem;
-      height: 1.75rem;
-      margin-right: 0.65rem;
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--accent-color, #38bdf8);
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 800;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 1.75rem; height: 1.75rem; margin-right: 0.65rem;
+      background: rgba(56, 189, 248, 0.15); color: var(--accent-color, #38bdf8);
+      border-radius: 8px; font-size: 0.85rem; font-weight: 800; flex-shrink: 0;
     }
-    .rule-toggle .chevron {
-      flex-shrink: 0;
-      width: 1.25rem;
-      height: 1.25rem;
-      color: var(--text-muted, #94a3b8);
-      transition: transform 0.25s ease;
-    }
+    .rule-toggle .chevron { flex-shrink: 0; width: 1.25rem; height: 1.25rem; color: var(--text-muted, #94a3b8); transition: transform 0.25s ease; }
     .rule-item.is-open .chevron { transform: rotate(180deg); color: var(--accent-color, #38bdf8); }
-    .rule-body {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    .rule-item.is-open .rule-body { max-height: 900px; }
+    /* L'altezza e' gestita via JS (robusta su qualsiasi lunghezza del contenuto) */
+    .rule-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
     .rule-body-inner {
-      padding: 0 1.25rem 1.25rem 1.25rem;
-      padding-left: calc(1.25rem + 1.75rem + 0.65rem);
-      color: var(--text-muted, #94a3b8);
-      font-size: 0.95rem;
-      line-height: 1.65;
+      padding: 0 1.25rem 1.25rem; padding-left: calc(1.25rem + 1.75rem + 0.65rem);
+      color: var(--text-muted, #94a3b8); font-size: 0.95rem; line-height: 1.65;
       border-top: 1px solid transparent;
     }
-    .rule-item.is-open .rule-body-inner {
-      border-top-color: rgba(255, 255, 255, 0.04);
-      padding-top: 0.85rem;
-    }
+    .rule-body-inner ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+    .rule-body-inner li { margin-bottom: 0.3rem; }
+    .rule-body-inner strong { color: #e2e8f0; }
+    .rule-item.is-open .rule-body-inner { border-top-color: rgba(255, 255, 255, 0.04); padding-top: 0.85rem; }
+
     @media (max-width: 560px) {
       .rule-body-inner { padding-left: 1.25rem; }
       .rule-toggle { font-size: 0.95rem; }
+      .rules-toolbar { justify-content: flex-start; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rule-body, .rule-toggle .chevron, .rule-item, .rule-toggle, .rules-btn { transition: none; }
+    }
+
+    @media print {
+      header, .nav-mobile, .site-footer, .rules-toolbar, .rules-toc { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .page-content, .rule-item, .rule-body-inner, .rule-body-inner strong { color: #000 !important; }
+      .rule-item { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; margin-bottom: 0.75rem; }
+      .rule-body { max-height: none !important; overflow: visible !important; transition: none !important; }
+      .rule-body-inner { padding-top: 0.5rem !important; }
+      .rule-toggle { color: #000 !important; background: transparent !important; padding: 0.6rem 0 !important; }
+      .rule-toggle .rule-num { background: #eee !important; color: #000 !important; }
+      .rule-toggle .chevron { display: none !important; }
     }
   </style>
 </head>
@@ -146,36 +154,139 @@
     <section class="page-hero">
       <h1 data-i18n="rules_title">Regolamento Ufficiale</h1>
       <p data-i18n="rules_subtitle">Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.</p>
+      <p class="rules-meta"><span data-i18n="rules_version">Versione 1.0</span> · <span data-i18n="rules_updated">Ultimo aggiornamento: ottobre 2026</span></p>
     </section>
 
+    <div class="rules-toolbar">
+      <button type="button" class="rules-btn" id="rules-expand" data-i18n="btn_expand">Espandi tutto</button>
+      <button type="button" class="rules-btn" id="rules-collapse" data-i18n="btn_collapse">Comprimi tutto</button>
+      <button type="button" class="rules-btn" id="rules-print" data-i18n="btn_print">Stampa / PDF</button>
+    </div>
+
+    <nav class="rules-toc" aria-label="Indice del regolamento">
+      <h2 data-i18n="toc_label">Indice</h2>
+      <ol>
+        <li><a href="#regola-1">1. <span data-i18n="rule1_title">Fair Play e Condotta in Mare</span></a></li>
+        <li><a href="#regola-2">2. <span data-i18n="rule2_title">Classi di Imbarcazioni</span></a></li>
+        <li><a href="#regola-3">3. <span data-i18n="rule3_title">Iscrizioni alle Regate</span></a></li>
+        <li><a href="#regola-4">4. <span data-i18n="rule4_title">Tipi di Evento</span></a></li>
+        <li><a href="#regola-5">5. <span data-i18n="rule5_title">Formato delle Regate</span></a></li>
+        <li><a href="#regola-6">6. <span data-i18n="rule6_title">Punteggi e Classifiche</span></a></li>
+        <li><a href="#regola-7">7. <span data-i18n="rule7_title">Stati dei Risultati</span></a></li>
+        <li><a href="#regola-8">8. <span data-i18n="rule8_title">Proteste e Reclami</span></a></li>
+        <li><a href="#regola-9">9. <span data-i18n="rule9_title">Squadre e Team</span></a></li>
+        <li><a href="#regola-10">10. <span data-i18n="rule10_title">Sanzioni e Penalità</span></a></li>
+        <li><a href="#regola-11">11. <span data-i18n="rule11_title">Albo d'Oro</span></a></li>
+      </ol>
+    </nav>
+
     <div class="rules-accordion" id="rulesAccordion">
-      <div class="rule-item">
-        <button type="button" class="rule-toggle" aria-expanded="false">
-          <span><span class="rule-num">1</span><span data-i18n="rule1_title">Fair Play e Condotta in Mare</span></span>
+      <div class="rule-item" id="regola-1">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-1-body">
+          <span><span class="rule-num">1</span><span data-i18n="rule1_title" id="regola-1-t">Fair Play e Condotta in Mare</span></span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
-        <div class="rule-body">
+        <div class="rule-body" id="regola-1-body" role="region" aria-labelledby="regola-1-t">
           <div class="rule-body-inner" data-i18n="rule1_desc">Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.</div>
         </div>
       </div>
 
-      <div class="rule-item">
-        <button type="button" class="rule-toggle" aria-expanded="false">
-          <span><span class="rule-num">2</span><span data-i18n="rule2_title">Classi di Imbarcazioni</span></span>
+      <div class="rule-item" id="regola-2">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-2-body">
+          <span><span class="rule-num">2</span><span data-i18n="rule2_title" id="regola-2-t">Classi di Imbarcazioni</span></span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
-        <div class="rule-body">
+        <div class="rule-body" id="regola-2-body" role="region" aria-labelledby="regola-2-t">
           <div class="rule-body-inner" data-i18n="rule2_desc">Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.</div>
         </div>
       </div>
 
-      <div class="rule-item">
-        <button type="button" class="rule-toggle" aria-expanded="false">
-          <span><span class="rule-num">3</span><span data-i18n="rule3_title">Punteggi e Classifiche</span></span>
+      <div class="rule-item" id="regola-3">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-3-body">
+          <span><span class="rule-num">3</span><span data-i18n="rule3_title" id="regola-3-t">Iscrizioni alle Regate</span></span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
-        <div class="rule-body">
-          <div class="rule-body-inner" data-i18n="rule3_desc"><strong>Sistema Low Point</strong> (1° = 1 pt, 2° = 2 pt, …). Vince chi ha il totale più basso.<br><br><strong>Singole regate / eventi:</strong> punti in base all’ordine di arrivo. Eventuali scarti definiti a inizio stagione.<br><br><strong>Classifica generale (per anno):</strong> ogni regata conta per <em>tutti</em> i soci. Chi non partecipa riceve punti di penalità = <strong>numero di partecipanti alla regata + 1</strong> (peggio dell’ultimo). La classifica è la somma di tutti i punti dell’anno. Tutti i membri del circolo compaiono in classifica.</div>
+        <div class="rule-body" id="regola-3-body" role="region" aria-labelledby="regola-3-t">
+          <div class="rule-body-inner" data-i18n="rule3_desc"><strong>Come iscriversi:</strong> dalla pagina <em>Calendario Gare</em>, premendo «Iscriviti» sulla gara desiderata (è necessario l'accesso). Puoi annullare la tua iscrizione con «Annulla iscrizione».<ul><li><strong>Chiusura iscrizioni:</strong> si chiudono <strong>2 ore prima</strong> dell'orario di partenza; oltre tale termine non è più possibile iscriversi o disiscriversi.</li><li><strong>Eventi aperti:</strong> gli eventi di tipo «aperto» <strong>non</strong> prevedono iscrizione né classifica.</li><li><strong>Chi può iscriversi:</strong> i soci registrati al circolo.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-4">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-4-body">
+          <span><span class="rule-num">4</span><span data-i18n="rule4_title" id="regola-4-t">Tipi di Evento</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-4-body" role="region" aria-labelledby="regola-4-t">
+          <div class="rule-body-inner" data-i18n="rule4_desc">Gli eventi in calendario sono di tre tipi:<ul><li><strong>Ufficiale:</strong> gara del circolo con iscrizione e classifica.</li><li><strong>Speciale:</strong> evento speciale con iscrizione e classifica.</li><li><strong>Aperto:</strong> evento dimostrativo o amichevole, <strong>senza</strong> iscrizione e <strong>senza</strong> classifica.</li></ul>Il tipo di evento è indicato su ogni scheda gara in <em>Calendario Gare</em>.</div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-5">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-5-body">
+          <span><span class="rule-num">5</span><span data-i18n="rule5_title" id="regola-5-t">Formato delle Regate</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-5-body" role="region" aria-labelledby="regola-5-t">
+          <div class="rule-body-inner" data-i18n="rule5_desc">Ogni evento può comprendere da <strong>1 a 3 regate</strong>: il numero di prove è indicato sulla scheda della gara. La classifica dell'evento tiene conto dei risultati di tutte le prove disputate.</div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-6">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-6-body">
+          <span><span class="rule-num">6</span><span data-i18n="rule6_title" id="regola-6-t">Punteggi e Classifiche</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-6-body" role="region" aria-labelledby="regola-6-t">
+          <div class="rule-body-inner" data-i18n="rule6_desc"><strong>Sistema Low Point.</strong> Nelle singole prove vince chi totalizza meno punti (1° = 1 pt, 2° = 2 pt, …).<ul><li><strong>Singole regate / eventi:</strong> punti in base all'ordine di arrivo; eventuali scarti sono definiti a inizio stagione.</li><li><strong>Classifica generale (per anno):</strong> ogni regata conta per <em>tutti</em> i soci; chi non partecipa riceve punti di penalità pari al <strong>numero di partecipanti alla regata + 1</strong> (peggio dell'ultimo). La classifica è la somma di tutti i punti dell'anno e vi compaiono tutti i membri del circolo.</li></ul></div>
+        </div>
+      </div>
+      <div class="rule-item" id="regola-7">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-7-body">
+          <span><span class="rule-num">7</span><span data-i18n="rule7_title" id="regola-7-t">Stati dei Risultati</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-7-body" role="region" aria-labelledby="regola-7-t">
+          <div class="rule-body-inner" data-i18n="rule7_desc"><strong>OK:</strong> arrivo regolare; i punti sono assegnati in base alla posizione ottenuta.<ul><li><strong>DNF</strong> — non arrivato (Did Not Finish).</li><li><strong>DNS</strong> — non partito (Did Not Start).</li><li><strong>DSQ</strong> — squalificato (Disqualified).</li><li><strong>RET</strong> — ritirato (Retired).</li></ul>Ai risultati non regolari non vengono assegnati punti di posizione; si applicano le penalità previste dalla regola dei punteggi.</div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-8">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-8-body">
+          <span><span class="rule-num">8</span><span data-i18n="rule8_title" id="regola-8-t">Proteste e Reclami</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-8-body" role="region" aria-labelledby="regola-8-t">
+          <div class="rule-body-inner" data-i18n="rule8_desc">Per contestare una condotta in regata è disponibile la pagina <em>Proteste</em>.<br><br>La protesta deve indicare: la <strong>gara</strong>, il <strong>concorrente protestato</strong>, l'eventuale <strong>regola contestata</strong>, il <strong>momento</strong> dell'episodio, una <strong>descrizione dei fatti</strong> e, se possibile, <strong>testimoni</strong> e <strong>allegati</strong> (immagini o PDF).<br><br>Le proteste sono esaminate dalla Direzione di Regata. Gli esiti possibili sono: <strong>in esame</strong>, <strong>accolta</strong>, <strong>respinta</strong> o <strong>ritirata</strong> dal protestante.</div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-9">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-9-body">
+          <span><span class="rule-num">9</span><span data-i18n="rule9_title" id="regola-9-t">Squadre e Team</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-9-body" role="region" aria-labelledby="regola-9-t">
+          <div class="rule-body-inner" data-i18n="rule9_desc">Le squadre del circolo sono gestite dalla Direzione. Ogni team ha un <strong>capitano</strong>, una descrizione, un <strong>logo</strong> e un <strong>colore</strong> identificativo, ed è mostrato pubblicamente nella pagina <em>Team</em> con l'elenco dei membri. L'appartenenza a una squadra non incide sui punteggi individuali in classifica.</div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-10">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-10-body">
+          <span><span class="rule-num">10</span><span data-i18n="rule10_title" id="regola-10-t">Sanzioni e Penalità</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-10-body" role="region" aria-labelledby="regola-10-t">
+          <div class="rule-body-inner" data-i18n="rule10_desc">In caso di violazioni del presente regolamento o di comportamento antisportivo, la Direzione di Regata può applicare:<ul><li>un <strong>richiamo</strong> o un'ammonizione;</li><li>una <strong>penalità</strong> in punti o la squalifica dalla singola prova;</li><li>la <strong>squalifica dalla classifica</strong> generale o dall'evento, nei casi più gravi o in caso di recidiva.</li></ul>Le sanzioni possono riguardare anche la condotta nei canali ufficiali del circolo (es. Discord).</div>
+        </div>
+      </div>
+
+      <div class="rule-item" id="regola-11">
+        <button type="button" class="rule-toggle" aria-expanded="false" aria-controls="regola-11-body">
+          <span><span class="rule-num">11</span><span data-i18n="rule11_title" id="regola-11-t">Albo d'Oro</span></span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="rule-body" id="regola-11-body" role="region" aria-labelledby="regola-11-t">
+          <div class="rule-body-inner" data-i18n="rule11_desc">L'<em>Albo d'Oro</em> raccoglie i vincitori di ogni evento del circolo. I vincitori vengono registrati automaticamente al termine dell'inserimento dei risultati di una gara.</div>
         </div>
       </div>
     </div>
@@ -215,67 +326,224 @@
       it: {
         rules_title: "Regolamento Ufficiale",
         rules_subtitle: "Linee guida, norme comportamentali e specifiche tecniche per le regate del Circolo Velico Italia su Virtual Skipper 5.",
+        rules_version: "Versione 1.0",
+        rules_updated: "Ultimo aggiornamento: ottobre 2026",
+        toc_label: "Indice",
+        btn_expand: "Espandi tutto",
+        btn_collapse: "Comprimi tutto",
+        btn_print: "Stampa / PDF",
         rule1_title: "Fair Play e Condotta in Mare",
         rule1_desc: "Il rispetto delle regole di regata ISAF virtuali è il pilastro del nostro circolo. Qualsiasi scorrettezza grave o comportamento antisportivo durante le prove ufficiali comporterà sanzioni o squalifiche dalla classifica generale.",
         rule2_title: "Classi di Imbarcazioni",
         rule2_desc: "Le competizioni si svolgono principalmente sulla classe America's Cup Class (ACC/V5) o su altre classi concordate dal comitato di regata prima dell'inizio della stagione.",
-        rule3_title: "Punteggi e Classifiche",
-        rule3_desc: "<strong>Sistema Low Point</strong> (1° = 1 pt, 2° = 2 pt, …). Vince chi ha il totale più basso.<br><br><strong>Singole regate / eventi:</strong> punti in base all’ordine di arrivo. Eventuali scarti definiti a inizio stagione.<br><br><strong>Classifica generale (per anno):</strong> ogni regata conta per <em>tutti</em> i soci. Chi non partecipa riceve punti di penalità = <strong>numero di partecipanti alla regata + 1</strong> (peggio dell’ultimo). La classifica è la somma di tutti i punti dell’anno. Tutti i membri del circolo compaiono in classifica."
+        rule3_title: "Iscrizioni alle Regate",
+        rule3_desc: "<strong>Come iscriversi:</strong> dalla pagina <em>Calendario Gare</em>, premendo \u00abIscriviti\u00bb sulla gara desiderata (è necessario l'accesso). Puoi annullare la tua iscrizione con \u00abAnnulla iscrizione\u00bb.<ul><li><strong>Chiusura iscrizioni:</strong> si chiudono <strong>2 ore prima</strong> dell'orario di partenza; oltre tale termine non è più possibile iscriversi o disiscriversi.</li><li><strong>Eventi aperti:</strong> gli eventi di tipo \u00abaperto\u00bb <strong>non</strong> prevedono iscrizione né classifica.</li><li><strong>Chi può iscriversi:</strong> i soci registrati al circolo.</li></ul>",
+        rule4_title: "Tipi di Evento",
+        rule4_desc: "Gli eventi in calendario sono di tre tipi:<ul><li><strong>Ufficiale:</strong> gara del circolo con iscrizione e classifica.</li><li><strong>Speciale:</strong> evento speciale con iscrizione e classifica.</li><li><strong>Aperto:</strong> evento dimostrativo o amichevole, <strong>senza</strong> iscrizione e <strong>senza</strong> classifica.</li></ul>Il tipo di evento è indicato su ogni scheda gara in <em>Calendario Gare</em>.",
+        rule5_title: "Formato delle Regate",
+        rule5_desc: "Ogni evento può comprendere da <strong>1 a 3 regate</strong>: il numero di prove è indicato sulla scheda della gara. La classifica dell'evento tiene conto dei risultati di tutte le prove disputate.",
+        rule6_title: "Punteggi e Classifiche",
+        rule6_desc: "<strong>Sistema Low Point.</strong> Nelle singole prove vince chi totalizza meno punti (1° = 1 pt, 2° = 2 pt, …).<ul><li><strong>Singole regate / eventi:</strong> punti in base all'ordine di arrivo; eventuali scarti sono definiti a inizio stagione.</li><li><strong>Classifica generale (per anno):</strong> ogni regata conta per <em>tutti</em> i soci; chi non partecipa riceve punti di penalità pari al <strong>numero di partecipanti alla regata + 1</strong> (peggio dell'ultimo). La classifica è la somma di tutti i punti dell'anno e vi compaiono tutti i membri del circolo.</li></ul>",
+        rule7_title: "Stati dei Risultati",
+        rule7_desc: "<strong>OK:</strong> arrivo regolare; i punti sono assegnati in base alla posizione ottenuta.<ul><li><strong>DNF</strong> — non arrivato (Did Not Finish).</li><li><strong>DNS</strong> — non partito (Did Not Start).</li><li><strong>DSQ</strong> — squalificato (Disqualified).</li><li><strong>RET</strong> — ritirato (Retired).</li></ul>Ai risultati non regolari non vengono assegnati punti di posizione; si applicano le penalità previste dalla regola dei punteggi.",
+        rule8_title: "Proteste e Reclami",
+        rule8_desc: "Per contestare una condotta in regata è disponibile la pagina <em>Proteste</em>.<br><br>La protesta deve indicare: la <strong>gara</strong>, il <strong>concorrente protestato</strong>, l'eventuale <strong>regola contestata</strong>, il <strong>momento</strong> dell'episodio, una <strong>descrizione dei fatti</strong> e, se possibile, <strong>testimoni</strong> e <strong>allegati</strong> (immagini o PDF).<br><br>Le proteste sono esaminate dalla Direzione di Regata. Gli esiti possibili sono: <strong>in esame</strong>, <strong>accolta</strong>, <strong>respinta</strong> o <strong>ritirata</strong> dal protestante.",
+        rule9_title: "Squadre e Team",
+        rule9_desc: "Le squadre del circolo sono gestite dalla Direzione. Ogni team ha un <strong>capitano</strong>, una descrizione, un <strong>logo</strong> e un <strong>colore</strong> identificativo, ed è mostrato pubblicamente nella pagina <em>Team</em> con l'elenco dei membri. L'appartenenza a una squadra non incide sui punteggi individuali in classifica.",
+        rule10_title: "Sanzioni e Penalità",
+        rule10_desc: "In caso di violazioni del presente regolamento o di comportamento antisportivo, la Direzione di Regata può applicare:<ul><li>un <strong>richiamo</strong> o un'ammonizione;</li><li>una <strong>penalità</strong> in punti o la squalifica dalla singola prova;</li><li>la <strong>squalifica dalla classifica</strong> generale o dall'evento, nei casi più gravi o in caso di recidiva.</li></ul>Le sanzioni possono riguardare anche la condotta nei canali ufficiali del circolo (es. Discord).",
+        rule11_title: "Albo d'Oro",
+        rule11_desc: "L'<em>Albo d'Oro</em> raccoglie i vincitori di ogni evento del circolo. I vincitori vengono registrati automaticamente al termine dell'inserimento dei risultati di una gara."
       },
       en: {
         rules_title: "Official Rules",
         rules_subtitle: "Guidelines, code of conduct and technical specs for Circolo Velico Italia races on Virtual Skipper 5.",
+        rules_version: "Version 1.0",
+        rules_updated: "Last updated: October 2026",
+        toc_label: "Index",
+        btn_expand: "Expand all",
+        btn_collapse: "Collapse all",
+        btn_print: "Print / PDF",
         rule1_title: "Fair Play and Conduct at Sea",
         rule1_desc: "Respect for virtual ISAF racing rules is the pillar of our club. Any serious misconduct or unsportsmanlike behaviour during official races will result in sanctions or disqualification from the overall standings.",
         rule2_title: "Boat Classes",
         rule2_desc: "Competitions are mainly held in the America's Cup Class (ACC/V5) or other classes agreed by the race committee before the season starts.",
-        rule3_title: "Scoring and Standings",
-        rule3_desc: "<strong>Low Point System</strong> (1st = 1 pt, 2nd = 2 pts…). Lowest total wins.<br><br><strong>Individual races / events:</strong> points by finishing order. Discards defined at season start.<br><br><strong>Overall standings (by year):</strong> every race counts for <em>all</em> members. Non-participants score <strong>number of race entrants + 1</strong> (worse than last). Standings are the sum of all points in the year. All club members appear in the ranking."
+        rule3_title: "Race Registration",
+        rule3_desc: "<strong>How to register:</strong> from the <em>Race Calendar</em> page, click \u00abRegister\u00bb on the race you want to enter (login required). You can cancel your entry with \u00abCancel registration\u00bb.<ul><li><strong>Closing time:</strong> registration closes <strong>2 hours before</strong> the start; after that you can no longer register or withdraw.</li><li><strong>Open events:</strong> events of type \u00abopen\u00bb have <strong>no</strong> registration and <strong>no</strong> standings.</li><li><strong>Who can enter:</strong> members registered with the club.</li></ul>",
+        rule4_title: "Event Types",
+        rule4_desc: "Calendar events come in three types:<ul><li><strong>Official:</strong> club race with registration and standings.</li><li><strong>Special:</strong> special event with registration and standings.</li><li><strong>Open:</strong> exhibition or friendly event, <strong>without</strong> registration and <strong>without</strong> standings.</li></ul>The event type is shown on each race card in the <em>Race Calendar</em>.",
+        rule5_title: "Race Format",
+        rule5_desc: "Each event may include <strong>1 to 3 races</strong>: the number of races is shown on the race card. Event standings take into account the results of all races sailed.",
+        rule6_title: "Scoring and Standings",
+        rule6_desc: "<strong>Low Point System.</strong> In individual races the lowest total wins (1st = 1 pt, 2nd = 2 pts, …).<ul><li><strong>Individual races / events:</strong> points by finishing order; any discards are defined at the start of the season.</li><li><strong>Overall standings (by year):</strong> every race counts for <em>all</em> members; non-participants score <strong>number of race entrants + 1</strong> (worse than last). Standings are the sum of all points in the year and include every club member.</li></ul>",
+        rule7_title: "Result Statuses",
+        rule7_desc: "<strong>OK:</strong> regular finish; points are awarded according to finishing position.<ul><li><strong>DNF</strong> — did not finish.</li><li><strong>DNS</strong> — did not start.</li><li><strong>DSQ</strong> — disqualified.</li><li><strong>RET</strong> — retired.</li></ul>Non-regular results do not receive position points; the penalties set by the scoring rule apply.",
+        rule8_title: "Protests and Claims",
+        rule8_desc: "To contest conduct during a race, use the <em>Protests</em> page.<br><br>A protest must include: the <strong>race</strong>, the <strong>protested competitor</strong>, the <strong>rule contested</strong> (if any), the <strong>moment</strong> of the incident, a <strong>description of the facts</strong> and, if possible, <strong>witnesses</strong> and <strong>attachments</strong> (images or PDF).<br><br>Protests are reviewed by the Race Committee. Possible outcomes: <strong>under review</strong>, <strong>upheld</strong>, <strong>rejected</strong> or <strong>withdrawn</strong>.",
+        rule9_title: "Teams and Crews",
+        rule9_desc: "Club teams are managed by the Committee. Each team has a <strong>captain</strong>, a description, a <strong>logo</strong> and an identifying <strong>colour</strong>, and is shown publicly on the <em>Teams</em> page with its members. Belonging to a team does not affect individual standings points.",
+        rule10_title: "Sanctions and Penalties",
+        rule10_desc: "For breaches of these rules or unsportsmanlike conduct, the Race Committee may apply:<ul><li>a <strong>warning</strong> or reprimand;</li><li>a <strong>points penalty</strong> or disqualification from the individual race;</li><li><strong>disqualification from the standings</strong> or the event, in the most serious or repeated cases.</li></ul>Sanctions may also cover conduct in the club's official channels (e.g. Discord).",
+        rule11_title: "Hall of Fame",
+        rule11_desc: "The <em>Hall of Fame</em> collects the winners of every club event. Winners are recorded automatically once a race's results are entered."
       },
       fr: {
         rules_title: "Règlement Officiel",
         rules_subtitle: "Lignes directrices, code de conduite et spécifications techniques pour les courses du Circolo Velico Italia sur Virtual Skipper 5.",
+        rules_version: "Version 1.0",
+        rules_updated: "Dernière mise à jour : octobre 2026",
+        toc_label: "Sommaire",
+        btn_expand: "Tout déplier",
+        btn_collapse: "Tout replier",
+        btn_print: "Imprimer / PDF",
         rule1_title: "Fair-play et Conduite en Mer",
         rule1_desc: "Le respect des règles de course ISAF virtuelles est le pilier de notre club. Toute incorrection grave ou comportement antisportif lors des épreuves officielles entraînera des sanctions ou une disqualification du classement général.",
         rule2_title: "Classes de Bateaux",
         rule2_desc: "Les compétitions se déroulent principalement en classe America's Cup (ACC/V5) ou d'autres classes convenues par le comité de course avant le début de la saison.",
-        rule3_title: "Points et Classements",
-        rule3_desc: "<strong>Système Low Point</strong> (1er = 1 pt, 2e = 2 pts…). Le total le plus bas gagne.<br><br><strong>Courses :</strong> points selon l’ordre d’arrivée.<br><br><strong>Classement général (par année) :</strong> chaque course compte pour <em>tous</em> les membres. Absent = <strong>nombre de participants + 1</strong>. Somme de tous les points de l’année."
+        rule3_title: "Inscriptions aux Courses",
+        rule3_desc: "<strong>Comment s'inscrire :</strong> depuis la page <em>Calendrier</em>, en cliquant sur \u00abS'inscrire\u00bb (connexion requise). Vous pouvez annuler votre inscription avec \u00abAnnuler\u00bb.<ul><li><strong>Clôture :</strong> les inscriptions ferment <strong>2 heures avant</strong> le départ ; passé ce délai, plus d'inscription ni de désinscription.</li><li><strong>Épreuves ouvertes :</strong> les épreuves de type \u00abouvert\u00bb n'ont <strong>ni</strong> inscription <strong>ni</strong> classement.</li><li><strong>Qui peut s'inscrire :</strong> les membres inscrits au club.</li></ul>",
+        rule4_title: "Types d'Épreuves",
+        rule4_desc: "Les épreuves du calendrier sont de trois types :<ul><li><strong>Officielle :</strong> course du club avec inscription et classement.</li><li><strong>Spéciale :</strong> épreuve spéciale avec inscription et classement.</li><li><strong>Ouverte :</strong> épreuve de démonstration ou amicale, <strong>sans</strong> inscription et <strong>sans</strong> classement.</li></ul>Le type est indiqué sur chaque fiche d'épreuve du <em>Calendrier</em>.",
+        rule5_title: "Format des Courses",
+        rule5_desc: "Chaque épreuve peut comprendre de <strong>1 à 3 courses</strong> : le nombre est indiqué sur la fiche. Le classement de l'épreuve tient compte de toutes les courses disputées.",
+        rule6_title: "Points et Classements",
+        rule6_desc: "<strong>Système Low Point.</strong> Sur une manche, le total le plus bas gagne (1er = 1 pt, 2e = 2 pts…).<ul><li><strong>Courses / épreuves :</strong> points selon l'ordre d'arrivée ; les éventuelles retraites sont définies en début de saison.</li><li><strong>Classement général (par année) :</strong> chaque course compte pour <em>tous</em> les membres ; les absents reçoivent <strong>nombre de participants + 1</strong> (pire que le dernier). Le classement est la somme des points de l'année et inclut tous les membres du club.</li></ul>",
+        rule7_title: "Statuts des Résultats",
+        rule7_desc: "<strong>OK :</strong> arrivée régulière ; les points sont attribués selon la position.<ul><li><strong>DNF</strong> — non arrivé (Did Not Finish).</li><li><strong>DNS</strong> — non parti (Did Not Start).</li><li><strong>DSQ</strong> — disqualifié (Disqualified).</li><li><strong>RET</strong> — abandon (Retired).</li></ul>Les résultats non réguliers ne reçoivent pas de points de position ; les pénalités prévues s'appliquent.",
+        rule8_title: "Protestations et Réclamations",
+        rule8_desc: "Pour contester une conduite en course, utilisez la page <em>Protestations</em>.<br><br>La protestation doit indiquer : la <strong>course</strong>, le <strong>concurrent protesté</strong>, la <strong>règle contestée</strong> (le cas échéant), le <strong>moment</strong>, une <strong>description des faits</strong> et, si possible, des <strong>témoins</strong> et des <strong>pièces jointes</strong> (images ou PDF).<br><br>Les protestations sont examinées par le Comité de Course. Issues possibles : <strong>en examen</strong>, <strong>acceptée</strong>, <strong>rejetée</strong> ou <strong>retirée</strong>.",
+        rule9_title: "Équipes et Équipages",
+        rule9_desc: "Les équipes du club sont gérées par le Comité. Chaque équipe a un <strong>capitaine</strong>, une description, un <strong>logo</strong> et une <strong>couleur</strong> identifiante, et est présentée publiquement sur la page <em>Équipes</em> avec ses membres. L'appartenance à une équipe n'influence pas le classement individuel.",
+        rule10_title: "Sanctions et Pénalités",
+        rule10_desc: "En cas d'infraction au présent règlement ou de comportement antisportif, le Comité de Course peut appliquer :<ul><li>un <strong>rappel</strong> ou un avertissement ;</li><li>une <strong>pénalité</strong> en points ou la disqualification de la manche ;</li><li>la <strong>disqualification du classement</strong> général ou de l'épreuve, dans les cas graves ou récidivants.</li></ul>Les sanctions peuvent aussi concerner la conduite sur les canaux officiels du club (ex. Discord).",
+        rule11_title: "Temple de la Renommée",
+        rule11_desc: "Le <em>Temple de la Renommée</em> recueille les vainqueurs de chaque épreuve du club. Les vainqueurs sont enregistrés automatiquement dès la saisie des résultats."
       },
       es: {
         rules_title: "Reglamento Oficial",
         rules_subtitle: "Directrices, normas de conducta y especificaciones técnicas para las regatas del Circolo Velico Italia en Virtual Skipper 5.",
+        rules_version: "Versión 1.0",
+        rules_updated: "Última actualización: octubre 2026",
+        toc_label: "Índice",
+        btn_expand: "Expandir todo",
+        btn_collapse: "Contraer todo",
+        btn_print: "Imprimir / PDF",
         rule1_title: "Juego Limpio y Conducta en el Mar",
         rule1_desc: "El respeto a las reglas de regata ISAF virtuales es el pilar de nuestro club. Cualquier incorrección grave o comportamiento antideportivo durante las pruebas oficiales conllevará sanciones o descalificación de la clasificación general.",
         rule2_title: "Clases de Embarcaciones",
         rule2_desc: "Las competiciones se celebran principalmente en la clase America's Cup (ACC/V5) u otras clases acordadas por el comité de regata antes del inicio de la temporada.",
-        rule3_title: "Puntuaciones y Clasificaciones",
-        rule3_desc: "<strong>Sistema Low Point</strong> (1.º = 1 pt, 2.º = 2 pts…). Gana el total más bajo.<br><br><strong>Regatas:</strong> puntos según orden de llegada.<br><br><strong>Clasificación general (por año):</strong> cada regata cuenta para <em>todos</em> los socios. Quien no participa recibe <strong>participantes + 1</strong>. Suma de todos los puntos del año."
+        rule3_title: "Inscripción a las Regatas",
+        rule3_desc: "<strong>Cómo inscribirse:</strong> desde la página <em>Calendario</em>, pulsando \u00abInscribirse\u00bb (requiere iniciar sesión). Puedes anular tu inscripción con \u00abCancelar\u00bb.<ul><li><strong>Cierre:</strong> las inscripciones cierran <strong>2 horas antes</strong> de la salida; después ya no es posible inscribirse ni darse de baja.</li><li><strong>Eventos abiertos:</strong> los eventos de tipo \u00ababierto\u00bb <strong>no</strong> tienen inscripción <strong>ni</strong> clasificación.</li><li><strong>Quién puede inscribirse:</strong> los socios registrados en el club.</li></ul>",
+        rule4_title: "Tipos de Evento",
+        rule4_desc: "Los eventos del calendario son de tres tipos:<ul><li><strong>Oficial:</strong> regata del club con inscripción y clasificación.</li><li><strong>Especial:</strong> evento especial con inscripción y clasificación.</li><li><strong>Abierto:</strong> evento de exhibición o amistoso, <strong>sin</strong> inscripción y <strong>sin</strong> clasificación.</li></ul>El tipo se indica en cada ficha de regata del <em>Calendario</em>.",
+        rule5_title: "Formato de las Regatas",
+        rule5_desc: "Cada evento puede incluir de <strong>1 a 3 regatas</strong>: el número se indica en la ficha de la regata. La clasificación del evento tiene en cuenta todos los resultados.",
+        rule6_title: "Puntuaciones y Clasificaciones",
+        rule6_desc: "<strong>Sistema Low Point.</strong> En cada manga gana el total más bajo (1.º = 1 pt, 2.º = 2 pts…).<ul><li><strong>Regatas / eventos:</strong> puntos según el orden de llegada; los descartes se definen al inicio de la temporada.</li><li><strong>Clasificación general (por año):</strong> cada regata cuenta para <em>todos</em> los socios; quien no participa recibe <strong>participantes + 1</strong> (peor que el último). La clasificación es la suma de los puntos del año e incluye a todos los miembros.</li></ul>",
+        rule7_title: "Estados de los Resultados",
+        rule7_desc: "<strong>OK:</strong> llegada regular; los puntos se asignan según la posición.<ul><li><strong>DNF</strong> — no terminó (Did Not Finish).</li><li><strong>DNS</strong> — no salió (Did Not Start).</li><li><strong>DSQ</strong> — descalificado (Disqualified).</li><li><strong>RET</strong> — retirado (Retired).</li></ul>Los resultados no regulares no reciben puntos de posición; se aplican las penalizaciones previstas.",
+        rule8_title: "Protestas y Reclamaciones",
+        rule8_desc: "Para impugnar una conducta en regata está disponible la página <em>Protestas</em>.<br><br>La protesta debe indicar: la <strong>regata</strong>, el <strong>protestado</strong>, la <strong>regla impugnada</strong> (si procede), el <strong>momento</strong>, una <strong>descripción de los hechos</strong> y, si es posible, <strong>testigos</strong> y <strong>adjuntos</strong> (imágenes o PDF).<br><br>Las protestas son evaluadas por el Comité de Regata. Resultados posibles: <strong>en estudio</strong>, <strong>aceptada</strong>, <strong>rechazada</strong> o <strong>retirada</strong>.",
+        rule9_title: "Equipos y Tripulaciones",
+        rule9_desc: "Los equipos del club son gestionados por el Comité. Cada equipo tiene un <strong>capitán</strong>, una descripción, un <strong>logo</strong> y un <strong>color</strong> identificativo, y se muestra públicamente en la página <em>Equipos</em> con sus miembros. Pertenecer a un equipo no influye en los puntos individuales.",
+        rule10_title: "Sanciones y Penalizaciones",
+        rule10_desc: "Ante infracciones de este reglamento o conducta antideportiva, el Comité de Regata puede aplicar:<ul><li>un <strong>apercibimiento</strong> o amonestación;</li><li>una <strong>penalización</strong> en puntos o la descalificación de la manga;</li><li>la <strong>descalificación de la clasificación</strong> general o del evento, en los casos graves o reincidentes.</li></ul>Las sanciones pueden afectar también a la conducta en los canales oficiales del club (p. ej. Discord).",
+        rule11_title: "Salón de la Fama",
+        rule11_desc: "El <em>Salón de la Fama</em> recoge los ganadores de cada evento del club. Los ganadores se registran automáticamente al introducir los resultados."
       }
     };
 
+
+    // Apre/chiude una sezione. L'altezza e' calcolata sul contenuto reale (nessun taglio).
+    function setOpen(item, open) {
+      var btn = item.querySelector('.rule-toggle');
+      var bodyEl = item.querySelector('.rule-body');
+      if (!btn || !bodyEl) return;
+      item.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      bodyEl.setAttribute('aria-hidden', open ? 'false' : 'true');
+      bodyEl.style.maxHeight = open ? (bodyEl.scrollHeight + 'px') : '0px';
+    }
+
+    function resizeOpen() {
+      document.querySelectorAll('.rule-item.is-open .rule-body').forEach(function (b) {
+        b.style.maxHeight = b.scrollHeight + 'px';
+      });
+    }
+
+    function openFromHash() {
+      var id = (location.hash || '').replace('#', '');
+      if (!id) return;
+      var item = document.getElementById(id);
+      if (!item || !item.classList.contains('rule-item')) return;
+      setOpen(item, true);
+      item.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     function initAccordion() {
-      document.querySelectorAll('.rule-toggle').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const item = btn.closest('.rule-item');
-          const isOpen = item.classList.contains('is-open');
-          document.querySelectorAll('.rule-item.is-open').forEach(el => {
-            el.classList.remove('is-open');
-            el.querySelector('.rule-toggle').setAttribute('aria-expanded', 'false');
-          });
-          if (!isOpen) {
-            item.classList.add('is-open');
-            btn.setAttribute('aria-expanded', 'true');
-          }
+      var items = document.querySelectorAll('.rule-item');
+
+      items.forEach(function (item) {
+        var btn = item.querySelector('.rule-toggle');
+        if (!btn || btn._cviWired) return;
+        btn._cviWired = true;
+        btn.addEventListener('click', function () {
+          var open = !item.classList.contains('is-open');
+          setOpen(item, open);
+          if (open) history.replaceState(null, '', '#' + item.id);
+          else if (location.hash === '#' + item.id) history.replaceState(null, '', location.pathname + location.search);
         });
       });
+
+      // Indice: apre la sezione e la porta in vista
+      document.querySelectorAll('.rules-toc a[href^="#"]').forEach(function (a) {
+        if (a._cviWired) return;
+        a._cviWired = true;
+        a.addEventListener('click', function (e) {
+          var item = document.getElementById((a.getAttribute('href') || '').slice(1));
+          if (!item) return;
+          e.preventDefault();
+          setOpen(item, true);
+          history.replaceState(null, '', a.getAttribute('href'));
+          item.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+
+      var expand = document.getElementById('rules-expand');
+      if (expand && !expand._cviWired) {
+        expand._cviWired = true;
+        expand.onclick = function () { items.forEach(function (it) { setOpen(it, true); }); };
+      }
+      var collapse = document.getElementById('rules-collapse');
+      if (collapse && !collapse._cviWired) {
+        collapse._cviWired = true;
+        collapse.onclick = function () { items.forEach(function (it) { setOpen(it, false); }); };
+      }
+      var printBtn = document.getElementById('rules-print');
+      if (printBtn && !printBtn._cviWired) {
+        printBtn._cviWired = true;
+        printBtn.onclick = function () {
+          items.forEach(function (it) { setOpen(it, true); });
+          setTimeout(function () { window.print(); }, 80);
+        };
+      }
+
+      // Ricalcola le altezze al resize e al cambio lingua
+      if (!window._cviRulesHooked) {
+        window._cviRulesHooked = true;
+        window.addEventListener('resize', resizeOpen);
+        var langSel = document.getElementById('languageSelect');
+        if (langSel) langSel.addEventListener('change', function () { setTimeout(resizeOpen, 60); });
+      }
     }
 
     const _orig = CVI.init;
     CVI.init = function(a) {
       _orig(a, extra);
       initAccordion();
+      openFromHash();
     };
+    window.addEventListener('hashchange', openFromHash);
     CVI.init('regolamento.html');
   </script>
 </body>
