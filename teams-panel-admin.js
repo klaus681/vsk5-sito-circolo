@@ -116,7 +116,7 @@
   async function uploadTeamLogo(file) {
     if (!file) return;
     if (!window.CVI || !CVI.supabase) { setLogoStatus("Supabase non disponibile.", "#f87171"); return; }
-    if (file.size > 2 * 1024 * 1024) { setLogoStatus("Immagine troppo grande (max 2 MB).", "#f87171"); return; }
+    if (file.size > 5 * 1024 * 1024) { setLogoStatus("Immagine troppo grande (max 5 MB).", "#f87171"); return; }
     setLogoStatus("Caricamento «" + file.name + "»…", "#94a3b8");
     try {
       var sess = await CVI.supabase.auth.getSession();
@@ -141,7 +141,7 @@
       renderLogoPreview(url);
       setLogoStatus("Logo caricato (bucket «" + usedBucket + "»). Ora premi Salva per applicarlo.", "#34d399");
     } catch (err) {
-      setLogoStatus("Errore upload: " + (err.message || err) + " (verifica il bucket «team-logos» — vedi teams-logo-sql.sql).", "#f87171");
+      setLogoStatus("⚠ Errore upload: " + (err.message || err) + " (verifica il bucket «team-logos» — vedi teams-logo-sql.sql).", "#f87171");
     }
   }
 
@@ -569,6 +569,13 @@
       if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex0)) { alert("Colore personalizzato non valido: usa un esadecimale tipo #38bdf8"); return; }
       tema = hex0.toLowerCase();
     }
+
+    // Se c'è un file scelto ma il logo non è stato caricato (upload fallito/in corso), evita di azzerare il logo salvato.
+    var logoFileEl = document.getElementById("tm-logo-file");
+    if (logoFileEl && logoFileEl.files && logoFileEl.files[0] && !logo_url) {
+      alert("Hai selezionato un file ma il logo non è stato caricato.\n\nAttendi la fine del caricamento (o riprova) e controlla il messaggio sotto il campo.\nSe non serve, premi «Rimuovi logo» per togliere il file e poi salva.");
+      return;
+    }
     var id = document.getElementById("tm-id").value.trim();
     if (!nome) return alert("Il nome del team è obbligatorio");
 
@@ -589,6 +596,16 @@
         tema: tema || null
       }, !!id, id);
       if (r.error) throw r.error;
+
+      // Verifica che logo e colore siano stati davvero salvati (se mancano le colonne su Supabase, il salvataggio li scarta).
+      var saved = (r.data && r.data[0]) || null;
+      var notSaved = [];
+      if (saved && logo_url && String(saved.logo_url || "") !== String(logo_url)) notSaved.push("logo");
+      if (saved && tema && String(saved.tema || "") !== String(tema)) notSaved.push("colore");
+      if (notSaved.length) {
+        notify("Attenzione: " + notSaved.join(" e ") + " non salvato/i", "err");
+        alert("Attenzione: " + notSaved.join(" e ") + " non è stato salvato.\n\nCausa più probabile: mancano le colonne su Supabase.\nEsegui `teams-logo-sql.sql` (logo) e `teams-tema-sql.sql` (colore) nel SQL Editor di Supabase.");
+      }
 
       if (id && previousName && previousName.toLowerCase() !== nome.toLowerCase()) {
         var useId = detectTeamIdCol(profilesCache);

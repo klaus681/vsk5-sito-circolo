@@ -12,14 +12,14 @@ comment on column public.teams.logo_url is
   'URL pubblico del logo della squadra. NULL = fallback alle iniziali.';
 
 -- ============================================
--- Storage: bucket pubblico "team-logos" (max 2 MB, solo immagini)
+-- Storage: bucket pubblico "team-logos" (max 5 MB, solo immagini)
 -- ============================================
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'team-logos',
   'team-logos',
   true,
-  2097152,
+  5242880,
   array['image/jpeg','image/png','image/webp','image/gif','image/svg+xml']
 )
 on conflict (id) do update set
