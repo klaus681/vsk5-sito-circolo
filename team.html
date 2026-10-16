@@ -229,6 +229,41 @@
       return themes[h];
     }
 
+    var TEAM_THEMES = ['sky', 'teal', 'amber', 'violet', 'red'];
+    function normalizeHex(hex) {
+      var h = String(hex || '').replace('#', '').trim();
+      if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+      if (!/^[0-9a-f]{6}$/i.test(h)) return null;
+      return '#' + h.toLowerCase();
+    }
+    function hexRgb(hex) {
+      var h = normalizeHex(hex); if (!h) return null;
+      return { r: parseInt(h.substr(1, 2), 16), g: parseInt(h.substr(3, 2), 16), b: parseInt(h.substr(5, 2), 16) };
+    }
+    function darkenHex(hex, f) {
+      var c = hexRgb(hex); if (!c) return hex;
+      function cl(x) { x = Math.round(x); return Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0'); }
+      return '#' + cl(c.r * f) + cl(c.g * f) + cl(c.b * f);
+    }
+    function rgbaHex(hex, a) {
+      var c = hexRgb(hex); if (!c) return 'rgba(56,189,248,' + a + ')';
+      return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + a + ')';
+    }
+    // Ritorna { theme, style }: palette via data-theme, colore custom via variabili CSS inline.
+    // Se l'admin non ha scelto nulla -> assegnazione automatica dal nome (teamTheme).
+    function teamThemeInfo(team) {
+      var name = (team && (team.nome_team || team.nome)) || '';
+      var val = String((team && team.tema) || '').trim();
+      var hex = /^#/.test(val) ? normalizeHex(val) : null;
+      if (hex) {
+        var style = ' style="--team-1:' + hex + ';--team-2:' + darkenHex(hex, 0.72) +
+          ';--team-soft:' + rgbaHex(hex, 0.16) + ';--team-glow:' + rgbaHex(hex, 0.35) + '"';
+        return { theme: '', style: style };
+      }
+      if (TEAM_THEMES.indexOf(val) >= 0) return { theme: val, style: '' };
+      return { theme: teamTheme(name), style: '' };
+    }
+
     function memberInitials(m) {
       const n = (m.nickname || m.nome || '').trim();
       if (!n) return '?';
@@ -274,8 +309,9 @@
             }).join('') + '</ul>'
           : '<span class="no-members">' + t.no_members + '</span>';
 
+        var tinfo = teamThemeInfo(team);
         return (
-          '<div class="team-card" data-theme="' + teamTheme(teamName) + '">' +
+          '<div class="team-card" data-theme="' + tinfo.theme + '"' + tinfo.style + '>' +
             '<div class="team-card-top">' +
               '<div class="team-card-head">' +
                 '<div class="team-avatar">' + teamAvatarInner(teamName, team.logo_url) + '</div>' +
