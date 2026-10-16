@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Download - CVI Virtual</title>
+  <meta name="description" content="Area Download del Circolo Velico Italia Virtual: regolamenti, skin e livree ufficiali, mappe e materiali per Virtual Skipper 5.">
+  <style>
+    .info-banner{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.35);border-radius:10px;color:#cbd5e1;font-size:.9rem;margin-bottom:1rem}
+    .info-banner a{color:var(--accent-color)}
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -66,6 +71,13 @@
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
 
+  <noscript>
+    <div class="page-content">
+      <div class="content-box">
+        <p class="empty-text">Attiva JavaScript per vedere l'Area Download.</p>
+      </div>
+    </div>
+  </noscript>
   <main class="page-content" id="protected-content" style="display:none">
     <div class="content-box">
       <div class="download-header">
@@ -116,7 +128,11 @@
         btn_logout: "Disconnetti",
         btn_scarica: "Scarica",
         empty_downloads: "Nessun file disponibile al momento.",
-        alert_auth_required: "Devi effettuare l'accesso per accedere all'Area Download."
+        alert_auth_required: "Devi effettuare l'accesso per accedere all'Area Download.",
+        login_required: "Per scaricare i file è necessario effettuare l'accesso.",
+        btn_login: "Accedi per scaricare",
+        msg_no_file: "Impossibile trovare il file da scaricare. Contatta l'amministratore.",
+        msg_download_error: "Errore durante il download: "
       },
       en: {
         download_title: "Download Area",
@@ -124,7 +140,11 @@
         btn_logout: "Log Out",
         btn_scarica: "Download",
         empty_downloads: "No files available at the moment.",
-        alert_auth_required: "You must log in to access the Download Area."
+        alert_auth_required: "You must log in to access the Download Area.",
+        login_required: "You must log in to download the files.",
+        btn_login: "Log in to download",
+        msg_no_file: "Could not find the file to download. Contact the administrator.",
+        msg_download_error: "Download error: "
       },
       fr: {
         download_title: "Espace Téléchargement",
@@ -132,7 +152,11 @@
         btn_logout: "Se déconnecter",
         btn_scarica: "Télécharger",
         empty_downloads: "Aucun fichier disponible.",
-        alert_auth_required: "Vous devez vous connecter pour accéder à l'Espace Téléchargement."
+        alert_auth_required: "Vous devez vous connecter pour accéder à l'Espace Téléchargement.",
+        login_required: "Vous devez vous connecter pour télécharger les fichiers.",
+        btn_login: "Se connecter pour télécharger",
+        msg_no_file: "Fichier introuvable. Contactez l'administrateur.",
+        msg_download_error: "Erreur lors du téléchargement : "
       },
       es: {
         download_title: "Área de Descargas",
@@ -140,48 +164,29 @@
         btn_logout: "Cerrar sesión",
         btn_scarica: "Descargar",
         empty_downloads: "No hay archivos disponibles.",
-        alert_auth_required: "Debes iniciar sesión para acceder al Área de Descargas."
+        alert_auth_required: "Debes iniciar sesión para acceder al Área de Descargas.",
+        login_required: "Debes iniciar sesión para descargar los archivos.",
+        btn_login: "Inicia sesión para descargar",
+        msg_no_file: "No se encontró el archivo. Contacta al administrador.",
+        msg_download_error: "Error durante la descarga: "
       }
     };
 
     const TIPO_BTN = { pdf: "PDF", zip: "ZIP", exe: "EXE", link: "Apri", file: "Scarica" };
 
-    const FALLBACK = [
-      {
-        titolo: "Regolamento Ufficiale di Circolo VSK5",
-        descrizione: "Documento PDF con tutte le direttive e specifiche di navigazione.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1556009117057818654/Regolamento_Regata_C.V.I_GP_1.pdf?backend=b2&ex=6ac7372a&is=6ac5e5aa&hm=27e59bc6ab110754ea2ba1e975d26ea9e268d7bf6c1eb8d5f11d3e4e784c3493&",
-        tipo: "pdf"
-      },
-      {
-        titolo: "Regolamento RRS (Racing Rules of Sailing) 2025–2028",
-        descrizione: "Regole ufficiali di regata World Sailing (RRS / RSS). Edizione corrente 2025–2028.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1557651364677681192/le_regole_di_regata_2025-2028-2.pdf?ex=6ac89361&is=6ac741e1&hm=22cfb521a2cb95725d31f7b23768d170630a8ca219fee3cb90953964715a37db&",
-        tipo: "pdf"
-      },
-      {
-        titolo: "Skin e Livree Ufficiali CVI",
-        descrizione: "Pacchetto grafico personalizzato per le barche del team.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1554762599936295033/c.v.i._friend.zip?backend=b2&ex=6ac6a2c1&is=6ac55141&hm=d38af0ea9deb04078e1ff4b5afba42f4a409779e4498330dcf0213a67178b38c&",
-        tipo: "zip"
-      },
-      {
-        titolo: "Mappe Ufficiali C.V.I.",
-        descrizione: "Setup mappe VSK5 ufficiali del Circolo Velico Italiano GP.",
-        url: "https://cdn.discordapp.com/attachments/1554762463386542183/1554814389042024459/VSK5_Maps_c.v.i.GP_Setup.exe?backend=b2&ex=6ac6d2fd&is=6ac5817d&hm=9061b20ebf785e03667c94106d51ade9cd06cbf822b5665670ad57b173594a8f&",
-        tipo: "exe"
-      }
-    ];
+    let lastItems = [];
 
     function esc(s) {
       if (s == null) return "";
-      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;");
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
-    // renderDownloads now accepts isLoggedIn and shows download controls only to authenticated users
-    function renderDownloads(items, isLoggedIn) {
+    function currentT() { return extra[(window.CVI && CVI.currentLang) || 'it'] || extra.it; }
+
+    function renderDownloads(items) {
       const list = document.getElementById("download-list");
-      const t = (window.CVI && extra[(CVI.currentLang || 'it')]) ? extra[CVI.currentLang] : extra.it;
+      const t = currentT();
+      if (!list) return;
       if (!items || !items.length) {
         list.innerHTML = '<p class="empty-text" style="color:var(--text-muted)">' + esc(t.empty_downloads) + "</p>";
         return;
@@ -189,10 +194,9 @@
       list.innerHTML = items.map(function (d) {
         const tipo = (d.tipo || "file").toLowerCase();
         const btnLabel = TIPO_BTN[tipo] || t.btn_scarica;
-        // If user is logged in, show actual download button; otherwise prompt to login
-        const btnHtml = isLoggedIn
-          ? '<button class="btn-download" data-url="' + esc(d.url || '') + '" data-path="' + esc(d.private_path || '') + '" data-bucket="' + esc(d.bucket || '') + '">Scarica ' + esc(btnLabel) + '</button>'
-          : '<a href="accedi.html" class="btn-download btn-login" rel="noopener">Accedi per scaricare</a>';
+        const btnHtml = '<button class="btn-download" data-url="' + esc(d.url || '') +
+          '" data-path="' + esc(d.private_path || '') + '" data-bucket="' + esc(d.bucket || '') + '">' +
+          esc(btnLabel) + '</button>';
         return (
           '<div class="download-item">' +
           '<div class="download-info">' +
@@ -204,67 +208,70 @@
         );
       }).join("");
 
-      // Attach click handlers for download buttons (only present when isLoggedIn)
-      if (isLoggedIn) {
-        list.querySelectorAll('.btn-download').forEach(btn => {
-          btn.addEventListener('click', async function () {
-            const url = btn.dataset.url;
-            const privatePath = btn.dataset.path;
-            const bucket = btn.dataset.bucket || 'downloads';
-            try {
-              if (privatePath && window.CVI && CVI.supabase && CVI.supabase.storage) {
-                // Try to get a signed URL from Supabase storage (requires that files are stored privately)
-                const { data: signed, error } = await CVI.supabase.storage.from(bucket).createSignedUrl(privatePath, 60);
-                if (error) throw error;
-                if (signed && signed.signedUrl) {
-                  window.open(signed.signedUrl, '_blank');
-                  return;
-                }
-              }
-              // Fallback to direct URL if present
-              if (url) {
-                window.open(url, '_blank');
-                return;
-              }
-              alert('Impossibile trovare il file da scaricare. Contatta l\'amministratore.');
-            } catch (e) {
-              console.error('download error', e);
-              alert('Errore durante il download: ' + (e.message || e));
+      list.querySelectorAll('.btn-download').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          const t2 = currentT();
+          const url = btn.dataset.url;
+          const privatePath = btn.dataset.path;
+          const bucket = btn.dataset.bucket || 'downloads';
+          try {
+            if (privatePath && window.CVI && CVI.supabase && CVI.supabase.storage) {
+              const { data: signed, error } = await CVI.supabase.storage.from(bucket).createSignedUrl(privatePath, 60);
+              if (error) throw error;
+              if (signed && signed.signedUrl) { window.open(signed.signedUrl, '_blank'); return; }
             }
-          });
+            if (url) { window.open(url, '_blank'); return; }
+            alert(t2.msg_no_file);
+          } catch (e) {
+            console.error('download error', e);
+            alert(t2.msg_download_error + (e.message || e));
+          }
         });
-      }
+      });
     }
 
-    // loadDownloadsList returns the data it loaded
     async function loadDownloadsList() {
+      if (!window.CVI || !CVI.supabase) return [];
+      const base = 'id, titolo, descrizione, url, tipo, ordine, attivo, created_at';
       try {
-        if (window.CVI && CVI.supabase) {
-          const { data, error } = await CVI.supabase
-            .from('downloads')
-            .select('id, titolo, descrizione, url, tipo, ordine, attivo, created_at')
+        let { data, error } = await CVI.supabase.from('downloads')
+          .select(base + ', bucket, private_path')
+          .eq('attivo', true)
+          .order('ordine', { ascending: true })
+          .order('created_at', { ascending: false });
+        if (error) {
+          // Colonne opzionali (bucket/private_path) assenti: riprova senza.
+          const r2 = await CVI.supabase.from('downloads').select(base)
             .eq('attivo', true)
             .order('ordine', { ascending: true })
             .order('created_at', { ascending: false });
-          if (error) throw error;
-          if (data && data.length) {
-            return data;
-          } else {
-            return FALLBACK;
-          }
-        } else {
-          // No supabase available (CVI not initialized) - return fallback
-          return FALLBACK;
+          if (r2.error) throw r2.error;
+          data = r2.data;
         }
+        return data || [];
       } catch (e) {
-        console.warn('downloads table:', e);
-        return FALLBACK;
+        console.warn('downloads table:', e && (e.message || e));
+        return [];
+      }
+    }
+
+    function showLoginGate() {
+      const t = currentT();
+      const list = document.getElementById("download-list");
+      if (list) list.innerHTML = "";
+      const content = document.querySelector('.content-box');
+      if (content && !document.getElementById('download-login-banner')) {
+        const banner = document.createElement('div');
+        banner.id = 'download-login-banner';
+        banner.className = 'info-banner';
+        banner.innerHTML = '<p style="margin:0;padding:.85rem 1rem">' + esc(t.login_required) + '</p>' +
+          '<p style="margin:0;padding:0 1rem 1rem"><a class="btn-download" href="accedi.html">' + esc(t.btn_login) + '</a></p>';
+        content.insertBefore(banner, content.firstChild);
       }
     }
 
     async function safeCheckAuthAndShow() {
       document.getElementById('protected-content').style.display = '';
-      // default: not logged in
       let isLoggedIn = false;
 
       if (window.CVI && CVI.supabase && CVI.supabase.auth) {
@@ -277,37 +284,29 @@
         }
       }
 
-      // show/hide logout button
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
-        if (!isLoggedIn) logoutBtn.style.display = 'none';
-        else {
+        if (!isLoggedIn) {
+          logoutBtn.style.display = 'none';
+        } else {
           logoutBtn.style.display = '';
-          logoutBtn.addEventListener('click', async () => {
-            if (window.CVI && CVI.supabase && CVI.supabase.auth) {
-              await CVI.supabase.auth.signOut();
-            }
-            window.location.href = 'accedi.html';
-          });
+          if (!logoutBtn._wired) {
+            logoutBtn._wired = true;
+            logoutBtn.addEventListener('click', async () => {
+              if (window.CVI && CVI.supabase && CVI.supabase.auth) await CVI.supabase.auth.signOut();
+              window.location.href = 'accedi.html';
+            });
+          }
         }
       }
 
-      const items = await loadDownloadsList();
-      renderDownloads(items, isLoggedIn);
+      // Area riservata: senza accesso non mostriamo i file.
+      if (!isLoggedIn) { showLoginGate(); return; }
 
-      if (!isLoggedIn) {
-        const content = document.querySelector('.content-box');
-        if (content && !document.getElementById('download-login-banner')) {
-          const banner = document.createElement('div');
-          banner.id = 'download-login-banner';
-          banner.className = 'info-banner';
-          banner.innerHTML = '<p style="margin:0;padding:.6rem">Per scaricare i file è necessario <a href="accedi.html">accedere</a>. Se sei un amministratore, gestisci i download dall\'area admin.</p>';
-          content.insertBefore(banner, content.firstChild);
-        }
-      }
+      lastItems = await loadDownloadsList();
+      renderDownloads(lastItems);
     }
 
-    // Start logic: if CVI.init exists, override to inject behavior; otherwise run safe flow
     function startDownloadPage() {
       try {
         if (window.CVI && typeof CVI.init === 'function') {
@@ -318,18 +317,19 @@
           };
           try { CVI.init('download.html'); } catch (e) { console.warn('CVI.init call failed', e); safeCheckAuthAndShow(); }
         } else {
-          // No CVI.init available: just run the safe flow (will use fallback if no supabase)
           safeCheckAuthAndShow();
         }
       } catch (e) {
         console.error('startDownloadPage error', e);
-        // fallback: show fallback items without login
         document.getElementById('protected-content').style.display = '';
-        renderDownloads(FALLBACK, false);
+        showLoginGate();
       }
     }
 
-    // Kick off after a short delay so common.js can possibly initialize CVI
+    const _langSel = document.getElementById('languageSelect');
+    if (_langSel) _langSel.addEventListener('change', function () { setTimeout(function () { renderDownloads(lastItems); }, 0); });
+
+    // Avvia dopo un breve delay così common.js può inizializzare CVI
     setTimeout(startDownloadPage, 350);
   </script>
 </body>

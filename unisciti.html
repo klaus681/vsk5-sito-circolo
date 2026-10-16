@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unisciti - CVI Virtual</title>
+  <meta name="description" content="Unisciti al Circolo Velico Italia Virtual: registrati per partecipare alle regate, entrare in classifica e far parte della community di Virtual Skipper 5.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -74,27 +75,39 @@
       <form id="register-form" class="auth-form">
         <div class="form-group">
           <label for="nome" data-i18n="label_nome">Nome</label>
-          <input type="text" id="nome" required placeholder="Il tuo nome" autocomplete="given-name">
+          <input type="text" id="nome" required data-i18n-placeholder="placeholder_nome" placeholder="Il tuo nome" autocomplete="given-name">
         </div>
         <div class="form-group">
           <label for="cognome" data-i18n="label_cognome">Cognome</label>
-          <input type="text" id="cognome" required placeholder="Il tuo cognome" autocomplete="family-name">
+          <input type="text" id="cognome" required data-i18n-placeholder="placeholder_cognome" placeholder="Il tuo cognome" autocomplete="family-name">
         </div>
         <div class="form-group">
           <label for="nickname" data-i18n="label_nickname">Nickname</label>
-          <input type="text" id="nickname" required placeholder="Nickname di gioco" autocomplete="username">
+          <input type="text" id="nickname" required data-i18n-placeholder="placeholder_nickname" placeholder="Nickname di gioco" autocomplete="username">
         </div>
         <div class="form-group">
-          <label for="team" data-i18n="label_team">Team</label>
-          <input type="text" id="team" placeholder="Nome del team" autocomplete="organization">
+          <label for="team-select" data-i18n="label_team">Team</label>
+          <select id="team-select">
+            <option value="" data-i18n="team_none">— Nessun team / scegli —</option>
+            <option value="__other__" data-i18n="team_other">Altro (scrivi il nome)…</option>
+          </select>
+          <input type="text" id="team" data-i18n-placeholder="placeholder_team" placeholder="Nome del team" autocomplete="organization" style="display:none;margin-top:0.5rem">
         </div>
         <div class="form-group">
           <label for="email" data-i18n="label_email">Email</label>
-          <input type="email" id="email" required placeholder="tuamail@example.com" autocomplete="email">
+          <input type="email" id="email" required data-i18n-placeholder="placeholder_email" placeholder="tuamail@example.com" autocomplete="email">
         </div>
         <div class="form-group">
           <label for="password" data-i18n="label_password">Password</label>
-          <input type="password" id="password" required minlength="6" placeholder="••••••••" autocomplete="new-password">
+          <input type="password" id="password" required minlength="8" data-i18n-placeholder="placeholder_password" placeholder="••••••••" autocomplete="new-password">
+          <small data-i18n="hint_password" style="color:var(--text-muted);font-size:0.78rem">Almeno 8 caratteri.</small>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-start;gap:0.5rem">
+          <input type="checkbox" id="privacy" required style="margin-top:0.25rem">
+          <div>
+            <label for="privacy" data-i18n="label_privacy" style="font-size:0.85rem;margin:0">Ho letto e accetto il trattamento dei miei dati.</label>
+            <a href="regolamento.html" data-i18n="label_privacy_link" style="font-size:0.85rem;display:inline-block;margin-top:0.15rem">Leggi il regolamento</a>
+          </div>
         </div>
         <button type="submit" class="btn-submit" data-i18n="btn_register">Registrati</button>
       </form>
@@ -102,7 +115,7 @@
         <span data-i18n="has_account">Hai già un account?</span>
         <a href="accedi.html" data-i18n="link_login">Accedi qui</a>
       </div>
-      <div id="reg-msg" class="auth-msg" style="display:none;margin-top:1rem;padding:0.75rem 1rem;border-radius:8px;font-size:0.9rem;"></div>
+      <div id="reg-msg" class="auth-msg" role="status" aria-live="polite" style="display:none;margin-top:1rem;padding:0.75rem 1rem;border-radius:8px;font-size:0.9rem;"></div>
     </div>
   </main>
 
@@ -139,36 +152,117 @@
         join_title: "Unisciti al Circolo", join_subtitle: "Compila il modulo per registrarti e far parte della community.",
         label_nome: "Nome", label_cognome: "Cognome", label_nickname: "Nickname", label_team: "Team",
         label_email: "Email", label_password: "Password", btn_register: "Registrati",
-        has_account: "Hai già un account?", link_login: "Accedi qui"
+        has_account: "Hai già un account?", link_login: "Accedi qui",
+        placeholder_nome: "Il tuo nome", placeholder_cognome: "Il tuo cognome", placeholder_nickname: "Nickname di gioco",
+        placeholder_team: "Nome del team", placeholder_email: "tuamail@example.com", placeholder_password: "Almeno 8 caratteri",
+        hint_password: "Almeno 8 caratteri.",
+        team_none: "— Nessun team / scegli —", team_other: "Altro (scrivi il nome)…",
+        label_privacy: "Ho letto e accetto il trattamento dei miei dati.", label_privacy_link: "Leggi il regolamento",
+        msg_register_ok: "Registrazione completata! Controlla la email se è richiesta la conferma, poi accedi.",
+        msg_profile_warn: "Nota: se la conferma email è attiva, il profilo verrà completato al primo accesso.",
+        msg_error_prefix: "Errore: "
       },
       en: {
         join_title: "Join the Club", join_subtitle: "Fill the form to register and join the community.",
         label_nome: "First name", label_cognome: "Last name", label_nickname: "Nickname", label_team: "Team",
         label_email: "Email", label_password: "Password", btn_register: "Register",
-        has_account: "Already have an account?", link_login: "Log in here"
+        has_account: "Already have an account?", link_login: "Log in here",
+        placeholder_nome: "Your first name", placeholder_cognome: "Your last name", placeholder_nickname: "Game nickname",
+        placeholder_team: "Team name", placeholder_email: "you@example.com", placeholder_password: "At least 8 characters",
+        hint_password: "At least 8 characters.",
+        team_none: "— No team / choose —", team_other: "Other (type the name)…",
+        label_privacy: "I have read and accept the processing of my data.", label_privacy_link: "Read the rules",
+        msg_register_ok: "Registration complete! Check your email if confirmation is required, then log in.",
+        msg_profile_warn: "Note: if email confirmation is enabled, your profile will be completed at first login.",
+        msg_error_prefix: "Error: "
       },
       fr: {
         join_title: "Rejoindre le Club", join_subtitle: "Remplissez le formulaire pour vous inscrire.",
         label_nome: "Prénom", label_cognome: "Nom", label_nickname: "Pseudo", label_team: "Équipe",
         label_email: "Email", label_password: "Mot de passe", btn_register: "S'inscrire",
-        has_account: "Déjà un compte ?", link_login: "Se connecter"
+        has_account: "Déjà un compte ?", link_login: "Se connecter",
+        placeholder_nome: "Votre prénom", placeholder_cognome: "Votre nom", placeholder_nickname: "Pseudo de jeu",
+        placeholder_team: "Nom de l'équipe", placeholder_email: "vous@example.com", placeholder_password: "Au moins 8 caractères",
+        hint_password: "Au moins 8 caractères.",
+        team_none: "— Aucune équipe / choisir —", team_other: "Autre (saisir le nom)…",
+        label_privacy: "J'ai lu et j'accepte le traitement de mes données.", label_privacy_link: "Lire le règlement",
+        msg_register_ok: "Inscription terminée ! Vérifiez votre email si une confirmation est requise, puis connectez-vous.",
+        msg_profile_warn: "Remarque : si la confirmation par email est activée, le profil sera complété à la première connexion.",
+        msg_error_prefix: "Erreur : "
       },
       es: {
         join_title: "Únete al Club", join_subtitle: "Completa el formulario para registrarte.",
         label_nome: "Nombre", label_cognome: "Apellido", label_nickname: "Apodo", label_team: "Equipo",
         label_email: "Email", label_password: "Contraseña", btn_register: "Registrarse",
-        has_account: "¿Ya tienes cuenta?", link_login: "Accede aquí"
+        has_account: "¿Ya tienes cuenta?", link_login: "Accede aquí",
+        placeholder_nome: "Tu nombre", placeholder_cognome: "Tu apellido", placeholder_nickname: "Apodo de juego",
+        placeholder_team: "Nombre del equipo", placeholder_email: "tu@example.com", placeholder_password: "Al menos 8 caracteres",
+        hint_password: "Al menos 8 caracteres.",
+        team_none: "— Sin equipo / elegir —", team_other: "Otro (escribe el nombre)…",
+        label_privacy: "He leído y acepto el tratamiento de mis datos.", label_privacy_link: "Leer el reglamento",
+        msg_register_ok: "¡Registro completado! Revisa tu correo si se requiere confirmación y luego inicia sesión.",
+        msg_profile_warn: "Nota: si la confirmación por correo está activada, el perfil se completará al primer inicio de sesión.",
+        msg_error_prefix: "Error: "
       }
     };
 
+    function currentT() { return extra[(window.CVI && CVI.currentLang) || 'it'] || extra.it; }
+
+    // I placeholder non sono gestiti da common.js: li applichiamo qui.
+    function applyPlaceholders() {
+      const t = currentT();
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+        const k = el.getAttribute('data-i18n-placeholder');
+        if (t[k]) el.setAttribute('placeholder', t[k]);
+      });
+    }
+
+    // Team: tendina con i team esistenti + opzione "Altro" con campo libero
+    async function loadTeamsIntoSelect() {
+      const sel = document.getElementById('team-select');
+      if (!sel || !window.CVI || !CVI.supabase) return;
+      try {
+        const { data, error } = await CVI.supabase.from('teams').select('id,nome_team,nome');
+        if (error) throw error;
+        const names = (data || []).map(function (t) { return (t.nome_team || t.nome || '').trim(); })
+          .filter(Boolean).sort(function (a, b) { return a.localeCompare(b, 'it'); });
+        const other = sel.querySelector('option[value="__other__"]');
+        names.forEach(function (n) {
+          const o = document.createElement('option');
+          o.value = n; o.textContent = n;
+          sel.insertBefore(o, other);
+        });
+      } catch (e) { console.warn('teams select:', e && e.message); }
+    }
+
+    function teamValue() {
+      const sel = document.getElementById('team-select');
+      const inp = document.getElementById('team');
+      if (!sel) return inp ? inp.value.trim() : '';
+      if (sel.value === '__other__') return inp ? inp.value.trim() : '';
+      return sel.value;
+    }
+
+    (function wireTeamSelect() {
+      const sel = document.getElementById('team-select');
+      const inp = document.getElementById('team');
+      if (!sel || !inp) return;
+      sel.addEventListener('change', function () {
+        const other = sel.value === '__other__';
+        inp.style.display = other ? '' : 'none';
+        if (!other) inp.value = '';
+      });
+    })();
+
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const t = currentT();
       const msg = document.getElementById('reg-msg');
       msg.style.display = 'none';
       const nome = document.getElementById('nome').value.trim();
       const cognome = document.getElementById('cognome').value.trim();
       const nickname = document.getElementById('nickname').value.trim();
-      const team = document.getElementById('team').value.trim();
+      const team = teamValue();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const { data, error } = await CVI.supabase.auth.signUp({
@@ -176,27 +270,37 @@
         options: { data: { nome, cognome, nickname, team } }
       });
       if (error) {
-        msg.textContent = error.message;
+        msg.textContent = t.msg_error_prefix + error.message;
         msg.style.display = 'block';
         msg.style.background = 'rgba(248,113,113,0.12)';
         msg.style.color = '#f87171';
         return;
       }
+      // Il profilo si crea solo se la sessione è attiva (con la conferma email potrebbe non esserlo).
+      let profileWarn = false;
       if (data.user) {
-        await CVI.supabase.from('profiles').upsert({
-          id: data.user.id,
-          nome, cognome, nickname, team,
-          email
+        const { error: pErr } = await CVI.supabase.from('profiles').upsert({
+          id: data.user.id, nome, cognome, nickname, team, email
         });
+        if (pErr) { profileWarn = true; console.warn('profiles upsert:', pErr.message); }
       }
-      msg.textContent = 'Registrazione completata! Controlla la email se richiesta conferma, poi accedi.';
+      msg.style.whiteSpace = 'pre-line';
+      msg.textContent = t.msg_register_ok + (profileWarn ? '\n' + t.msg_profile_warn : '');
       msg.style.display = 'block';
       msg.style.background = 'rgba(52,211,153,0.15)';
       msg.style.color = '#34d399';
       setTimeout(() => { window.location.href = 'accedi.html'; }, 2000);
     });
 
-    CVI.init('unisciti.html', extra);
+    const _origInit = CVI.init;
+    CVI.init = function (a) {
+      _origInit(a, extra);
+      applyPlaceholders();
+      loadTeamsIntoSelect();
+    };
+    const _langSel = document.getElementById('languageSelect');
+    if (_langSel) _langSel.addEventListener('change', function () { setTimeout(applyPlaceholders, 0); });
+    CVI.init('unisciti.html');
   </script>
 </body>
 </html>

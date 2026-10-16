@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contatti - CVI Virtual</title>
+  <meta name="description" content="Contatta il Circolo Velico Italia Virtual: email ufficiale e modulo di contatto per domande su regate, iscrizioni e squadre.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -95,7 +96,7 @@
         <textarea id="contact-msg" data-i18n-placeholder="placeholder_msg" placeholder="Il tuo messaggio..." required></textarea>
       </div>
       <button type="submit" class="btn-submit" data-i18n="btn_send">Invia messaggio</button>
-      <p id="form-status" style="margin-top: 15px; font-weight: 500; font-size: 0.95rem;"></p>
+      <p id="form-status" role="status" aria-live="polite" style="margin-top: 15px; font-weight: 500; font-size: 0.95rem;"></p>
     </form>
   </main>
 
@@ -139,7 +140,11 @@
         placeholder_name: "Il tuo nome / Nickname",
         placeholder_email: "La tua email",
         placeholder_msg: "Il tuo messaggio...",
-        btn_send: "Invia messaggio"
+        btn_send: "Invia messaggio",
+        msg_fill_all: "Compila tutti i campi.",
+        msg_mail_opening: "Si sta aprendo il tuo client email… Se non parte, scrivi a {email}",
+        mail_subject_prefix: "Contatto CVI Virtual –",
+        mail_body_name: "Nome", mail_body_email: "Email"
       },
       en: {
         contact_title: "Contact",
@@ -150,7 +155,11 @@
         placeholder_name: "Your name / Nickname",
         placeholder_email: "Your email",
         placeholder_msg: "Your message...",
-        btn_send: "Send message"
+        btn_send: "Send message",
+        msg_fill_all: "Please fill in all fields.",
+        msg_mail_opening: "Opening your email client… If nothing happens, write to {email}",
+        mail_subject_prefix: "CVI Virtual contact –",
+        mail_body_name: "Name", mail_body_email: "Email"
       },
       fr: {
         contact_title: "Contact",
@@ -161,7 +170,11 @@
         placeholder_name: "Votre nom / Pseudo",
         placeholder_email: "Votre email",
         placeholder_msg: "Votre message...",
-        btn_send: "Envoyer"
+        btn_send: "Envoyer",
+        msg_fill_all: "Veuillez remplir tous les champs.",
+        msg_mail_opening: "Ouverture de votre client mail… S'il ne s'ouvre pas, écrivez à {email}",
+        mail_subject_prefix: "Contact CVI Virtual –",
+        mail_body_name: "Nom", mail_body_email: "Email"
       },
       es: {
         contact_title: "Contacto",
@@ -172,27 +185,50 @@
         placeholder_name: "Tu nombre / Apodo",
         placeholder_email: "Tu email",
         placeholder_msg: "Tu mensaje...",
-        btn_send: "Enviar mensaje"
+        btn_send: "Enviar mensaje",
+        msg_fill_all: "Completa todos los campos.",
+        msg_mail_opening: "Abriendo tu cliente de correo… Si no se abre, escribe a {email}",
+        mail_subject_prefix: "Contacto CVI Virtual –",
+        mail_body_name: "Nombre", mail_body_email: "Email"
       }
     };
-    document.getElementById('contact-form').addEventListener('submit', function(e) {
+    const CONTACT_EMAIL = 'circolovelicoitalia@outlook.it';
+
+    function currentT() { return extra[(window.CVI && CVI.currentLang) || 'it'] || extra.it; }
+
+    // I placeholder non sono gestiti da common.js: li applichiamo qui.
+    function applyPlaceholders() {
+      const t = currentT();
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+        const k = el.getAttribute('data-i18n-placeholder');
+        if (t[k]) el.setAttribute('placeholder', t[k]);
+      });
+    }
+
+    document.getElementById('contact-form').addEventListener('submit', function (e) {
       e.preventDefault();
+      const t = currentT();
       const name = document.getElementById('contact-name').value.trim();
       const email = document.getElementById('contact-email').value.trim();
       const msg = document.getElementById('contact-msg').value.trim();
       const statusEl = document.getElementById('form-status');
       if (!name || !email || !msg) {
-        statusEl.textContent = 'Compila tutti i campi.';
+        statusEl.textContent = t.msg_fill_all;
         statusEl.style.color = '#f87171';
         return;
       }
-      const subject = encodeURIComponent('Contatto CVI Virtual – ' + name);
-      const body = encodeURIComponent('Nome: ' + name + '\nEmail: ' + email + '\n\n' + msg);
-      window.location.href = 'mailto:circolovelicoitalia@outlook.it?subject=' + subject + '&body=' + body;
-      statusEl.textContent = 'Si apre il tuo client email… Se non parte, scrivi a circolovelicoitalia@outlook.it';
+      const subject = encodeURIComponent(t.mail_subject_prefix + ' ' + name);
+      const body = encodeURIComponent(t.mail_body_name + ': ' + name + '\n' + t.mail_body_email + ': ' + email + '\n\n' + msg);
+      window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + subject + '&body=' + body;
+      statusEl.textContent = (t.msg_mail_opening || '').replace('{email}', CONTACT_EMAIL);
       statusEl.style.color = '#34d399';
     });
-    CVI.init('contatti.html', extra);
+
+    const _origInit = CVI.init;
+    CVI.init = function (a) { _origInit(a, extra); applyPlaceholders(); };
+    const _langSel = document.getElementById('languageSelect');
+    if (_langSel) _langSel.addEventListener('change', function () { setTimeout(applyPlaceholders, 0); });
+    CVI.init('contatti.html');
   </script>
 </body>
 </html>
