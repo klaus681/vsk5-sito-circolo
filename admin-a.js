@@ -82,9 +82,26 @@ async function loadSoci(){
   }catch(e){box.innerHTML='<p class="empty-text" style="color:#f87171">'+esc(e.message||e)+'</p>';}
 }
 
-function resetGara(){document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value="ufficiale";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
+function injectTipoField(){
+  if(document.getElementById("gara-tipo"))return;
+  var num=document.getElementById("gara-num");
+  if(!num)return;
+  var wrap=document.createElement("div");
+  wrap.innerHTML='<label class="adm-label" for="gara-tipo">Tipo gara</label>'+
+    '<select class="adm-select" id="gara-tipo" style="width:100%;max-width:28rem">'+
+    '<option value="ufficiale">Ufficiale (soci) – iscrizione + classifica</option>'+
+    '<option value="speciale">Speciale – iscrizione + classifica</option>'+
+    '<option value="aperto">Evento aperto – no iscrizione, no classifica</option>'+
+    '</select>';
+  var parent=num.closest("div")||num.parentNode;
+  if(parent&&parent.parentNode)parent.parentNode.insertBefore(wrap, parent.nextSibling);
+  else if(parent)parent.appendChild(wrap);
+}
+
+function resetGara(){injectTipoField();document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value="ufficiale";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
 
 async function loadGare(){
+  injectTipoField();
   var box=document.getElementById("gare-list");box.innerHTML='<p class="loading-text">…</p>';
   try{
     var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,tipo").order("data_gara",{ascending:false});
@@ -117,7 +134,7 @@ async function loadGare(){
       var iscrBlock='<div style="margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="font-size:.8rem;color:#94a3b8;font-weight:600">Iscritti: <strong style="color:#7dd3fc">'+list.length+'</strong></span>'+(list.length?'<button type="button" class="btn-sm gara-dl-iscr" data-id="'+esc(g.id)+'">⬇ CSV iscritti</button>':'')+'</div>'+(list.length?'<div style="font-size:.82rem;color:#cbd5e1;line-height:1.45">'+nicks+'</div>':'<div style="font-size:.82rem;color:#64748b">Nessun iscritto</div>')+'</div>';
       return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate · '+tipoLab+' · iscr. -'+chOre+'h'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
     }).join(""):'<p class="empty-text">Nessuna gara.</p>';
-    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value=(g.tipo||"ufficiale");var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
+    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){injectTipoField();var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value=(g.tipo||"ufficiale");var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
     box.querySelectorAll(".gara-del").forEach(function(b){b.onclick=async function(){if(!confirm("Eliminare?"))return;await CVI.supabase.from("gare").delete().eq("id",b.getAttribute("data-id"));status("Eliminata","ok");loadGare();};});
     box.querySelectorAll(".gara-dl-iscr").forEach(function(b){b.onclick=function(){downloadIscrittiAdmin(b.getAttribute("data-id"));};});
     fillGaraSel();
@@ -141,6 +158,7 @@ function downloadIscrittiAdmin(garaId){
 
 async function saveGara(e){
   e.preventDefault();
+  injectTipoField();
   var id=document.getElementById("gara-id").value.trim(),titolo=document.getElementById("gara-titolo").value.trim(),dl=document.getElementById("gara-data").value,desc=document.getElementById("gara-desc").value.trim(),nr=Math.min(3,Math.max(1,parseInt(document.getElementById("gara-num").value,10)||1));
   var chEl=document.getElementById("gara-chiusura");var chiusura_ore=chEl?parseInt(chEl.value,10):2;if(isNaN(chiusura_ore)||chiusura_ore<0)chiusura_ore=2;if(chiusura_ore>168)chiusura_ore=168;
   if(!titolo||!dl)return alert("Titolo e data obbligatori");
