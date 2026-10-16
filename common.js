@@ -11,7 +11,7 @@
   const NAV_KEYS = {
     it: {
       nav_home: 'Home', nav_team: 'Team', nav_gare: 'Gare & Eventi ▾',
-      nav_gare_sub: 'Calendario', nav_classifiche: 'Classifiche', nav_proteste: 'Proteste',
+      nav_gare_sub: 'Calendario', nav_cal_vista: 'Vista calendario', nav_classifiche: 'Classifiche', nav_proteste: 'Proteste',
       nav_albo: "Albo d'Oro", nav_regolamento: 'Regolamento', nav_download: 'Download',
       nav_contatti: 'Contatti', nav_membri: 'Membri', nav_unisciti: 'Unisciti',
       nav_accedi: 'Accedi', nav_area_membri: 'Il mio profilo',
@@ -19,7 +19,7 @@
     },
     en: {
       nav_home: 'Home', nav_team: 'Teams', nav_gare: 'Races & Events ▾',
-      nav_gare_sub: 'Calendar', nav_classifiche: 'Standings', nav_proteste: 'Protests',
+      nav_gare_sub: 'Calendar', nav_cal_vista: 'Calendar view', nav_classifiche: 'Standings', nav_proteste: 'Protests',
       nav_albo: 'Hall of Fame', nav_regolamento: 'Rules', nav_download: 'Download',
       nav_contatti: 'Contact', nav_membri: 'Members', nav_unisciti: 'Join Us',
       nav_accedi: 'Login', nav_area_membri: 'My profile',
@@ -27,7 +27,7 @@
     },
     fr: {
       nav_home: 'Accueil', nav_team: 'Équipes', nav_gare: 'Courses & Événements ▾',
-      nav_gare_sub: 'Calendrier', nav_classifiche: 'Classements', nav_proteste: 'Réclamations',
+      nav_gare_sub: 'Calendrier', nav_cal_vista: 'Vue calendrier', nav_classifiche: 'Classements', nav_proteste: 'Réclamations',
       nav_albo: 'Temple de la Renommée', nav_regolamento: 'Règlement', nav_download: 'Téléchargements',
       nav_contatti: 'Contact', nav_membri: 'Membres', nav_unisciti: 'Rejoindre',
       nav_accedi: 'Connexion', nav_area_membri: 'Mon profil',
@@ -35,7 +35,7 @@
     },
     es: {
       nav_home: 'Inicio', nav_team: 'Equipos', nav_gare: 'Regatas y Eventos ▾',
-      nav_gare_sub: 'Calendario', nav_classifiche: 'Clasificación', nav_proteste: 'Protestas',
+      nav_gare_sub: 'Calendario', nav_cal_vista: 'Vista calendario', nav_classifiche: 'Clasificación', nav_proteste: 'Protestas',
       nav_albo: 'Salón de la Fama', nav_regolamento: 'Reglamento', nav_download: 'Descargas',
       nav_contatti: 'Contacto', nav_membri: 'Miembros', nav_unisciti: 'Únete',
       nav_accedi: 'Acceder', nav_area_membri: 'Mi perfil',
@@ -280,7 +280,7 @@
 })();
 
 
-/* —— Extra CVI: link Proteste / Eventi aperti nel menu a tendina —— */
+/* —— Extra CVI: link Proteste / Eventi aperti / Vista calendario nel menu a tendina —— */
 (function () {
   "use strict";
   var _ens = window.CVI && window.CVI.ensureNavLinks;
@@ -304,9 +304,10 @@
       }
       var lang = window.CVI.currentLang || "it";
       var pr = ({ it: "Proteste", en: "Protests", fr: "R\u00e9clamations", es: "Protestas" })[lang] || "Proteste";
+      var calLabel = ({ it: "Vista calendario", en: "Calendar view", fr: "Vue calendrier", es: "Vista calendario" })[lang] || "Vista calendario";
+      addDrop("calendario.html", calLabel);
       addDrop("proteste.html", pr);
       addDrop("eventi-aperti.html", "Eventi aperti");
     };
   }
 })();
-

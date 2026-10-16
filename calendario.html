@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Calendario mensile e settimanale delle regate ufficiali e degli eventi aperti del Circolo Velico Italia.">
+  <title>Calendario – CVI Virtual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="logo-cvi.png">
+  <style>
+    .cal-page { max-width: 1100px; margin: 0 auto; }
+    .cal-toolbar {
+      display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+      justify-content: space-between; margin-bottom: 1.25rem;
+    }
+    .cal-nav { display: flex; align-items: center; gap: 0.5rem; }
+    .cal-nav button {
+      background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.35);
+      color: #7dd3fc; width: 38px; height: 38px; border-radius: 8px;
+      font-size: 1.1rem; cursor: pointer; font-family: inherit; font-weight: 700;
+    }
+    .cal-nav button:hover { background: rgba(56,189,248,0.22); }
+    .cal-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.35rem; color: #fff; margin: 0; min-width: 180px; text-align: center;
+    }
+    .cal-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .cal-view-toggle, .cal-filter {
+      background: #0b0f19; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 0.45rem 0.75rem; font-family: inherit; font-size: 0.88rem;
+      font-weight: 600; cursor: pointer;
+    }
+    .cal-view-toggle.active {
+      background: rgba(56,189,248,0.18); color: #7dd3fc; border-color: rgba(56,189,248,0.45);
+    }
+    .cal-legend {
+      display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;
+      font-size: 0.82rem; color: #94a3b8;
+    }
+    .cal-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .cal-dot {
+      width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+    }
+    .cal-dot.ufficiale { background: #38bdf8; }
+    .cal-dot.aperto { background: #34d399; }
+
+    /* Monthly grid */
+    .cal-month-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; overflow: hidden;
+    }
+    .cal-weekday {
+      background: #111827; color: #94a3b8; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; padding: 0.55rem 0.4rem;
+      text-align: center;
+    }
+    .cal-day {
+      background: #0f1524; min-height: 92px; padding: 0.35rem 0.4rem;
+      position: relative; vertical-align: top;
+    }
+    .cal-day.other-month { background: #0b0f19; opacity: 0.45; }
+    .cal-day.today { background: rgba(56,189,248,0.08); }
+    .cal-day-num {
+      font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.25rem;
+    }
+    .cal-day.today .cal-day-num { color: #7dd3fc; }
+    .cal-event {
+      display: block; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.35rem;
+      border-radius: 4px; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; cursor: pointer; text-decoration: none; color: #0b0f19;
+      line-height: 1.25;
+    }
+    .cal-event.ufficiale { background: #38bdf8; }
+    .cal-event.aperto { background: #34d399; }
+    .cal-event:hover { filter: brightness(1.12); }
+    .cal-event.past { opacity: 0.65; }
+    .cal-more {
+      font-size: 0.7rem; color: #7dd3fc; cursor: pointer; margin-top: 0.15rem;
+    }
+
+    /* Weekly view */
+    .cal-week-grid {
+      display: grid; grid-template-columns: 56px repeat(7, 1fr); gap: 1px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; overflow: hidden;
+    }
+    .cal-week-corner, .cal-week-head {
+      background: #111827; color: #94a3b8; font-size: 0.75rem; font-weight: 700;
+      padding: 0.55rem 0.35rem; text-align: center;
+    }
+    .cal-week-head.today-col { color: #7dd3fc; }
+    .cal-week-hour {
+      background: #0f1524; color: #64748b; font-size: 0.7rem; padding: 0.35rem 0.25rem;
+      text-align: right; min-height: 48px;
+    }
+    .cal-week-cell {
+      background: #0f1524; min-height: 48px; padding: 0.2rem; position: relative;
+    }
+    .cal-week-cell.today-col { background: rgba(56,189,248,0.06); }
+    .cal-week-event {
+      display: block; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.4rem;
+      border-radius: 5px; margin-bottom: 0.2rem; text-decoration: none; color: #0b0f19;
+      line-height: 1.3;
+    }
+    .cal-week-event.ufficiale { background: #38bdf8; }
+    .cal-week-event.aperto { background: #34d399; }
+    .cal-week-event:hover { filter: brightness(1.12); }
+
+    /* Detail modal */
+    .cal-modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9500;
+      display: none; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .cal-modal-backdrop.open { display: flex; }
+    .cal-modal {
+      background: #111827; border: 1px solid rgba(56,189,248,0.3); border-radius: 14px;
+      padding: 1.35rem 1.5rem; max-width: 420px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .cal-modal h3 { margin: 0 0 0.4rem; color: #7dd3fc; font-size: 1.15rem; }
+    .cal-modal .meta { color: #94a3b8; font-size: 0.88rem; margin-bottom: 0.75rem; }
+    .cal-modal .desc { color: #cbd5e1; font-size: 0.92rem; line-height: 1.5; margin-bottom: 1rem; white-space: pre-wrap; }
+    .cal-modal-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .cal-modal-actions a, .cal-modal-actions button {
+      padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.88rem;
+      font-family: inherit; cursor: pointer; text-decoration: none;
+    }
+    .cal-btn-primary { background: #38bdf8; color: #0b0f19; border: none; }
+    .cal-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); }
+
+    .cal-loading, .cal-empty { color: #94a3b8; text-align: center; padding: 2.5rem 1rem; }
+    .cal-error { color: #f87171; text-align: center; padding: 1.5rem; }
+
+    @media (max-width: 720px) {
+      .cal-day { min-height: 72px; }
+      .cal-event { font-size: 0.65rem; padding: 0.12rem 0.25rem; }
+      .cal-title { font-size: 1.1rem; min-width: 140px; }
+      .cal-week-grid { font-size: 0.7rem; }
+      .cal-week-hour { min-height: 40px; }
+      .cal-week-cell { min-height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="calendario.html" class="active">Vista calendario</a></li>
+            <li><a href="live.html">Live</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+            <li><a href="proteste.html" data-i18n="nav_proteste">Proteste</a></li>
+            <li><a href="eventi-aperti.html">Eventi aperti</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario lista</a>
+      <a href="calendario.html">→ Vista calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+      <a href="proteste.html">→ Proteste</a>
+      <a href="eventi-aperti.html">→ Eventi aperti</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="content-box cal-page">
+      <h1>Calendario</h1>
+      <p class="subtitle">Vista mensile e settimanale di gare ufficiali ed eventi aperti.</p>
+
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <button type="button" id="cal-prev" aria-label="Precedente">‹</button>
+          <h2 class="cal-title" id="cal-title">—</h2>
+          <button type="button" id="cal-next" aria-label="Successivo">›</button>
+          <button type="button" id="cal-today" class="cal-view-toggle" style="width:auto;padding:0.4rem 0.7rem;font-size:0.8rem">Oggi</button>
+        </div>
+        <div class="cal-controls">
+          <button type="button" class="cal-view-toggle active" data-view="month" id="btn-month">Mese</button>
+          <button type="button" class="cal-view-toggle" data-view="week" id="btn-week">Settimana</button>
+          <select id="cal-filter" class="cal-filter" aria-label="Filtro">
+            <option value="all">Tutte</option>
+            <option value="ufficiali">Solo ufficiali</option>
+            <option value="aperti">Solo eventi aperti</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cal-legend">
+        <span><i class="cal-dot ufficiale"></i> Gare ufficiali</span>
+        <span><i class="cal-dot aperto"></i> Eventi aperti</span>
+      </div>
+
+      <div id="cal-container">
+        <p class="cal-loading">Caricamento calendario…</p>
+      </div>
+    </div>
+  </main>
+
+  <div class="cal-modal-backdrop" id="cal-modal" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title">
+    <div class="cal-modal">
+      <h3 id="cal-modal-title">—</h3>
+      <div class="meta" id="cal-modal-meta"></div>
+      <div class="desc" id="cal-modal-desc"></div>
+      <div class="cal-modal-actions">
+        <a href="#" id="cal-modal-link" class="cal-btn-primary" target="_self">Apri dettaglio</a>
+        <button type="button" class="cal-btn-ghost" id="cal-modal-close">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span>
+        <p>Circolo Velico Italia · Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo-doro.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario lista</a>
+          <a href="calendario.html">Vista calendario</a>
+          <a href="eventi-aperti.html">Eventi aperti</a>
+          <a href="download.html">Download</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
+  </footer>
+
+  <script src="common.js"></script>
+  <script src="calendario.js"></script>
+</body>
+</html>
