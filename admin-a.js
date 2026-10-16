@@ -98,13 +98,26 @@ function injectTipoField(){
   else if(parent)parent.appendChild(wrap);
 }
 
-function resetGara(){injectTipoField();document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value="ufficiale";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
+function injectMaxField(){
+  if(document.getElementById("gara-max"))return;
+  var anchor=document.getElementById("gara-tipo");
+  var num=document.getElementById("gara-num");
+  var ref=anchor?anchor.closest("div"):(num?num.closest("div"):null);
+  if(!ref)return;
+  var wrap=document.createElement("div");
+  wrap.innerHTML='<label class="adm-label" for="gara-max">Numero massimo iscritti (vuoto = illimitato)</label>'+
+    '<input type="number" min="1" step="1" class="adm-input" id="gara-max" placeholder="es. 20" style="width:8rem">';
+  if(ref.parentNode)ref.parentNode.insertBefore(wrap, ref.nextSibling);
+}
+
+function resetGara(){injectTipoField();injectMaxField();document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value="ufficiale";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";var mx=document.getElementById("gara-max");if(mx)mx.value="";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
 
 async function loadGare(){
   injectTipoField();
+  injectMaxField();
   var box=document.getElementById("gare-list");box.innerHTML='<p class="loading-text">…</p>';
   try{
-    var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,tipo").order("data_gara",{ascending:false});
+    var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,tipo,max_iscritti").order("data_gara",{ascending:false});
     if(res.error){
       res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore").order("data_gara",{ascending:false});
     }
@@ -129,12 +142,13 @@ async function loadGare(){
       var chOre=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;if(isNaN(chOre)||chOre<0)chOre=2;
       var tipoLab=(function(t){t=(t||"ufficiale").toLowerCase();return t==="aperto"?"Aperto":(t==="speciale"?"Speciale":"Ufficiale");})(g.tipo);
       var list=cacheIscrittiAdmin[String(g.id)]||[];
+      var cap=g.max_iscritti!=null?parseInt(g.max_iscritti,10):null;if(cap!=null&&(isNaN(cap)||cap<1))cap=null;
       var nicks=list.slice(0,12).map(function(p){var label=esc(p.nickname||p.nome||'?');if(p.team)label+=' ('+esc(p.team)+')';return label;}).join(', ');
       if(list.length>12)nicks+=" … +"+(list.length-12);
-      var iscrBlock='<div style="margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="font-size:.8rem;color:#94a3b8;font-weight:600">Iscritti: <strong style="color:#7dd3fc">'+list.length+'</strong></span>'+(list.length?'<button type="button" class="btn-sm gara-dl-iscr" data-id="'+esc(g.id)+'">⬇ CSV iscritti</button>':'')+'</div>'+(list.length?'<div style="font-size:.82rem;color:#cbd5e1;line-height:1.45">'+nicks+'</div>':'<div style="font-size:.82rem;color:#64748b">Nessun iscritto</div>')+'</div>';
+      var iscrBlock='<div style="margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="font-size:.8rem;color:#94a3b8;font-weight:600">Iscritti: <strong style="color:#7dd3fc">'+list.length+(cap!=null?(' / '+cap):'')+'</strong>'+(cap!=null&&list.length>=cap?' <span style="display:inline-block;background:rgba(248,113,113,.15);color:#f87171;font-size:.68rem;font-weight:700;padding:.1rem .45rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em">Al completo</span>':'')+'</span>'+(list.length?'<button type="button" class="btn-sm gara-dl-iscr" data-id="'+esc(g.id)+'">⬇ CSV iscritti</button>':'')+'</div>'+(list.length?'<div style="font-size:.82rem;color:#cbd5e1;line-height:1.45">'+nicks+'</div>':'<div style="font-size:.82rem;color:#64748b">Nessun iscritto</div>')+'</div>';
       return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate · '+tipoLab+' · iscr. -'+chOre+'h'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
     }).join(""):'<p class="empty-text">Nessuna gara.</p>';
-    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){injectTipoField();var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value=(g.tipo||"ufficiale");var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
+    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){injectTipoField();injectMaxField();var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value=(g.tipo||"ufficiale");var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}var mxEl=document.getElementById("gara-max");if(mxEl)mxEl.value=(g.max_iscritti!=null?String(g.max_iscritti):"");document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
     box.querySelectorAll(".gara-del").forEach(function(b){b.onclick=async function(){if(!confirm("Eliminare?"))return;await CVI.supabase.from("gare").delete().eq("id",b.getAttribute("data-id"));status("Eliminata","ok");loadGare();};});
     box.querySelectorAll(".gara-dl-iscr").forEach(function(b){b.onclick=function(){downloadIscrittiAdmin(b.getAttribute("data-id"));};});
     fillGaraSel();
@@ -161,9 +175,10 @@ async function saveGara(e){
   injectTipoField();
   var id=document.getElementById("gara-id").value.trim(),titolo=document.getElementById("gara-titolo").value.trim(),dl=document.getElementById("gara-data").value,desc=document.getElementById("gara-desc").value.trim(),nr=Math.min(3,Math.max(1,parseInt(document.getElementById("gara-num").value,10)||1));
   var chEl=document.getElementById("gara-chiusura");var chiusura_ore=chEl?parseInt(chEl.value,10):2;if(isNaN(chiusura_ore)||chiusura_ore<0)chiusura_ore=2;if(chiusura_ore>168)chiusura_ore=168;
+  var mxEl=document.getElementById("gara-max");var max_iscritti=(mxEl&&mxEl.value.trim()!=="")?parseInt(mxEl.value,10):null;if(max_iscritti!=null&&(isNaN(max_iscritti)||max_iscritti<1))max_iscritti=null;
   if(!titolo||!dl)return alert("Titolo e data obbligatori");
   var tipoEl=document.getElementById("gara-tipo");var tipo=(tipoEl&&tipoEl.value)||"ufficiale";if(["ufficiale","speciale","aperto"].indexOf(tipo)<0)tipo="ufficiale";
-  var payload={titolo:titolo,descrizione:desc||null,data_gara:new Date(dl).toISOString(),num_regate:nr,chiusura_ore:chiusura_ore,tipo:tipo};
+  var payload={titolo:titolo,descrizione:desc||null,data_gara:new Date(dl).toISOString(),num_regate:nr,chiusura_ore:chiusura_ore,tipo:tipo,max_iscritti:max_iscritti};
   var btn=document.getElementById("gara-save-btn");btn.disabled=true;
   try{if(id)await CVI.supabase.from("gare").update(payload).eq("id",id);else await CVI.supabase.from("gare").insert(payload);status(id?"Aggiornata":"Creata","ok");resetGara();loadGare();}catch(err){alert(err.message||err);}finally{btn.disabled=false;}
 }
