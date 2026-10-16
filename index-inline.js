@@ -38,6 +38,17 @@ function ensureAudienceBadgeStyles() {
   document.head.appendChild(s);
 }
 
+function ensureIscrittiBadgeStyles() {
+  if (document.getElementById('cvi-iscritti-badge-css')) return;
+  var s = document.createElement('style');
+  s.id = 'cvi-iscritti-badge-css';
+  s.textContent = [
+    '.badge-stato.is-iscritti{background:rgba(56,189,248,.15);color:#7dd3fc}',
+    '.badge-stato.is-full{background:rgba(248,113,113,.18);color:#f87171}'
+  ].join('');
+  document.head.appendChild(s);
+}
+
 function audienceBadge(gara) {
   var t = ((gara && gara.tipo) || 'ufficiale').toLowerCase();
   if (t === 'aperto') return { key: 'aperto', label: 'Evento aperto' };
@@ -160,17 +171,25 @@ async function caricaProssimaGara() {
       return;
     }
     const now = new Date().toISOString();
-    let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
+    let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo, max_iscritti').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
     if (error) {
       console.warn('gare future:', error.message);
-      var fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
+      var fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
       data = fb.data; error = fb.error;
+      if (error) {
+        var fb2 = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
+        data = fb2.data; error = fb2.error;
+      }
       if (error) { console.warn('gare future fallback:', error.message); data = null; }
     }
     if (!data || !data.length) {
-      const past = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').order('data_gara', { ascending: false }).limit(1);
+      const past = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo, max_iscritti').order('data_gara', { ascending: false }).limit(1);
       var pastData = past.data;
       if (past.error || !pastData || !pastData.length) {
+        var past1 = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').order('data_gara', { ascending: false }).limit(1);
+        pastData = past1.data;
+      }
+      if (!pastData || !pastData.length) {
         var past2 = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').order('data_gara', { ascending: false }).limit(1);
         pastData = past2.data;
       }
@@ -188,19 +207,33 @@ async function caricaProssimaGara() {
         if (liveBtnEl) liveBtnEl.style.display = 'none';
         if (bt) bt.textContent = 'Calendario';
         if (ba) ba.style.display = 'none';
+        var bi=document.getElementById('regata-badge-iscritti');if(bi){bi.style.display='none';bi.textContent='';}
         var cd=document.getElementById('regata-countdown');if(cd)cd.style.display='none';
         if(_cviCountdownTimer){clearInterval(_cviCountdownTimer);_cviCountdownTimer=null;}
         return;
       }
-      fillRegata(pastData[0]);
+      await fillRegataConIscritti(pastData[0]);
       return;
     }
-    fillRegata(data[0]);
+    await fillRegataConIscritti(data[0]);
   } catch (err) {
     console.error(err);
     const el = document.getElementById('regata-titolo');
     if (el) el.textContent = 'Impossibile caricare le gare';
   }
+}
+
+async function fillRegataConIscritti(gara) {
+  if (gara && gara.id && ((gara.tipo || 'ufficiale').toLowerCase() !== 'aperto')) {
+    try {
+      var res = await CVI.supabase.from('iscrizioni_gare').select('user_id', { count: 'exact', head: true }).eq('gara_id', gara.id);
+      if (!res.error && typeof res.count === 'number') gara._iscritti = res.count;
+      else if (res.error) console.warn('iscritti count:', res.error.message);
+    } catch (e) {
+      console.warn('iscritti count:', e && e.message);
+    }
+  }
+  fillRegata(gara);
 }
 
 function fillRegata(gara) {
@@ -246,6 +279,40 @@ function fillRegata(gara) {
     badgeAud.textContent = aud.label;
     badgeAud.style.display = '';
     badgeAud.className = 'badge-stato is-audience is-' + aud.key;
+  }
+
+  // Badge iscritti / capienza (dalla prossima gara)
+  ensureIscrittiBadgeStyles();
+  var badgeIscr = document.getElementById('regata-badge-iscritti');
+  if (!badgeIscr) {
+    var wrapI = document.getElementById('regata-badges');
+    if (wrapI) {
+      badgeIscr = document.createElement('span');
+      badgeIscr.id = 'regata-badge-iscritti';
+      badgeIscr.className = 'badge-stato';
+      wrapI.appendChild(badgeIscr);
+    }
+  }
+  if (badgeIscr) {
+    var tipoLow = ((gara.tipo) || 'ufficiale').toLowerCase();
+    var cnt = (typeof gara._iscritti === 'number') ? gara._iscritti : null;
+    var capNum = (gara.max_iscritti != null) ? parseInt(gara.max_iscritti, 10) : NaN;
+    var cap = (!isNaN(capNum) && capNum >= 1) ? capNum : null;
+    if (tipoLow === 'aperto' || cnt == null) {
+      badgeIscr.style.display = 'none';
+      badgeIscr.textContent = '';
+      badgeIscr.title = '';
+    } else if (cap != null && cnt >= cap) {
+      badgeIscr.textContent = 'Al completo';
+      badgeIscr.title = 'Iscritti ' + cnt + ' / ' + cap;
+      badgeIscr.className = 'badge-stato is-full';
+      badgeIscr.style.display = '';
+    } else {
+      badgeIscr.textContent = (cap != null) ? ('Iscritti ' + cnt + ' / ' + cap) : ('Iscritti ' + cnt);
+      badgeIscr.title = '';
+      badgeIscr.className = 'badge-stato is-iscritti';
+      badgeIscr.style.display = '';
+    }
   }
 
   // Countdown automatico dalla data_gara
