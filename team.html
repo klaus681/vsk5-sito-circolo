@@ -11,18 +11,82 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="fix-nav.css?v=2">
   <style>
-    /* styles omitted for brevity in this commit log - unchanged */
     .teams-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.35rem;margin-top:1.5rem}
-    .team-card{position:relative;background:linear-gradient(165deg,#152033 0%,#111827 55%,#0f1524 100%);border:1px solid rgba(56,189,248,0.18);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-height:280px;transition:border-color .25s ease,transform .25s ease,box-shadow .25s ease}
-    .team-card-top{position:relative;padding:1.35rem 1.35rem 1.1rem;background:linear-gradient(135deg,rgba(56,189,248,.14) 0%,transparent 60%),linear-gradient(180deg,rgba(56,189,248,.06) 0%,transparent 100%);border-bottom:1px solid rgba(255,255,255,.05)}
-    .team-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;color:#0b0f19;background:linear-gradient(135deg,#38bdf8 0%,#0ea5e9 100%);box-shadow:0 4px 16px rgba(56,189,248,.35);margin-bottom:.9rem;letter-spacing:-.02em}
-    .team-card h3{margin:0 0 .4rem;font-size:1.25rem;font-weight:750;color:#fff}
-    .team-desc{font-size:.88rem;color:var(--text-muted);line-height:1.55;margin:0}
+
+    /* Card team: colori pilotati dalle variabili --team-* definite per tema (data-theme) */
+    .team-card{
+      --team-1:#38bdf8;--team-2:#0ea5e9;--team-soft:rgba(56,189,248,.14);--team-glow:rgba(56,189,248,.32);
+      position:relative;background:linear-gradient(165deg,#152033 0%,#111827 55%,#0f1524 100%);
+      border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;padding:0;
+      display:flex;flex-direction:column;min-height:280px;
+      transition:border-color .25s ease,transform .25s ease,box-shadow .25s ease;
+    }
+    .team-card:hover{border-color:var(--team-1);transform:translateY(-4px);box-shadow:0 16px 36px var(--team-glow)}
+
+    /* Temi per squadra (valori generati da teamTheme()) */
+    .team-card[data-theme="sky"]{--team-1:#38bdf8;--team-2:#0ea5e9;--team-soft:rgba(56,189,248,.14);--team-glow:rgba(56,189,248,.32)}
+    .team-card[data-theme="teal"]{--team-1:#2dd4bf;--team-2:#0d9488;--team-soft:rgba(45,212,191,.15);--team-glow:rgba(45,212,191,.32)}
+    .team-card[data-theme="amber"]{--team-1:#fbbf24;--team-2:#f59e0b;--team-soft:rgba(251,191,36,.15);--team-glow:rgba(251,191,36,.32)}
+    .team-card[data-theme="violet"]{--team-1:#a78bfa;--team-2:#8b5cf6;--team-soft:rgba(167,139,250,.16);--team-glow:rgba(167,139,250,.34)}
+    .team-card[data-theme="red"]{--team-1:#f87171;--team-2:#ef4444;--team-soft:rgba(248,113,113,.16);--team-glow:rgba(248,113,113,.34)}
+
+    /* Fascia/banner superiore con accento del colore squadra */
+    .team-card-top{
+      position:relative;padding:1.7rem 1.35rem 1.15rem;
+      background:radial-gradient(130% 120% at 0% 0%,var(--team-soft) 0%,transparent 62%);
+      border-bottom:1px solid rgba(255,255,255,.05);
+    }
+    .team-card-top::before{
+      content:"";position:absolute;top:0;left:0;right:0;height:5px;
+      background:linear-gradient(90deg,var(--team-1),var(--team-2));
+    }
+    .team-avatar{
+      width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:1.2rem;color:#0b0f19;
+      background:linear-gradient(135deg,var(--team-1) 0%,var(--team-2) 100%);
+      box-shadow:0 6px 18px var(--team-glow);margin-bottom:.9rem;letter-spacing:-.02em;
+    }
+    .team-card h3{margin:0 0 .4rem;font-size:1.3rem;font-weight:750;color:#fff;letter-spacing:-.01em}
+
+    /* Badge capitano (prima non stilizzato) */
+    .team-captain-badge{
+      display:inline-flex;align-items:center;gap:.35rem;margin:0 0 .6rem;
+      background:var(--team-soft);color:var(--team-1);border:1px solid var(--team-glow);
+      font-size:.72rem;font-weight:700;padding:.22rem .6rem;border-radius:999px;letter-spacing:.02em;
+    }
+    .team-captain-badge::before{content:"👑"}
+
+    .team-desc{
+      font-size:.88rem;color:var(--text-muted);line-height:1.55;margin:0;
+      display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+    }
     .team-members-section{padding:1.1rem 1.35rem 1.35rem;flex:1;display:flex;flex-direction:column}
     .team-members-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);margin-bottom:.75rem;display:flex;align-items:center;gap:.45rem}
+
+    /* Count pill (prima non stilizzata) */
+    .count-pill{
+      display:inline-flex;align-items:center;justify-content:center;min-width:1.35rem;height:1.35rem;
+      padding:0 .4rem;border-radius:999px;background:var(--team-soft);color:var(--team-1);
+      font-size:.72rem;font-weight:800;letter-spacing:0;
+    }
+
     .members-chips{display:flex;flex-wrap:wrap;gap:.45rem;list-style:none;margin:0;padding:0}
-    .member-dot{width:22px;height:22px;border-radius:50%;background:rgba(56,189,248,.2);color:var(--accent-color);font-size:.65rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+    .members-chips li{
+      display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);border-radius:999px;
+      padding:.2rem .65rem .2rem .25rem;font-size:.82rem;color:#cbd5e1;
+      transition:border-color .2s ease,background .2s ease;
+    }
+    .members-chips li:hover{border-color:var(--team-glow);background:var(--team-soft)}
+    .member-dot{
+      width:22px;height:22px;border-radius:50%;background:var(--team-soft);color:var(--team-1);
+      font-size:.65rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
     .no-members{font-size:.85rem;color:var(--text-muted);font-style:italic}
+
+    @media (prefers-reduced-motion: reduce){
+      .team-card,.members-chips li{transition:none}
+    }
   </style>
 </head>
 <body>
