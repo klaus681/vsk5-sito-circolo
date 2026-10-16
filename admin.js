@@ -21,7 +21,7 @@
       s3.textContent = st;
       document.head.appendChild(s3);
     }
-    var tm = await fetch("teams-panel-admin.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
+    var tm = await fetch("teams-panel-admin.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
     if (tm) {
       var s5 = document.createElement("script");
       s5.textContent = tm;
