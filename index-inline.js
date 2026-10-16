@@ -26,6 +26,25 @@ const extra = {
   }
 };
 
+function ensureAudienceBadgeStyles() {
+  if (document.getElementById('cvi-audience-badge-css')) return;
+  var s = document.createElement('style');
+  s.id = 'cvi-audience-badge-css';
+  s.textContent = [
+    '.badge-stato.is-audience.is-soci{background:rgba(56,189,248,.15);color:#7dd3fc}',
+    '.badge-stato.is-audience.is-speciale{background:rgba(168,85,247,.15);color:#c084fc}',
+    '.badge-stato.is-audience.is-aperto{background:rgba(52,211,153,.15);color:#34d399}'
+  ].join('');
+  document.head.appendChild(s);
+}
+
+function audienceBadge(gara) {
+  var t = ((gara && gara.tipo) || 'ufficiale').toLowerCase();
+  if (t === 'aperto') return { key: 'aperto', label: 'Evento aperto' };
+  if (t === 'speciale') return { key: 'speciale', label: 'Evento speciale · soci' };
+  return { key: 'soci', label: 'Riservata ai soci' };
+}
+
 function statoGara(gara) {
   if (!gara || !gara.data_gara) return { key: 'none', label: '', tipo: 'Prossima gara' };
   const start = new Date(gara.data_gara).getTime();
@@ -37,6 +56,11 @@ function statoGara(gara) {
   const durataMs = Math.max(2, nr * 1.5) * 60 * 60 * 1000;
   if (now >= start + durataMs) return { key: 'conclusa', label: 'Conclusa', tipo: 'Ultima gara' };
   if (now >= start) return { key: 'corso', label: 'In corso', tipo: 'Gara in corso' };
+  var isAperto = ((gara.tipo || 'ufficiale').toLowerCase() === 'aperto');
+  if (isAperto) {
+    if (now >= start - chiusuraOre * 60 * 60 * 1000) return { key: 'chiuse', label: 'In arrivo', tipo: 'Prossima gara' };
+    return { key: 'aperte', label: 'Senza iscrizione', tipo: 'Prossima gara' };
+  }
   if (now >= start - chiusuraOre * 60 * 60 * 1000) return { key: 'chiuse', label: 'Iscrizioni chiuse', tipo: 'Prossima gara' };
   return { key: 'aperte', label: 'Iscrizioni aperte', tipo: 'Prossima gara' };
 }
@@ -48,11 +72,22 @@ async function caricaProssimaGara() {
       return;
     }
     const now = new Date().toISOString();
-    let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
-    if (error) { console.warn('gare future:', error.message); data = null; }
+    let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
+    if (error) {
+      console.warn('gare future:', error.message);
+      // fallback senza colonna tipo
+      var fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
+      data = fb.data; error = fb.error;
+      if (error) { console.warn('gare future fallback:', error.message); data = null; }
+    }
     if (!data || !data.length) {
-      const past = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').order('data_gara', { ascending: false }).limit(1);
-      if (past.error || !past.data || !past.data.length) {
+      const past = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').order('data_gara', { ascending: false }).limit(1);
+      var pastData = past.data;
+      if (past.error || !pastData || !pastData.length) {
+        var past2 = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate').order('data_gara', { ascending: false }).limit(1);
+        pastData = past2.data;
+      }
+      if (!pastData || !pastData.length) {
         document.getElementById('regata-titolo').textContent = 'Nessuna gara in programma';
         document.getElementById('regata-data').textContent = '📅 --';
         document.getElementById('regata-descrizione').textContent = 'Controlla più tardi per nuovi eventi.';
@@ -60,13 +95,15 @@ async function caricaProssimaGara() {
         const badgeLive = document.getElementById('regata-badge-live');
         const liveBtnEl = document.getElementById('regata-live-btn');
         const bt = document.getElementById('regata-badge-tipo');
+        const ba = document.getElementById('regata-badge-audience');
         if (bs) { bs.style.display = 'none'; bs.textContent = ''; }
         if (badgeLive) badgeLive.style.display = 'none';
         if (liveBtnEl) liveBtnEl.style.display = 'none';
         if (bt) bt.textContent = 'Calendario';
+        if (ba) ba.style.display = 'none';
         return;
       }
-      fillRegata(past.data[0]);
+      fillRegata(pastData[0]);
       return;
     }
     fillRegata(data[0]);
@@ -102,6 +139,24 @@ function fillRegata(gara) {
       badgeStato.style.display = 'none';
       badgeStato.textContent = '';
     }
+  }
+
+  ensureAudienceBadgeStyles();
+  var aud = audienceBadge(gara);
+  var badgeAud = document.getElementById('regata-badge-audience');
+  if (!badgeAud) {
+    var wrap = document.getElementById('regata-badges');
+    if (wrap) {
+      badgeAud = document.createElement('span');
+      badgeAud.id = 'regata-badge-audience';
+      badgeAud.className = 'badge-stato';
+      wrap.appendChild(badgeAud);
+    }
+  }
+  if (badgeAud) {
+    badgeAud.textContent = aud.label;
+    badgeAud.style.display = '';
+    badgeAud.className = 'badge-stato is-audience is-' + aud.key;
   }
 
   var card = document.getElementById('next-regata-card');
@@ -188,7 +243,6 @@ async function caricaStats() {
       const gare2026 = (gareRes.data || []).filter(g => g.data_gara && String(g.data_gara).startsWith(STAGIONE));
       elReg.textContent = gare2026.length;
     }
-    // Fondazione circolo: sempre 2003
     if (elFond) elFond.textContent = '2003';
   } catch (e) { console.warn('stats', e); }
 }
@@ -239,13 +293,13 @@ async function caricaBacheca() {
         : '';
       return `<div class="avviso-item">
         <div class="avviso-meta">
-          <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'&lt;')}</span>
+          <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'<')}</span>
           <div class="avviso-actions">
             <span class="avviso-data">${dataFmt}</span>
             ${delBtn}
           </div>
         </div>
-        <div class="avviso-testo">${(a.testo || '').replace(/</g,'&lt;')}</div>
+        <div class="avviso-testo">${(a.testo || '').replace(/</g,'<')}</div>
       </div>`;
     }).join('');
 
