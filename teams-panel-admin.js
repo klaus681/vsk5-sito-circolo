@@ -121,14 +121,21 @@
       var ext = (file.name.split(".").pop() || "png").toLowerCase();
       var safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-60) || ("logo." + ext);
       var path = session.user.id + "/" + Date.now() + "-" + safe;
-      var up = await CVI.supabase.storage.from("team-logos").upload(path, file, { contentType: file.type || "image/png", upsert: false });
-      if (up.error) throw up.error;
-      var pub = CVI.supabase.storage.from("team-logos").getPublicUrl(path);
+      // Prova prima il bucket dedicato, poi fallback su "gallery" (come fa l'admin Download).
+      var buckets = ["team-logos", "gallery"];
+      var usedBucket = null, lastErr = null;
+      for (var i = 0; i < buckets.length; i++) {
+        var up = await CVI.supabase.storage.from(buckets[i]).upload(path, file, { contentType: file.type || "image/png", upsert: false });
+        if (!up.error) { usedBucket = buckets[i]; break; }
+        lastErr = up.error;
+      }
+      if (!usedBucket) throw lastErr || new Error("Upload non riuscito");
+      var pub = CVI.supabase.storage.from(usedBucket).getPublicUrl(path);
       var url = pub.data && pub.data.publicUrl;
       if (!url) throw new Error("URL pubblico non disponibile");
       var l = document.getElementById("tm-logo"); if (l) l.value = url;
       renderLogoPreview(url);
-      setLogoStatus("Logo caricato. Ora premi Salva per applicarlo.", "#34d399");
+      setLogoStatus("Logo caricato (bucket «" + usedBucket + "»). Ora premi Salva per applicarlo.", "#34d399");
     } catch (err) {
       setLogoStatus("Errore upload: " + (err.message || err) + " (verifica il bucket «team-logos» — vedi teams-logo-sql.sql).", "#f87171");
     }
