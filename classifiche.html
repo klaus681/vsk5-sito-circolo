@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="fix-nav.css?v=2">
   <style>
     .tabs { display: flex; gap: 0.35rem; margin-bottom: 1.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
@@ -52,7 +52,9 @@
     .empty-hint { text-align: center; color: var(--text-muted); padding: 2rem 1rem; font-size: 0.95rem; }
     .auth-needed { text-align: center; padding: 2rem 1rem; }
     .auth-needed a { color: var(--accent-color); font-weight: 600; }
-    .gara-result-card { background: #1a2332; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }
+    .gara-result-card { position: relative; background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%); border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 1rem; overflow: hidden; transition: border-color .25s ease; }
+    .gara-result-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent-color), #0ea5e9); pointer-events: none; z-index: 1; }
+    .gara-result-card:hover { border-color: rgba(56, 189, 248, 0.4); }
     .gara-result-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.15rem; cursor: pointer; gap: 0.75rem; flex-wrap: wrap; }
     .gara-result-header:hover { background: rgba(56, 189, 248, 0.04); }
     .gara-result-header h3 { margin: 0; font-size: 1.05rem; color: #fff; }

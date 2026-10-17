@@ -294,11 +294,95 @@ body.menu-open { overflow: hidden; }
 .content-box h1, .content-box > h1 { font-size: 1.6rem; color: var(--accent-color); margin-bottom: 0.4rem; font-weight: 700; }
 .content-box > p.subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
 .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
-.team-card, .gara-card {
-  background: #1a2332; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem;
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+
+/* ============================================
+   Sistema "accent card" (dal modello Team)
+   Card con accento cromatico riutilizzabile su tutto il sito.
+   Personalizzabile con data-theme="sky|teal|amber|violet|red"
+   oppure con variabili inline --acc-1/--acc-2/--acc-soft/--acc-glow.
+   ============================================ */
+:root {
+  --acc-1: var(--accent-color);
+  --acc-2: #0ea5e9;
+  --acc-soft: var(--accent-soft);
+  --acc-glow: var(--accent-glow);
 }
-.team-card:hover, .gara-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+.acc-card[data-theme="sky"]    { --acc-1:#38bdf8; --acc-2:#0ea5e9; --acc-soft:rgba(56,189,248,.14);  --acc-glow:rgba(56,189,248,.32); }
+.acc-card[data-theme="teal"]   { --acc-1:#2dd4bf; --acc-2:#0d9488; --acc-soft:rgba(45,212,191,.15);  --acc-glow:rgba(45,212,191,.32); }
+.acc-card[data-theme="amber"]  { --acc-1:#fbbf24; --acc-2:#f59e0b; --acc-soft:rgba(251,191,36,.15);  --acc-glow:rgba(251,191,36,.32); }
+.acc-card[data-theme="violet"] { --acc-1:#a78bfa; --acc-2:#8b5cf6; --acc-soft:rgba(167,139,250,.16); --acc-glow:rgba(167,139,250,.34); }
+.acc-card[data-theme="red"]    { --acc-1:#f87171; --acc-2:#ef4444; --acc-soft:rgba(248,113,113,.16); --acc-glow:rgba(248,113,113,.34); }
+
+/* Contenitore card con accento (sfondo gradiente + lift + alone colorato) */
+.acc-card, .team-card, .gara-card, .card-box {
+  position: relative;
+  background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  overflow: hidden;
+  transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.acc-card:hover, .team-card:hover, .gara-card:hover, .card-box:hover {
+  border-color: var(--acc-1);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px var(--acc-glow);
+}
+
+/* Striscia superiore con gradiente accento (firma del modello Team) */
+.acc-card::before, .gara-card::before, .card-box::before, .content-box::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--acc-1), var(--acc-2));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Box contenitore ampio: accento senza effetto "lift" */
+.content-box {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(165deg, #131d2f 0%, #111827 60%, #0f1524 100%);
+  border-radius: var(--radius-lg);
+  transition: border-color .25s ease;
+}
+.content-box:hover { border-color: var(--acc-1); }
+
+/* Statistiche: accento + alone colorato */
+.stat-item {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(165deg, #152033 0%, #111827 60%, #0f1524 100%);
+  transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.stat-item::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--acc-1), var(--acc-2));
+  pointer-events: none;
+}
+.stat-item:hover { border-color: var(--acc-1); transform: translateY(-3px); box-shadow: 0 14px 30px var(--acc-glow); }
+
+/* Parti riutilizzabili del modello */
+.acc-avatar {
+  width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1.2rem; color: #0b0f19; letter-spacing: -.02em;
+  background: linear-gradient(135deg, var(--acc-1) 0%, var(--acc-2) 100%);
+  box-shadow: 0 6px 18px var(--acc-glow);
+}
+.acc-badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: var(--acc-soft); color: var(--acc-1); border: 1px solid var(--acc-glow);
+  font-size: .72rem; font-weight: 700; padding: .22rem .6rem; border-radius: 999px; letter-spacing: .02em;
+}
+.acc-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.35rem; height: 1.35rem; padding: 0 .4rem; border-radius: 999px;
+  background: var(--acc-soft); color: var(--acc-1); font-size: .72rem; font-weight: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acc-card, .team-card, .gara-card, .card-box, .stat-item { transition: none; }
+}
 .loading-text, .empty-text { color: var(--text-muted); text-align: center; padding: 2rem 1rem; }
 
 .members-table, .results-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
