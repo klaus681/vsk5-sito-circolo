@@ -7,3 +7,7 @@ document.write('<script src="cvi-flags.js?v=1"><\/script>');
 document.write('<script src="cvi-flags-ui.js?v=1"><\/script>');
 /* Extra: regolamento dinamico da admin (no-op se non sulla pagina regolamento) */
 document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
+/* Extra: voce Tornei nel menu Gare & Eventi */
+document.write('<script src="tornei-nav.js?v=1"><\/script>');
+/* Extra: banner torneo in home se pubblicato */
+document.write('<script src="tornei-home.js?v=1"><\/script>');
