@@ -51,6 +51,12 @@
       s9.textContent = tn;
       document.head.appendChild(s9);
     }
+    var sf = await fetch("sfondi-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (sf) {
+      var s10 = document.createElement("script");
+      s10.textContent = sf;
+      document.head.appendChild(s10);
+    }
     var dc = await fetch("discord-notify.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (dc) {
       var s4 = document.createElement("script");
