@@ -189,7 +189,14 @@ function wire(){
   var gc=document.getElementById("tn-gare-close"); if(gc&&!gc._wired){ gc._wired=true; gc.onclick=function(){ var p=document.getElementById("tn-gare-panel"); if(p) p.style.display="none"; }; }
   document.querySelectorAll('.admin-tab[data-tab="tornei"]').forEach(function(tab){
     if(tab._tnWired) return; tab._tnWired=true;
-    tab.addEventListener("click",function(){ setTimeout(loadTornei,50); },true);
+    tab.addEventListener("click",function(){
+      // Questo tab viene creato dopo initTabs(): dobbiamo attivare il pannello da soli.
+      document.querySelectorAll(".admin-tab").forEach(function(t){ t.classList.remove("active"); });
+      document.querySelectorAll(".admin-panel").forEach(function(p){ p.classList.remove("active"); });
+      tab.classList.add("active");
+      var p=document.getElementById("panel-tornei"); if(p) p.classList.add("active");
+      loadTornei();
+    },true);
   });
 }
 function isActive(){ var p=document.getElementById("panel-tornei"); var t=document.querySelector('.admin-tab[data-tab="tornei"]'); return (p&&p.classList.contains("active"))||(t&&t.classList.contains("active")); }
