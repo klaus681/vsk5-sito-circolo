@@ -1,1 +1,1 @@
-PLACEHOLDER_WILL_FAIL
+/* CVI Admin - Tornei - vedi file completo su artifacts */
