@@ -1,1 +1,1 @@
-/* CVI Admin - Tornei - vedi file completo su artifacts */
+/* loaded from local - use create */
