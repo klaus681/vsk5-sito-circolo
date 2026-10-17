@@ -3,6 +3,7 @@
 "use strict";
 var STATI={bozza:"Bozza",aperto:"Aperto",in_corso:"In corso",chiuso:"Chiuso"};
 var torneiCache=[],gareCache=[],linksCache={};
+var _tnLoading=false;
 function esc(s){if(s==null)return"";return String(s).replace(/&/g,String.fromCharCode(38,97,109,112,59)).replace(/</g,String.fromCharCode(38,108,116,59)).replace(/>/g,String.fromCharCode(38,103,116,59)).replace(/"/g,String.fromCharCode(38,113,117,111,116,59));}
 function notify(msg,type){if(typeof status==="function"){status(msg,type);return;}var el=document.getElementById("admin-status");if(!el)return;el.textContent=msg||"";el.className="admin-status"+(type?" "+type:"");clearTimeout(notify._t);if(msg)notify._t=setTimeout(function(){el.textContent="";el.className="admin-status";},4000);}
 function panelHTML(){
@@ -69,8 +70,11 @@ async function loadLinks(torneoId){
 }
 async function loadTornei(){
   if(!ensureUI()) return;
+  if(_tnLoading) return;
+  _tnLoading=true;
   var box=document.getElementById("tn-list"), hint=document.getElementById("tn-sql-hint");
-  if(!box) return; box.innerHTML='<p class="loading-text">Caricamento...</p>';
+  if(!box){ _tnLoading=false; return; }
+  box.innerHTML='<p class="loading-text">Caricamento...</p>';
   try{
     if(!window.CVI||!CVI.supabase) throw new Error("Supabase non disponibile");
     await loadGareList();
@@ -116,7 +120,7 @@ async function loadTornei(){
   }catch(e){
     box.innerHTML='<p class="empty-text" style="color:#f87171">Errore: '+esc(e.message||e)+"</p>";
     if(hint){ hint.style.display="block"; hint.textContent="Esegui tornei-sql.sql nel SQL Editor di Supabase."; }
-  }
+  } finally { _tnLoading=false; }
 }
 async function openGarePanel(torneoId){
   var t=torneiCache.find(function(x){return String(x.id)===String(torneoId);}); if(!t) return;
@@ -189,7 +193,18 @@ function wire(){
   });
 }
 function isActive(){ var p=document.getElementById("panel-tornei"); var t=document.querySelector('.admin-tab[data-tab="tornei"]'); return (p&&p.classList.contains("active"))||(t&&t.classList.contains("active")); }
-function boot(){ wire(); setTimeout(wire,500); setTimeout(wire,1500); setTimeout(wire,3000); var n=0; var iv=setInterval(function(){ n++; if(isActive()) loadTornei(); if(n>40) clearInterval(iv); },500); }
+function boot(){
+  wire();
+  setTimeout(wire, 600);
+  setTimeout(wire, 2000);
+  var tries = 0;
+  function tryOnce(){
+    tries++;
+    if (isActive()) { loadTornei(); return; }
+    if (tries < 3) setTimeout(tryOnce, 800);
+  }
+  setTimeout(tryOnce, 400);
+}
 window.loadTorneiAdmin=loadTornei;
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
 })();
