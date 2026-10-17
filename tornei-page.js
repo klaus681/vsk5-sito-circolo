@@ -1,4 +1,4 @@
-/* CVI - pagina pubblica Tornei */
+/* CVI - pagina pubblica Tornei + iscrizioni */
 (function () {
   "use strict";
 
@@ -8,6 +8,10 @@
     in_corso: "In corso",
     chiuso: "Chiuso"
   };
+
+  var currentTorneo = null;
+  var currentUserId = null;
+  var iscrizioniCache = [];
 
   function esc(s) {
     if (s == null) return "";
@@ -78,6 +82,211 @@
     return rows;
   }
 
+  async function getSessionUserId() {
+    try {
+      var res = await CVI.supabase.auth.getSession();
+      var session = res.data && res.data.session;
+      return session && session.user ? session.user.id : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function loadIscrizioni(torneoId) {
+    var r = await CVI.supabase
+      .from("torneo_iscrizioni")
+      .select("id,user_id,created_at")
+      .eq("torneo_id", torneoId)
+      .order("created_at", { ascending: true });
+    if (r.error) throw r.error;
+    iscrizioniCache = r.data || [];
+    return iscrizioniCache;
+  }
+
+  async function renderIscrizioni(t) {
+    var countEl = document.getElementById("tn-iscr-count");
+    var statusEl = document.getElementById("tn-iscr-status");
+    var msgEl = document.getElementById("tn-iscr-msg");
+    var btnIn = document.getElementById("tn-iscr-btn");
+    var btnOut = document.getElementById("tn-disiscr-btn");
+    var loginLink = document.getElementById("tn-iscr-login");
+    var listEl = document.getElementById("tn-iscr-list");
+    if (!countEl) return;
+
+    var n = iscrizioniCache.length;
+    var max = t.max_partecipanti != null && t.max_partecipanti > 0 ? t.max_partecipanti : null;
+    countEl.textContent =
+      "Iscritti: " + n + (max != null ? " / " + max : "");
+
+    var pieno = max != null && n >= max;
+    var chiuso = t.stato === "chiuso";
+    var aperto = t.stato === "aperto" || t.stato === "in_corso";
+
+    if (statusEl) {
+      if (chiuso) statusEl.textContent = "(iscrizioni chiuse)";
+      else if (pieno) statusEl.textContent = "(completo)";
+      else if (aperto) statusEl.textContent = "(iscrizioni aperte)";
+      else statusEl.textContent = "(non aperto)";
+    }
+
+    currentUserId = await getSessionUserId();
+    var sonoIscritto =
+      currentUserId &&
+      iscrizioniCache.some(function (i) {
+        return String(i.user_id) === String(currentUserId);
+      });
+
+    if (btnIn) btnIn.style.display = "none";
+    if (btnOut) btnOut.style.display = "none";
+    if (loginLink) loginLink.style.display = "none";
+    if (msgEl) msgEl.textContent = "";
+
+    if (!currentUserId) {
+      if (loginLink) {
+        loginLink.style.display = "inline-block";
+        loginLink.href =
+          "accedi.html?redirect=" +
+          encodeURIComponent("tornei.html?id=" + t.id);
+      }
+      if (msgEl && !chiuso)
+        msgEl.textContent = "Accedi con il tuo account socio per iscriverti al torneo.";
+    } else if (sonoIscritto) {
+      if (btnOut) btnOut.style.display = "inline-block";
+      if (msgEl) msgEl.textContent = "Sei iscritto a questo torneo.";
+    } else if (chiuso) {
+      if (msgEl) msgEl.textContent = "Il torneo e chiuso: non e possibile iscriversi.";
+    } else if (pieno) {
+      if (msgEl) msgEl.textContent = "Raggiunto il numero massimo di partecipanti.";
+    } else if (!aperto && t.stato === "bozza") {
+      if (msgEl) msgEl.textContent = "Torneo non ancora aperto alle iscrizioni.";
+    } else {
+      if (btnIn) btnIn.style.display = "inline-block";
+    }
+
+    // lista iscritti
+    if (listEl) {
+      if (!iscrizioniCache.length) {
+        listEl.innerHTML = "<li>Nessun iscritto.</li>";
+        return;
+      }
+      var uids = iscrizioniCache.map(function (i) {
+        return i.user_id;
+      });
+      var pr = await CVI.supabase
+        .from("profiles")
+        .select("id,nickname,team")
+        .in("id", uids);
+      var pmap = {};
+      (pr.data || []).forEach(function (p) {
+        pmap[p.id] = p;
+      });
+      listEl.innerHTML = iscrizioniCache
+        .map(function (i, idx) {
+          var p = pmap[i.user_id] || {};
+          var nick = p.nickname || String(i.user_id).slice(0, 8);
+          var team = p.team ? " · " + p.team : "";
+          return (
+            "<li><strong>" +
+            (idx + 1) +
+            ".</strong> " +
+            esc(nick) +
+            esc(team) +
+            "</li>"
+          );
+        })
+        .join("");
+    }
+  }
+
+  async function iscriviti() {
+    if (!currentTorneo || !currentUserId) return;
+    var msgEl = document.getElementById("tn-iscr-msg");
+    var btn = document.getElementById("tn-iscr-btn");
+    if (btn) btn.disabled = true;
+    try {
+      await loadIscrizioni(currentTorneo.id);
+      var max =
+        currentTorneo.max_partecipanti != null && currentTorneo.max_partecipanti > 0
+          ? currentTorneo.max_partecipanti
+          : null;
+      if (max != null && iscrizioniCache.length >= max) {
+        if (msgEl) {
+          msgEl.style.color = "#f87171";
+          msgEl.textContent = "Torneo completo.";
+        }
+        await renderIscrizioni(currentTorneo);
+        return;
+      }
+      var ins = await CVI.supabase.from("torneo_iscrizioni").insert({
+        torneo_id: currentTorneo.id,
+        user_id: currentUserId
+      });
+      if (ins.error) throw ins.error;
+      if (msgEl) {
+        msgEl.style.color = "#34d399";
+        msgEl.textContent = "Iscrizione confermata!";
+      }
+      await loadIscrizioni(currentTorneo.id);
+      await renderIscrizioni(currentTorneo);
+    } catch (e) {
+      var m = e.message || e;
+      if (/duplicate|unique|23505/i.test(String(m))) m = "Sei gia iscritto.";
+      if (msgEl) {
+        msgEl.style.color = "#f87171";
+        msgEl.textContent = "Errore: " + m;
+      }
+      if (/relation|does not exist|42P01/i.test(String(m))) {
+        if (msgEl)
+          msgEl.textContent =
+            "Tabella iscrizioni mancante: esegui tornei-sql.sql su Supabase.";
+      }
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function disiscriviti() {
+    if (!currentTorneo || !currentUserId) return;
+    if (!confirm("Annullare la tua iscrizione a questo torneo?")) return;
+    var msgEl = document.getElementById("tn-iscr-msg");
+    var btn = document.getElementById("tn-disiscr-btn");
+    if (btn) btn.disabled = true;
+    try {
+      var del = await CVI.supabase
+        .from("torneo_iscrizioni")
+        .delete()
+        .eq("torneo_id", currentTorneo.id)
+        .eq("user_id", currentUserId);
+      if (del.error) throw del.error;
+      if (msgEl) {
+        msgEl.style.color = "#94a3b8";
+        msgEl.textContent = "Iscrizione annullata.";
+      }
+      await loadIscrizioni(currentTorneo.id);
+      await renderIscrizioni(currentTorneo);
+    } catch (e) {
+      if (msgEl) {
+        msgEl.style.color = "#f87171";
+        msgEl.textContent = "Errore: " + (e.message || e);
+      }
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function wireIscrButtons() {
+    var btnIn = document.getElementById("tn-iscr-btn");
+    var btnOut = document.getElementById("tn-disiscr-btn");
+    if (btnIn && !btnIn._wired) {
+      btnIn._wired = true;
+      btnIn.onclick = iscriviti;
+    }
+    if (btnOut && !btnOut._wired) {
+      btnOut._wired = true;
+      btnOut.onclick = disiscriviti;
+    }
+  }
+
   async function loadList() {
     var box = document.getElementById("tn-list");
     if (!box) return;
@@ -96,12 +305,33 @@
         );
         return;
       }
+
+      // conteggio iscrizioni per card
+      var ids = list.map(function (t) {
+        return t.id;
+      });
+      var iscrMap = {};
+      try {
+        var ir = await CVI.supabase
+          .from("torneo_iscrizioni")
+          .select("torneo_id")
+          .in("torneo_id", ids);
+        (ir.data || []).forEach(function (row) {
+          iscrMap[row.torneo_id] = (iscrMap[row.torneo_id] || 0) + 1;
+        });
+      } catch (e) {}
+
       box.innerHTML = list
         .map(function (t) {
           var st = STATI[t.stato] || t.stato;
           var dates = [];
           if (t.data_inizio) dates.push(t.data_inizio);
           if (t.data_fine) dates.push(t.data_fine);
+          var ni = iscrMap[t.id] || 0;
+          var max =
+            t.max_partecipanti != null && t.max_partecipanti > 0
+              ? t.max_partecipanti
+              : null;
           return (
             '<div class="tn-card" data-id="' +
             esc(t.id) +
@@ -117,8 +347,12 @@
             "</span>" +
             "scarti " +
             esc(String(t.scarti != null ? t.scarti : 0)) +
-            (t.gare_previste ? " · " + esc(String(t.gare_previste)) + " gare previste" : "") +
-            (t.max_partecipanti ? " · max " + esc(String(t.max_partecipanti)) + " iscritti" : "") +
+            (t.gare_previste
+              ? " · " + esc(String(t.gare_previste)) + " gare previste"
+              : "") +
+            " · iscritti " +
+            ni +
+            (max != null ? "/" + max : "") +
             (dates.length ? " · " + esc(dates.join(" / ")) : "") +
             "</div>" +
             (t.descrizione
@@ -157,6 +391,7 @@
     var rankBox = document.getElementById("tn-rank-box");
     rankBox.innerHTML =
       '<p class="loading-text" style="color:var(--text-muted)">Calcolo classifica...</p>';
+    wireIscrButtons();
 
     try {
       var tr = await CVI.supabase.from("tornei").select("*").eq("id", id).maybeSingle();
@@ -166,6 +401,7 @@
         setMsg(rankBox, "Torneo non trovato.", true);
         return;
       }
+      currentTorneo = t;
 
       document.getElementById("tn-detail-title").textContent = t.titolo || "Torneo";
       var st = STATI[t.stato] || t.stato;
@@ -176,6 +412,20 @@
         meta += " · " + [t.data_inizio, t.data_fine].filter(Boolean).join(" / ");
       document.getElementById("tn-detail-meta").textContent = meta;
       document.getElementById("tn-detail-desc").textContent = t.descrizione || "";
+
+      try {
+        await loadIscrizioni(t.id);
+        await renderIscrizioni(t);
+      } catch (ie) {
+        var ce = document.getElementById("tn-iscr-count");
+        if (ce) ce.textContent = "Iscritti: —";
+        var me = document.getElementById("tn-iscr-msg");
+        if (me) {
+          me.style.color = "#f87171";
+          me.textContent =
+            "Iscrizioni non disponibili. Esegui tornei-sql.sql su Supabase se manca la tabella.";
+        }
+      }
 
       var links = await CVI.supabase
         .from("torneo_gare")
@@ -281,6 +531,7 @@
       setMsg(box, "Connessione Supabase non disponibile. Ricarica la pagina.", true);
       return;
     }
+    wireIscrButtons();
     var id = qs("id");
     if (id) showDetail(id);
     else loadList();
