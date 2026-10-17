@@ -5,3 +5,5 @@ document.write('<script src="profilo-nazionalita.js?v=1"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
 document.write('<script src="cvi-flags.js?v=1"><\/script>');
 document.write('<script src="cvi-flags-ui.js?v=1"><\/script>');
+/* Extra: regolamento dinamico da admin (no-op se non sulla pagina regolamento) */
+document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
