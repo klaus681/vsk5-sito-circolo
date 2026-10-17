@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="mobile.css">
   <link rel="stylesheet" href="fix-nav.css?v=2">
   <style>
@@ -26,7 +26,9 @@
     .team-badge{display:inline-block;margin-top:.5rem;padding:.25rem .7rem;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);border-radius:999px;color:#7dd3fc;font-size:.82rem;font-weight:600}
     .role-pill{display:inline-block;margin-left:.4rem;padding:.15rem .5rem;background:rgba(52,211,153,.12);color:#34d399;border-radius:999px;font-size:.72rem;font-weight:700;text-transform:uppercase}
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.85rem;margin-bottom:1.25rem}
-    .stat-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.1rem 1rem;text-align:center}
+    .stat-card{position:relative;overflow:hidden;background:linear-gradient(165deg,#152033 0%,#111827 60%,#0f1524 100%);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.1rem 1rem;text-align:center;transition:border-color .25s ease,transform .25s ease,box-shadow .25s ease}
+    .stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent-color),#0ea5e9);pointer-events:none}
+    .stat-card:hover{border-color:var(--accent-color);transform:translateY(-3px);box-shadow:0 14px 30px rgba(56,189,248,.25)}
     .stat-card .num{font-size:1.75rem;font-weight:800;color:#38bdf8;line-height:1.2}
     .stat-card .lbl{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.3rem;font-weight:600}
     .section-box{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.25rem 1.35rem;margin-bottom:1.25rem}
