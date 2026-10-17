@@ -41,26 +41,8 @@
     }, 4000);
   }
 
-  function ensureUI() {
-    if (document.getElementById("panel-regolamento")) return true;
-
-    var tabs = document.querySelector(".admin-tabs");
-    if (!tabs) return false;
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "admin-tab";
-    btn.setAttribute("data-tab", "regolamento");
-    btn.textContent = "Regolamento";
-
-    var exportTab = tabs.querySelector('[data-tab="export"]');
-    if (exportTab) tabs.insertBefore(btn, exportTab);
-    else tabs.appendChild(btn);
-
-    var panel = document.createElement("div");
-    panel.id = "panel-regolamento";
-    panel.className = "admin-panel";
-    panel.innerHTML =
+  function panelHTML() {
+    return (
       '<div class="admin-card">' +
       '<h3 style="margin:0 0 0.5rem;color:#7dd3fc">Regolamento ufficiale</h3>' +
       '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 1rem">Modifica titoli e testi delle sezioni. Supporta HTML semplice (<strong>, <em>, <ul>, <li>). Dopo il salvataggio la pagina pubblica legge i contenuti aggiornati.</p>' +
@@ -76,13 +58,45 @@
       '<a href="regolamento.html" target="_blank" rel="noopener" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">Apri pagina pubblica →</a>' +
       '</div>' +
       '<p id="reg-hint" style="margin:0.75rem 0 0;font-size:0.82rem;color:#94a3b8;display:none"></p>' +
-      '</div>';
+      '</div>'
+    );
+  }
 
-    var app = document.getElementById("admin-app");
-    if (app) app.appendChild(panel);
-    else {
-      var last = document.querySelector(".admin-panel:last-of-type");
-      if (last && last.parentNode) last.parentNode.appendChild(panel);
+  function ensureUI() {
+    var tabs = document.querySelector(".admin-tabs");
+    if (!tabs) return false;
+
+    var tab = tabs.querySelector('[data-tab="regolamento"]');
+    if (!tab) {
+      tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "admin-tab";
+      tab.setAttribute("data-tab", "regolamento");
+      tab.textContent = "Regolamento";
+      var exportTab = tabs.querySelector('[data-tab="export"]');
+      if (exportTab) tabs.insertBefore(tab, exportTab);
+      else tabs.appendChild(tab);
+    }
+
+    var panel = document.getElementById("panel-regolamento");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "panel-regolamento";
+      panel.className = "admin-panel";
+      var app = document.getElementById("admin-app");
+      var exportPanel = document.getElementById("panel-export");
+      if (exportPanel && exportPanel.parentNode) {
+        exportPanel.parentNode.insertBefore(panel, exportPanel);
+      } else if (app) {
+        app.appendChild(panel);
+      } else {
+        return false;
+      }
+    }
+
+    // Se il pannello non ha ancora il form, inseriscilo
+    if (!document.getElementById("reg-rules-list")) {
+      panel.innerHTML = panelHTML();
     }
 
     return true;
@@ -186,11 +200,13 @@
         };
         if (hint) {
           hint.style.display = "block";
+          hint.style.color = "#94a3b8";
           hint.textContent =
             "Nessun regolamento salvato su database: mostro i valori di default. Salva per pubblicarli.";
         }
       } else if (hint) {
         hint.style.display = "block";
+        hint.style.color = "#94a3b8";
         hint.textContent = "Contenuti caricati da site_settings (regolamento_json).";
       }
 
@@ -281,26 +297,21 @@
     notify("Default caricati (non ancora salvati)", "ok");
   }
 
-  function wireTab() {
-    if (!ensureUI()) return;
-
-    var tab = document.querySelector('.admin-tab[data-tab="regolamento"]');
-    if (!tab || tab._regWired) return;
-    tab._regWired = true;
-
-    tab.addEventListener("click", function () {
-      document.querySelectorAll(".admin-tab").forEach(function (t) {
-        t.classList.remove("active");
-      });
-      document.querySelectorAll(".admin-panel").forEach(function (p) {
-        p.classList.remove("active");
-      });
-      tab.classList.add("active");
-      var panel = document.getElementById("panel-regolamento");
-      if (panel) panel.classList.add("active");
-      loadRegolamento();
+  function activateRegTab() {
+    document.querySelectorAll(".admin-tab").forEach(function (t) {
+      t.classList.remove("active");
     });
+    document.querySelectorAll(".admin-panel").forEach(function (p) {
+      p.classList.remove("active");
+    });
+    var tab = document.querySelector('.admin-tab[data-tab="regolamento"]');
+    if (tab) tab.classList.add("active");
+    var panel = document.getElementById("panel-regolamento");
+    if (panel) panel.classList.add("active");
+    loadRegolamento();
+  }
 
+  function wireButtons() {
     var saveBtn = document.getElementById("reg-save-btn");
     if (saveBtn && !saveBtn._wired) {
       saveBtn._wired = true;
@@ -318,13 +329,28 @@
     }
   }
 
+  function wireTab() {
+    if (!ensureUI()) return;
+    wireButtons();
+
+    var tab = document.querySelector('.admin-tab[data-tab="regolamento"]');
+    if (!tab) return;
+
+    // Sovrascrive eventuali handler di initTabs
+    tab.onclick = function (e) {
+      if (e) e.preventDefault();
+      activateRegTab();
+    };
+  }
+
   window.loadRegolamentoAdmin = loadRegolamento;
 
   function boot() {
     wireTab();
-    setTimeout(wireTab, 800);
-    setTimeout(wireTab, 2000);
-    setTimeout(wireTab, 4000);
+    setTimeout(wireTab, 500);
+    setTimeout(wireTab, 1200);
+    setTimeout(wireTab, 2500);
+    setTimeout(wireTab, 5000);
   }
 
   if (document.readyState === "loading") {
