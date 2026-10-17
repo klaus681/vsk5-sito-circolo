@@ -31,11 +31,18 @@
     );
   }
 
-  async function sendEmbed(opts, webhookKey) {
-    var webhook = await getWebhook(webhookKey || "discord_webhook");
-    if (!isValidWebhook(webhook) && webhookKey && webhookKey !== "discord_webhook") {
-      webhook = await getWebhook("discord_webhook");
+  async function resolveWebhook(webhookKey) {
+    var keys = Array.isArray(webhookKey) ? webhookKey.slice() : [webhookKey || "discord_webhook"];
+    if (keys.indexOf("discord_webhook") < 0) keys.push("discord_webhook");
+    for (var i = 0; i < keys.length; i++) {
+      var w = await getWebhook(keys[i]);
+      if (isValidWebhook(w)) return w;
     }
+    return "";
+  }
+
+  async function sendEmbed(opts, webhookKey) {
+    var webhook = await resolveWebhook(webhookKey);
     if (!isValidWebhook(webhook)) return false;
     var embed = {
       title: String(opts.title || "").slice(0, 256),
@@ -189,7 +196,27 @@
           url: t.id ? SITE + "/tornei.html?id=" + encodeURIComponent(t.id) : SITE + "/tornei.html",
           fields: fields
         },
-        "discord_webhook_tornei"
+        ["discord_webhook_iscrizioni", "discord_webhook_tornei", "discord_webhook"]
+      );
+    },
+    notifyIscrizioneGara: function (g, iscritto) {
+      g = g || {};
+      var fields = [];
+      if (iscritto)
+        fields.push({ name: "Iscritto", value: String(iscritto).slice(0, 100), inline: true });
+      if (g.max_iscritti)
+        fields.push({ name: "Max iscritti", value: String(g.max_iscritti), inline: true });
+      return sendEmbed(
+        {
+          title: "🙋 Nuova iscrizione alla gara: " + (g.titolo || "Gara"),
+          description: iscritto
+            ? iscritto + " si è iscritto alla gara."
+            : "Nuova iscrizione alla gara.",
+          color: 0x38bdf8,
+          url: SITE + "/gare.html",
+          fields: fields
+        },
+        ["discord_webhook_iscrizioni", "discord_webhook_gare", "discord_webhook"]
       );
     }
   };
