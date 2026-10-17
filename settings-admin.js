@@ -39,7 +39,7 @@ async function loadSettings(){
   var input=document.getElementById("set-youtube");
   var hint=document.getElementById("set-sql-hint");
   try{
-    var allKeys=["home_youtube","discord_webhook","discord_webhook_gare","discord_webhook_proteste","discord_webhook_tornei"].concat(ALL_SETTING_KEYS);
+    var allKeys=["home_youtube","discord_webhook","discord_webhook_gare","discord_webhook_proteste","discord_webhook_tornei","discord_webhook_iscrizioni"].concat(ALL_SETTING_KEYS);
     var res=await CVI.supabase.from("site_settings").select("key,value").in("key", allKeys);
     if(res.error)throw res.error;
     var map={};
@@ -55,6 +55,8 @@ async function loadSettings(){
     if(dwg) dwg.value=map.discord_webhook_gare||"";
     var dwt=document.getElementById("set-discord-webhook-tornei");
     if(dwt) dwt.value=map.discord_webhook_tornei||"";
+    var dwi=document.getElementById("set-discord-webhook-iscrizioni");
+    if(dwi) dwi.value=map.discord_webhook_iscrizioni||"";
     ALL_SETTING_KEYS.forEach(function(k){
       var el=document.getElementById("set-"+k);
       if(el) el.value=map[k]||"";
@@ -146,6 +148,7 @@ function ensureProtestWebhookField(){
   }
   var gareWrap=document.getElementById("set-discord-webhook-gare")?document.getElementById("set-discord-webhook-gare").parentElement:null;
   var torWrap=document.getElementById("set-discord-webhook-tornei")?document.getElementById("set-discord-webhook-tornei").parentElement:null;
+  var iscrWrap=document.getElementById("set-discord-webhook-iscrizioni")?document.getElementById("set-discord-webhook-iscrizioni").parentElement:null;
   var protWrap=document.getElementById("set-discord-webhook-proteste")?document.getElementById("set-discord-webhook-proteste").parentElement:null;
   if(!gareWrap) gareWrap=insertAfter(generalWrap,
     '<label class="adm-label" for="set-discord-webhook-gare">Webhook Gare (#gare)</label>'+
@@ -155,7 +158,11 @@ function ensureProtestWebhookField(){
     '<label class="adm-label" for="set-discord-webhook-tornei">Webhook Tornei (#tornei)</label>'+
     '<input class="adm-input" id="set-discord-webhook-tornei" style="width:100%" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">'+
     '<p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Solo per i tornei. Se vuoto, usa il webhook generale.</p>');
-  if(!protWrap) protWrap=insertAfter(torWrap,
+  if(!iscrWrap) iscrWrap=insertAfter(torWrap,
+    '<label class="adm-label" for="set-discord-webhook-iscrizioni">Webhook Iscrizioni (#iscrizioni)</label>'+
+    '<input class="adm-input" id="set-discord-webhook-iscrizioni" style="width:100%" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">'+
+    '<p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Nuove iscrizioni a gare e tornei. Se vuoto, usa i webhook di gare/tornei.</p>');
+  if(!protWrap) protWrap=insertAfter(iscrWrap,
     '<label class="adm-label" for="set-discord-webhook-proteste">Webhook Proteste (#proteste)</label>'+
     '<input class="adm-input" id="set-discord-webhook-proteste" style="width:100%" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">'+
     '<p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Solo per le proteste. Se vuoto, usa il webhook generale.</p>');
@@ -174,8 +181,10 @@ async function saveDiscord(e){
   var valT=inputT?inputT.value.trim():"";
   var inputG=document.getElementById("set-discord-webhook-gare");
   var valG=inputG?inputG.value.trim():"";
+  var inputI=document.getElementById("set-discord-webhook-iscrizioni");
+  var valI=inputI?inputI.value.trim():"";
   function validWh(u){return !u || /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//i.test(u);}
-  if(!validWh(val)||!validWh(valP)||!validWh(valT)||!validWh(valG)){
+  if(!validWh(val)||!validWh(valP)||!validWh(valT)||!validWh(valG)||!validWh(valI)){
     alert("URL webhook Discord non valido. Deve iniziare con https://discord.com/api/webhooks/...");
     return;
   }
@@ -190,8 +199,10 @@ async function saveDiscord(e){
     if(r3.error)throw r3.error;
     var r4=await upsertSetting("discord_webhook_gare",valG);
     if(r4.error)throw r4.error;
+    var r5=await upsertSetting("discord_webhook_iscrizioni",valI);
+    if(r5.error)throw r5.error;
     if(window.CVIDiscord) CVIDiscord.clearCache();
-    notify((val||valP||valT||valG)?"Webhook Discord salvati":"Webhook rimossi","ok");
+    notify((val||valP||valT||valG||valI)?"Webhook Discord salvati":"Webhook rimossi","ok");
   }catch(err){
     notify(err.message||err,"err");
   }finally{ if(btn)btn.disabled=false; }
