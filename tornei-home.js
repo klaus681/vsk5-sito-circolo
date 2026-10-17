@@ -23,7 +23,6 @@
   }
 
   async function loadBanner() {
-    // solo in home
     var path = (location.pathname || "").split("/").pop() || "";
     if (path && path !== "index.html" && path !== "" && path !== "/") return;
 
@@ -42,7 +41,6 @@
       if (r.error || !r.data || !r.data.length) return;
       var t = r.data[0];
 
-      // conta iscritti
       var nIsc = 0;
       try {
         var ir = await CVI.supabase
@@ -52,7 +50,6 @@
         nIsc = ir.count != null ? ir.count : 0;
       } catch (e) {}
 
-      // trova un posto vicino alla card prossima gara
       var host =
         document.querySelector(".hero-stats") ||
         document.querySelector(".home-next-race") ||
@@ -61,12 +58,12 @@
         document.querySelector("main .page-content") ||
         document.querySelector("main");
 
-      // preferisci inserire dopo la card prossima gara se esiste
       var nextCard =
         document.querySelector("a.home-race-card") ||
         document.querySelector(".race-highlight") ||
         document.querySelector("[class*='next-race']") ||
-        document.querySelector("[class*='prossima']");
+        document.querySelector("[class*='prossima']") ||
+        document.getElementById("next-regata-card");
 
       if (document.getElementById("home-torneo-banner")) return;
 
@@ -93,6 +90,16 @@
         "border-radius:14px;border:1px solid rgba(56,189,248,0.35);" +
         "background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,58,95,0.85));" +
         "color:#e2e8f0;max-width:640px";
+
+      if (window.__CVI_BG_TORNEO) {
+        card.style.backgroundImage =
+          "linear-gradient(135deg, rgba(15,23,42,0.88), rgba(30,58,95,0.75)), url(\"" +
+          String(window.__CVI_BG_TORNEO).replace(/"/g, "") +
+          "\")";
+        card.style.backgroundSize = "cover";
+        card.style.backgroundPosition = "center";
+      }
+
       card.innerHTML =
         '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.45rem">' +
         '<span style="font-size:0.7rem;font-weight:800;letter-spacing:0.06em;padding:0.15rem 0.55rem;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc">TORNEO</span>' +
