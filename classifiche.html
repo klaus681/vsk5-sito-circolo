@@ -72,6 +72,21 @@
     .regata-panel { display: none; }
     .regata-panel.active { display: block; }
     .event-total-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin: 1rem 0 .5rem; }
+    /* Podio + filtri classifica generale */
+    .rank-tools { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+    .rank-tools input, .rank-tools select { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; padding: .55rem .8rem; font-family: inherit; font-size: .9rem; }
+    .rank-tools input { flex: 1; min-width: 200px; }
+    .rank-tools input:focus, .rank-tools select:focus { outline: none; border-color: var(--accent-color); }
+    .rank-podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: .85rem; margin-bottom: 1.25rem; }
+    .rank-podium:empty { display: none; }
+    .rank-podium .rank-podium-item { padding: 1rem .8rem; text-align: center; }
+    .rank-podium .rank-medal { font-size: 1.7rem; line-height: 1; margin-bottom: .35rem; }
+    .rank-podium .rank-podium-nick { font-weight: 800; color: #fff; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-podium .rank-podium-team { color: var(--text-muted); font-size: .82rem; margin-top: .2rem; }
+    .rank-podium .rank-podium-pts { font-weight: 800; color: var(--acc-1, var(--accent-color)); margin-top: .5rem; font-size: 1.15rem; }
+    .rank-table tr.is-me td { background: var(--accent-soft); }
+    .rank-table tr.is-me .nick::after { content: " · tu"; color: var(--accent-color); font-weight: 700; font-size: .72rem; }
+    @media (max-width: 600px) { .rank-podium { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -130,6 +145,11 @@
       </div>
       <div id="tab-generale" class="tab-panel active">
         <div class="info-banner"><strong>Low Point System</strong> — Ogni regata conta separatamente. Classifica aggiornata dopo ogni inserimento.</div>
+        <div class="rank-tools">
+          <input type="search" id="rank-search" placeholder="Cerca skipper o team…" aria-label="Cerca nella classifica">
+          <select id="rank-team" aria-label="Filtra per team"><option value="">Tutti i team</option></select>
+        </div>
+        <div id="rank-podium" class="rank-podium" aria-label="Podio"></div>
         <div id="classifica-generale"><p class="loading-text">Caricamento classifica...</p></div>
       </div>
       <div id="tab-gare" class="tab-panel">
@@ -252,8 +272,9 @@
       if (insErr) throw insErr;
     }
 
-    function renderClassificaGenerale() {
-      const box = document.getElementById('classifica-generale');
+    let rankFilter = { q: '', team: '' };
+
+    function getRankRows() {
       let rows = (cacheClassifiche || []).slice();
       if (!rows.length && cacheRisultati.length) {
         const totals = {}, gareCount = {};
@@ -266,18 +287,87 @@
         rows.sort((a, b) => a.punti_totali - b.punti_totali);
         rows.forEach((r, i) => { r.posizione = i + 1; });
       }
+      rows.sort((a, b) => (a.posizione || 999) - (b.posizione || 999));
+      return rows;
+    }
+
+    const RANK_MEDALS = ['🥇', '🥈', '🥉'];
+    const RANK_ACCENTS = [
+      { c1: '#fbbf24', c2: '#f59e0b', soft: 'rgba(251,191,36,.14)', glow: 'rgba(251,191,36,.32)' },
+      { c1: '#cbd5e1', c2: '#94a3b8', soft: 'rgba(203,213,225,.14)', glow: 'rgba(203,213,225,.30)' },
+      { c1: '#f59e0b', c2: '#b45309', soft: 'rgba(245,158,11,.14)', glow: 'rgba(245,158,11,.30)' }
+    ];
+
+    function renderRankPodium(filtered) {
+      const box = document.getElementById('rank-podium');
+      if (!box) return;
+      box.innerHTML = filtered.slice(0, 3).map((r, i) => {
+        const p = profiloLabel(r.user_id);
+        const a = RANK_ACCENTS[i];
+        const style = '--acc-1:' + a.c1 + ';--acc-2:' + a.c2 + ';--acc-soft:' + a.soft + ';--acc-glow:' + a.glow;
+        return '<div class="acc-card rank-podium-item" style="' + style + '">' +
+          '<div class="rank-medal">' + RANK_MEDALS[i] + '</div>' +
+          '<div class="rank-podium-nick">' + esc(p.nick) + '</div>' +
+          (p.team ? '<div class="rank-podium-team">' + esc(p.team) + '</div>' : '') +
+          '<div class="rank-podium-pts">' + (r.punti_totali != null ? r.punti_totali : '—') + ' pt</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderClassificaGenerale() {
+      const box = document.getElementById('classifica-generale');
+      const teamSel = document.getElementById('rank-team');
+      const rows = getRankRows();
       if (!rows.length) {
+        renderRankPodium([]);
         box.innerHTML = '<p class="empty-hint">Nessun risultato inserito ancora.</p>';
         return;
       }
-      rows.sort((a, b) => (a.posizione || 999) - (b.posizione || 999));
-      let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Regate</th><th class="pts">Punti</th></tr></thead><tbody>';
-      rows.forEach((r, i) => {
+      if (teamSel) {
+        const teams = [];
+        rows.forEach(r => { const t = profiloLabel(r.user_id).team; if (t && teams.indexOf(t) < 0) teams.push(t); });
+        teams.sort((a, b) => a.localeCompare(b, 'it'));
+        teamSel.innerHTML = '<option value="">Tutti i team</option>' + teams.map(t => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+        teamSel.value = rankFilter.team || '';
+        if (rankFilter.team && teamSel.value !== rankFilter.team) rankFilter.team = '';
+      }
+      const q = rankFilter.q.trim().toLowerCase();
+      const team = rankFilter.team;
+      const filtered = rows.filter(r => {
         const p = profiloLabel(r.user_id);
-        html += '<tr><td class="pos">' + (r.posizione != null ? r.posizione : i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div>' + (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') + '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + (r.gare_disputate != null ? r.gare_disputate : '—') + '</td><td class="pts">' + r.punti_totali + '</td></tr>';
+        if (team && p.team !== team) return false;
+        if (q) {
+          const hay = (p.nick + ' ' + p.nome + ' ' + p.team).toLowerCase();
+          if (hay.indexOf(q) < 0) return false;
+        }
+        return true;
+      });
+      renderRankPodium(filtered);
+      if (!filtered.length) {
+        box.innerHTML = '<p class="empty-hint">Nessuno skipper corrisponde al filtro.</p>';
+        return;
+      }
+      let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Regate</th><th class="pts">Punti</th></tr></thead><tbody>';
+      filtered.forEach((r, i) => {
+        const p = profiloLabel(r.user_id);
+        const isMe = currentUserId && String(r.user_id) === String(currentUserId);
+        html += '<tr' + (isMe ? ' class="is-me"' : '') + '><td class="pos">' + (r.posizione != null ? r.posizione : i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div>' + (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') + '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + (r.gare_disputate != null ? r.gare_disputate : '—') + '</td><td class="pts">' + r.punti_totali + '</td></tr>';
       });
       html += '</tbody></table>';
       box.innerHTML = html;
+    }
+
+    function wireRankTools() {
+      const search = document.getElementById('rank-search');
+      if (search && !search._wired) {
+        search._wired = true;
+        search.addEventListener('input', () => { rankFilter.q = search.value || ''; renderClassificaGenerale(); });
+      }
+      const teamSel = document.getElementById('rank-team');
+      if (teamSel && !teamSel._wired) {
+        teamSel._wired = true;
+        teamSel.addEventListener('change', () => { rankFilter.team = teamSel.value || ''; renderClassificaGenerale(); });
+      }
     }
 
     function buildRegataTable(risultati) {
@@ -538,6 +628,7 @@
       if (cacheRisultati.length && !cacheClassifiche.length && isAdmin) {
         try { await syncClassifiche(); } catch (e) { console.warn(e); }
       }
+      wireRankTools();
       renderClassificaGenerale();
       renderPerGara();
       setupInserimento();
