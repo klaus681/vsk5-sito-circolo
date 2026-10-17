@@ -39,6 +39,12 @@
       s6.textContent = pr;
       document.head.appendChild(s6);
     }
+    var rg = await fetch("regolamento-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (rg) {
+      var s8 = document.createElement("script");
+      s8.textContent = rg;
+      document.head.appendChild(s8);
+    }
     var dc = await fetch("discord-notify.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (dc) {
       var s4 = document.createElement("script");
