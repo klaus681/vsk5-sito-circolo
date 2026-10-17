@@ -16,6 +16,8 @@
     { num: 11, title: "Albo d'Oro", body: "L'<em>Albo d'Oro</em> raccoglie i vincitori di ogni evento del circolo. I vincitori vengono registrati automaticamente al termine dell'inserimento dei risultati di una gara." }
   ];
 
+  var _loadedOnce = false;
+
   function esc(s) {
     if (s == null) return "";
     return String(s)
@@ -83,18 +85,16 @@
       panel = document.createElement("div");
       panel.id = "panel-regolamento";
       panel.className = "admin-panel";
-      var app = document.getElementById("admin-app");
       var exportPanel = document.getElementById("panel-export");
       if (exportPanel && exportPanel.parentNode) {
         exportPanel.parentNode.insertBefore(panel, exportPanel);
-      } else if (app) {
-        app.appendChild(panel);
       } else {
-        return false;
+        var app = document.getElementById("admin-app");
+        if (app) app.appendChild(panel);
+        else return false;
       }
     }
 
-    // Se il pannello non ha ancora il form, inseriscilo
     if (!document.getElementById("reg-rules-list")) {
       panel.innerHTML = panelHTML();
     }
@@ -171,8 +171,13 @@
     return { version: version.trim(), updated: updated.trim(), rules: rules };
   }
 
-  async function loadRegolamento() {
+  async function loadRegolamento(force) {
     if (!ensureUI()) return;
+    if (_loadedOnce && !force && document.getElementById("reg-rules-list") && document.querySelector(".reg-rule-card")) {
+      wireButtons();
+      return;
+    }
+
     var hint = document.getElementById("reg-hint");
     try {
       if (!window.CVI || !CVI.supabase) throw new Error("Supabase non disponibile");
@@ -215,6 +220,8 @@
       if (vEl) vEl.value = data.version || "";
       if (uEl) uEl.value = data.updated || "";
       renderRules(data.rules);
+      wireButtons();
+      _loadedOnce = true;
     } catch (e) {
       if (hint) {
         hint.style.display = "block";
@@ -222,13 +229,15 @@
         hint.textContent =
           "Errore caricamento: " +
           (e.message || e) +
-          " — verifico tabella site_settings.";
+          " — verifica tabella site_settings.";
       }
       var vEl2 = document.getElementById("reg-version");
       var uEl2 = document.getElementById("reg-updated");
       if (vEl2) vEl2.value = "Versione 1.0";
       if (uEl2) uEl2.value = "Ultimo aggiornamento: ottobre 2026";
       renderRules(DEFAULT_RULES.slice());
+      wireButtons();
+      _loadedOnce = true;
     }
   }
 
@@ -297,20 +306,6 @@
     notify("Default caricati (non ancora salvati)", "ok");
   }
 
-  function activateRegTab() {
-    document.querySelectorAll(".admin-tab").forEach(function (t) {
-      t.classList.remove("active");
-    });
-    document.querySelectorAll(".admin-panel").forEach(function (p) {
-      p.classList.remove("active");
-    });
-    var tab = document.querySelector('.admin-tab[data-tab="regolamento"]');
-    if (tab) tab.classList.add("active");
-    var panel = document.getElementById("panel-regolamento");
-    if (panel) panel.classList.add("active");
-    loadRegolamento();
-  }
-
   function wireButtons() {
     var saveBtn = document.getElementById("reg-save-btn");
     if (saveBtn && !saveBtn._wired) {
@@ -329,28 +324,61 @@
     }
   }
 
-  function wireTab() {
-    if (!ensureUI()) return;
-    wireButtons();
-
+  function isRegPanelActive() {
+    var panel = document.getElementById("panel-regolamento");
     var tab = document.querySelector('.admin-tab[data-tab="regolamento"]');
-    if (!tab) return;
-
-    // Sovrascrive eventuali handler di initTabs
-    tab.onclick = function (e) {
-      if (e) e.preventDefault();
-      activateRegTab();
-    };
+    return (
+      (panel && panel.classList.contains("active")) ||
+      (tab && tab.classList.contains("active"))
+    );
   }
 
-  window.loadRegolamentoAdmin = loadRegolamento;
+  function tryLoadIfActive() {
+    if (isRegPanelActive()) {
+      loadRegolamento(false);
+    }
+  }
+
+  function wireTab() {
+    if (!ensureUI()) return;
+
+    var tab = document.querySelector('.admin-tab[data-tab="regolamento"]');
+    if (tab && !tab._regListener) {
+      tab._regListener = true;
+      // capture=true: gira PRIMA di initTabs.onclick e non viene sovrascritto
+      tab.addEventListener(
+        "click",
+        function () {
+          setTimeout(function () {
+            loadRegolamento(false);
+          }, 50);
+        },
+        true
+      );
+    }
+
+    // Se il pannello è già attivo (utente ha già cliccato), carica subito
+    tryLoadIfActive();
+  }
+
+  window.loadRegolamentoAdmin = function () {
+    loadRegolamento(true);
+  };
 
   function boot() {
     wireTab();
-    setTimeout(wireTab, 500);
-    setTimeout(wireTab, 1200);
-    setTimeout(wireTab, 2500);
-    setTimeout(wireTab, 5000);
+    setTimeout(wireTab, 400);
+    setTimeout(wireTab, 1000);
+    setTimeout(wireTab, 2000);
+    setTimeout(wireTab, 4000);
+
+    // Poll leggero: se l'utente apre il tab, carica i contenuti
+    var n = 0;
+    var iv = setInterval(function () {
+      n++;
+      tryLoadIfActive();
+      if (n > 60) clearInterval(iv); // ~30s
+    }, 500);
   }
 
   if (document.readyState === "loading") {
