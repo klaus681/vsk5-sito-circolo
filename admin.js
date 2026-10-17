@@ -45,6 +45,12 @@
       s8.textContent = rg;
       document.head.appendChild(s8);
     }
+    var tn = await fetch("tornei-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (tn) {
+      var s9 = document.createElement("script");
+      s9.textContent = tn;
+      document.head.appendChild(s9);
+    }
     var dc = await fetch("discord-notify.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (dc) {
       var s4 = document.createElement("script");
