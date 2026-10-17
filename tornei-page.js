@@ -2,13 +2,7 @@
 (function () {
   "use strict";
 
-  var STATI = {
-    bozza: "Bozza",
-    aperto: "Aperto",
-    in_corso: "In corso",
-    chiuso: "Chiuso"
-  };
-
+  var STATI = { bozza: "Bozza", aperto: "Aperto", in_corso: "In corso", chiuso: "Chiuso" };
   var currentTorneo = null;
   var currentUserId = null;
   var iscrizioniCache = [];
@@ -25,6 +19,17 @@
   function qs(name) {
     var m = location.search.match(new RegExp("[?&]" + name + "=([^&]*)"));
     return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise(function (_, reject) {
+        setTimeout(function () {
+          reject(new Error((label || "Operazione") + " in timeout (" + ms + "ms)"));
+        }, ms);
+      })
+    ]);
   }
 
   function waitCVI() {
@@ -66,11 +71,7 @@
       var total = kept.reduce(function (s, x) {
         return s + x;
       }, 0);
-      rows.push({
-        user_id: uid,
-        punti_totali: total,
-        prove: byUser[uid].length
-      });
+      rows.push({ user_id: uid, punti_totali: total, prove: byUser[uid].length });
     });
     rows.sort(function (a, b) {
       if (a.punti_totali !== b.punti_totali) return a.punti_totali - b.punti_totali;
@@ -84,7 +85,7 @@
 
   async function getSessionUserId() {
     try {
-      var res = await CVI.supabase.auth.getSession();
+      var res = await withTimeout(CVI.supabase.auth.getSession(), 5000, "Sessione");
       var session = res.data && res.data.session;
       return session && session.user ? session.user.id : null;
     } catch (e) {
@@ -93,11 +94,15 @@
   }
 
   async function loadIscrizioni(torneoId) {
-    var r = await CVI.supabase
-      .from("torneo_iscrizioni")
-      .select("id,user_id,created_at")
-      .eq("torneo_id", torneoId)
-      .order("created_at", { ascending: true });
+    var r = await withTimeout(
+      CVI.supabase
+        .from("torneo_iscrizioni")
+        .select("id,user_id,created_at")
+        .eq("torneo_id", torneoId)
+        .order("created_at", { ascending: true }),
+      8000,
+      "Iscrizioni"
+    );
     if (r.error) throw r.error;
     iscrizioniCache = r.data || [];
     return iscrizioniCache;
@@ -115,8 +120,7 @@
 
     var n = iscrizioniCache.length;
     var max = t.max_partecipanti != null && t.max_partecipanti > 0 ? t.max_partecipanti : null;
-    countEl.textContent =
-      "Iscritti: " + n + (max != null ? " / " + max : "");
+    countEl.textContent = "Iscritti: " + n + (max != null ? " / " + max : "");
 
     var pieno = max != null && n >= max;
     var chiuso = t.stato === "chiuso";
@@ -144,12 +148,9 @@
     if (!currentUserId) {
       if (loginLink) {
         loginLink.style.display = "inline-block";
-        loginLink.href =
-          "accedi.html?redirect=" +
-          encodeURIComponent("tornei.html?id=" + t.id);
+        loginLink.href = "accedi.html?redirect=" + encodeURIComponent("tornei.html?id=" + t.id);
       }
-      if (msgEl && !chiuso)
-        msgEl.textContent = "Accedi con il tuo account socio per iscriverti al torneo.";
+      if (msgEl && !chiuso) msgEl.textContent = "Accedi con il tuo account socio per iscriverti al torneo.";
     } else if (sonoIscritto) {
       if (btnOut) btnOut.style.display = "inline-block";
       if (msgEl) msgEl.textContent = "Sei iscritto a questo torneo.";
@@ -163,7 +164,6 @@
       if (btnIn) btnIn.style.display = "inline-block";
     }
 
-    // lista iscritti
     if (listEl) {
       if (!iscrizioniCache.length) {
         listEl.innerHTML = "<li>Nessun iscritto.</li>";
@@ -172,29 +172,27 @@
       var uids = iscrizioniCache.map(function (i) {
         return i.user_id;
       });
-      var pr = await CVI.supabase
-        .from("profiles")
-        .select("id,nickname,team")
-        .in("id", uids);
-      var pmap = {};
-      (pr.data || []).forEach(function (p) {
-        pmap[p.id] = p;
-      });
-      listEl.innerHTML = iscrizioniCache
-        .map(function (i, idx) {
-          var p = pmap[i.user_id] || {};
-          var nick = p.nickname || String(i.user_id).slice(0, 8);
-          var team = p.team ? " · " + p.team : "";
-          return (
-            "<li><strong>" +
-            (idx + 1) +
-            ".</strong> " +
-            esc(nick) +
-            esc(team) +
-            "</li>"
-          );
-        })
-        .join("");
+      try {
+        var pr = await withTimeout(
+          CVI.supabase.from("profiles").select("id,nickname,team").in("id", uids),
+          8000,
+          "Profili"
+        );
+        var pmap = {};
+        (pr.data || []).forEach(function (p) {
+          pmap[p.id] = p;
+        });
+        listEl.innerHTML = iscrizioniCache
+          .map(function (i, idx) {
+            var p = pmap[i.user_id] || {};
+            var nick = p.nickname || String(i.user_id).slice(0, 8);
+            var team = p.team ? " · " + p.team : "";
+            return "<li><strong>" + (idx + 1) + ".</strong> " + esc(nick) + esc(team) + "</li>";
+          })
+          .join("");
+      } catch (e) {
+        listEl.innerHTML = "<li>" + iscrizioniCache.length + " iscritti</li>";
+      }
     }
   }
 
@@ -236,9 +234,7 @@
         msgEl.textContent = "Errore: " + m;
       }
       if (/relation|does not exist|42P01/i.test(String(m))) {
-        if (msgEl)
-          msgEl.textContent =
-            "Tabella iscrizioni mancante: esegui tornei-sql.sql su Supabase.";
+        if (msgEl) msgEl.textContent = "Tabella iscrizioni mancante: esegui tornei-sql.sql su Supabase.";
       }
     } finally {
       if (btn) btn.disabled = false;
@@ -290,32 +286,30 @@
   async function loadList() {
     var box = document.getElementById("tn-list");
     if (!box) return;
+    box.innerHTML = '<p class="loading-text" style="color:var(--text-muted)">Caricamento...</p>';
     try {
-      var r = await CVI.supabase
-        .from("tornei")
-        .select("*")
-        .eq("pubblicato", true)
-        .order("data_inizio", { ascending: false });
+      var r = await withTimeout(
+        CVI.supabase.from("tornei").select("*").eq("pubblicato", true).order("created_at", { ascending: false }),
+        10000,
+        "Caricamento tornei"
+      );
       if (r.error) throw r.error;
       var list = r.data || [];
       if (!list.length) {
-        setMsg(
-          box,
-          "Nessun torneo pubblicato al momento. Creane uno da Admin - Tornei e spunta Pubblicato."
-        );
+        setMsg(box, "Nessun torneo pubblicato. In Admin - Tornei spunta Pubblicato e imposta stato Aperto o In corso.");
         return;
       }
 
-      // conteggio iscrizioni per card
       var ids = list.map(function (t) {
         return t.id;
       });
       var iscrMap = {};
       try {
-        var ir = await CVI.supabase
-          .from("torneo_iscrizioni")
-          .select("torneo_id")
-          .in("torneo_id", ids);
+        var ir = await withTimeout(
+          CVI.supabase.from("torneo_iscrizioni").select("torneo_id").in("torneo_id", ids),
+          8000,
+          "Conteggio iscritti"
+        );
         (ir.data || []).forEach(function (row) {
           iscrMap[row.torneo_id] = (iscrMap[row.torneo_id] || 0) + 1;
         });
@@ -328,28 +322,19 @@
           if (t.data_inizio) dates.push(t.data_inizio);
           if (t.data_fine) dates.push(t.data_fine);
           var ni = iscrMap[t.id] || 0;
-          var max =
-            t.max_partecipanti != null && t.max_partecipanti > 0
-              ? t.max_partecipanti
-              : null;
+          var max = t.max_partecipanti != null && t.max_partecipanti > 0 ? t.max_partecipanti : null;
           return (
             '<div class="tn-card" data-id="' +
             esc(t.id) +
-            '">' +
-            "<h2>" +
+            '"><h2>' +
             esc(t.titolo) +
-            "</h2>" +
-            '<div class="tn-meta">' +
-            '<span class="tn-badge ' +
+            '</h2><div class="tn-meta"><span class="tn-badge ' +
             esc(t.stato || "") +
             '">' +
             esc(st) +
-            "</span>" +
-            "scarti " +
+            "</span>scarti " +
             esc(String(t.scarti != null ? t.scarti : 0)) +
-            (t.gare_previste
-              ? " · " + esc(String(t.gare_previste)) + " gare previste"
-              : "") +
+            (t.gare_previste ? " · " + esc(String(t.gare_previste)) + " gare previste" : "") +
             " · iscritti " +
             ni +
             (max != null ? "/" + max : "") +
@@ -364,6 +349,7 @@
           );
         })
         .join("");
+
       box.querySelectorAll(".tn-card").forEach(function (card) {
         card.onclick = function () {
           var id = card.getAttribute("data-id");
@@ -374,11 +360,7 @@
     } catch (e) {
       var msg = e && (e.message || e.details || String(e));
       if (/relation|does not exist|42P01/i.test(msg || "")) {
-        setMsg(
-          box,
-          "Tabelle tornei non ancora create. Esegui tornei-sql.sql nel SQL Editor di Supabase.",
-          true
-        );
+        setMsg(box, "Tabelle tornei non create. Esegui tornei-sql.sql nel SQL Editor di Supabase.", true);
       } else {
         setMsg(box, "Errore caricamento: " + msg, true);
       }
@@ -389,12 +371,15 @@
     document.getElementById("tn-list-view").style.display = "none";
     document.getElementById("tn-detail-view").style.display = "block";
     var rankBox = document.getElementById("tn-rank-box");
-    rankBox.innerHTML =
-      '<p class="loading-text" style="color:var(--text-muted)">Calcolo classifica...</p>';
+    rankBox.innerHTML = '<p class="loading-text" style="color:var(--text-muted)">Calcolo classifica...</p>';
     wireIscrButtons();
 
     try {
-      var tr = await CVI.supabase.from("tornei").select("*").eq("id", id).maybeSingle();
+      var tr = await withTimeout(
+        CVI.supabase.from("tornei").select("*").eq("id", id).maybeSingle(),
+        10000,
+        "Dettaglio torneo"
+      );
       if (tr.error) throw tr.error;
       var t = tr.data;
       if (!t) {
@@ -422,16 +407,19 @@
         var me = document.getElementById("tn-iscr-msg");
         if (me) {
           me.style.color = "#f87171";
-          me.textContent =
-            "Iscrizioni non disponibili. Esegui tornei-sql.sql su Supabase se manca la tabella.";
+          me.textContent = "Iscrizioni non disponibili. Esegui tornei-sql.sql su Supabase se manca la tabella.";
         }
       }
 
-      var links = await CVI.supabase
-        .from("torneo_gare")
-        .select("gara_id,ordine")
-        .eq("torneo_id", id)
-        .order("ordine", { ascending: true });
+      var links = await withTimeout(
+        CVI.supabase
+          .from("torneo_gare")
+          .select("gara_id,ordine")
+          .eq("torneo_id", id)
+          .order("ordine", { ascending: true }),
+        8000,
+        "Gare torneo"
+      );
       if (links.error) throw links.error;
       var garaIds = (links.data || []).map(function (l) {
         return l.gara_id;
@@ -440,14 +428,15 @@
       var gareList = document.getElementById("tn-detail-gare");
       if (!garaIds.length) {
         gareList.innerHTML = "<li>Nessuna gara collegata.</li>";
-        setMsg(
-          rankBox,
-          "Collega le gare dal pannello Admin - Tornei per generare la classifica."
-        );
+        setMsg(rankBox, "Collega le gare dal pannello Admin - Tornei per generare la classifica.");
         return;
       }
 
-      var gr = await CVI.supabase.from("gare").select("id,titolo,data_gara").in("id", garaIds);
+      var gr = await withTimeout(
+        CVI.supabase.from("gare").select("id,titolo,data_gara").in("id", garaIds),
+        8000,
+        "Dati gare"
+      );
       if (gr.error) throw gr.error;
       var gareMap = {};
       (gr.data || []).forEach(function (g) {
@@ -458,31 +447,21 @@
           var g = gareMap[gid];
           var label = g ? g.titolo : gid;
           var d = g && g.data_gara ? String(g.data_gara).slice(0, 10) : "";
-          return (
-            "<li><strong>" +
-            (i + 1) +
-            ".</strong> " +
-            esc(label) +
-            (d ? " · " + esc(d) : "") +
-            "</li>"
-          );
+          return "<li><strong>" + (i + 1) + ".</strong> " + esc(label) + (d ? " · " + esc(d) : "") + "</li>";
         })
         .join("");
 
-      var ris = await CVI.supabase
-        .from("risultati_gara")
-        .select("user_id,punti,gara_id,regata_num")
-        .in("gara_id", garaIds);
+      var ris = await withTimeout(
+        CVI.supabase.from("risultati_gara").select("user_id,punti,gara_id,regata_num").in("gara_id", garaIds),
+        10000,
+        "Risultati"
+      );
       if (ris.error) throw ris.error;
       var risultati = ris.data || [];
 
       var scarti = t.scarti != null ? Number(t.scarti) : 0;
       document.getElementById("tn-rank-hint").textContent =
-        "Low Point · " +
-        risultati.length +
-        " risultati · scarti: " +
-        scarti +
-        " (i punteggi peggiori non contano nel totale)";
+        "Low Point · " + risultati.length + " risultati · scarti: " + scarti;
 
       var ranked = calcRanking(risultati, scarti);
       if (!ranked.length) {
@@ -493,7 +472,11 @@
       var uids = ranked.map(function (r) {
         return r.user_id;
       });
-      var pr = await CVI.supabase.from("profiles").select("id,nickname,team,nome").in("id", uids);
+      var pr = await withTimeout(
+        CVI.supabase.from("profiles").select("id,nickname,team,nome").in("id", uids),
+        8000,
+        "Profili classifica"
+      );
       var pmap = {};
       (pr.data || []).forEach(function (p) {
         pmap[p.id] = p;
@@ -525,8 +508,19 @@
   }
 
   async function boot() {
-    var ok = await waitCVI();
     var box = document.getElementById("tn-list");
+    // safety: se dopo 12s ancora loading, messaggio
+    setTimeout(function () {
+      if (box && /Caricamento/i.test(box.textContent || "")) {
+        setMsg(
+          box,
+          "Il caricamento sta impiegando troppo. Controlla di aver eseguito tornei-sql.sql su Supabase e ricarica.",
+          true
+        );
+      }
+    }, 12000);
+
+    var ok = await waitCVI();
     if (!ok || !window.CVI || !CVI.supabase) {
       setMsg(box, "Connessione Supabase non disponibile. Ricarica la pagina.", true);
       return;
