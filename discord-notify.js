@@ -94,13 +94,16 @@
           value: String(gara.num_regate),
           inline: true
         });
-      return sendEmbed({
-        title: "🏁 Nuova gara: " + (gara.titolo || "Gara"),
-        description: gara.descrizione || "Iscrizioni aperte sul sito.",
-        color: 0x34d399,
-        url: SITE + "/gare.html",
-        fields: fields
-      });
+      return sendEmbed(
+        {
+          title: "🏁 Nuova gara: " + (gara.titolo || "Gara"),
+          description: gara.descrizione || "Iscrizioni aperte sul sito.",
+          color: 0x34d399,
+          url: SITE + "/gare.html",
+          fields: fields
+        },
+        "discord_webhook_gare"
+      );
     },
     notifyProtesta: function (p) {
       p = p || {};
