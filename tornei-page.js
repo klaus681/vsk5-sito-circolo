@@ -6,6 +6,7 @@
   var currentTorneo = null;
   var currentUserId = null;
   var iscrizioniCache = [];
+  var lastProfilesMap = null;
 
   function esc(s) {
     if (s == null) return "";
@@ -182,6 +183,7 @@
         (pr.data || []).forEach(function (p) {
           pmap[p.id] = p;
         });
+        lastProfilesMap = pmap;
         listEl.innerHTML = iscrizioniCache
           .map(function (i, idx) {
             var p = pmap[i.user_id] || {};
@@ -226,6 +228,18 @@
       }
       await loadIscrizioni(currentTorneo.id);
       await renderIscrizioni(currentTorneo);
+      if (window.CVIDiscord && CVIDiscord.notifyTorneoIscrizione) {
+        var me = lastProfilesMap && lastProfilesMap[currentUserId];
+        var lbl = me
+          ? me.nickname || [me.nome, me.cognome].filter(Boolean).join(" ")
+          : "";
+        try {
+          await CVIDiscord.notifyTorneoIscrizione(
+            { id: currentTorneo.id, titolo: currentTorneo.titolo, max_partecipanti: currentTorneo.max_partecipanti },
+            lbl
+          );
+        } catch (e) { console.warn(e); }
+      }
     } catch (e) {
       var m = e.message || e;
       if (/duplicate|unique|23505/i.test(String(m))) m = "Sei gia iscritto.";

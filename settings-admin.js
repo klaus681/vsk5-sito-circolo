@@ -39,7 +39,7 @@ async function loadSettings(){
   var input=document.getElementById("set-youtube");
   var hint=document.getElementById("set-sql-hint");
   try{
-    var allKeys=["home_youtube","discord_webhook","discord_webhook_proteste"].concat(ALL_SETTING_KEYS);
+    var allKeys=["home_youtube","discord_webhook","discord_webhook_proteste","discord_webhook_tornei"].concat(ALL_SETTING_KEYS);
     var res=await CVI.supabase.from("site_settings").select("key,value").in("key", allKeys);
     if(res.error)throw res.error;
     var map={};
@@ -51,6 +51,8 @@ async function loadSettings(){
     ensureProtestWebhookField();
     var dwp=document.getElementById("set-discord-webhook-proteste");
     if(dwp) dwp.value=map.discord_webhook_proteste||"";
+    var dwt=document.getElementById("set-discord-webhook-tornei");
+    if(dwt) dwt.value=map.discord_webhook_tornei||"";
     ALL_SETTING_KEYS.forEach(function(k){
       var el=document.getElementById("set-"+k);
       if(el) el.value=map[k]||"";
@@ -128,18 +130,30 @@ async function saveStats(e){
 }
 
 function ensureProtestWebhookField(){
-  if(document.getElementById("set-discord-webhook-proteste")) return;
   var form=document.getElementById("settings-discord-form");
   if(!form) return;
-  var first=form.querySelector("div");
-  var wrap=document.createElement("div");
-  wrap.style.marginTop="0.75rem";
-  wrap.innerHTML=
-    '<label class="adm-label" for="set-discord-webhook-proteste">Webhook Proteste (#proteste)</label>'+
-    '<input class="adm-input" id="set-discord-webhook-proteste" style="width:100%" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">'+
-    '<p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Solo per le proteste. Se vuoto, usa il webhook generale.</p>';
-  if(first&&first.nextSibling) form.insertBefore(wrap, first.nextSibling);
-  else form.insertBefore(wrap, form.firstChild);
+  if(!document.getElementById("set-discord-webhook-proteste")){
+    var wrap=document.createElement("div");
+    wrap.style.marginTop="0.75rem";
+    wrap.innerHTML=
+      '<label class="adm-label" for="set-discord-webhook-proteste">Webhook Proteste (#proteste)</label>'+
+      '<input class="adm-input" id="set-discord-webhook-proteste" style="width:100%" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">'+
+      '<p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Solo per le proteste. Se vuoto, usa il webhook generale.</p>';
+    var first=form.querySelector("div");
+    if(first&&first.nextSibling) form.insertBefore(wrap, first.nextSibling);
+    else form.insertBefore(wrap, form.firstChild);
+  }
+  if(!document.getElementById("set-discord-webhook-tornei")){
+    var wrapT=document.createElement("div");
+    wrapT.style.marginTop="0.75rem";
+    wrapT.innerHTML=
+      '<label class="adm-label" for="set-discord-webhook-tornei">Webhook Tornei (#tornei)</label>'+
+      '<input class="adm-input" id="set-discord-webhook-tornei" style="width:100%" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">'+
+      '<p style="margin:.35rem 0 0;font-size:.8rem;color:#94a3b8">Solo per i tornei. Se vuoto, usa il webhook generale.</p>';
+    var wp=document.getElementById("set-discord-webhook-proteste");
+    if(wp&&wp.parentElement&&wp.parentElement.nextSibling) form.insertBefore(wrapT, wp.parentElement.nextSibling);
+    else form.appendChild(wrapT);
+  }
   var label0=form.querySelector('label[for="set-discord-webhook"]');
   if(label0) label0.textContent="Webhook generale (avvisi / gare)";
 }
@@ -152,8 +166,10 @@ async function saveDiscord(e){
   var val=input.value.trim();
   var inputP=document.getElementById("set-discord-webhook-proteste");
   var valP=inputP?inputP.value.trim():"";
+  var inputT=document.getElementById("set-discord-webhook-tornei");
+  var valT=inputT?inputT.value.trim():"";
   function validWh(u){return !u || /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//i.test(u);}
-  if(!validWh(val)||!validWh(valP)){
+  if(!validWh(val)||!validWh(valP)||!validWh(valT)){
     alert("URL webhook Discord non valido. Deve iniziare con https://discord.com/api/webhooks/...");
     return;
   }
@@ -164,8 +180,10 @@ async function saveDiscord(e){
     if(r.error)throw r.error;
     var r2=await upsertSetting("discord_webhook_proteste",valP);
     if(r2.error)throw r2.error;
+    var r3=await upsertSetting("discord_webhook_tornei",valT);
+    if(r3.error)throw r3.error;
     if(window.CVIDiscord) CVIDiscord.clearCache();
-    notify((val||valP)?"Webhook Discord salvati":"Webhook rimossi","ok");
+    notify((val||valP||valT)?"Webhook Discord salvati":"Webhook rimossi","ok");
   }catch(err){
     notify(err.message||err,"err");
   }finally{ if(btn)btn.disabled=false; }

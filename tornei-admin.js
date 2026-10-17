@@ -181,10 +181,17 @@ async function saveTorneo(e){
   var stato=(document.getElementById("tn-stato")||{}).value||"bozza";
   var pub=!!(document.getElementById("tn-pub")||{}).checked;
   var payload={titolo:titolo,descrizione:desc||null,data_inizio:inizio||null,data_fine:fine||null,scarti:scarti,gare_previste:garePrev,max_partecipanti:maxPart,stato:stato,pubblicato:pub,updated_at:new Date().toISOString()};
+  var prev=id?torneiCache.find(function(x){ return String(x.id)===String(id); }):null;
+  var wasPub=!!(prev&&prev.pubblicato);
   var btn=document.getElementById("tn-save-btn"); if(btn) btn.disabled=true;
   try{
     var r; if(id) r=await CVI.supabase.from("tornei").update(payload).eq("id",id); else r=await CVI.supabase.from("tornei").insert(payload);
-    if(r.error) throw r.error; notify(id?"Torneo aggiornato":"Torneo creato","ok"); resetForm(); loadTornei();
+    if(r.error) throw r.error; notify(id?"Torneo aggiornato":"Torneo creato","ok");
+    if(pub && !wasPub && window.CVIDiscord && CVIDiscord.notifyTorneo){
+      var newId=(r.data&&r.data[0]&&r.data[0].id)||id||null;
+      try{ await CVIDiscord.notifyTorneo({ id:newId, titolo:titolo, descrizione:desc, stato:stato, data_inizio:inizio, data_fine:fine, gare_previste:garePrev, max_partecipanti:maxPart }); }catch(e){ console.warn(e); }
+    }
+    resetForm(); loadTornei();
   }catch(err){
     notify(err.message||err,"err");
     var hint=document.getElementById("tn-sql-hint");

@@ -140,6 +140,54 @@
         },
         "discord_webhook_proteste"
       );
+    },
+    notifyTorneo: function (t) {
+      t = t || {};
+      var fields = [];
+      var statoLbl =
+        { bozza: "Bozza", aperto: "Aperto", in_corso: "In corso", chiuso: "Chiuso" }[
+          t.stato
+        ] || t.stato || "";
+      if (statoLbl) fields.push({ name: "Stato", value: String(statoLbl), inline: true });
+      var date = [];
+      if (t.data_inizio) date.push(t.data_inizio);
+      if (t.data_fine) date.push(t.data_fine);
+      if (date.length)
+        fields.push({ name: "📅 Periodo", value: date.join(" → ").slice(0, 100), inline: true });
+      if (t.gare_previste)
+        fields.push({ name: "Gare previste", value: String(t.gare_previste), inline: true });
+      if (t.max_partecipanti)
+        fields.push({ name: "Max partecipanti", value: String(t.max_partecipanti), inline: true });
+      return sendEmbed(
+        {
+          title: "🏆 Nuovo torneo: " + (t.titolo || "Torneo"),
+          description: String(t.descrizione || "Torneo pubblicato sul sito.").slice(0, 900),
+          color: 0xa78bfa,
+          url: t.id ? SITE + "/tornei.html?id=" + encodeURIComponent(t.id) : SITE + "/tornei.html",
+          fields: fields
+        },
+        "discord_webhook_tornei"
+      );
+    },
+    notifyTorneoIscrizione: function (t, iscritto) {
+      t = t || {};
+      var fields = [];
+      if (iscritto)
+        fields.push({ name: "Iscritto", value: String(iscritto).slice(0, 100), inline: true });
+      if (t.max_partecipanti)
+        fields.push({ name: "Max partecipanti", value: String(t.max_partecipanti), inline: true });
+      return sendEmbed(
+        {
+          title: "📝 Nuova iscrizione al torneo: " + (t.titolo || "Torneo"),
+          description: iscritto
+            ? iscritto + " si è iscritto al torneo."
+            : "Nuova iscrizione al torneo.",
+          color: 0x34d399,
+          url: t.id ? SITE + "/tornei.html?id=" + encodeURIComponent(t.id) : SITE + "/tornei.html",
+          fields: fields
+        },
+        "discord_webhook_tornei"
+      );
     }
   };
 
