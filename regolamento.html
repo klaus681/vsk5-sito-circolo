@@ -509,21 +509,19 @@
         });
       });
 
+      // Query live (non catturano la NodeList): restano valide anche dopo un re-render da DB
       var expand = document.getElementById('rules-expand');
-      if (expand && !expand._cviWired) {
-        expand._cviWired = true;
-        expand.onclick = function () { items.forEach(function (it) { setOpen(it, true); }); };
+      if (expand) {
+        expand.onclick = function () { document.querySelectorAll('.rule-item').forEach(function (it) { setOpen(it, true); }); };
       }
       var collapse = document.getElementById('rules-collapse');
-      if (collapse && !collapse._cviWired) {
-        collapse._cviWired = true;
-        collapse.onclick = function () { items.forEach(function (it) { setOpen(it, false); }); };
+      if (collapse) {
+        collapse.onclick = function () { document.querySelectorAll('.rule-item').forEach(function (it) { setOpen(it, false); }); };
       }
       var printBtn = document.getElementById('rules-print');
-      if (printBtn && !printBtn._cviWired) {
-        printBtn._cviWired = true;
+      if (printBtn) {
         printBtn.onclick = function () {
-          items.forEach(function (it) { setOpen(it, true); });
+          document.querySelectorAll('.rule-item').forEach(function (it) { setOpen(it, true); });
           setTimeout(function () { window.print(); }, 80);
         };
       }
@@ -545,6 +543,57 @@
     };
     window.addEventListener('hashchange', openFromHash);
     CVI.init('regolamento.html');
+
+    /* —— Indice gestibile dall'admin (tabella regolamento_regole).
+       Se la tabella è vuota o non raggiungibile, resta l'HTML statico qui sopra. —— */
+    var CHEVRON = '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+    function escHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function renderRegolamento(rows) {
+      var ol = document.querySelector('.rules-toc ol');
+      var acc = document.getElementById('rulesAccordion');
+      if (!ol || !acc) return;
+      var toc = '', body = '';
+      rows.forEach(function (r, i) {
+        var n = i + 1;
+        var id = 'regola-' + n;
+        var builtin = r.chiave && /^rule\d+$/.test(r.chiave);
+        var tAttr = builtin ? ' data-i18n="' + r.chiave + '_title"' : '';
+        var dAttr = builtin ? ' data-i18n="' + r.chiave + '_desc"' : '';
+        var titolo = escHtml(r.titolo || '');
+        toc += '<li><a href="#' + id + '">' + n + '. <span' + tAttr + '>' + titolo + '</span></a></li>';
+        body += '<div class="rule-item" id="' + id + '">'
+          + '<button type="button" class="rule-toggle" aria-expanded="false" aria-controls="' + id + '-body">'
+          +   '<span><span class="rule-num">' + n + '</span><span' + tAttr + ' id="' + id + '-t">' + titolo + '</span></span>'
+          +   CHEVRON
+          + '</button>'
+          + '<div class="rule-body" id="' + id + '-body" role="region" aria-labelledby="' + id + '-t">'
+          +   '<div class="rule-body-inner"' + dAttr + '>' + (r.contenuto || '') + '</div>'
+          + '</div></div>';
+      });
+      ol.innerHTML = toc;
+      acc.innerHTML = body;
+    }
+
+    async function loadRegolamento() {
+      try {
+        if (!window.CVI || !CVI.supabase) return;
+        var res = await CVI.supabase.from('regolamento_regole')
+          .select('ordine,chiave,titolo,contenuto,visibile')
+          .eq('visibile', true)
+          .order('ordine', { ascending: true });
+        if (res.error || !res.data || !res.data.length) return; // fallback statico
+        renderRegolamento(res.data);
+        initAccordion();
+        CVI.applyI18n(extra);
+        openFromHash();
+      } catch (e) { console.warn('[CVI regolamento]', e); }
+    }
+    loadRegolamento();
   </script>
 </body>
 </html>

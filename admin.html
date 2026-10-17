@@ -91,6 +91,7 @@
         <button type="button" class="admin-tab" data-tab="eventi-aperti">Eventi aperti</button>
         <button type="button" class="admin-tab" data-tab="galleria">Galleria</button>
         <button type="button" class="admin-tab" data-tab="download">Download</button>
+        <button type="button" class="admin-tab" data-tab="regolamento">Regolamento</button>
         <button type="button" class="admin-tab" data-tab="impostazioni">Impostazioni</button>
         <button type="button" class="admin-tab" data-tab="export">Export</button>
       </div>
@@ -261,6 +262,26 @@
           </form>
         </div>
         <div id="dl-list"><p class="loading-text">Caricamento…</p></div>
+      </div>
+      <div id="panel-regolamento" class="admin-panel">
+        <div class="admin-card">
+          <div class="admin-card-head" style="margin-bottom:0.75rem">
+            <div>
+              <h3 style="margin:0 0 0.25rem;color:#7dd3fc">Indice del Regolamento</h3>
+              <p class="meta" style="margin:0">Riordina, mostra/nascondi, modifica o aggiungi le voci dell'indice della pagina <a href="regolamento.html" target="_blank" style="color:#7dd3fc">Regolamento</a>.</p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button type="button" class="btn-ghost" id="reg-seed-btn">Importa regole attuali</button>
+              <button type="button" class="btn-primary" id="reg-add-btn">+ Aggiungi regola</button>
+            </div>
+          </div>
+          <div id="reg-list"><p class="loading-text">Caricamento…</p></div>
+          <div class="form-actions" style="margin-top:0.85rem">
+            <button type="button" class="btn-primary" id="reg-save-btn">Salva</button>
+            <button type="button" class="btn-ghost" id="reg-reset-btn">Ripristina predefinito</button>
+          </div>
+          <div id="reg-sql-hint" class="sql-hint" style="display:none">Crea la tabella regolamento_regole (vedi regolamento-sql.sql).</div>
+        </div>
       </div>
       <div id="panel-impostazioni" class="admin-panel">
         <div id="set-sql-hint" class="sql-hint" style="display:none">Crea site_settings.</div>

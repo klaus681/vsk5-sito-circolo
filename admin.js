@@ -21,6 +21,12 @@
       s3.textContent = st;
       document.head.appendChild(s3);
     }
+    var rg = await fetch("regolamento-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (rg) {
+      var s8 = document.createElement("script");
+      s8.textContent = rg;
+      document.head.appendChild(s8);
+    }
     var tm = await fetch("teams-panel-admin.js?v=8").then(function(r){ return r.ok ? r.text() : ""; });
     if (tm) {
       var s5 = document.createElement("script");
