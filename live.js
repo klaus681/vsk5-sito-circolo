@@ -5,6 +5,9 @@
   var REFRESH_MS = 20000;
   var currentGaraId = null;
   var timer = null;
+  var tickTimer = null;
+  var nextAt = 0;
+  var liveState = { intervalMs: REFRESH_MS };
 
   function esc(s) {
     if (s == null) return "";
@@ -237,6 +240,7 @@
       var idParam = qs("id");
       var gara = await loadGara(idParam || currentGaraId);
       if (!gara) {
+        liveState.intervalMs = 60000;
         document.getElementById("live-content").style.display = "none";
         document.getElementById("live-empty").style.display = "block";
         document.getElementById("live-title").textContent = "Live gara";
@@ -247,6 +251,7 @@
       currentGaraId = gara.id;
       document.getElementById("live-empty").style.display = "none";
       document.getElementById("live-content").style.display = "block";
+      liveState.intervalMs = intervalForGara(gara);
       renderHeader(gara);
       var iscritti = await loadIscritti(gara.id);
       renderIscritti(iscritti);
@@ -262,14 +267,57 @@
     } catch (e) {
       document.getElementById("live-meta").textContent =
         "Errore: " + (e.message || e);
+    } finally {
+      scheduleNext();
     }
+  }
+
+  function intervalForGara(gara) {
+    if (!gara) return 60000;
+    var k = statoGara(gara).key;
+    if (k === "corso") return 5000;
+    if (k === "chiuse" || k === "aperte") return 15000;
+    return 60000;
+  }
+
+  function updateTick() {
+    var el = document.getElementById("live-tick");
+    if (!el) return;
+    var ogni = Math.round(liveState.intervalMs / 1000);
+    var secs = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
+    el.textContent = "Aggiornamento automatico ogni " + ogni + "s · prossimo tra " + secs + "s";
+  }
+
+  function scheduleNext() {
+    if (timer) clearTimeout(timer);
+    nextAt = Date.now() + liveState.intervalMs;
+    timer = setTimeout(function () {
+      if (document.hidden) { scheduleNext(); return; }
+      refresh();
+    }, liveState.intervalMs);
+    updateTick();
+  }
+
+  function startTick() {
+    if (tickTimer) clearInterval(tickTimer);
+    tickTimer = setInterval(function () {
+      if (document.hidden) return;
+      updateTick();
+    }, 1000);
   }
 
   function start() {
     if (window.CVI && CVI.init) CVI.init("live.html");
+    var btn = document.getElementById("live-refresh-btn");
+    if (btn && !btn._wired) {
+      btn._wired = true;
+      btn.onclick = function () { refresh(); };
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) refresh();
+    });
+    startTick();
     refresh();
-    if (timer) clearInterval(timer);
-    timer = setInterval(refresh, REFRESH_MS);
   }
 
   if (document.readyState === "loading") {
