@@ -15,12 +15,38 @@
   (async function () {
     var msg = document.getElementById('msg');
     try {
-      // Versione funzionante precedente (prima del danno)
       var url = 'https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/a11890d991f816f207067fa1c0078822279369f9/admin.html';
       var res = await fetch(url + '?t=' + Date.now());
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var html = await res.text();
       if (!html || html.indexOf('panel-gare') < 0) throw new Error('Contenuto non valido');
+
+      // Cache-bust admin.js e aggiungi tab Regolamento se manca
+      html = html.replace(/admin\.js\?v=\d+/g, 'admin.js?v=12');
+
+      if (html.indexOf('data-tab="regolamento"') < 0) {
+        html = html.replace(
+          '<button type="button" class="admin-tab" data-tab="export">Export</button>',
+          '<button type="button" class="admin-tab" data-tab="regolamento">Regolamento</button>\n        <button type="button" class="admin-tab" data-tab="export">Export</button>'
+        );
+      }
+
+      // Pannello vuoto se manca (riempito da regolamento-admin.js)
+      if (html.indexOf('id="panel-regolamento"') < 0) {
+        html = html.replace(
+          '<div id="panel-export" class="admin-panel">',
+          '<div id="panel-regolamento" class="admin-panel"><p class="loading-text">Caricamento regolamento…</p></div>\n      <div id="panel-export" class="admin-panel">'
+        );
+      }
+
+      // Script esplicito regolamento-admin (oltre al loader in admin.js)
+      if (html.indexOf('regolamento-admin.js') < 0) {
+        html = html.replace(
+          /<script src="admin\.js\?v=\d+"><\/script>/,
+          '<script src="admin.js?v=12"></script>\n  <script src="regolamento-admin.js?v=2"></script>'
+        );
+      }
+
       document.open();
       document.write(html);
       document.close();
