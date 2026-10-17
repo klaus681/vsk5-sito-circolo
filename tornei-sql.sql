@@ -1,7 +1,7 @@
 -- ============================================
--- CVI Virtual – Tornei (campionati / serie)
+-- CVI Virtual - Tornei (campionati / serie)
 -- Esegui nel SQL Editor di Supabase.
--- (sicuro da rieseguire: usa IF NOT EXISTS / DROP POLICY IF EXISTS)
+-- (sicuro da rieseguire: IF NOT EXISTS / DROP POLICY IF EXISTS)
 -- ============================================
 
 create table if not exists public.tornei (
@@ -46,32 +46,75 @@ create table if not exists public.torneo_iscrizioni (
 create index if not exists torneo_iscrizioni_torneo_idx on public.torneo_iscrizioni (torneo_id);
 create index if not exists torneo_iscrizioni_user_idx on public.torneo_iscrizioni (user_id);
 
+-- FK user_id -> profiles(id), aggiunta in modo sicuro (NOT VALID = non controlla le righe esistenti)
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'torneo_iscrizioni_user_fk') then
+    alter table public.torneo_iscrizioni
+      add constraint torneo_iscrizioni_user_fk
+      foreign key (user_id) references public.profiles(id) on delete cascade not valid;
+  end if;
+end $$;
+
+-- updated_at automatico
+create or replace function public.tornei_touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end $$;
+
+drop trigger if exists trg_tornei_updated_at on public.tornei;
+create trigger trg_tornei_updated_at
+  before update on public.tornei
+  for each row execute function public.tornei_touch_updated_at();
+
 alter table public.tornei enable row level security;
 alter table public.torneo_gare enable row level security;
 alter table public.torneo_iscrizioni enable row level security;
 
+-- Predicato admin/scorer usato dalle policy (ripetuto inline)
+-- exists (select 1 from public.profiles p where p.id = auth.uid()
+--   and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer')))
+
+-- ---------- LETTURA PUBBLICA ----------
 drop policy if exists "tornei_public_read" on public.tornei;
 create policy "tornei_public_read" on public.tornei
-  for select using (true);
+  for select using (pubblicato = true);
 
 drop policy if exists "torneo_gare_public_read" on public.torneo_gare;
 create policy "torneo_gare_public_read" on public.torneo_gare
-  for select using (true);
+  for select using (
+    exists (select 1 from public.tornei t where t.id = torneo_id and t.pubblicato = true)
+  );
 
 drop policy if exists "torneo_iscrizioni_public_read" on public.torneo_iscrizioni;
 create policy "torneo_iscrizioni_public_read" on public.torneo_iscrizioni
-  for select using (true);
+  for select using (
+    exists (select 1 from public.tornei t where t.id = torneo_id and t.pubblicato = true)
+  );
 
+-- ---------- ADMIN / SCORER: lettura completa + scrittura ----------
 drop policy if exists "tornei_auth_write" on public.tornei;
-create policy "tornei_auth_write" on public.tornei
-  for all to authenticated using (true) with check (true);
+drop policy if exists "tornei_admin_all" on public.tornei;
+create policy "tornei_admin_all" on public.tornei
+  for all to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid()
+    and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer'))))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid()
+    and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer'))));
 
 drop policy if exists "torneo_gare_auth_write" on public.torneo_gare;
-create policy "torneo_gare_auth_write" on public.torneo_gare
-  for all to authenticated using (true) with check (true);
+drop policy if exists "torneo_gare_admin_all" on public.torneo_gare;
+create policy "torneo_gare_admin_all" on public.torneo_gare
+  for all to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid()
+    and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer'))))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid()
+    and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer'))));
 
--- Ogni utente autenticato puo iscriversi/disiscriversi solo per se stesso;
--- gli admin gestiscono tutto dal pannello (stessa policy auth write ampia).
+-- ---------- ISCRIZIONI ----------
+-- Ogni utente autenticato gestisce solo la propria iscrizione.
 drop policy if exists "torneo_iscrizioni_auth_insert" on public.torneo_iscrizioni;
 create policy "torneo_iscrizioni_auth_insert" on public.torneo_iscrizioni
   for insert to authenticated with check (auth.uid() = user_id);
@@ -80,6 +123,20 @@ drop policy if exists "torneo_iscrizioni_auth_delete" on public.torneo_iscrizion
 create policy "torneo_iscrizioni_auth_delete" on public.torneo_iscrizioni
   for delete to authenticated using (auth.uid() = user_id);
 
+-- Admin/scorer gestiscono qualsiasi iscrizione (aggiunta/rimozione dal pannello).
 drop policy if exists "torneo_iscrizioni_auth_admin" on public.torneo_iscrizioni;
-create policy "torneo_iscrizioni_auth_admin" on public.torneo_iscrizioni
-  for all to authenticated using (true) with check (true);
+drop policy if exists "torneo_iscrizioni_admin_all" on public.torneo_iscrizioni;
+create policy "torneo_iscrizioni_admin_all" on public.torneo_iscrizioni
+  for all to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid()
+    and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer'))))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid()
+    and (p.is_admin = true or lower(coalesce(p.role,'')) in ('admin','scorer'))));
+
+-- ---------- GRANT ----------
+grant select on public.tornei to anon, authenticated;
+grant select on public.torneo_gare to anon, authenticated;
+grant select on public.torneo_iscrizioni to anon, authenticated;
+grant all on public.tornei to authenticated;
+grant all on public.torneo_gare to authenticated;
+grant all on public.torneo_iscrizioni to authenticated;

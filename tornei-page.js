@@ -289,7 +289,7 @@
     box.innerHTML = '<p class="loading-text" style="color:var(--text-muted)">Caricamento...</p>';
     try {
       var r = await withTimeout(
-        CVI.supabase.from("tornei").select("*").eq("pubblicato", true).order("created_at", { ascending: false }),
+        CVI.supabase.from("tornei").select("*").eq("pubblicato", true).neq("stato", "bozza").order("created_at", { ascending: false }),
         10000,
         "Caricamento tornei"
       );
@@ -324,7 +324,9 @@
           var ni = iscrMap[t.id] || 0;
           var max = t.max_partecipanti != null && t.max_partecipanti > 0 ? t.max_partecipanti : null;
           return (
-            '<div class="tn-card" data-id="' +
+            '<div class="tn-card" role="button" tabindex="0" aria-label="Apri torneo: ' +
+            esc(t.titolo) +
+            '" data-id="' +
             esc(t.id) +
             '"><h2>' +
             esc(t.titolo) +
@@ -351,10 +353,17 @@
         .join("");
 
       box.querySelectorAll(".tn-card").forEach(function (card) {
-        card.onclick = function () {
+        var open = function () {
           var id = card.getAttribute("data-id");
           history.pushState(null, "", "tornei.html?id=" + encodeURIComponent(id));
           showDetail(id);
+        };
+        card.onclick = open;
+        card.onkeydown = function (ev) {
+          if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar") {
+            ev.preventDefault();
+            open();
+          }
         };
       });
     } catch (e) {
