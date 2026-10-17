@@ -103,6 +103,10 @@
     .rank-podium .rank-podium-pts { font-weight: 800; color: var(--acc-1, var(--accent-color)); margin-top: .5rem; font-size: 1.15rem; }
     .rank-table tr.is-me td { background: var(--accent-soft); }
     .rank-table tr.is-me .nick::after { content: " · tu"; color: var(--accent-color); font-weight: 700; font-size: .72rem; }
+    .rank-table th.sortable { cursor: pointer; user-select: none; }
+    .rank-table th.sortable:hover { color: var(--accent-color); }
+    .rank-table th.sort-asc::after { content: " \25B2"; font-size: .7em; }
+    .rank-table th.sort-desc::after { content: " \25BC"; font-size: .7em; }
     @media (max-width: 600px) { .rank-podium { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -290,6 +294,7 @@
     }
 
     let rankFilter = { q: '', team: '' };
+    let rankSort = { key: 'pos', dir: 'asc' };
 
     function getRankRows() {
       let rows = (cacheClassifiche || []).slice();
@@ -364,11 +369,29 @@
         box.innerHTML = '<p class="empty-hint">Nessuno skipper corrisponde al filtro.</p>';
         return;
       }
-      let html = '<table class="rank-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Regate</th><th class="pts">Punti</th></tr></thead><tbody>';
-      filtered.forEach((r, i) => {
-        const p = profiloLabel(r.user_id);
+      const withP = filtered.map(r => ({ r, p: profiloLabel(r.user_id) }));
+      const key = rankSort.key;
+      const dir = rankSort.dir === 'asc' ? 1 : -1;
+      withP.sort((a, b) => {
+        let va, vb;
+        switch (key) {
+          case 'nick': return String(a.p.nick || '').localeCompare(String(b.p.nick || ''), 'it') * dir;
+          case 'team': return String(a.p.team || '').localeCompare(String(b.p.team || ''), 'it') * dir;
+          case 'regate': va = Number(a.r.gare_disputate) || 0; vb = Number(b.r.gare_disputate) || 0; break;
+          case 'punti': va = Number(a.r.punti_totali) || 0; vb = Number(b.r.punti_totali) || 0; break;
+          default: va = a.r.posizione || 999; vb = b.r.posizione || 999;
+        }
+        return (va - vb) * dir;
+      });
+      const th = (k, label, cls) => '<th class="sortable' + (cls ? ' ' + cls : '') +
+        (rankSort.key === k ? ' sort-' + (rankSort.dir === 'asc' ? 'asc' : 'desc') : '') +
+        '" data-sort="' + k + '">' + label + '</th>';
+      let html = '<table class="rank-table"><thead><tr>' +
+        th('pos', '#') + th('nick', 'Skipper') + th('team', 'Team') + th('regate', 'Regate') + th('punti', 'Punti', 'pts') +
+        '</tr></thead><tbody>';
+      withP.forEach(({ r, p }) => {
         const isMe = currentUserId && String(r.user_id) === String(currentUserId);
-        html += '<tr' + (isMe ? ' class="is-me"' : '') + '><td class="pos">' + (r.posizione != null ? r.posizione : i + 1) + '</td><td><div class="nick">' + esc(p.nick) + '</div>' + (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') + '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + (r.gare_disputate != null ? r.gare_disputate : '—') + '</td><td class="pts">' + r.punti_totali + '</td></tr>';
+        html += '<tr' + (isMe ? ' class="is-me"' : '') + '><td class="pos">' + (r.posizione != null ? r.posizione : '—') + '</td><td><div class="nick">' + esc(p.nick) + '</div>' + (p.nome ? '<div class="name">' + esc(p.nome) + '</div>' : '') + '</td><td>' + (p.team ? '<span class="team">' + esc(p.team) + '</span>' : '—') + '</td><td>' + (r.gare_disputate != null ? r.gare_disputate : '—') + '</td><td class="pts">' + r.punti_totali + '</td></tr>';
       });
       html += '</tbody></table>';
       box.innerHTML = html;
@@ -384,6 +407,18 @@
       if (teamSel && !teamSel._wired) {
         teamSel._wired = true;
         teamSel.addEventListener('change', () => { rankFilter.team = teamSel.value || ''; renderClassificaGenerale(); });
+      }
+      const box = document.getElementById('classifica-generale');
+      if (box && !box._sortWired) {
+        box._sortWired = true;
+        box.addEventListener('click', (e) => {
+          const el = e.target.closest ? e.target.closest('th.sortable') : null;
+          if (!el) return;
+          const k = el.getAttribute('data-sort');
+          if (rankSort.key === k) rankSort.dir = rankSort.dir === 'asc' ? 'desc' : 'asc';
+          else { rankSort.key = k; rankSort.dir = 'asc'; }
+          renderClassificaGenerale();
+        });
       }
     }
 
