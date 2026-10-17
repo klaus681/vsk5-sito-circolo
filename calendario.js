@@ -20,10 +20,10 @@
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """);
   }
 
   function startOfDay(d) {
@@ -36,6 +36,39 @@
     return a.getFullYear() === b.getFullYear() &&
       a.getMonth() === b.getMonth() &&
       a.getDate() === b.getDate();
+  }
+
+  /** Chiave giorno YYYY-MM-DD in locale (evita shift UTC) */
+  function dayKeyFromDate(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  /** Per eventi: data di calendario dal valore salvato (primi 10 char se ISO) */
+  function dayKeyFromEvent(iso) {
+    if (!iso) return "";
+    var s = String(iso).trim();
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    try {
+      return dayKeyFromDate(new Date(s));
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function parseEventLocal(iso) {
+    if (!iso) return null;
+    var s = String(iso).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      var p = s.split("-");
+      return new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0);
+    }
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
   }
 
   function mondayOf(d) {
@@ -55,7 +88,10 @@
   function fmtTime(iso) {
     if (!iso) return "";
     try {
-      return new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso).trim())) return "";
+      var d = parseEventLocal(iso) || new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     } catch (e) {
       return "";
     }
@@ -64,7 +100,8 @@
   function fmtFull(iso) {
     if (!iso) return "Data da definire";
     try {
-      return new Date(iso).toLocaleString("it-IT", {
+      var d = parseEventLocal(iso) || new Date(iso);
+      return d.toLocaleString("it-IT", {
         weekday: "long",
         day: "numeric",
         month: "long",
@@ -86,9 +123,10 @@
   }
 
   function eventsOnDay(dayDate) {
+    var key = dayKeyFromDate(dayDate);
     return filteredEvents().filter(function (e) {
       if (!e.date) return false;
-      return isSameDay(new Date(e.date), dayDate);
+      return dayKeyFromEvent(e.date) === key;
     });
   }
 
@@ -127,6 +165,7 @@
         if (!g.data_gara) return;
         var gTipo = (g.tipo || "ufficiale").toLowerCase();
         var calType = gTipo === "aperto" ? "aperto" : (gTipo === "speciale" ? "speciale" : "ufficiale");
+        if (calType !== "aperto" && calType !== "speciale") calType = "ufficiale";
         events.push({
           id: "g-" + g.id,
           type: calType,
@@ -173,8 +212,7 @@
       } else {
         el.textContent =
           mon.getDate() + " " + MONTHS[mon.getMonth()].slice(0, 3) +
-          " – " + sun.getDate() + " " + MONTHS[sun.getMonth()].slice(0, 3) +
-          " " + sun.getFullYear();
+          " – " + sun.getDate() + " " + MONTHS[sun.getMonth()].slice(0, 3) + " " + sun.getFullYear();
       }
     }
   }
@@ -197,14 +235,14 @@
       var inMonth = day.getMonth() === month;
       var isToday = isSameDay(day, today);
       var dayEvents = eventsOnDay(day);
-      var cls = "cal-day" + (inMonth ? "" : " other-month") + (isToday ? " today" : "");
+      var cls = "cal-day" + (inMonth ? "" : " other-month") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "");
 
       html += '<div class="' + cls + '">';
       html += '<div class="cal-day-num">' + day.getDate() + "</div>";
 
       var maxShow = 3;
       dayEvents.slice(0, maxShow).forEach(function (ev) {
-        var past = new Date(ev.date).getTime() < now;
+        var past = (parseEventLocal(ev.date) || new Date(ev.date)).getTime() < now;
         html +=
           '<a href="#" class="cal-event ' + esc(ev.type) + (past ? " past" : "") +
           '" data-id="' + esc(ev.id) + '" title="' + esc(ev.title) + " · " + esc(fmtTime(ev.date)) + '">' +
@@ -244,12 +282,12 @@
         var day = addDays(mon, d);
         var isToday = isSameDay(day, today);
         var dayEvents = eventsOnDay(day).filter(function (ev) {
-          var t = new Date(ev.date);
+          var t = parseEventLocal(ev.date) || new Date(ev.date);
           return t.getHours() === hour;
         });
         if (hour === 10) {
           eventsOnDay(day).forEach(function (ev) {
-            var t = new Date(ev.date);
+            var t = parseEventLocal(ev.date) || new Date(ev.date);
             if (t.getHours() < 8 || t.getHours() > 22) {
               if (dayEvents.indexOf(ev) < 0) dayEvents.push(ev);
             }
@@ -278,104 +316,84 @@
     if (!box) return;
 
     if (state.loading) {
-      box.innerHTML = '<p class="cal-loading">Caricamento calendario…</p>';
+      box.innerHTML = '<p class="loading-text" style="color:var(--text-muted);padding:2rem 0">Caricamento calendario...</p>';
       return;
     }
 
-    if (state.view === "month") renderMonth(box);
-    else renderWeek(box);
+    if (state.view === "week") renderWeek(box);
+    else renderMonth(box);
 
-    box.querySelectorAll("[data-id]").forEach(function (el) {
-      el.addEventListener("click", function (e) {
+    box.querySelectorAll("[data-id]").forEach(function (a) {
+      a.addEventListener("click", function (e) {
         e.preventDefault();
-        openModal(el.getAttribute("data-id"));
+        var id = a.getAttribute("data-id");
+        var ev = state.events.find(function (x) { return x.id === id; });
+        if (!ev) return;
+        var detail = document.getElementById("cal-detail");
+        if (!detail) return;
+        detail.style.display = "block";
+        detail.innerHTML =
+          "<h3>" + esc(ev.title) + "</h3>" +
+          '<p class="cal-detail-meta">' + esc(fmtFull(ev.date)) +
+          ' · <span class="cal-dot ' + esc(ev.type) + '" style="display:inline-block;vertical-align:middle"></span> ' +
+          esc(ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : "Gara ufficiale")) +
+          "</p>" +
+          (ev.desc ? "<p>" + esc(ev.desc) + "</p>" : "") +
+          (ev.link ? '<p><a href="' + esc(ev.link) + '">Vai alla pagina →</a></p>' : "");
+        detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
       });
     });
-  }
-
-  function openModal(id) {
-    var ev = state.events.find(function (x) { return x.id === id; });
-    if (!ev) return;
-    document.getElementById("cal-modal-title").textContent = ev.title;
-    document.getElementById("cal-modal-meta").textContent =
-      (ev.type === "aperto" ? "Evento aperto · " : (ev.type === "speciale" ? "Evento speciale · " : "Gara ufficiale · ")) + fmtFull(ev.date);
-    document.getElementById("cal-modal-desc").textContent = ev.desc || "Nessuna descrizione.";
-    var link = document.getElementById("cal-modal-link");
-    link.href = ev.link;
-    link.textContent = ev.type === "ufficiale" || ev.type === "speciale" ? "Vai a Calendario gare" : "Vai a Eventi aperti";
-    document.getElementById("cal-modal").classList.add("open");
-  }
-
-  function closeModal() {
-    document.getElementById("cal-modal").classList.remove("open");
-  }
-
-  function goPrev() {
-    if (state.view === "month") {
-      state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth() - 1, 1);
-    } else {
-      state.cursor = addDays(state.cursor, -7);
-    }
-    render();
-  }
-
-  function goNext() {
-    if (state.view === "month") {
-      state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + 1, 1);
-    } else {
-      state.cursor = addDays(state.cursor, 7);
-    }
-    render();
-  }
-
-  function goToday() {
-    state.cursor = new Date();
-    render();
-  }
-
-  function setView(v) {
-    state.view = v;
-    document.querySelectorAll(".cal-view-toggle[data-view]").forEach(function (btn) {
-      btn.classList.toggle("active", btn.getAttribute("data-view") === v);
-    });
-    render();
-  }
-
-  function setFilter(f) {
-    state.filter = f;
-    render();
   }
 
   function wire() {
     var prev = document.getElementById("cal-prev");
     var next = document.getElementById("cal-next");
-    var today = document.getElementById("cal-today");
-    var filt = document.getElementById("cal-filter");
-    var btnM = document.getElementById("btn-month");
-    var btnW = document.getElementById("btn-week");
-    var modal = document.getElementById("cal-modal");
-    var closeBtn = document.getElementById("cal-modal-close");
+    var todayBtn = document.getElementById("cal-today");
+    if (prev) prev.onclick = function () {
+      if (state.view === "month") state.cursor.setMonth(state.cursor.getMonth() - 1);
+      else state.cursor = addDays(state.cursor, -7);
+      render();
+    };
+    if (next) next.onclick = function () {
+      if (state.view === "month") state.cursor.setMonth(state.cursor.getMonth() + 1);
+      else state.cursor = addDays(state.cursor, 7);
+      render();
+    };
+    if (todayBtn) todayBtn.onclick = function () {
+      state.cursor = new Date();
+      render();
+    };
 
-    if (prev) prev.onclick = goPrev;
-    if (next) next.onclick = goNext;
-    if (today) today.onclick = goToday;
-    if (filt) filt.onchange = function () { setFilter(filt.value); };
-    if (btnM) btnM.onclick = function () { setView("month"); };
-    if (btnW) btnW.onclick = function () { setView("week"); };
-    if (closeBtn) closeBtn.onclick = closeModal;
-    if (modal) {
-      modal.addEventListener("click", function (e) {
-        if (e.target === modal) closeModal();
-      });
-    }
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") closeModal();
+    document.querySelectorAll(".cal-view-toggle").forEach(function (btn) {
+      btn.onclick = function () {
+        document.querySelectorAll(".cal-view-toggle").forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        state.view = btn.getAttribute("data-view") || "month";
+        render();
+      };
     });
+
+    var filter = document.getElementById("cal-filter");
+    if (filter) filter.onchange = function () {
+      state.filter = filter.value || "all";
+      render();
+    };
   }
 
-  if (typeof CVI !== "undefined" && CVI.init) {
-    CVI.init("calendario.html");
+  function waitCVI(cb) {
+    var n = 0;
+    (function tick() {
+      if (window.CVI && CVI.supabase) return cb();
+      if (++n > 80) return cb();
+      setTimeout(tick, 50);
+    })();
   }
-  wire();
-  loadEvents();
+
+  function boot() {
+    wire();
+    waitCVI(loadEvents);
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 })();
