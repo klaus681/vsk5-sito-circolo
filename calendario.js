@@ -3,6 +3,8 @@
   "use strict";
 
   var state = { view: "month", filter: "all", cursor: new Date(), events: [], loading: true };
+  var SITE = "https://www.circolovelicoitalia.it";
+  var openEventId = null;
   var WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
   var MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
@@ -238,6 +240,7 @@
   function openModal(id) {
     var ev = state.events.find(function (x) { return x.id === id; });
     if (!ev) return;
+    openEventId = id;
     document.getElementById("cal-modal-title").textContent = ev.title;
     document.getElementById("cal-modal-meta").textContent =
       fmtFull(ev.date) + " · " + (ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : "Gara ufficiale"));
@@ -253,6 +256,122 @@
   function closeModal() {
     var m = document.getElementById("cal-modal");
     if (m) m.classList.remove("open");
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  function icsEscape(s) {
+    return String(s == null ? "" : s)
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r?\n/g, "\\n");
+  }
+
+  function foldLine(line) {
+    if (line.length <= 73) return line;
+    var out = "", i = 0;
+    while (i < line.length) {
+      var size = i === 0 ? 73 : 72;
+      var chunk = line.slice(i, i + size);
+      out += (i === 0 ? "" : "\r\n ") + chunk;
+      i += chunk.length;
+    }
+    return out;
+  }
+
+  function isDateOnly(iso) { return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || "").trim()); }
+
+  function icsStamp(iso) {
+    var s = String(iso || "").trim();
+    if (!s) return null;
+    if (isDateOnly(s)) {
+      var p = s.split("-");
+      return { allDay: true, value: p[0] + p[1] + p[2] };
+    }
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return null;
+    return { allDay: false, value: d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "") };
+  }
+
+  function utcStamp(date) {
+    return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  }
+
+  function addDaysToStamp(stamp, n) {
+    var d = new Date(+stamp.slice(0, 4), +stamp.slice(4, 6) - 1, +stamp.slice(6, 8));
+    d.setDate(d.getDate() + n);
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate());
+  }
+
+  function buildVEvent(ev) {
+    var st = icsStamp(ev.date);
+    if (!st) return "";
+    var url = ev.link ? SITE + "/" + ev.link : SITE;
+    var lines = ["BEGIN:VEVENT", "UID:" + ev.id + "@circolovelicoitalia.it", "DTSTAMP:" + utcStamp(new Date())];
+    if (st.allDay) {
+      lines.push("DTSTART;VALUE=DATE:" + st.value);
+      lines.push("DTEND;VALUE=DATE:" + addDaysToStamp(st.value, 1));
+    } else {
+      lines.push("DTSTART:" + st.value);
+      var end = new Date(ev.date); end.setTime(end.getTime() + 2 * 3600 * 1000);
+      lines.push("DTEND:" + utcStamp(end));
+    }
+    lines.push("SUMMARY:" + icsEscape(ev.title || "Evento"));
+    if (ev.desc) lines.push("DESCRIPTION:" + icsEscape(ev.desc));
+    lines.push("URL:" + url);
+    lines.push("LOCATION:Virtual Skipper \u2013 Circolo Velico Italia");
+    lines.push("END:VEVENT");
+    return lines.map(foldLine).join("\r\n");
+  }
+
+  function buildICS(events) {
+    var parts = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//CVI Virtual//Calendario//IT", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+    (events || []).forEach(function (ev) { var v = buildVEvent(ev); if (v) parts.push(v); });
+    parts.push("END:VCALENDAR");
+    return parts.join("\r\n") + "\r\n";
+  }
+
+  function downloadICS(filename, content) {
+    var blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  function exportAllICS() {
+    var list = filteredEvents();
+    if (!list.length) { alert("Nessun evento da esportare."); return; }
+    downloadICS("calendario-cvi.ics", buildICS(list));
+  }
+
+  function exportEventICS(ev) {
+    if (!ev) return;
+    var safe = String(ev.title || "evento").replace(/[^\w\-]+/g, "_").slice(0, 40);
+    downloadICS("cvi-" + safe + ".ics", buildICS([ev]));
+  }
+
+  function gcalUrl(ev) {
+    var st = icsStamp(ev.date);
+    if (!st) return "";
+    var dates;
+    if (st.allDay) {
+      dates = st.value + "/" + addDaysToStamp(st.value, 1);
+    } else {
+      var end = new Date(ev.date); end.setTime(end.getTime() + 2 * 3600 * 1000);
+      dates = st.value + "/" + utcStamp(end);
+    }
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE"
+      + "&text=" + encodeURIComponent(ev.title || "Evento")
+      + "&dates=" + dates
+      + "&details=" + encodeURIComponent(ev.desc || "")
+      + "&location=" + encodeURIComponent("Virtual Skipper \u2013 Circolo Velico Italia");
+  }
+
+  function currentEvent() {
+    return state.events.find(function (x) { return x.id === openEventId; });
   }
 
   function wire() {
@@ -288,6 +407,16 @@
     if (closeBtn) closeBtn.onclick = closeModal;
     if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+    var icsAllBtn = document.getElementById("cal-ics-all");
+    if (icsAllBtn) icsAllBtn.onclick = exportAllICS;
+    var icsBtn = document.getElementById("cal-modal-ics");
+    if (icsBtn) icsBtn.onclick = function () { exportEventICS(currentEvent()); };
+    var gcalBtn = document.getElementById("cal-modal-gcal");
+    if (gcalBtn) gcalBtn.onclick = function () {
+      var ev = currentEvent();
+      var u = ev && gcalUrl(ev);
+      if (u) window.open(u, "_blank", "noopener");
+    };
   }
 
   function waitCVI(cb) {
