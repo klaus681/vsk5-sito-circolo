@@ -45,7 +45,7 @@
       s8.textContent = rg;
       document.head.appendChild(s8);
     }
-    var tn = await fetch("tornei-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var tn = await fetch("tornei-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (tn) {
       var s9 = document.createElement("script");
       s9.textContent = tn;
