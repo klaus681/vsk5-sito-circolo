@@ -2,6 +2,8 @@
 (function () {
   "use strict";
 
+  var busy = false;
+
   function esc(s) {
     if (s == null) return "";
     return String(s)
@@ -25,9 +27,11 @@
   async function loadBanner() {
     var path = (location.pathname || "").split("/").pop() || "";
     if (path && path !== "index.html" && path !== "" && path !== "/") return;
+    if (busy || document.getElementById("home-torneo-banner")) return;
+    busy = true;
 
     var ok = await waitCVI();
-    if (!ok) return;
+    if (!ok) { busy = false; return; }
 
     try {
       var r = await CVI.supabase
@@ -138,6 +142,8 @@
       }
     } catch (e) {
       console.warn("[CVI tornei-home]", e);
+    } finally {
+      busy = false;
     }
   }
 

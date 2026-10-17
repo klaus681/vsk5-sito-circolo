@@ -27,6 +27,13 @@ return '<div class="admin-card"><h3 id="tn-form-title" style="margin:0 0 0.5rem;
 '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 0.75rem">Seleziona le gare ufficiali del torneo.</p><div id="tn-gare-checks" style="max-height:280px;overflow:auto;margin-bottom:0.75rem"></div>'+
 '<div class="form-actions"><button type="button" class="btn-primary" id="tn-gare-save">Salva gare</button><button type="button" class="btn-ghost" id="tn-gare-close">Chiudi</button>'+
 '<a id="tn-public-link" href="tornei.html" target="_blank" rel="noopener" class="btn-ghost" style="text-decoration:none">Pagina pubblica</a></div><p id="tn-gare-status" style="margin:0.5rem 0 0;font-size:0.85rem"></p></div>'+
+'<div id="tn-adm-iscr-panel" class="admin-card" style="display:none"><h3 style="margin:0 0 0.5rem;color:#7dd3fc">Iscritti: <span id="tn-adm-iscr-name" style="color:#fff"></span></h3>'+
+'<div id="tn-adm-iscr-list" style="margin-bottom:0.75rem"></div>'+
+'<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">'+
+'<select class="adm-select" id="tn-adm-iscr-add-sel" style="min-width:220px"><option value="">Aggiungi skipper...</option></select>'+
+'<button type="button" class="btn-primary" id="tn-adm-iscr-add-btn">Aggiungi</button>'+
+'<button type="button" class="btn-ghost" id="tn-adm-iscr-close">Chiudi</button></div>'+
+'<p id="tn-adm-iscr-status" style="margin:0.5rem 0 0;font-size:0.85rem"></p></div>'+
 '<div id="tn-sql-hint" class="sql-hint" style="display:none">Esegui tornei-sql.sql su Supabase.</div>'+
 '<div id="tn-list"><p class="loading-text">Apri questa scheda per caricare i tornei.</p></div>';
 }
@@ -94,6 +101,7 @@ async function loadTornei(){
         '<div style="display:flex;gap:0.4rem;flex-wrap:wrap">'+
         '<button type="button" class="btn-sm tn-edit" data-id="'+esc(t.id)+'">Modifica</button>'+
         '<button type="button" class="btn-sm tn-gare" data-id="'+esc(t.id)+'">Gare</button>'+
+        '<button type="button" class="btn-sm tn-iscr" data-id="'+esc(t.id)+'">Iscritti</button>'+
         '<a class="btn-sm" href="tornei.html?id='+encodeURIComponent(t.id)+'" target="_blank" rel="noopener" style="text-decoration:none">Classifica</a>'+
         '<button type="button" class="btn-danger-sm tn-del" data-id="'+esc(t.id)+'">Elimina</button></div></div>'+
         (t.descrizione?'<p class="card-desc">'+esc(t.descrizione)+'</p>':'')+'</div>';
@@ -111,6 +119,7 @@ async function loadTornei(){
       document.getElementById("tn-form").scrollIntoView({behavior:"smooth",block:"nearest"});
     };});
     box.querySelectorAll(".tn-gare").forEach(function(b){ b.onclick=function(){ openGarePanel(b.getAttribute("data-id")); };});
+    box.querySelectorAll(".tn-iscr").forEach(function(b){ b.onclick=function(){ openIscrPanel(b.getAttribute("data-id")); };});
     box.querySelectorAll(".tn-del").forEach(function(b){ b.onclick=async function(){
       var id=b.getAttribute("data-id"); var t=torneiCache.find(function(x){return String(x.id)===id;});
       if(!confirm("Eliminare il torneo «"+(t&&t.titolo?t.titolo:"")+"»?")) return;
@@ -152,7 +161,9 @@ async function saveGareLinks(){
     var del=await CVI.supabase.from("torneo_gare").delete().eq("torneo_id",torneoId); if(del.error) throw del.error;
     if(ids.length){ var rows=ids.map(function(gid,i){ return {torneo_id:torneoId,gara_id:gid,ordine:i}; });
       var ins=await CVI.supabase.from("torneo_gare").insert(rows); if(ins.error) throw ins.error; }
-    if(st){ st.style.color="#34d399"; st.textContent="Salvate "+ids.length+" gare."; }
+    var tt=torneiCache.find(function(x){ return String(x.id)===String(torneoId); });
+    var prev=(tt&&tt.gare_previste!=null)?tt.gare_previste:0;
+    if(st){ st.style.color="#34d399"; st.textContent="Salvate "+ids.length+" gare."+(prev&&prev!==ids.length?" (previste: "+prev+" - controlla la differenza)":""); }
     notify("Gare collegate","ok"); loadTornei();
   }catch(e){ if(st){ st.style.color="#f87171"; st.textContent=e.message||e; } alert("Errore: "+(e.message||e)); }
 }
@@ -181,12 +192,73 @@ async function saveTorneo(e){
     alert("Errore salvataggio: "+(err.message||err));
   }finally{ if(btn) btn.disabled=false; }
 }
+var profilesCache=null;
+function profLabel(p){ if(!p) return "?"; var n=(p.nickname||"").trim(); var nm=[p.nome,p.cognome].filter(Boolean).join(" ").trim(); return n||nm||String(p.id||"").slice(0,8); }
+async function loadProfiles(){
+  if(profilesCache) return profilesCache;
+  var r=await CVI.supabase.from("profiles").select("id,nickname,nome,cognome,team").order("nickname",{ascending:true});
+  if(r.error) throw r.error; profilesCache=r.data||[]; return profilesCache;
+}
+async function openIscrPanel(torneoId){
+  var t=torneiCache.find(function(x){ return String(x.id)===String(torneoId); }); if(!t) return;
+  var panel=document.getElementById("tn-adm-iscr-panel"); if(!panel) return;
+  panel.style.display="block"; panel.setAttribute("data-torneo-id",torneoId);
+  var nm=document.getElementById("tn-adm-iscr-name"); if(nm) nm.textContent=t.titolo||"";
+  var st=document.getElementById("tn-adm-iscr-status"); if(st){ st.textContent=""; st.style.color=""; }
+  await refreshIscrPanel(torneoId);
+  panel.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+async function refreshIscrPanel(torneoId){
+  var listBox=document.getElementById("tn-adm-iscr-list"); if(!listBox) return;
+  listBox.innerHTML='<p class="loading-text">Caricamento...</p>';
+  try{
+    await loadProfiles();
+    var r=await CVI.supabase.from("torneo_iscrizioni").select("id,user_id").eq("torneo_id",torneoId);
+    if(r.error) throw r.error;
+    var rows=r.data||[]; var pmap={}; profilesCache.forEach(function(p){ pmap[p.id]=p; });
+    if(!rows.length){ listBox.innerHTML='<p class="empty-text">Nessun iscritto.</p>'; }
+    else{
+      listBox.innerHTML='<ul style="list-style:none;padding:0;margin:0">'+rows.map(function(x){
+        var p=pmap[x.user_id]||{};
+        return '<li style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="color:#e2e8f0">'+esc(profLabel(p))+(p.team?' <span style="color:#94a3b8">- '+esc(p.team)+'</span>':'')+'</span><button type="button" class="btn-danger-sm tn-adm-iscr-del" data-id="'+esc(x.id)+'">Rimuovi</button></li>';
+      }).join("")+'</ul>';
+      listBox.querySelectorAll(".tn-adm-iscr-del").forEach(function(b){ b.onclick=function(){ removeIscritto(torneoId,b.getAttribute("data-id")); }; });
+    }
+    var sel=document.getElementById("tn-adm-iscr-add-sel");
+    if(sel){
+      var iscr={}; rows.forEach(function(x){ iscr[x.user_id]=true; });
+      sel.innerHTML='<option value="">Aggiungi skipper...</option>'+profilesCache.filter(function(p){ return !iscr[p.id]; }).map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(profLabel(p))+'</option>'; }).join("");
+    }
+  }catch(e){ listBox.innerHTML='<p style="color:#f87171">'+esc(e.message||e)+'</p>'; }
+}
+async function addIscritto(torneoId){
+  var sel=document.getElementById("tn-adm-iscr-add-sel"); var uid=sel?sel.value:""; var st=document.getElementById("tn-adm-iscr-status");
+  if(!uid){ if(st){ st.style.color="#f87171"; st.textContent="Seleziona uno skipper."; } return; }
+  try{
+    var r=await CVI.supabase.from("torneo_iscrizioni").insert({torneo_id:torneoId,user_id:uid});
+    if(r.error) throw r.error;
+    if(st){ st.style.color="#34d399"; st.textContent="Iscritto aggiunto."; }
+    await refreshIscrPanel(torneoId);
+  }catch(e){ if(st){ st.style.color="#f87171"; st.textContent=e.message||e; } }
+}
+async function removeIscritto(torneoId,id){
+  if(!confirm("Rimuovere questo iscritto dal torneo?")) return;
+  var st=document.getElementById("tn-adm-iscr-status");
+  try{
+    var r=await CVI.supabase.from("torneo_iscrizioni").delete().eq("id",id);
+    if(r.error) throw r.error;
+    if(st){ st.style.color="#34d399"; st.textContent="Iscritto rimosso."; }
+    await refreshIscrPanel(torneoId);
+  }catch(e){ if(st){ st.style.color="#f87171"; st.textContent=e.message||e; } }
+}
 function wire(){
   if(!ensureUI()) return;
   var form=document.getElementById("tn-form"); if(form&&!form._wired){ form._wired=true; form.onsubmit=saveTorneo; }
   var cancel=document.getElementById("tn-cancel-btn"); if(cancel&&!cancel._wired){ cancel._wired=true; cancel.onclick=resetForm; }
   var gs=document.getElementById("tn-gare-save"); if(gs&&!gs._wired){ gs._wired=true; gs.onclick=saveGareLinks; }
   var gc=document.getElementById("tn-gare-close"); if(gc&&!gc._wired){ gc._wired=true; gc.onclick=function(){ var p=document.getElementById("tn-gare-panel"); if(p) p.style.display="none"; }; }
+  var ib=document.getElementById("tn-adm-iscr-add-btn"); if(ib&&!ib._wired){ ib._wired=true; ib.onclick=function(){ var p=document.getElementById("tn-adm-iscr-panel"); var tid=p&&p.getAttribute("data-torneo-id"); if(tid) addIscritto(tid); }; }
+  var ic=document.getElementById("tn-adm-iscr-close"); if(ic&&!ic._wired){ ic._wired=true; ic.onclick=function(){ var p=document.getElementById("tn-adm-iscr-panel"); if(p) p.style.display="none"; }; }
   document.querySelectorAll('.admin-tab[data-tab="tornei"]').forEach(function(tab){
     if(tab._tnWired) return; tab._tnWired=true;
     tab.addEventListener("click",function(){

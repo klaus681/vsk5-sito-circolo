@@ -10,6 +10,6 @@ document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 /* Extra: voce Tornei nel menu Gare & Eventi */
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
 /* Extra: banner torneo in home se pubblicato */
-document.write('<script src="tornei-home.js?v=2"><\/script>');
+document.write('<script src="tornei-home.js?v=3"><\/script>');
 /* Extra: sfondi home personalizzati da admin */
 document.write('<script src="home-sfondi.js?v=1"><\/script>');
