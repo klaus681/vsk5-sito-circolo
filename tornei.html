@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tornei - CVI Virtual</title>
-  <meta name="description" content="Tornei e campionati del Circolo Velico Italia Virtual: classifica dedicata per ogni serie di regate.">
+  <meta name="description" content="Tornei e campionati del Circolo Velico Italia Virtual.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="mobile.css">
-  <link rel="stylesheet" href="fix-nav.css?v=2">
+  <link rel="stylesheet" href="form-nav.css?v=2">
   <style>
     .tn-grid { display: grid; gap: 1rem; }
     .tn-card {
@@ -41,7 +41,6 @@
     .tn-table .pos { font-weight: 800; color: #7dd3fc; width: 2.5rem; }
     .tn-table .pts { font-weight: 700; color: #fff; }
     .tn-back { display: inline-block; margin-bottom: 1rem; color: #7dd3fc; text-decoration: none; font-weight: 600; font-size: .9rem; }
-    .tn-back:hover { text-decoration: underline; }
     .tn-gare-list { list-style: none; padding: 0; margin: .75rem 0 0; }
     .tn-gare-list li {
       padding: .4rem 0; border-bottom: 1px solid rgba(255,255,255,.04);
@@ -52,14 +51,14 @@
 <body>
   <header>
     <a href="index.html" class="logo-container">
-      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
+      <span class="logo-text">CVI <span>Virtual</span></span>
     </a>
     <nav class="nav-desktop" aria-label="Menu principale">
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="team.html">Team</a></li>
         <li class="dropdown">
-          <a href="gare.html">Gare & Eventi ▾</a>
+          <a href="gare.html">Gare e Eventi</a>
           <ul class="dropdown-menu">
             <li><a href="gare.html">Calendario</a></li>
             <li><a href="classifiche.html">Classifiche</a></li>
@@ -84,11 +83,11 @@
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html">Home</a>
     <a href="team.html">Team</a>
-    <a href="gare.html">Gare & Eventi</a>
+    <a href="gare.html">Gare e Eventi</a>
     <div class="mobile-dropdown">
-      <a href="gare.html">→ Calendario</a>
-      <a href="classifiche.html">→ Classifiche</a>
-      <a href="tornei.html">→ Tornei</a>
+      <a href="gare.html">Calendario</a>
+      <a href="classifiche.html">Classifiche</a>
+      <a href="tornei.html">Tornei</a>
     </div>
     <a href="albo-doro.html">Albo d'Oro</a>
     <a href="regolamento.html">Regolamento</a>
@@ -109,7 +108,7 @@
       </div>
 
       <div id="tn-detail-view" style="display:none">
-        <a href="tornei.html" class="tn-back" id="tn-back">← Tutti i tornei</a>
+        <a href="tornei.html" class="tn-back" id="tn-back">Tutti i tornei</a>
         <h1 id="tn-detail-title">Torneo</h1>
         <p id="tn-detail-meta" class="tn-meta"></p>
         <p id="tn-detail-desc" style="color:#cbd5e1;margin-top:.75rem"></p>
@@ -129,281 +128,13 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <span class="logo-text">CVI <span style="color: var(--accent-color);">Virtual</span></span>
         <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
       </div>
     </div>
   </footer>
 
   <script src="common.js"></script>
-  <script src="form-nav.js"></script>
-  <script>
-  (function () {
-    var STATI = { bozza: "Bozza", aperto: "Aperto", in_corso: "In corso", chiuso: "Chiuso" };
-
-    function esc(s) {
-      if (s == null) return "";
-      return String(s)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
-        .replace(/"/g, """);
-    }
-
-    function qs(name) {
-      var m = location.search.match(new RegExp("[?&]" + name + "=([^&]*)"));
-      return m ? decodeURIComponent(m[1]) : "";
-    }
-
-    function waitCVI() {
-      return new Promise(function (resolve) {
-        var n = 0;
-        (function tick() {
-          if (window.CVI && CVI.supabase) return resolve();
-          if (++n > 80) return resolve();
-          setTimeout(tick, 50);
-        })();
-      });
-    }
-
-    /** Classifica Low Point: ogni riga risultati_gara e un punteggio; scarta i N peggiori (punti piu alti). */
-    function calcRanking(risultati, scarti) {
-      var byUser = {};
-      risultati.forEach(function (r) {
-        var uid = String(r.user_id);
-        if (!byUser[uid]) byUser[uid] = [];
-        byUser[uid].push(Number(r.punti) || 0);
-      });
-      var rows = [];
-      Object.keys(byUser).forEach(function (uid) {
-        var scores = byUser[uid].slice().sort(function (a, b) {
-          return b - a;
-        }); // peggiori prima
-        var discarded = scores.slice(0, Math.min(scarti, scores.length));
-        var kept = scores.slice(Math.min(scarti, scores.length));
-        var total = kept.reduce(function (s, x) {
-          return s + x;
-        }, 0);
-        rows.push({
-          user_id: uid,
-          punti_totali: total,
-          prove: byUser[uid].length,
-          scartati: discarded.length,
-          dettagli: byUser[uid].slice()
-        });
-      });
-      rows.sort(function (a, b) {
-        if (a.punti_totali !== b.punti_totali) return a.punti_totali - b.punti_totali;
-        return b.prove - a.prove;
-      });
-      rows.forEach(function (r, i) {
-        r.posizione = i + 1;
-      });
-      return rows;
-    }
-
-    async function loadList() {
-      var box = document.getElementById("tn-list");
-      try {
-        var r = await CVI.supabase
-          .from("tornei")
-          .select("*")
-          .eq("pubblicato", true)
-          .order("data_inizio", { ascending: false });
-        if (r.error) throw r.error;
-        var list = r.data || [];
-        if (!list.length) {
-          box.innerHTML =
-            '<p class="empty-text" style="color:var(--text-muted)">Nessun torneo pubblicato al momento.</p>';
-          return;
-        }
-        box.innerHTML = list
-          .map(function (t) {
-            var st = STATI[t.stato] || t.stato;
-            var dates = [];
-            if (t.data_inizio) dates.push(t.data_inizio);
-            if (t.data_fine) dates.push(t.data_fine);
-            return (
-              '<div class="tn-card" data-id="' +
-              esc(t.id) +
-              '">' +
-              "<h2>" +
-              esc(t.titolo) +
-              "</h2>" +
-              '<div class="tn-meta">' +
-              '<span class="tn-badge ' +
-              esc(t.stato || "") +
-              '">' +
-              esc(st) +
-              "</span>" +
-              "scarti " +
-              esc(String(t.scarti != null ? t.scarti : 0)) +
-              (dates.length ? " · " + esc(dates.join(" → ")) : "") +
-              "</div>" +
-              (t.descrizione
-                ? '<p style="color:#94a3b8;font-size:.9rem;margin:.5rem 0 0">' +
-                  esc(t.descrizione).slice(0, 160) +
-                  "</p>"
-                : "") +
-              "</div>"
-            );
-          })
-          .join("");
-        box.querySelectorAll(".tn-card").forEach(function (card) {
-          card.onclick = function () {
-            history.pushState(null, "", "tornei.html?id=" + encodeURIComponent(card.getAttribute("data-id")));
-            showDetail(card.getAttribute("data-id"));
-          };
-        });
-      } catch (e) {
-        box.innerHTML =
-          '<p style="color:#f87171">Errore caricamento: ' +
-          esc(e.message || e) +
-          "</p>";
-      }
-    }
-
-    async function showDetail(id) {
-      document.getElementById("tn-list-view").style.display = "none";
-      document.getElementById("tn-detail-view").style.display = "block";
-      var rankBox = document.getElementById("tn-rank-box");
-      rankBox.innerHTML = '<p class="loading-text" style="color:var(--text-muted)">Calcolo classifica...</p>';
-
-      try {
-        var tr = await CVI.supabase.from("tornei").select("*").eq("id", id).maybeSingle();
-        if (tr.error) throw tr.error;
-        var t = tr.data;
-        if (!t) {
-          rankBox.innerHTML = "<p>Torneo non trovato.</p>";
-          return;
-        }
-
-        document.getElementById("tn-detail-title").textContent = t.titolo || "Torneo";
-        var st = STATI[t.stato] || t.stato;
-        var meta = st + " · scarti " + (t.scarti != null ? t.scarti : 0);
-        if (t.data_inizio || t.data_fine)
-          meta += " · " + [t.data_inizio, t.data_fine].filter(Boolean).join(" → ");
-        document.getElementById("tn-detail-meta").textContent = meta;
-        document.getElementById("tn-detail-desc").textContent = t.descrizione || "";
-
-        var links = await CVI.supabase
-          .from("torneo_gare")
-          .select("gara_id,ordine")
-          .eq("torneo_id", id)
-          .order("ordine", { ascending: true });
-        if (links.error) throw links.error;
-        var garaIds = (links.data || []).map(function (l) {
-          return l.gara_id;
-        });
-
-        var gareList = document.getElementById("tn-detail-gare");
-        if (!garaIds.length) {
-          gareList.innerHTML = "<li>Nessuna gara collegata.</li>";
-          rankBox.innerHTML =
-            '<p class="empty-text" style="color:var(--text-muted)">Collega le gare dal pannello Admin per generare la classifica.</p>';
-          return;
-        }
-
-        var gr = await CVI.supabase
-          .from("gare")
-          .select("id,titolo,data_gara")
-          .in("id", garaIds);
-        if (gr.error) throw gr.error;
-        var gareMap = {};
-        (gr.data || []).forEach(function (g) {
-          gareMap[g.id] = g;
-        });
-        gareList.innerHTML = garaIds
-          .map(function (gid, i) {
-            var g = gareMap[gid];
-            var label = g ? g.titolo : gid;
-            var d = g && g.data_gara ? String(g.data_gara).slice(0, 10) : "";
-            return "<li><strong>" + (i + 1) + ".</strong> " + esc(label) + (d ? " · " + esc(d) : "") + "</li>";
-          })
-          .join("");
-
-        var ris = await CVI.supabase
-          .from("risultati_gara")
-          .select("user_id,punti,gara_id,regata_num")
-          .in("gara_id", garaIds);
-        if (ris.error) throw ris.error;
-        var risultati = ris.data || [];
-
-        var scarti = t.scarti != null ? Number(t.scarti) : 0;
-        document.getElementById("tn-rank-hint").textContent =
-          "Low Point · " +
-          risultati.length +
-          " risultati · scarti: " +
-          scarti +
-          " (i punteggi peggiori non contano nel totale)";
-
-        var ranked = calcRanking(risultati, scarti);
-        if (!ranked.length) {
-          rankBox.innerHTML =
-            '<p class="empty-text" style="color:var(--text-muted)">Ancora nessun risultato nelle gare del torneo.</p>';
-          return;
-        }
-
-        var uids = ranked.map(function (r) {
-          return r.user_id;
-        });
-        var pr = await CVI.supabase.from("profiles").select("id,nickname,team,nome").in("id", uids);
-        var pmap = {};
-        (pr.data || []).forEach(function (p) {
-          pmap[p.id] = p;
-        });
-
-        var html =
-          '<table class="tn-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Prove</th><th>Punti</th></tr></thead><tbody>';
-        ranked.forEach(function (r) {
-          var p = pmap[r.user_id] || {};
-          var nick = p.nickname || r.user_id.slice(0, 8);
-          html +=
-            "<tr><td class=\"pos\">" +
-            r.posizione +
-            "</td><td>" +
-            esc(nick) +
-            "</td><td>" +
-            esc(p.team || "—") +
-            "</td><td>" +
-            r.prove +
-            "</td><td class=\"pts\">" +
-            r.punti_totali +
-            "</td></tr>";
-        });
-        html += "</tbody></table>";
-        rankBox.innerHTML = html;
-      } catch (e) {
-        rankBox.innerHTML =
-          '<p style="color:#f87171">Errore: ' + esc(e.message || e) + "</p>";
-      }
-    }
-
-    async function boot() {
-      await waitCVI();
-      if (!window.CVI || !CVI.supabase) {
-        document.getElementById("tn-list").innerHTML =
-          "<p style=\"color:#f87171\">Connessione non disponibile.</p>";
-        return;
-      }
-      var id = qs("id");
-      if (id) showDetail(id);
-      else loadList();
-
-      window.addEventListener("popstate", function () {
-        var id2 = qs("id");
-        if (id2) showDetail(id2);
-        else {
-          document.getElementById("tn-detail-view").style.display = "none";
-          document.getElementById("tn-list-view").style.display = "block";
-          loadList();
-        }
-      });
-    }
-
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-    else boot();
-  })();
-  </script>
+  <script src="tornei-page.js?v=1"></script>
 </body>
 </html>
