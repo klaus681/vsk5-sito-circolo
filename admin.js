@@ -15,7 +15,7 @@
       s2.textContent = dl;
       document.head.appendChild(s2);
     }
-    var st = await fetch("settings-admin.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
+    var st = await fetch("settings-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (st) {
       var s3 = document.createElement("script");
       s3.textContent = st;
@@ -45,7 +45,7 @@
       s8.textContent = rg;
       document.head.appendChild(s8);
     }
-    var tn = await fetch("tornei-admin.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
+    var tn = await fetch("tornei-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (tn) {
       var s9 = document.createElement("script");
       s9.textContent = tn;
@@ -57,7 +57,7 @@
       s10.textContent = sf;
       document.head.appendChild(s10);
     }
-    var dc = await fetch("discord-notify.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
+    var dc = await fetch("discord-notify.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
     if (dc) {
       var s4 = document.createElement("script");
       s4.textContent = dc;
