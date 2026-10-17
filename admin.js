@@ -9,7 +9,7 @@
     s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
 
-    var dl = await fetch("downloads-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
+    var dl = await fetch("downloads-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (dl) {
       var s2 = document.createElement("script");
       s2.textContent = dl;
