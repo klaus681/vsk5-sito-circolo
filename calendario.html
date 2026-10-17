@@ -220,6 +220,7 @@
             <option value="ufficiali">Solo ufficiali</option>
             <option value="aperti">Solo eventi aperti</option>
           </select>
+          <button type="button" class="cal-view-toggle" id="cal-ics-all" style="width:auto;padding:0.4rem 0.7rem;font-size:0.8rem" title="Scarica il calendario in formato .ics">📅 Esporta .ics</button>
         </div>
       </div>
 
@@ -242,6 +243,8 @@
       <div class="desc" id="cal-modal-desc"></div>
       <div class="cal-modal-actions">
         <a href="#" id="cal-modal-link" class="cal-btn-primary" target="_self">Apri dettaglio</a>
+        <button type="button" class="cal-btn-ghost" id="cal-modal-ics">📅 Aggiungi al calendario</button>
+        <a href="#" id="cal-modal-gcal" class="cal-btn-ghost" target="_blank" rel="noopener">Google Calendar</a>
         <button type="button" class="cal-btn-ghost" id="cal-modal-close">Chiudi</button>
       </div>
     </div>
@@ -257,6 +260,6 @@
   </footer>
 
   <script src="common.js"></script>
-  <script src="calendario.js?v=3"></script>
+  <script src="calendario.js?v=4"></script>
 </body>
 </html>
