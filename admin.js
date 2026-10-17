@@ -39,7 +39,7 @@
       s6.textContent = pr;
       document.head.appendChild(s6);
     }
-    var rg = await fetch("regolamento-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var rg = await fetch("regolamento-admin.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
     if (rg) {
       var s8 = document.createElement("script");
       s8.textContent = rg;
