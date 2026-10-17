@@ -1,29 +1,18 @@
-/* CVI Virtual – Calendario mensile/settimanale (gare ufficiali + eventi aperti)
-   Solo lettura. Non modifica tabelle né logiche admin esistenti. */
+/* CVI Virtual – Calendario mensile/settimanale */
 (function () {
   "use strict";
 
-  var state = {
-    view: "month",
-    filter: "all",
-    cursor: new Date(),
-    events: [],
-    loading: true
-  };
-
+  var state = { view: "month", filter: "all", cursor: new Date(), events: [], loading: true };
   var WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
-  var MONTHS = [
-    "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-    "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
-  ];
+  var MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+      .replace(/&/g, String.fromCharCode(38, 97, 109, 112, 59))
+      .replace(/</g, String.fromCharCode(38, 108, 116, 59))
+      .replace(/>/g, String.fromCharCode(38, 103, 116, 59))
+      .replace(/"/g, String.fromCharCode(38, 113, 117, 111, 116, 59));
   }
 
   function startOfDay(d) {
@@ -33,9 +22,7 @@
   }
 
   function isSameDay(a, b) {
-    return a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
 
   function dayKeyFromDate(d) {
@@ -93,10 +80,7 @@
     if (!iso) return "Data da definire";
     try {
       var d = parseEventLocal(iso) || new Date(iso);
-      return d.toLocaleString("it-IT", {
-        weekday: "long", day: "numeric", month: "long", year: "numeric",
-        hour: "2-digit", minute: "2-digit"
-      });
+      return d.toLocaleString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
     } catch (e) { return String(iso); }
   }
 
@@ -173,8 +157,7 @@
   function renderMonth(container) {
     var year = state.cursor.getFullYear();
     var month = state.cursor.getMonth();
-    var first = new Date(year, month, 1);
-    var start = mondayOf(first);
+    var start = mondayOf(new Date(year, month, 1));
     var today = startOfDay(new Date());
     var now = Date.now();
     var html = '<div class="cal-month-grid">';
@@ -185,11 +168,10 @@
       var isToday = isSameDay(day, today);
       var dayEvents = eventsOnDay(day);
       var cls = "cal-day" + (inMonth ? "" : " other-month") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "");
-      html += '<div class="' + cls + '">';
-      html += '<div class="cal-day-num">' + day.getDate() + "</div>";
+      html += '<div class="' + cls + '"><div class="cal-day-num">' + day.getDate() + "</div>";
       dayEvents.slice(0, 3).forEach(function (ev) {
         var past = (parseEventLocal(ev.date) || new Date(ev.date)).getTime() < now;
-        html += '<a href="#" class="cal-event ' + esc(ev.type) + (past ? " past" : "") + '" data-id="' + esc(ev.id) + '" title="' + esc(ev.title) + " · " + esc(fmtTime(ev.date)) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
+        html += '<a href="#" class="cal-event ' + esc(ev.type) + (past ? " past" : "") + '" data-id="' + esc(ev.id) + '" title="' + esc(ev.title) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
       });
       if (dayEvents.length > 3) html += '<div class="cal-more">+' + (dayEvents.length - 3) + " altri</div>";
       html += "</div>";
@@ -226,7 +208,7 @@
         }
         html += '<div class="cal-week-cell' + (isSameDay(day, today) ? " today-col" : "") + '">';
         dayEvents.forEach(function (ev) {
-          html += '<a href="#" class="cal-week-event ' + esc(ev.type) + '" data-id="' + esc(ev.id) + '" title="' + esc(ev.title) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
+          html += '<a href="#" class="cal-week-event ' + esc(ev.type) + '" data-id="' + esc(ev.id) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
         });
         html += "</div>";
       }
@@ -261,12 +243,16 @@
       fmtFull(ev.date) + " · " + (ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : "Gara ufficiale"));
     document.getElementById("cal-modal-desc").textContent = ev.desc || "Nessuna descrizione.";
     var link = document.getElementById("cal-modal-link");
-    if (link) { link.href = ev.link || "#"; link.style.display = ev.link ? "inline-block" : "none"; }
+    if (link) {
+      link.href = ev.link || "#";
+      link.style.display = ev.link ? "inline-block" : "none";
+    }
     document.getElementById("cal-modal").classList.add("open");
   }
 
   function closeModal() {
-    document.getElementById("cal-modal").classList.remove("open");
+    var m = document.getElementById("cal-modal");
+    if (m) m.classList.remove("open");
   }
 
   function wire() {
@@ -287,7 +273,9 @@
     document.querySelectorAll(".cal-view-toggle").forEach(function (btn) {
       if (btn.id === "cal-today") return;
       btn.onclick = function () {
-        document.querySelectorAll(".cal-view-toggle").forEach(function (b) { if (b.id !== "cal-today") b.classList.remove("active"); });
+        document.querySelectorAll(".cal-view-toggle").forEach(function (b) {
+          if (b.id !== "cal-today") b.classList.remove("active");
+        });
         btn.classList.add("active");
         state.view = btn.getAttribute("data-view") || "month";
         render();
