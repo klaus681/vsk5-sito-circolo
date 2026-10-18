@@ -110,14 +110,20 @@ function injectMaxField(){
   if(ref.parentNode)ref.parentNode.insertBefore(wrap, ref.nextSibling);
 }
 
-function resetGara(){injectTipoField();injectMaxField();document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value="ufficiale";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";var mx=document.getElementById("gara-max");if(mx)mx.value="";document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
+function meteoVisibleChecked(){var el=document.getElementById("gara-meteo-visibile");return el?!!el.checked:true}
+function renderMeteoAdmin(values){var box=document.getElementById("gara-meteo-fields");if(!box||!window.CVIMeteo)return;var count=Math.min(3,Math.max(1,parseInt((document.getElementById("gara-num")||{}).value,10)||1));CVIMeteo.renderAdmin(box,values,count)}
+function readMeteoAdmin(){var box=document.getElementById("gara-meteo-fields");if(!box||!window.CVIMeteo)return null;return CVIMeteo.readAdminFields(box,meteoVisibleChecked())}
+function resetGara(){injectTipoField();injectMaxField();document.getElementById("gara-id").value="";document.getElementById("gara-titolo").value="";document.getElementById("gara-data").value="";document.getElementById("gara-desc").value="";document.getElementById("gara-num").value="1";var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value="ufficiale";var ch=document.getElementById("gara-chiusura");if(ch)ch.value="2";var mx=document.getElementById("gara-max");if(mx)mx.value="";var mv=document.getElementById("gara-meteo-visibile");if(mv)mv.checked=true;renderMeteoAdmin(null);document.getElementById("gara-form-title").textContent="Nuova gara";document.getElementById("gara-save-btn").textContent="Salva gara";document.getElementById("gara-cancel-btn").style.display="none";}
 
 async function loadGare(){
   injectTipoField();
   injectMaxField();
   var box=document.getElementById("gare-list");box.innerHTML='<p class="loading-text">…</p>';
   try{
-    var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,tipo,max_iscritti").order("data_gara",{ascending:false});
+    var res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,tipo,max_iscritti,meteo").order("data_gara",{ascending:false});
+    if(res.error){
+      res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,tipo,max_iscritti").order("data_gara",{ascending:false});
+    }
     if(res.error){
       res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore").order("data_gara",{ascending:false});
     }
@@ -146,9 +152,9 @@ async function loadGare(){
       var nicks=list.slice(0,12).map(function(p){var label=esc(p.nickname||p.nome||'?');if(p.team)label+=' ('+esc(p.team)+')';return label;}).join(', ');
       if(list.length>12)nicks+=" … +"+(list.length-12);
       var iscrBlock='<div style="margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="font-size:.8rem;color:#94a3b8;font-weight:600">Iscritti: <strong style="color:#7dd3fc">'+list.length+(cap!=null?(' / '+cap):'')+'</strong>'+(cap!=null&&list.length>=cap?' <span style="display:inline-block;background:rgba(248,113,113,.15);color:#f87171;font-size:.68rem;font-weight:700;padding:.1rem .45rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em">Al completo</span>':'')+'</span>'+(list.length?'<button type="button" class="btn-sm gara-dl-iscr" data-id="'+esc(g.id)+'">⬇ CSV iscritti</button>':'')+'</div>'+(list.length?'<div style="font-size:.82rem;color:#cbd5e1;line-height:1.45">'+nicks+'</div>':'<div style="font-size:.82rem;color:#64748b">Nessun iscritto</div>')+'</div>';
-      return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate · '+tipoLab+' · iscr. -'+chOre+'h'+(past?" · conclusa":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
+      return'<div class="admin-card'+(past?" is-past":"")+'"><div class="admin-card-head"><div><strong>'+esc(g.titolo)+'</strong><div class="meta">'+esc(fmt(g.data_gara))+' · '+nr+' regate · '+tipoLab+' · iscr. -'+chOre+'h'+(past?" · conclusa":"")+((window.CVIMeteo&&CVIMeteo.has(g))?" · 🌤 meteo":"")+'</div></div><div class="admin-card-actions"><button type="button" class="btn-sm gara-edit" data-id="'+esc(g.id)+'">Modifica</button><button type="button" class="btn-danger-sm gara-del" data-id="'+esc(g.id)+'">Elimina</button></div></div>'+(g.descrizione?'<p class="card-desc">'+esc(g.descrizione)+'</p>':'')+iscrBlock+'</div>';
     }).join(""):'<p class="empty-text">Nessuna gara.</p>';
-    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){injectTipoField();injectMaxField();var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value=(g.tipo||"ufficiale");var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}var mxEl=document.getElementById("gara-max");if(mxEl)mxEl.value=(g.max_iscritti!=null?String(g.max_iscritti):"");document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
+    box.querySelectorAll(".gara-edit").forEach(function(b){b.onclick=function(){injectTipoField();injectMaxField();var g=gare.find(function(x){return String(x.id)===b.getAttribute("data-id");});if(!g)return;document.getElementById("gara-id").value=g.id;document.getElementById("gara-titolo").value=g.titolo||"";document.getElementById("gara-data").value=toLocal(g.data_gara);document.getElementById("gara-desc").value=g.descrizione||"";document.getElementById("gara-num").value=String(Math.min(3,Math.max(1,parseInt(g.num_regate,10)||1)));var tipoEl=document.getElementById("gara-tipo");if(tipoEl)tipoEl.value=(g.tipo||"ufficiale");var chEl=document.getElementById("gara-chiusura");if(chEl){var cv=g.chiusura_ore!=null?parseInt(g.chiusura_ore,10):2;chEl.value=String(isNaN(cv)?2:cv);}var mxEl=document.getElementById("gara-max");if(mxEl)mxEl.value=(g.max_iscritti!=null?String(g.max_iscritti):"");var mvEl=document.getElementById("gara-meteo-visibile");if(mvEl)mvEl.checked=!(g.meteo&&g.meteo.visibile===false);renderMeteoAdmin(g.meteo);document.getElementById("gara-form-title").textContent="Modifica gara";document.getElementById("gara-save-btn").textContent="Aggiorna";document.getElementById("gara-cancel-btn").style.display="inline-block";};});
     box.querySelectorAll(".gara-del").forEach(function(b){b.onclick=async function(){if(!confirm("Eliminare?"))return;await CVI.supabase.from("gare").delete().eq("id",b.getAttribute("data-id"));status("Eliminata","ok");loadGare();};});
     box.querySelectorAll(".gara-dl-iscr").forEach(function(b){b.onclick=function(){downloadIscrittiAdmin(b.getAttribute("data-id"));};});
     fillGaraSel();
@@ -178,10 +184,29 @@ async function saveGara(e){
   var mxEl=document.getElementById("gara-max");var max_iscritti=(mxEl&&mxEl.value.trim()!=="")?parseInt(mxEl.value,10):null;if(max_iscritti!=null&&(isNaN(max_iscritti)||max_iscritti<1))max_iscritti=null;
   if(!titolo||!dl)return alert("Titolo e data obbligatori");
   var tipoEl=document.getElementById("gara-tipo");var tipo=(tipoEl&&tipoEl.value)||"ufficiale";if(["ufficiale","speciale","aperto"].indexOf(tipo)<0)tipo="ufficiale";
+  var meteo=readMeteoAdmin();
   var payload={titolo:titolo,descrizione:desc||null,data_gara:new Date(dl).toISOString(),num_regate:nr,chiusura_ore:chiusura_ore,tipo:tipo,max_iscritti:max_iscritti};
+  if(meteo)payload.meteo=meteo;
   var btn=document.getElementById("gara-save-btn");btn.disabled=true;
-  try{if(id)await CVI.supabase.from("gare").update(payload).eq("id",id);else await CVI.supabase.from("gare").insert(payload);status(id?"Aggiornata":"Creata","ok");resetGara();loadGare();}catch(err){alert(err.message||err);}finally{btn.disabled=false;}
+  try{
+    var res=id?await CVI.supabase.from("gare").update(payload).eq("id",id):await CVI.supabase.from("gare").insert(payload);
+    if(res&&res.error&&meteo&&/meteo/i.test(res.error.message||"")){
+      delete payload.meteo;
+      res=id?await CVI.supabase.from("gare").update(payload).eq("id",id):await CVI.supabase.from("gare").insert(payload);
+      if(res&&!res.error)alert("Gara salvata senza meteo: esegui gare-meteo-sql.sql su Supabase per attivare il campo.");
+    }
+    if(res&&res.error)throw res.error;
+    status(id?"Aggiornata":"Creata","ok");resetGara();loadGare();
+  }catch(err){alert(err.message||err);}finally{btn.disabled=false;}
 }
+
+function initMeteoAdmin(){
+  var num=document.getElementById("gara-num");
+  var box=document.getElementById("gara-meteo-fields");
+  if(num&&!num._cviMeteoWired){num._cviMeteoWired=true;num.addEventListener("change",function(){renderMeteoAdmin(readMeteoAdmin());});}
+  if(box&&!box._cviMeteoInit&&window.CVIMeteo){box._cviMeteoInit=true;CVIMeteo.renderAdmin(box,null,Math.min(3,Math.max(1,parseInt((num||{}).value,10)||1)));}
+}
+initMeteoAdmin();setTimeout(initMeteoAdmin,800);
 
 function fillGaraSel(){var sel=document.getElementById("ris-gara-select");if(!sel)return;sel.innerHTML='<option value="">— seleziona —</option>'+gare.map(function(g){return'<option value="'+esc(g.id)+'">'+esc(g.titolo)+' · '+esc(fmt(g.data_gara))+'</option>';}).join("");}
 

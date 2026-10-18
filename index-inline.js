@@ -171,7 +171,7 @@ async function caricaProssimaGara() {
       return;
     }
     const now = new Date().toISOString();
-    let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo, max_iscritti').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
+    let { data, error } = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo, max_iscritti, meteo').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
     if (error) {
       console.warn('gare future:', error.message);
       var fb = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').gte('data_gara', now).order('data_gara', { ascending: true }).limit(1);
@@ -183,7 +183,7 @@ async function caricaProssimaGara() {
       if (error) { console.warn('gare future fallback:', error.message); data = null; }
     }
     if (!data || !data.length) {
-      const past = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo, max_iscritti').order('data_gara', { ascending: false }).limit(1);
+      const past = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo, max_iscritti, meteo').order('data_gara', { ascending: false }).limit(1);
       var pastData = past.data;
       if (past.error || !pastData || !pastData.length) {
         var past1 = await CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, chiusura_ore, num_regate, tipo').order('data_gara', { ascending: false }).limit(1);
@@ -209,6 +209,7 @@ async function caricaProssimaGara() {
         if (ba) ba.style.display = 'none';
         var bi=document.getElementById('regata-badge-iscritti');if(bi){bi.style.display='none';bi.textContent='';}
         var cd=document.getElementById('regata-countdown');if(cd)cd.style.display='none';
+        var mb=document.getElementById('regata-meteo-btn');if(mb)mb.style.display='none';
         if(_cviCountdownTimer){clearInterval(_cviCountdownTimer);_cviCountdownTimer=null;}
         return;
       }
@@ -313,6 +314,17 @@ function fillRegata(gara) {
       badgeIscr.className = 'badge-stato is-iscritti';
       badgeIscr.style.display = '';
     }
+  }
+
+  // Pulsante Meteo (solo se l'admin ha inserito le condizioni)
+  var meteoBtn = document.getElementById('regata-meteo-btn');
+  if (meteoBtn) {
+    var hasMeteo = !!(window.CVIMeteo && CVIMeteo.has(gara));
+    meteoBtn.style.display = hasMeteo ? 'inline-flex' : 'none';
+    meteoBtn.onclick = function (ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      if (window.CVIMeteo) CVIMeteo.open(gara);
+    };
   }
 
   // Countdown automatico dalla data_gara

@@ -87,17 +87,31 @@
     if (id) {
       var one = await CVI.supabase
         .from("gare")
-        .select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore")
+        .select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,meteo")
         .eq("id", id)
         .maybeSingle();
+      if (one.error && /meteo/i.test(one.error.message || "")) {
+        one = await CVI.supabase
+          .from("gare")
+          .select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore")
+          .eq("id", id)
+          .maybeSingle();
+      }
       if (one.error) throw one.error;
       return one.data;
     }
     var all = await CVI.supabase
       .from("gare")
-      .select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore")
+      .select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore,meteo")
       .order("data_gara", { ascending: false })
       .limit(30);
+    if (all.error && /meteo/i.test(all.error.message || "")) {
+      all = await CVI.supabase
+        .from("gare")
+        .select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore")
+        .order("data_gara", { ascending: false })
+        .limit(30);
+    }
     if (all.error) throw all.error;
     return pickLiveGara(all.data || []);
   }
@@ -211,6 +225,14 @@
     document.getElementById("live-desc").textContent = gara.descrizione || "";
     var self = document.getElementById("live-self-link");
     if (self) self.href = "live.html?id=" + encodeURIComponent(gara.id);
+    var meteoBtn = document.getElementById("live-meteo-btn");
+    if (meteoBtn) {
+      var hasMeteo = !!(window.CVIMeteo && CVIMeteo.has(gara));
+      meteoBtn.style.display = hasMeteo ? "inline-flex" : "none";
+      meteoBtn.onclick = function () {
+        if (window.CVIMeteo) CVIMeteo.open(gara);
+      };
+    }
   }
 
   function renderIscritti(list) {
@@ -246,6 +268,8 @@
         document.getElementById("live-title").textContent = "Live gara";
         document.getElementById("live-meta").textContent =
           "Nessuna gara in finestra live.";
+        var mb = document.getElementById("live-meteo-btn");
+        if (mb) mb.style.display = "none";
         return;
       }
       currentGaraId = gara.id;
