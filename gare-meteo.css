@@ -451,6 +451,13 @@ body.cvi-meteo-open { overflow: hidden; }
   min-height: .8rem;
 }
 
+/* Evita la sovrapposizione con i badge della card "prossima gara" in home */
+.next-regata-wrap.has-meteo .regata-badges { padding-right: 7.6rem; }
+
+@media (max-width: 720px) {
+  .next-regata-wrap.has-meteo .regata-badges { padding-right: 6.4rem; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
   .cvi-meteo-modal { padding: 1.15rem 1rem 1rem; border-radius: 14px; }

@@ -209,7 +209,7 @@ async function caricaProssimaGara() {
         if (ba) ba.style.display = 'none';
         var bi=document.getElementById('regata-badge-iscritti');if(bi){bi.style.display='none';bi.textContent='';}
         var cd=document.getElementById('regata-countdown');if(cd)cd.style.display='none';
-        var mb=document.getElementById('regata-meteo-btn');if(mb)mb.style.display='none';
+        var mb=document.getElementById('regata-meteo-btn');if(mb){mb.style.display='none';if(mb.parentNode&&mb.parentNode.classList)mb.parentNode.classList.remove('has-meteo');}
         if(_cviCountdownTimer){clearInterval(_cviCountdownTimer);_cviCountdownTimer=null;}
         return;
       }
@@ -321,6 +321,8 @@ function fillRegata(gara) {
   if (meteoBtn) {
     var hasMeteo = !!(window.CVIMeteo && CVIMeteo.has(gara));
     meteoBtn.style.display = hasMeteo ? 'inline-flex' : 'none';
+    var meteoWrap = meteoBtn.parentNode;
+    if (meteoWrap && meteoWrap.classList) meteoWrap.classList.toggle('has-meteo', hasMeteo);
     meteoBtn.onclick = function (ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       if (window.CVIMeteo) CVIMeteo.open(gara);
