@@ -9,6 +9,8 @@ document.write('<script src="cvi-flags-ui.js?v=2"><\/script>');
 document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 /* Extra: voce Tornei nel menu Gare & Eventi */
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
+/* Extra: traduzioni menu (Live, Tornei, Eventi aperti, voci mobile) */
+document.write('<script src="nav-i18n.js?v=1"><\/script>');
 /* Extra: banner torneo in home se pubblicato */
 document.write('<script src="tornei-home.js?v=3"><\/script>');
 /* Extra: sfondi home personalizzati da admin */
