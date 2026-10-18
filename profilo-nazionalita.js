@@ -42,15 +42,23 @@
     s.id = "cvi-flag-css";
     s.textContent =
       ".flag-badge{display:inline-flex;align-items:center;gap:.35rem;margin-top:.45rem;padding:.2rem .65rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;font-size:.85rem;color:#e2e8f0}" +
-      ".flag-badge .flag-emoji{font-size:1.15rem;line-height:1}";
+      ".flag-badge .cvi-flag-img{width:1.5em;height:1.05em;margin-right:0}";
     document.head.appendChild(s);
+  }
+
+  function flagUrl(code) {
+    var key = String(code || "").toUpperCase();
+    if (!NAZIONI[key]) return "";
+    return "flags/" + key.toLowerCase() + ".png";
   }
 
   function flagHtml(code) {
     if (!code) return "";
-    var x = NAZIONI[String(code).toUpperCase()];
+    var key = String(code).toUpperCase();
+    var x = NAZIONI[key];
     if (!x) return "";
-    return '<span class="flag-badge"><span class="flag-emoji">' + x.f + "</span> " + x.n + "</span>";
+    return '<span class="flag-badge"><img class="cvi-flag-img" src="' + flagUrl(key) +
+      '" alt="' + x.n + '" width="20" height="15"> ' + x.n + "</span>";
   }
 
   function ensureSelect() {
@@ -61,7 +69,7 @@
     var opts = '<option value="">— Non indicata —</option>';
     Object.keys(NAZIONI).forEach(function (code) {
       var x = NAZIONI[code];
-      opts += '<option value="' + code + '">' + x.f + " " + x.n + "</option>";
+      opts += '<option value="' + code + '">' + x.n + "</option>";
     });
     wrap.innerHTML =
       '<label for="edit-nazionalita">Nazionalità (opzionale)</label>' +

@@ -18,7 +18,7 @@
     return new Promise(function (resolve) {
       var t0 = Date.now();
       (function tick() {
-        if (window.CVI && CVI.supabase && CVI.flagEmoji) return resolve(true);
+        if (window.CVI && CVI.supabase && CVI.flagImg) return resolve(true);
         if (Date.now() - t0 > (maxMs || 8000)) return resolve(false);
         setTimeout(tick, 40);
       })();
@@ -60,16 +60,16 @@
     if (!key) return;
     var p = byNick[key];
     if (!p || !p.nazionalita) return;
-    var flag = CVI.flagEmoji(p.nazionalita);
+    var flag = CVI.flagImg(p.nazionalita);
     if (!flag) return;
     el.dataset.cviFlag = "1";
-    if (!el.querySelector || !el.querySelector("img")) {
-      el.innerHTML = flag + "\u00a0" + el.innerHTML;
+    if (!el.querySelector || !el.querySelector("img.cvi-flag-img")) {
+      el.innerHTML = flag + el.innerHTML;
     }
   }
 
   function scan() {
-    if (!loaded || !CVI.flagEmoji) return;
+    if (!loaded || !CVI.flagImg) return;
 
     document.querySelectorAll(".nick, .rank-info strong, #home-ranking strong").forEach(applyToElement);
 
