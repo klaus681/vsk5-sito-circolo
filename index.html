@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="mobile.css">
   <link rel="stylesheet" href="fix-nav.css?v=2">
   <link rel="stylesheet" href="hero-home.css">
+  <link rel="stylesheet" href="gare-meteo.css?v=1">
   <style>
     .bacheca { position: relative; margin-bottom: 2rem; background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-lg); overflow: hidden; transition: border-color .25s ease, box-shadow .25s ease; }
     .bacheca::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent-color), #0ea5e9); pointer-events: none; z-index: 1; }
@@ -148,6 +149,7 @@
         <div class="stat-item"><span class="stat-number" id="stat-regate">—</span><span class="stat-label" id="stat-regate-label">Regate 2026</span></div>
         <div class="stat-item"><span class="stat-number" id="stat-fondazione">2003</span><span class="stat-label" id="stat-fondazione-label">Dal</span></div>
       </div>
+      <div class="next-regata-wrap">
       <a href="gare.html" id="next-regata-card" class="next-regata-card">
         <div>
           <div class="regata-badges" id="regata-badges">
@@ -163,6 +165,8 @@
         <span class="btn-segui-live" id="regata-live-btn" style="display:none">Segui LIVE</span>
         </div>
       </a>
+      <button type="button" class="btn-meteo" id="regata-meteo-btn" style="display:none">🌤 Meteo</button>
+      </div>
     </div>
     <section class="bacheca" id="bacheca" style="display:none">
       <div class="bacheca-header">
@@ -225,6 +229,7 @@
   <script src="common.js"></script>
   <script src="eventi-aperti-home.js?v=2"></script>
   <script src="home-hero.js?v=2"></script>
-  <script src="index-inline.js?v=10"></script>
+  <script src="gare-meteo.js?v=1"></script>
+  <script src="index-inline.js?v=11"></script>
 </body>
 </html>
