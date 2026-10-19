@@ -144,6 +144,24 @@
         msg.style.color = "#34d399";
         msg.textContent = "Iscrizione confermata!";
       }
+
+      // Notifica Discord
+      if (window.CVIDiscord && CVIDiscord.notifyAllenamentoIscrizione && a) {
+        try {
+          await CVIDiscord.notifyAllenamentoIscrizione(
+            {
+              id: a.id,
+              titolo: a.titolo,
+              data_ora: a.data_ora,
+              max_iscritti: a.max_iscritti
+            },
+            nick || ""
+          );
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+
       await loadIscrizioni([allId].concat(Object.keys(iscrizioniByAll)));
       renderList(window._alList || []);
     } catch (e) {
@@ -212,7 +230,9 @@
         var max = a.max_iscritti != null && a.max_iscritti > 0 ? a.max_iscritti : null;
         var pieno = max != null && n >= max;
         var annullato = a.stato === "annullato";
-        var concluso = a.stato === "concluso" || (a.data_ora && new Date(a.data_ora).getTime() < now - 3 * 3600 * 1000);
+        var concluso =
+          a.stato === "concluso" ||
+          (a.data_ora && new Date(a.data_ora).getTime() < now - 3 * 3600 * 1000);
         var sonoIscritto = isIscritto(a.id);
         var stLabel = STATI[a.stato] || a.stato;
         if (concluso && a.stato === "programmato") stLabel = "Passato";
@@ -228,7 +248,8 @@
               esc(a.id) +
               '">Annulla iscrizione</button>';
           } else if (pieno) {
-            actions = '<span style="color:#f87171;font-size:.88rem">Posti esauriti</span>';
+            actions =
+              '<span style="color:#f87171;font-size:.88rem">Posti esauriti</span>';
           } else {
             actions =
               '<button type="button" class="btn-primary" data-iscr="' +
@@ -248,7 +269,9 @@
             iscr
               .map(function (i, idx) {
                 var nick = i.nickname || String(i.user_id).slice(0, 8);
-                return "<li><strong>" + (idx + 1) + ".</strong> " + esc(nick) + "</li>";
+                return (
+                  "<li><strong>" + (idx + 1) + ".</strong> " + esc(nick) + "</li>"
+                );
               })
               .join("") +
             "</ul></details>";
@@ -271,11 +294,15 @@
           esc(fmt(a.data_ora)) +
           "</span>" +
           (a.classe_barca ? "<span>⛵ " + esc(a.classe_barca) + "</span>" : "") +
-          (a.durata_minuti ? "<span>⏱ " + esc(String(a.durata_minuti)) + " min</span>" : "") +
+          (a.durata_minuti
+            ? "<span>⏱ " + esc(String(a.durata_minuti)) + " min</span>"
+            : "") +
           "</div>" +
           (a.descrizione ? '<p class="al-desc">' + esc(a.descrizione) + "</p>" : "") +
           (a.server_info
-            ? '<p class="al-desc" style="color:#94a3b8">Server: ' + esc(a.server_info) + "</p>"
+            ? '<p class="al-desc" style="color:#94a3b8">Server: ' +
+              esc(a.server_info) +
+              "</p>"
             : "") +
           '<div class="al-actions">' +
           '<span class="al-iscr-count">Iscritti: ' +
