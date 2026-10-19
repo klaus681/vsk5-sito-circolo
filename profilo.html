@@ -180,7 +180,7 @@
   <script src="common.js?v=3"></script>
   <script>
   (function(){
-    function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');}
+    function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
     function resolveRole(p){if(!p)return'socio';var r=String(p.role||'').toLowerCase();if(r==='admin'||r==='scorer'||r==='caposquadra'||r==='socio')return r;return p.is_admin===true?'admin':'socio';}
     function initials(p){return((p.nickname||p.nome||'?').trim().slice(0,1)||'?').toUpperCase();}
     function avatarUrl(p){return p.avatar_url||p.foto||p.photo_url||null;}
@@ -291,7 +291,9 @@
     }
 
     async function loadProfile(userId,isOwn){
-      var res=await CVI.supabase.from('profiles').select('*').eq('id',userId).maybeSingle();
+      var cols='id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url,foto';
+      var res=await CVI.supabase.from('profiles').select(cols).eq('id',userId).maybeSingle();
+      if(res.error)res=await CVI.supabase.from('profiles').select('*').eq('id',userId).maybeSingle();
       var prof=res.data;if(res.error||!prof){document.getElementById('profile-app').innerHTML='<p class="empty-hint" style="color:#f87171">Profilo non trovato.</p>';return;}
       var nome=[prof.nome,prof.cognome].filter(Boolean).join(' ').trim();
       document.getElementById('prof-name').textContent=nome||prof.nickname||'Socio';
