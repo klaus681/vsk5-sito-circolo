@@ -1,4 +1,5 @@
-/* CVI – banner prossimo allenamento in home (stile allineato a Prossima gara) */
+/* CVI – banner prossimo allenamento in home
+   Condivide la riga #home-extra-banners col torneo (mai dentro next-regata-wrap) */
 (function () {
   "use strict";
 
@@ -46,31 +47,39 @@
     return !path || path === "index.html" || path === "/";
   }
 
-  /**
-   * Inserisce il banner SOTTO la riga stats+prossima gara,
-   * MAI dentro .next-regata-wrap (altrimenti il btn-meteo assoluto
-   * finisce sopra l'allenamento).
-   */
-  function findInsertPoint() {
-    var wrap = document.querySelector(".next-regata-wrap");
-    if (wrap && wrap.parentNode) return { parent: wrap.parentNode, before: wrap.nextSibling };
+  function ensureRow() {
+    var row = document.getElementById("home-extra-banners");
+    if (row) return row;
 
+    row = document.createElement("div");
+    row.id = "home-extra-banners";
+    row.style.cssText =
+      "display:flex;flex-wrap:wrap;gap:1rem;align-items:stretch;" +
+      "width:100%;max-width:960px;margin:0.85rem auto 1.25rem;" +
+      "padding:0 0.5rem;box-sizing:border-box;clear:both;";
+
+    var wrap = document.querySelector(".next-regata-wrap");
     var race =
       document.getElementById("next-regata-card") ||
-      document.querySelector("a.home-race-card") ||
-      document.querySelector(".race-highlight");
-    if (race) {
-      // sali al contenitore della riga, non al wrap interno
-      var row = race.closest(".hero-stats, .stats-row, .home-next-race, .content-row") || race.parentNode;
-      if (row && row.parentNode) return { parent: row.parentNode, before: row.nextSibling };
-      if (race.parentNode) return { parent: race.parentNode, before: race.nextSibling };
-    }
+      document.querySelector("a.home-race-card");
+    var statsRow =
+      document.querySelector(".hero-stats") ||
+      document.querySelector(".stats-row") ||
+      document.querySelector(".home-next-race");
 
-    var host =
-      document.querySelector("main .page-content") ||
-      document.querySelector("main") ||
-      document.body;
-    return { parent: host, before: host.firstChild };
+    var anchor =
+      wrap ||
+      (race && race.closest(".hero-stats, .stats-row, .home-next-race, .content-row")) ||
+      statsRow;
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(row, anchor.nextSibling);
+    } else {
+      var main =
+        document.querySelector("main .page-content") ||
+        document.querySelector("main");
+      if (main) main.insertBefore(row, main.firstChild);
+    }
+    return row;
   }
 
   function applyBg(card, url) {
@@ -136,19 +145,14 @@
 
       var bgUrl = await loadBgUrl();
 
-      // Wrapper full-width sotto la riga gara (non dentro next-regata-wrap)
-      var outer = document.createElement("div");
-      outer.id = "home-allenamento-banner-wrap";
-      outer.style.cssText =
-        "width:100%;max-width:640px;margin:0.85rem 0 1.25rem;clear:both;";
-
       var card = document.createElement("a");
       card.id = "home-allenamento-banner";
       card.href = "allenamenti.html";
       card.className = "home-allenamento-card";
       card.style.cssText =
-        "display:block;text-decoration:none;position:relative;overflow:hidden;" +
-        "padding:1.15rem 1.3rem 1.2rem;border-radius:16px;" +
+        "display:block;text-decoration:none;flex:1 1 280px;min-width:260px;max-width:460px;" +
+        "position:relative;overflow:hidden;" +
+        "padding:1.15rem 1.3rem;border-radius:16px;" +
         "border:1px solid rgba(52,211,153,0.35);" +
         "color:#e2e8f0;box-shadow:0 12px 36px rgba(0,0,0,0.35);" +
         "transition:border-color .25s ease, transform .2s ease;";
@@ -171,7 +175,7 @@
             nIsc +
             "</span>") +
         "</div>" +
-        '<div style="font-size:1.35rem;font-weight:800;color:#fff;margin-bottom:0.4rem;line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,0.45)">' +
+        '<div style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:0.4rem;line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,0.45)">' +
         esc(a.titolo) +
         "</div>" +
         '<div style="font-size:0.9rem;color:#e2e8f0;margin-bottom:0.35rem;opacity:0.95">📅 ' +
@@ -195,12 +199,15 @@
         card.style.transform = "none";
       });
 
-      outer.appendChild(card);
-
-      var point = findInsertPoint();
-      if (point.parent) {
-        if (point.before) point.parent.insertBefore(outer, point.before);
-        else point.parent.appendChild(outer);
+      var row = ensureRow();
+      // Allenamento a destra del torneo (o solo se non c'è torneo)
+      var tor = document.getElementById("home-torneo-banner");
+      if (tor && tor.parentNode === row) {
+        // dopo il torneo
+        if (tor.nextSibling) row.insertBefore(card, tor.nextSibling);
+        else row.appendChild(card);
+      } else {
+        row.appendChild(card);
       }
     } catch (e) {
       console.warn("[CVI allenamenti-home]", e);
