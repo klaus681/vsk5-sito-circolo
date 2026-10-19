@@ -8,6 +8,19 @@
 -- Ogni blocco è in transazione e termina con rollback:
 -- non modifica i dati.
 -- ============================================================
+-- 0) Diagnostica stato (read-only)
+select
+  to_regclass('public.profiles_public') as profiles_public,
+  to_regprocedure('public.is_club_staff()') as is_club_staff;
+
+select tablename, policyname, roles, cmd
+from pg_policies
+where schemaname = 'public'
+  and tablename in ('profiles', 'site_settings')
+order by tablename, policyname;
+
+-- Se profiles_public è NULL o is_club_staff è NULL, la migrazione
+-- non è stata applicata (o è andata in rollback).
 
 -- 1) Anon non deve poter leggere profiles
 begin;

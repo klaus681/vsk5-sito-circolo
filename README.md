@@ -51,7 +51,7 @@ Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `securi
 
 ### Migrazione RLS (Sprint 2)
 
-Esegui `security-rls-hardening-sql.sql` nel SQL Editor di Supabase dopo un backup. La migrazione:
+Esegui `security-rls-hardening-sql.sql` nel SQL Editor di Supabase dopo un backup. La migrazione è divisa in **6 blocchi con commit separati**: se un blocco fallisce, i precedenti restano applicati. L'ordine è: helper → vista pubblica → profili → site_settings → revoche → trigger di registrazione. L'ultimo blocco (`auth.users`) è opzionale e isolato: se fallisce, la sicurezza di profili e impostazioni resta attiva.
 
 - chiude l'accesso anonimo a `profiles` (prima email, `role` e `is_admin` erano leggibili con la sola anon key);
 - crea `profiles_public`, vista con le sole colonne sicure, usata dalle pagine pubbliche;

@@ -2,8 +2,10 @@
 -- CVI Virtual – RLS hardening (Sprint 2, punto 1)
 -- ------------------------------------------------------------
 -- Da eseguire su Supabase → SQL Editor, dopo un backup.
--- È tutto dentro una transazione: se una istruzione fallisce,
--- non viene applicata nessuna modifica (rollback automatico).
+-- Ogni blocco è una transazione separata: se un blocco fallisce,
+-- i blocchi precedenti restano applicati e si vede subito dove si ferma.
+-- Il trigger finale su auth.users è opzionale e isolato: se fallisce,
+-- la sicurezza di profiles/site_settings resta comunque attiva.
 --
 -- Cosa fa:
 --   1. Chiude la lettura anonima di public.profiles (email,
@@ -16,17 +18,18 @@
 --      lasciando leggibili solo le chiavi pubbliche.
 --   6. Revoca l'accesso anon alle tabelle riservate.
 --
+-- Ordine: helper -> vista -> profiles -> site_settings -> revoke -> trigger.
+--
 -- Dopo questa migrazione:
 --   - le pagine pubbliche devono leggere profiles_public;
---   - le notifiche Discord restano disattivate finché il webhook
---     non viene spostato in una Edge Function (Sprint 2, punto 2).
+--   - i webhook restano leggibili solo dagli admin; per spostarli
+--     lato server serve una Edge Function (Sprint 2, punto 2).
 -- ============================================================
 
+-- ============================================================
+-- STEP 1 (blocco 1): Helper ruoli (SECURITY DEFINER per evitare ricorsione RLS)
+-- ============================================================
 begin;
-
--- ============================================================
--- 1. Helper ruoli (SECURITY DEFINER per evitare ricorsione RLS)
--- ============================================================
 
 create or replace function public.is_club_admin()
 returns boolean
@@ -67,9 +70,46 @@ $$;
 revoke all on function public.is_club_staff() from public;
 grant execute on function public.is_club_staff() to authenticated;
 
+commit;
+
 -- ============================================================
--- 2. Profiles: accesso anonimo chiuso, update solo proprio/admin
+-- STEP 2 (blocco 3): Vista pubblica: solo colonne sicure, niente email
 -- ============================================================
+begin;
+
+-- La vista è di proprietà di postgres e legge la tabella con i
+-- privilegi del owner: espone intenzionalmente solo le colonne
+-- pubbliche. Non impostare security_invoker=true, altrimenti
+-- tornerebbe a applicare la RLS e le pagine pubbliche non
+-- vedrebbero più i profili degli altri soci.
+create or replace view public.profiles_public as
+select
+  id,
+  nickname,
+  nome,
+  cognome,
+  team,
+  team_id,
+  nazionalita,
+  avatar_url,
+  role,
+  is_admin
+from public.profiles;
+
+comment on view public.profiles_public is
+  'Vista pubblica dei profili: espone solo colonne non sensibili (niente email). Usata dalle pagine pubbliche.';
+
+revoke all on public.profiles_public from public;
+revoke all on public.profiles_public from anon;
+revoke all on public.profiles_public from authenticated;
+grant select on public.profiles_public to anon, authenticated;
+
+commit;
+
+-- ============================================================
+-- STEP 3 (blocco 2): Profiles: accesso anonimo chiuso, update solo proprio/admin
+-- ============================================================
+begin;
 
 alter table public.profiles enable row level security;
 
@@ -168,77 +208,12 @@ create trigger trg_profiles_guard_privileges
   before insert or update on public.profiles
   for each row execute function public.profiles_guard_privileges();
 
--- ============================================================
--- 3. Vista pubblica: solo colonne sicure, niente email
--- ============================================================
-
--- La vista è di proprietà di postgres e legge la tabella con i
--- privilegi del owner: espone intenzionalmente solo le colonne
--- pubbliche. Non impostare security_invoker=true, altrimenti
--- tornerebbe a applicare la RLS e le pagine pubbliche non
--- vedrebbero più i profili degli altri soci.
-create or replace view public.profiles_public as
-select
-  id,
-  nickname,
-  nome,
-  cognome,
-  team,
-  team_id,
-  nazionalita,
-  avatar_url,
-  role,
-  is_admin
-from public.profiles;
-
-comment on view public.profiles_public is
-  'Vista pubblica dei profili: espone solo colonne non sensibili (niente email). Usata dalle pagine pubbliche.';
-
-revoke all on public.profiles_public from public;
-revoke all on public.profiles_public from anon;
-revoke all on public.profiles_public from authenticated;
-grant select on public.profiles_public to anon, authenticated;
+commit;
 
 -- ============================================================
--- 4. Creazione automatica del profilo alla registrazione
+-- STEP 4 (blocco 5): Site settings: chiavi pubbliche sì, webhook/segreti no
 -- ============================================================
-
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  begin
-    insert into public.profiles (id, nome, cognome, nickname, team, email)
-    values (
-      new.id,
-      coalesce(nullif(new.raw_user_meta_data->>'nome', ''), ''),
-      coalesce(nullif(new.raw_user_meta_data->>'cognome', ''), ''),
-      coalesce(nullif(new.raw_user_meta_data->>'nickname', ''), split_part(new.email, '@', 1)),
-      coalesce(nullif(new.raw_user_meta_data->>'team', ''), ''),
-      new.email
-    )
-    on conflict (id) do nothing;
-  exception
-    when others then
-      -- Non bloccare la registrazione se il profilo non può essere creato
-      -- (es. nickname duplicato): l'utente potrà completarlo dal profilo.
-      raise warning 'handle_new_user: profilo non creato per %: %', new.id, sqlerrm;
-  end;
-  return new;
-end;
-$$;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-
--- ============================================================
--- 5. Site settings: chiavi pubbliche sì, webhook/segreti no
--- ============================================================
+begin;
 
 alter table public.site_settings enable row level security;
 
@@ -282,9 +257,12 @@ create policy site_settings_admin_all
   using (public.is_club_admin())
   with check (public.is_club_admin());
 
+commit;
+
 -- ============================================================
--- 6. Tabelle riservate: nessun accesso anonimo
+-- STEP 5 (blocco 6): Tabelle riservate: nessun accesso anonimo
 -- ============================================================
+begin;
 
 do $$
 declare
@@ -307,9 +285,7 @@ end $$;
 
 -- Ricarica la schema cache di PostgREST per rendere subito
 -- disponibile public.profiles_public.
-notify pgrst, 'reload schema';
 
-commit;
 
 -- ============================================================
 -- Verifica rapida post-migrazione (eseguire a parte)
@@ -318,3 +294,54 @@ commit;
 -- select key from public.site_settings;            -- nessuna chiave *webhook*
 -- select public.is_club_admin();                   -- false per un socio
 
+commit;
+
+-- ============================================================
+-- STEP 6 (blocco 4): Creazione automatica del profilo alla registrazione
+-- ============================================================
+begin;
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  begin
+    insert into public.profiles (id, nome, cognome, nickname, team, email)
+    values (
+      new.id,
+      coalesce(nullif(new.raw_user_meta_data->>'nome', ''), ''),
+      coalesce(nullif(new.raw_user_meta_data->>'cognome', ''), ''),
+      coalesce(nullif(new.raw_user_meta_data->>'nickname', ''), split_part(new.email, '@', 1)),
+      coalesce(nullif(new.raw_user_meta_data->>'team', ''), ''),
+      new.email
+    )
+    on conflict (id) do nothing;
+  exception
+    when others then
+      -- Non bloccare la registrazione se il profilo non può essere creato
+      -- (es. nickname duplicato): l'utente potrà completarlo dal profilo.
+      raise warning 'handle_new_user: profilo non creato per %: %', new.id, sqlerrm;
+  end;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+commit;
+
+
+notify pgrst, 'reload schema';
+
+-- ============================================================
+-- Verifica rapida post-migrazione (eseguire a parte)
+-- ============================================================
+-- select * from public.profiles_public limit 1;   -- nessuna colonna email
+-- select key from public.site_settings;            -- nessuna chiave *webhook*
+-- select public.is_club_admin();                   -- false per un socio
