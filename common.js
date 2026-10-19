@@ -11,6 +11,8 @@ document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
 /* Extra: traduzioni menu (Live, Tornei, Eventi aperti, voci mobile) */
 document.write('<script src="nav-i18n.js?v=1"><\/script>');
+/* Extra: voce Messaggi nel menu + badge non letti */
+document.write('<script src="messaggi-nav.js?v=1"><\/script>');
 /* Extra: banner torneo in home se pubblicato */
 document.write('<script src="tornei-home.js?v=3"><\/script>');
 /* Extra: sfondi home personalizzati da admin */

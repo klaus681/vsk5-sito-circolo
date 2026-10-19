@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messaggi - CVI Virtual</title>
+  <meta name="description" content="Messaggi interni del Circolo Velico Italia.">
+  <link rel="canonical" href="https://circolovelicoitalia.it/messaggi.html">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+  <link rel="apple-touch-icon" href="apple-touch-180.png">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css?v=2">
+  <style>
+    .messages-page { max-width: 900px; margin: 0 auto; }
+    .messages-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;
+    }
+    .messages-header h1 { margin: 0; font-size: 1.5rem; color: var(--accent-color); font-weight: 700; }
+    .messages-subtitle { margin: .25rem 0 0; color: var(--text-muted); font-size: .9rem; }
+    .messages-header-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .messages-unread {
+      display: inline-flex; align-items: center; padding: .25rem .7rem; border-radius: 999px;
+      background: rgba(56, 189, 248, .12); border: 1px solid rgba(56, 189, 248, .3);
+      color: #7dd3fc; font-size: .78rem; font-weight: 700; white-space: nowrap;
+    }
+    .messages-unread[hidden] { display: none; }
+    .messages-mark-all {
+      background: transparent; border: 1px solid var(--border-color); color: var(--text-main);
+      padding: .45rem .85rem; border-radius: 8px; font-family: inherit; font-size: .8rem;
+      font-weight: 600; cursor: pointer; transition: border-color var(--transition), background var(--transition);
+    }
+    .messages-mark-all:hover:not(:disabled) { border-color: var(--border-hover); background: var(--card-bg-hover); }
+    .messages-mark-all:disabled { opacity: .45; cursor: not-allowed; }
+
+    .messages-list { display: flex; flex-direction: column; gap: .85rem; }
+    .message-card {
+      position: relative; overflow: hidden;
+      background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%);
+      border: 1px solid var(--border-color); border-radius: var(--radius-md);
+      padding: 1rem 1.1rem;
+    }
+    .message-card.is-unread {
+      border-color: rgba(56, 189, 248, .45);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, .12);
+    }
+    .message-card.is-unread::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: linear-gradient(180deg, var(--accent-color), #0ea5e9);
+    }
+    .message-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+    .message-subject { margin: 0; color: #fff; font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
+    .message-meta { margin-top: .25rem; color: var(--text-muted); font-size: .78rem; }
+    .message-meta strong { color: #cbd5e1; }
+    .message-new {
+      flex: 0 0 auto; padding: .15rem .5rem; border-radius: 999px;
+      background: rgba(56, 189, 248, .15); color: #7dd3fc;
+      font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .message-body {
+      margin: .65rem 0 0; color: #cbd5e1; font-size: .9rem;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .message-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .8rem; }
+    .message-read-btn {
+      background: transparent; border: 1px solid rgba(56, 189, 248, .35);
+      color: #7dd3fc; padding: .35rem .75rem; border-radius: 7px;
+      font-family: inherit; font-size: .78rem; font-weight: 600; cursor: pointer;
+      transition: background var(--transition);
+    }
+    .message-read-btn:hover { background: rgba(56, 189, 248, .1); }
+    .messages-error { text-align: center; padding: 2rem 1rem; color: #f87171; }
+    .messages-retry {
+      margin-top: .75rem; background: var(--accent-color); color: #0b0f19;
+      border: none; border-radius: 8px; padding: .5rem 1rem;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+    }
+    .messages-gate { text-align: center; padding: 2.5rem 1rem; }
+    @media (max-width: 600px) {
+      .messages-header-actions { width: 100%; }
+      .messages-mark-all { flex: 1 1 auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container">
+      <span class="logo-text">⚓ CVI <span>Virtual</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="profilo.html">Profilo</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="messages-page">
+      <div id="messages-gate" class="messages-gate" style="display:none">
+        <h2>Accesso richiesto</h2>
+        <p>Devi effettuare l'accesso per vedere i messaggi.</p>
+        <a href="accedi.html" class="btn-primary" style="display:inline-block;margin-top:1rem;padding:.6rem 1.2rem;border-radius:8px;text-decoration:none">Accedi</a>
+      </div>
+
+      <div id="messages-app" class="content-box" style="display:none">
+        <div class="messages-header">
+          <div>
+            <h1 data-i18n="messages_title">Messaggi</h1>
+            <p class="messages-subtitle" data-i18n="messages_subtitle">Messaggi interni inviati dagli amministratori del circolo.</p>
+          </div>
+          <div class="messages-header-actions">
+            <span class="messages-unread" id="messages-unread" hidden></span>
+            <button type="button" class="messages-mark-all" id="messages-mark-all" data-i18n="messages_mark_all">Segna tutti come letti</button>
+          </div>
+        </div>
+
+        <div id="messages-list" aria-busy="true">
+          <p class="loading-text" data-i18n="messages_loading">Caricamento messaggi...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a>
+          <a href="classifiche.html">Classifiche</a>
+          <a href="albo-doro.html">Albo d'Oro</a>
+          <a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="download.html">Download</a>
+          <a href="contatti.html">Contatti</a>
+          <a href="unisciti.html">Unisciti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper
+    </div>
+  </footer>
+
+  <script src="common.js?v=3"></script>
+  <script>
+    const extra = {
+      it: {
+        messages_title: "Messaggi",
+        messages_subtitle: "Messaggi interni inviati dagli amministratori del circolo.",
+        messages_loading: "Caricamento messaggi...",
+        messages_empty: "Non hai ancora ricevuto messaggi.",
+        messages_unread: "{n} non letti",
+        messages_unread_one: "1 non letto",
+        messages_mark_all: "Segna tutti come letti",
+        messages_mark_read: "Segna come letto",
+        messages_new: "Nuovo",
+        messages_no_subject: "(senza oggetto)",
+        messages_from: "Da {name}",
+        messages_error: "Impossibile caricare i messaggi.",
+        messages_retry: "Riprova",
+        messages_login_required: "Devi effettuare l'accesso per vedere i messaggi."
+      },
+      en: {
+        messages_title: "Messages",
+        messages_subtitle: "Internal messages sent by club administrators.",
+        messages_loading: "Loading messages...",
+        messages_empty: "You have not received any messages yet.",
+        messages_unread: "{n} unread",
+        messages_unread_one: "1 unread",
+        messages_mark_all: "Mark all as read",
+        messages_mark_read: "Mark as read",
+        messages_new: "New",
+        messages_no_subject: "(no subject)",
+        messages_from: "From {name}",
+        messages_error: "Unable to load messages.",
+        messages_retry: "Retry",
+        messages_login_required: "You must log in to view messages."
+      },
+      fr: {
+        messages_title: "Messages",
+        messages_subtitle: "Messages internes envoyés par les administrateurs du club.",
+        messages_loading: "Chargement des messages...",
+        messages_empty: "Vous n'avez pas encore reçu de messages.",
+        messages_unread: "{n} non lus",
+        messages_unread_one: "1 non lu",
+        messages_mark_all: "Tout marquer comme lu",
+        messages_mark_read: "Marquer comme lu",
+        messages_new: "Nouveau",
+        messages_no_subject: "(sans objet)",
+        messages_from: "De {name}",
+        messages_error: "Impossible de charger les messages.",
+        messages_retry: "Réessayer",
+        messages_login_required: "Connexion requise pour voir les messages."
+      },
+      es: {
+        messages_title: "Mensajes",
+        messages_subtitle: "Mensajes internos enviados por los administradores del club.",
+        messages_loading: "Cargando mensajes...",
+        messages_empty: "Todavía no has recibido mensajes.",
+        messages_unread: "{n} sin leer",
+        messages_unread_one: "1 sin leer",
+        messages_mark_all: "Marcar todos como leídos",
+        messages_mark_read: "Marcar como leído",
+        messages_new: "Nuevo",
+        messages_no_subject: "(sin asunto)",
+        messages_from: "De {name}",
+        messages_error: "No se pudieron cargar los mensajes.",
+        messages_retry: "Reintentar",
+        messages_login_required: "Debes iniciar sesión para ver los mensajes."
+      }
+    };
+
+    const LOCALES = { it: "it-IT", en: "en-GB", fr: "fr-FR", es: "es-ES" };
+    let messages = [];
+    let senderMap = {};
+    let currentUserId = null;
+    let unreadCount = 0;
+
+    function t(key) {
+      const dict = extra[CVI.currentLang] || extra.it;
+      return dict[key] != null ? dict[key] : (extra.it[key] || "");
+    }
+
+    function esc(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      try {
+        return d.toLocaleString(LOCALES[CVI.currentLang] || "it-IT", {
+          day: "2-digit", month: "short", year: "numeric",
+          hour: "2-digit", minute: "2-digit"
+        });
+      } catch (e) {
+        return d.toLocaleString("it-IT");
+      }
+    }
+
+    function senderLabel(m) {
+      if (!m || !m.sender_id) return "Circolo";
+      return senderMap[String(m.sender_id)] || "Circolo";
+    }
+
+    function cardHtml(m) {
+      const unread = !m.read_at;
+      const subject = (m.subject || "").trim() || t("messages_no_subject");
+      const from = t("messages_from").replace("{name}", senderLabel(m));
+      return '<article class="message-card' + (unread ? " is-unread" : "") + '" data-id="' + esc(m.id) + '">' +
+        '<div class="message-top">' +
+          '<div>' +
+            '<h2 class="message-subject">' + esc(subject) + '</h2>' +
+            '<div class="message-meta">' + esc(from) + ' · ' + esc(fmtDate(m.created_at)) + '</div>' +
+          '</div>' +
+          (unread ? '<span class="message-new">' + esc(t("messages_new")) + '</span>' : '') +
+        '</div>' +
+        '<p class="message-body">' + esc(m.body || '') + '</p>' +
+        (unread
+          ? '<div class="message-actions">' +
+              '<button type="button" class="message-read-btn" data-read="' + esc(m.id) + '">' +
+                esc(t("messages_mark_read")) +
+              '</button>' +
+            '</div>'
+          : '') +
+      '</article>';
+    }
+
+    function updateHeader() {
+      unreadCount = messages.filter(function (m) { return !m.read_at; }).length;
+      const badge = document.getElementById("messages-unread");
+      if (badge) {
+        badge.hidden = unreadCount <= 0;
+        badge.textContent = unreadCount === 1
+          ? t("messages_unread_one")
+          : t("messages_unread").replace("{n}", unreadCount);
+      }
+      const all = document.getElementById("messages-mark-all");
+      if (all) all.disabled = unreadCount <= 0;
+    }
+
+    function render() {
+      const list = document.getElementById("messages-list");
+      if (!list) return;
+      list.setAttribute("aria-busy", "false");
+      updateHeader();
+      if (!messages.length) {
+        list.innerHTML = '<p class="empty-text">' + esc(t("messages_empty")) + '</p>';
+        return;
+      }
+      list.innerHTML = '<div class="messages-list">' + messages.map(cardHtml).join("") + '</div>';
+    }
+
+    async function loadSenders() {
+      senderMap = {};
+      const ids = [];
+      const seen = {};
+      messages.forEach(function (m) {
+        if (!m.sender_id) return;
+        const id = String(m.sender_id);
+        if (seen[id]) return;
+        seen[id] = true;
+        ids.push(id);
+      });
+      if (!ids.length) return;
+      try {
+        const res = await CVI.supabase
+          .from("profiles")
+          .select("id,nickname,nome,cognome")
+          .in("id", ids);
+        if (res.error) return;
+        (res.data || []).forEach(function (p) {
+          const nick = (p.nickname || "").trim();
+          const full = [p.nome, p.cognome].filter(Boolean).join(" ").trim();
+          senderMap[String(p.id)] = nick ? "@" + nick : (full || "Circolo");
+        });
+      } catch (e) { /* il mittente resta "Circolo" */ }
+    }
+
+    function showError() {
+      const list = document.getElementById("messages-list");
+      if (!list) return;
+      list.setAttribute("aria-busy", "false");
+      list.innerHTML = '<div class="messages-error"><p>' + esc(t("messages_error")) + '</p>' +
+        '<button type="button" class="messages-retry" id="messages-retry">' +
+        esc(t("messages_retry")) + '</button></div>';
+      const retry = document.getElementById("messages-retry");
+      if (retry) retry.onclick = load;
+    }
+
+    async function load() {
+      const list = document.getElementById("messages-list");
+      if (!list) return;
+      list.setAttribute("aria-busy", "true");
+      list.innerHTML = '<p class="loading-text">' + esc(t("messages_loading")) + '</p>';
+
+      let res;
+      try {
+        res = await CVI.supabase
+          .from("member_messages")
+          .select("*")
+          .eq("recipient_id", currentUserId)
+          .order("created_at", { ascending: false });
+      } catch (e) {
+        showError();
+        return;
+      }
+      if (res.error) {
+        showError();
+        return;
+      }
+
+      messages = res.data || [];
+      await loadSenders();
+      render();
+    }
+
+    function refreshNavBadge() {
+      if (typeof window.CVIrefreshMessagesBadge === "function") {
+        window.CVIrefreshMessagesBadge();
+      }
+    }
+
+    async function markRead(id) {
+      const msg = messages.filter(function (m) { return String(m.id) === String(id); })[0];
+      if (!msg || msg.read_at) return;
+      const btn = document.querySelector('[data-read="' + String(id).replace(/"/g, '\\"') + '"]');
+      if (btn) btn.disabled = true;
+
+      const res = await CVI.supabase
+        .from("member_messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", id);
+      if (res.error) {
+        if (btn) btn.disabled = false;
+        alert(t("messages_error"));
+        return;
+      }
+      msg.read_at = new Date().toISOString();
+      render();
+      refreshNavBadge();
+    }
+
+    async function markAllRead() {
+      const unread = messages.filter(function (m) { return !m.read_at; });
+      if (!unread.length) return;
+      const btn = document.getElementById("messages-mark-all");
+      if (btn) btn.disabled = true;
+
+      const now = new Date().toISOString();
+      const ids = unread.map(function (m) { return m.id; });
+      const res = await CVI.supabase
+        .from("member_messages")
+        .update({ read_at: now })
+        .in("id", ids);
+      if (res.error) {
+        if (btn) btn.disabled = false;
+        alert(t("messages_error"));
+        return;
+      }
+      messages.forEach(function (m) {
+        if (!m.read_at) m.read_at = now;
+      });
+      render();
+      refreshNavBadge();
+    }
+
+    function bindActions() {
+      const list = document.getElementById("messages-list");
+      if (list) {
+        list.addEventListener("click", function (e) {
+          const btn = e.target.closest ? e.target.closest("[data-read]") : null;
+          if (btn) markRead(btn.getAttribute("data-read"));
+        });
+      }
+      const all = document.getElementById("messages-mark-all");
+      if (all) all.addEventListener("click", markAllRead);
+    }
+
+    function waitForCVI(maxMs) {
+      return new Promise(function (resolve) {
+        const started = Date.now();
+        (function tick() {
+          if (window.CVI && CVI.supabase) return resolve(true);
+          if (Date.now() - started > (maxMs || 8000)) return resolve(false);
+          setTimeout(tick, 50);
+        })();
+      });
+    }
+
+    async function boot() {
+      const ready = await waitForCVI(8000);
+      if (!ready) return;
+
+      CVI.init("messaggi.html", extra);
+
+      const sel = document.getElementById("languageSelect");
+      if (sel) sel.onchange = function () {
+        CVI.cambiaLingua(sel.value, extra);
+        render();
+      };
+
+      const sessionRes = await CVI.supabase.auth.getSession();
+      const session = sessionRes.data && sessionRes.data.session;
+      if (!session || !session.user) {
+        document.getElementById("messages-gate").style.display = "block";
+        return;
+      }
+
+      currentUserId = session.user.id;
+      document.getElementById("messages-app").style.display = "block";
+      bindActions();
+      await load();
+    }
+
+    boot();
+  </script>
+</body>
+</html>
+
