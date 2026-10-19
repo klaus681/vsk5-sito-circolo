@@ -9,7 +9,7 @@
     s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
 
-    var dt = await fetch("admin-datetime.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var dt = await fetch("admin-datetime.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (dt) {
       var sDt = document.createElement("script");
       sDt.textContent = dt;

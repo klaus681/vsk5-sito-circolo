@@ -9,13 +9,24 @@
     var st = document.createElement("style");
     st.id = STYLE_ID;
     st.textContent =
-      ".adm-datetime-wrap{position:relative;display:flex;align-items:center;gap:.4rem;width:100%}" +
+      ".adm-datetime-wrap{position:relative;display:flex;align-items:center;gap:.45rem;width:100%}" +
       ".adm-datetime-wrap .adm-input{flex:1;min-width:0;color-scheme:dark;cursor:pointer}" +
       "input[type=datetime-local].adm-input,input[type=date].adm-input{color-scheme:dark;cursor:pointer}" +
-      ".adm-datetime-btn{flex-shrink:0;width:42px;height:42px;border-radius:8px;" +
-      "border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.12);" +
-      "color:#7dd3fc;font-size:1.15rem;cursor:pointer;line-height:1}" +
-      ".adm-datetime-btn:hover{background:rgba(56,189,248,.25)}";
+      ".adm-datetime-btn{" +
+      "flex-shrink:0;width:44px;height:44px;border-radius:10px;" +
+      "border:1px solid rgba(255,255,255,.35);" +
+      "background:linear-gradient(135deg,#38bdf8,#0ea5e9);" +
+      "color:#fff;font-size:1.2rem;cursor:pointer;line-height:1;" +
+      "box-shadow:0 2px 10px rgba(14,165,233,.45);" +
+      "filter:none;-webkit-filter:none" +
+      "}" +
+      ".adm-datetime-btn:hover{" +
+      "background:linear-gradient(135deg,#7dd3fc,#38bdf8);" +
+      "color:#0b0f19;" +
+      "border-color:rgba(255,255,255,.6);" +
+      "box-shadow:0 4px 16px rgba(56,189,248,.55)" +
+      "}" +
+      ".adm-datetime-btn:active{transform:scale(.96)}";
     document.head.appendChild(st);
   }
 
@@ -26,9 +37,7 @@
         el.showPicker();
         return;
       }
-    } catch (e) {
-      /* showPicker può fallire se non c'è gesture utente */
-    }
+    } catch (e) {}
     el.focus();
   }
 
@@ -38,18 +47,15 @@
     input.style.colorScheme = "dark";
     input.style.cursor = "pointer";
 
-    // click sul campo → apri calendario
     input.addEventListener("click", function () {
       openPicker(input);
     });
     input.addEventListener("focus", function () {
-      // piccolo delay per evitare conflitti con focus
       setTimeout(function () {
         openPicker(input);
       }, 10);
     });
 
-    // se già in un wrap, non raddoppiare
     if (input.parentElement && input.parentElement.classList.contains("adm-datetime-wrap"))
       return;
 
@@ -63,7 +69,16 @@
     btn.className = "adm-datetime-btn";
     btn.title = "Apri calendario";
     btn.setAttribute("aria-label", "Apri calendario");
-    btn.textContent = "📅";
+    // SVG calendario bianco (visibile su qualsiasi sfondo)
+    btn.innerHTML =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<rect x="3" y="5" width="18" height="16" rx="2" stroke="#fff" stroke-width="2"/>' +
+      '<path d="M3 10h18" stroke="#fff" stroke-width="2"/>' +
+      '<path d="M8 3v4M16 3v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
+      '<circle cx="8" cy="15" r="1.2" fill="#fff"/>' +
+      '<circle cx="12" cy="15" r="1.2" fill="#fff"/>' +
+      '<circle cx="16" cy="15" r="1.2" fill="#fff"/>' +
+      "</svg>";
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -79,7 +94,6 @@
       .forEach(enhance);
   }
 
-  // MutationObserver: form dinamici (tornei, allenamenti, eventi)
   function observe() {
     var root = document.getElementById("admin-app") || document.body;
     if (!root || root._cviDtObs) return;
