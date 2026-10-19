@@ -161,6 +161,48 @@
     }
     .cvi-admin-toast.show { opacity: 1; transform: none; }
 
+    .cvi-modal {
+      position: fixed; inset: 0; z-index: 4000; display: flex;
+      align-items: center; justify-content: center; padding: 1rem;
+      background: rgba(2, 6, 23, .72);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .cvi-modal[hidden] { display: none; }
+    .cvi-modal-box {
+      position: relative; width: 100%; max-width: 520px;
+      background: linear-gradient(165deg, #152033 0%, #111827 60%, #0f1524 100%);
+      border: 1px solid var(--border-hover); border-radius: var(--radius-lg);
+      padding: 1.5rem; box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+    }
+    .cvi-modal-box h2 { margin: 0 2rem .9rem 0; font-size: 1.15rem; color: #fff; }
+    .cvi-modal-close {
+      position: absolute; top: .65rem; right: .7rem; background: transparent;
+      border: none; color: var(--text-muted); font-size: 1.5rem; line-height: 1;
+      cursor: pointer; padding: .15rem .35rem; border-radius: 6px;
+    }
+    .cvi-modal-close:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+    .cvi-field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .9rem; }
+    .cvi-field span { font-size: .8rem; font-weight: 600; color: var(--text-muted); }
+    .cvi-field input, .cvi-field textarea {
+      width: 100%; background: #0b0f19; border: 1px solid var(--border-color);
+      border-radius: 8px; color: var(--text-main); font-family: inherit;
+      font-size: .9rem; padding: .6rem .7rem; resize: vertical;
+    }
+    .cvi-modal-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .5rem; }
+    .cvi-btn-ghost {
+      background: transparent; border: 1px solid var(--border-color); color: var(--text-main);
+      padding: .5rem .9rem; border-radius: 8px; font-family: inherit; font-weight: 600; cursor: pointer;
+    }
+    .cvi-btn-ghost:hover { border-color: var(--border-hover); }
+    .cvi-btn-primary {
+      background: var(--accent-color); border: none; color: #0b0f19;
+      padding: .5rem 1rem; border-radius: 8px; font-family: inherit; font-weight: 700; cursor: pointer;
+    }
+    .cvi-btn-primary:hover { background: #7dd3fc; }
+    .cvi-btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .cvi-modal-status { margin: .6rem 0 0; font-size: .82rem; color: #f87171; min-height: 1em; }
+    body.cvi-modal-open { overflow: hidden; }
+
     .member-card-actions {
       display: none; align-items: center; gap: .5rem; flex-wrap: wrap;
       padding: 0 1.05rem 1rem;
@@ -299,6 +341,28 @@
         <button type="button" class="members-page-btn" id="members-next" data-i18n="members_next">Successiva →</button>
       </div>
     </div>
+
+    <div class="cvi-modal" id="cvi-message-modal" hidden>
+      <div class="cvi-modal-box" role="dialog" aria-modal="true" aria-labelledby="cvi-message-title">
+        <button type="button" class="cvi-modal-close" id="cvi-message-close" aria-label="Chiudi">×</button>
+        <h2 id="cvi-message-title"></h2>
+        <form id="cvi-message-form">
+          <label class="cvi-field">
+            <span data-i18n="message_subject">Oggetto (facoltativo)</span>
+            <input type="text" id="cvi-message-subject" maxlength="120" autocomplete="off">
+          </label>
+          <label class="cvi-field">
+            <span data-i18n="message_body">Messaggio</span>
+            <textarea id="cvi-message-body" rows="5" maxlength="4000" required></textarea>
+          </label>
+          <div class="cvi-modal-actions">
+            <button type="button" class="cvi-btn-ghost" id="cvi-message-cancel" data-i18n="message_cancel">Annulla</button>
+            <button type="submit" class="cvi-btn-primary" id="cvi-message-send" data-i18n="message_send">Invia</button>
+          </div>
+          <p class="cvi-modal-status" id="cvi-message-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
   </main>
 
   <footer class="site-footer">
@@ -357,7 +421,12 @@
         note_deleted: "Nota rimossa.", note_error: "Errore nota: ",
         reset_nick_prompt: "Nuovo nickname per {name}", reset_nick_done: "Nickname aggiornato.",
         reset_nick_error: "Errore nickname: ", role_updated: "Ruolo aggiornato.",
-        role_error: "Errore ruolo: ", role_change_confirm: "Cambiare il ruolo di {name} in {role}?"
+        role_error: "Errore ruolo: ", role_change_confirm: "Cambiare il ruolo di {name} in {role}?",
+        message: "Messaggio", message_title: "Invia un messaggio a {name}",
+        message_subject: "Oggetto (facoltativo)", message_body: "Messaggio",
+        message_cancel: "Annulla", message_send: "Invia",
+        message_sent: "Messaggio inviato.", message_error: "Errore invio: ",
+        message_body_required: "Scrivi il testo del messaggio."
       },
       en: {
         members_title: "Registered Members", members_subtitle: "Official list of club members.",
@@ -384,7 +453,12 @@
         note_deleted: "Note removed.", note_error: "Note error: ",
         reset_nick_prompt: "New nickname for {name}", reset_nick_done: "Nickname updated.",
         reset_nick_error: "Nickname error: ", role_updated: "Role updated.",
-        role_error: "Role error: ", role_change_confirm: "Change {name}'s role to {role}?"
+        role_error: "Role error: ", role_change_confirm: "Change {name}'s role to {role}?",
+        message: "Message", message_title: "Send a message to {name}",
+        message_subject: "Subject (optional)", message_body: "Message",
+        message_cancel: "Cancel", message_send: "Send",
+        message_sent: "Message sent.", message_error: "Send error: ",
+        message_body_required: "Write the message text."
       },
       fr: {
         members_title: "Membres Inscrits", members_subtitle: "Liste officielle des membres.",
@@ -411,7 +485,12 @@
         note_deleted: "Note supprimée.", note_error: "Erreur note : ",
         reset_nick_prompt: "Nouveau pseudo pour {name}", reset_nick_done: "Pseudo mis à jour.",
         reset_nick_error: "Erreur pseudo : ", role_updated: "Rôle mis à jour.",
-        role_error: "Erreur rôle : ", role_change_confirm: "Changer le rôle de {name} en {role} ?"
+        role_error: "Erreur rôle : ", role_change_confirm: "Changer le rôle de {name} en {role} ?",
+        message: "Message", message_title: "Envoyer un message à {name}",
+        message_subject: "Objet (facultatif)", message_body: "Message",
+        message_cancel: "Annuler", message_send: "Envoyer",
+        message_sent: "Message envoyé.", message_error: "Erreur d'envoi : ",
+        message_body_required: "Écrivez le texte du message."
       },
       es: {
         members_title: "Miembros Inscritos", members_subtitle: "Lista oficial de miembros.",
@@ -438,7 +517,12 @@
         note_deleted: "Nota eliminada.", note_error: "Error de nota: ",
         reset_nick_prompt: "Nuevo apodo para {name}", reset_nick_done: "Apodo actualizado.",
         reset_nick_error: "Error de apodo: ", role_updated: "Rol actualizado.",
-        role_error: "Error de rol: ", role_change_confirm: "¿Cambiar el rol de {name} a {role}?"
+        role_error: "Error de rol: ", role_change_confirm: "¿Cambiar el rol de {name} a {role}?",
+        message: "Mensaje", message_title: "Enviar un mensaje a {name}",
+        message_subject: "Asunto (opcional)", message_body: "Mensaje",
+        message_cancel: "Cancelar", message_send: "Enviar",
+        message_sent: "Mensaje enviado.", message_error: "Error de envío: ",
+        message_body_required: "Escribe el texto del mensaje."
       }
     };
     const PAGE_SIZE = 24;

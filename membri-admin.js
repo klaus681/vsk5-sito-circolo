@@ -16,6 +16,9 @@
   var teamsList = [];
   var notesByUid = {};
   var notesAvailable = false;
+  var messagesAvailable = false;
+  var messageRecipient = null;
+  var messageModal = null;
   var container = null;
   var bound = false;
 
@@ -84,6 +87,11 @@
     });
   }
 
+  async function loadMessagesAvailability() {
+    var r = await CVI.supabase.from("member_messages").select("id").limit(1);
+    messagesAvailable = !r.error;
+  }
+
   function profilesByUid() {
     var map = {};
     var list = window.CVIMembers ? CVIMembers.getProfiles() : [];
@@ -130,6 +138,97 @@
     box.innerHTML = team
       ? '<span class="team-badge">' + esc(team) + "</span>"
       : '<span class="member-no-team">' + esc(t("no_team")) + "</span>";
+  }
+
+  function setupMessageModal() {
+    if (messageModal) return;
+    messageModal = document.getElementById("cvi-message-modal");
+    if (!messageModal) return;
+
+    var form = document.getElementById("cvi-message-form");
+    var closeBtn = document.getElementById("cvi-message-close");
+    var cancelBtn = document.getElementById("cvi-message-cancel");
+    var sendBtn = document.getElementById("cvi-message-send");
+    var statusEl = document.getElementById("cvi-message-status");
+    var subjectEl = document.getElementById("cvi-message-subject");
+    var bodyEl = document.getElementById("cvi-message-body");
+
+    function closeModal() {
+      messageModal.hidden = true;
+      document.body.classList.remove("cvi-modal-open");
+      messageRecipient = null;
+      if (statusEl) statusEl.textContent = "";
+    }
+
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+    messageModal.addEventListener("click", function (e) {
+      if (e.target === messageModal) closeModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && messageModal && !messageModal.hidden) closeModal();
+    });
+
+    if (form) form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      if (!messageRecipient) return;
+
+      var body = bodyEl ? bodyEl.value.trim() : "";
+      if (!body) {
+        if (statusEl) statusEl.textContent = t("message_body_required") || "Scrivi il testo del messaggio.";
+        if (bodyEl) bodyEl.focus();
+        return;
+      }
+
+      if (sendBtn) sendBtn.disabled = true;
+      if (statusEl) statusEl.textContent = "";
+
+      var res = await CVI.supabase.from("member_messages").insert({
+        sender_id: currentUserId,
+        recipient_id: messageRecipient,
+        subject: subjectEl ? subjectEl.value.trim() : "",
+        body: body
+      });
+      if (sendBtn) sendBtn.disabled = false;
+
+      if (res.error) {
+        if (statusEl) {
+          statusEl.textContent = (t("message_error") || "Errore invio: ") + res.error.message;
+        }
+        return;
+      }
+
+      closeModal();
+      if (form) form.reset();
+      toast(t("message_sent"));
+    });
+  }
+
+  function openMessageModal(uid, name) {
+    if (!messagesAvailable || !uid) return;
+    setupMessageModal();
+    if (!messageModal) return;
+
+    messageRecipient = uid;
+    var title = document.getElementById("cvi-message-title");
+    if (title) title.textContent = t("message_title").replace("{name}", name || "");
+
+    var statusEl = document.getElementById("cvi-message-status");
+    if (statusEl) statusEl.textContent = "";
+    var subjectEl = document.getElementById("cvi-message-subject");
+    if (subjectEl) subjectEl.value = "";
+    var bodyEl = document.getElementById("cvi-message-body");
+    if (bodyEl) bodyEl.value = "";
+
+    messageModal.hidden = false;
+    document.body.classList.add("cvi-modal-open");
+    if (bodyEl) bodyEl.focus();
+  }
+
+  function bindMessageButton(btn, uid, card) {
+    btn.addEventListener("click", function () {
+      openMessageModal(uid, card.getAttribute("data-nick") || "");
+    });
   }
 
   async function expelMember(uid, nick) {
@@ -309,6 +408,11 @@
         esc(notesByUid[uid] || "") + '">' + esc(t("note") || "Nota") + "</button>";
     }
 
+    if (messagesAvailable) {
+      html += '<button type="button" class="member-admin-btn" data-action="message">' +
+        esc(t("message") || "Messaggio") + "</button>";
+    }
+
     html += '<button type="button" class="member-expel-btn">' +
       esc(t("expel") || "Espelli") + "</button>";
 
@@ -318,12 +422,14 @@
     var roleSel = actions.querySelector(".member-role-select");
     var nickBtn = actions.querySelector('[data-action="nick"]');
     var noteBtn = actions.querySelector('[data-action="note"]');
+    var messageBtn = actions.querySelector('[data-action="message"]');
     var expelBtn = actions.querySelector(".member-expel-btn");
 
     if (teamSel) bindTeamSelect(teamSel, uid, card);
     if (roleSel) bindRoleSelect(roleSel, uid, card);
     if (nickBtn) bindNickButton(nickBtn, uid, card);
     if (noteBtn) bindNoteButton(noteBtn, uid, card);
+    if (messageBtn) bindMessageButton(messageBtn, uid, card);
     if (expelBtn) expelBtn.addEventListener("click", function () {
       expelMember(uid, card.getAttribute("data-nick"));
     });
@@ -344,7 +450,8 @@
     var profiles = window.CVIMembers ? CVIMembers.getProfiles() : [];
     hasTeamIdCol = profiles.length > 0 && Object.prototype.hasOwnProperty.call(profiles[0], "team_id");
 
-    await Promise.all([loadTeams(), loadNotes()]);
+    await Promise.all([loadTeams(), loadNotes(), loadMessagesAvailability()]);
+    setupMessageModal();
 
     container = document.getElementById("members-container");
     if (!container) return;
