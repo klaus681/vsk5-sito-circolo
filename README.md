@@ -16,6 +16,7 @@ Sito statico del Circolo Velico Italia Virtual (Virtual Skipper 5), pubblicato s
 *.js                   logica per pagina e moduli condivisi
 *.css                  stile globale, mobile e componenti
 fonts/ + fonts.css     font self-hosted (Plus Jakarta Sans, Playfair Display)
+                       licenze OFL incluse in fonts/OFL-*.txt
 *.sql                  script SQL / policy RLS da applicare su Supabase
 sitemap.xml, robots.txt
 ```
