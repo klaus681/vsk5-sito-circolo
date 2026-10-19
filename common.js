@@ -11,6 +11,8 @@ document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
 /* Extra: voce Tutor nel menu */
 document.write('<script src="tutor-nav.js?v=1"><\/script>');
+/* Extra: voce Biblioteca (vicino a Download) */
+document.write('<script src="biblioteca-nav.js?v=1"><\/script>');
 /* Extra: traduzioni menu */
 document.write('<script src="nav-i18n.js?v=1"><\/script>');
 /* Extra: voce Messaggi nel menu + badge non letti */

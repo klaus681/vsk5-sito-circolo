@@ -70,6 +70,12 @@
       sTu.textContent = tu;
       document.head.appendChild(sTu);
     }
+    var bib = await fetch("biblioteca-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (bib) {
+      var sBib = document.createElement("script");
+      sBib.textContent = bib;
+      document.head.appendChild(sBib);
+    }
     var sf = await fetch("sfondi-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
     if (sf) {
       var s10 = document.createElement("script");
