@@ -186,5 +186,5 @@ create policy "tutor_sessioni_admin" on public.tutor_sessioni
 
 grant select, insert, update on public.tutor to authenticated;
 grant select, insert, update on public.tutor_sessioni to authenticated;
-grant all on public.tutor to authenticated;
-grant all on public.tutor_sessioni to authenticated;
+grant delete on public.tutor to authenticated;
+grant delete on public.tutor_sessioni to authenticated;

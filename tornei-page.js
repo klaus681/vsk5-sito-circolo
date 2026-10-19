@@ -175,7 +175,7 @@
       });
       try {
         var pr = await withTimeout(
-          CVI.supabase.from("profiles").select("id,nickname,team").in("id", uids),
+          CVI.supabase.from("profiles_public").select("id,nickname,team").in("id", uids),
           8000,
           "Profili"
         );
@@ -496,7 +496,7 @@
         return r.user_id;
       });
       var pr = await withTimeout(
-        CVI.supabase.from("profiles").select("id,nickname,team,nome").in("id", uids),
+        CVI.supabase.from("profiles_public").select("id,nickname,team,nome").in("id", uids),
         8000,
         "Profili classifica"
       );

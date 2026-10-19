@@ -29,7 +29,7 @@
     if (!CVI.supabase) return;
     try {
       var res = await CVI.supabase
-        .from("profiles")
+        .from("profiles_public")
         .select("id, nickname, nome, cognome, nazionalita");
       if (res.error) return;
       byNick = {};

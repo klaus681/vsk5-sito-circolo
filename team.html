@@ -316,7 +316,7 @@
               const full = (nome + ' ' + (m.cognome || '')).trim();
               let label = nome;
               if (nick) label += label ? ' (' + nick + ')' : nick;
-              label = label || m.email || 'Membro';
+              label = label || 'Membro';
               const isCap = !!capKey && (teamKey(nick) === capKey || teamKey(nome) === capKey || teamKey(full) === capKey);
               return '<li' + (isCap ? ' class="is-captain"' : '') + '>' +
                 '<span class="member-dot">' + esc(memberInitials(m)) + '</span>' +
@@ -357,7 +357,7 @@
       if (error) { container.innerHTML = '<p class="empty-text" style="color:#ef4444">Errore: ' + error.message + '</p>'; return; }
       if (!teams || !teams.length) { container.innerHTML = '<p class="empty-text">' + (extra[(CVI.currentLang||'it')]).team_empty + '</p>'; return; }
 
-      const { data: profiles } = await CVI.supabase.from('profiles').select('*');
+      const { data: profiles } = await CVI.supabase.from('profiles_public').select('*');
       cachedTeams = teams; cachedProfiles = profiles || [];
       renderizzaTeams(cachedTeams, cachedProfiles);
     }

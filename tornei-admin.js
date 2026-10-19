@@ -203,7 +203,7 @@ var profilesCache=null;
 function profLabel(p){ if(!p) return "?"; var n=(p.nickname||"").trim(); var nm=[p.nome,p.cognome].filter(Boolean).join(" ").trim(); return n||nm||String(p.id||"").slice(0,8); }
 async function loadProfiles(){
   if(profilesCache) return profilesCache;
-  var r=await CVI.supabase.from("profiles").select("id,nickname,nome,cognome,team").order("nickname",{ascending:true});
+  var r=await CVI.supabase.from("profiles_public").select("id,nickname,nome,cognome,team").order("nickname",{ascending:true});
   if(r.error) throw r.error; profilesCache=r.data||[]; return profilesCache;
 }
 async function openIscrPanel(torneoId){

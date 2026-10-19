@@ -85,7 +85,7 @@
       if (id && uniq.indexOf(id) < 0) uniq.push(id);
     });
     if (!uniq.length) return;
-    var r = await CVI.supabase.from("profiles").select("id,nickname,team").in("id", uniq);
+    var r = await CVI.supabase.from("profiles_public").select("id,nickname,team").in("id", uniq);
     (r.data || []).forEach(function (p) {
       profiles[p.id] = p;
     });

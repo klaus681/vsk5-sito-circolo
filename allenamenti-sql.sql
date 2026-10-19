@@ -114,5 +114,5 @@ create policy "allenamento_iscrizioni_admin" on public.allenamento_iscrizioni
 
 grant select on public.allenamenti to authenticated;
 grant select on public.allenamento_iscrizioni to authenticated;
-grant all on public.allenamenti to authenticated;
-grant all on public.allenamento_iscrizioni to authenticated;
+grant insert, update, delete on public.allenamenti to authenticated;
+grant insert, update, delete on public.allenamento_iscrizioni to authenticated;
