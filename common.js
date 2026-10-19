@@ -9,11 +9,13 @@ document.write('<script src="cvi-flags-ui.js?v=2"><\/script>');
 document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 /* Extra: voce Tornei nel menu Gare & Eventi */
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
+/* Extra: voce Tutor nel menu */
+document.write('<script src="tutor-nav.js?v=1"><\/script>');
 /* Extra: traduzioni menu */
 document.write('<script src="nav-i18n.js?v=1"><\/script>');
 /* Extra: voce Messaggi nel menu + badge non letti */
 document.write('<script src="messaggi-nav.js?v=1"><\/script>');
-/* Extra: banner torneo + allenamento in riga dedicata (fuori wrap meteo) */
+/* Extra: banner torneo + allenamento in riga dedicata */
 document.write('<script src="tornei-home.js?v=4"><\/script>');
 document.write('<script src="allenamenti-home.js?v=3"><\/script>');
 /* Extra: sfondi home personalizzati da admin */

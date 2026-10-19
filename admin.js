@@ -64,6 +64,12 @@
       sAl.textContent = al;
       document.head.appendChild(sAl);
     }
+    var tu = await fetch("tutor-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (tu) {
+      var sTu = document.createElement("script");
+      sTu.textContent = tu;
+      document.head.appendChild(sTu);
+    }
     var sf = await fetch("sfondi-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
     if (sf) {
       var s10 = document.createElement("script");
