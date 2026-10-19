@@ -1,11 +1,12 @@
-/* CVI Admin - Sfondi Home (hero + card) */
+/* CVI Admin - Sfondi Home (hero + card + torneo + allenamento) */
 (function () {
   "use strict";
 
   var KEYS = [
     { key: "home_bg_hero", label: "Sfondo Hero (banner principale)", hint: "Immagine grande dietro titolo e slogan" },
     { key: "home_bg_next_race", label: "Sfondo card Prossima gara", hint: "Card accanto alle statistiche" },
-    { key: "home_bg_torneo", label: "Sfondo banner Torneo", hint: "Banner torneo pubblicato in home" }
+    { key: "home_bg_torneo", label: "Sfondo banner Torneo", hint: "Banner torneo pubblicato in home" },
+    { key: "home_bg_allenamento", label: "Sfondo banner Allenamento", hint: "Banner prossimo allenamento in home" }
   ];
 
   var DEFAULTS = {
@@ -13,7 +14,9 @@
       "https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1400&q=70",
     home_bg_next_race:
       "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1000&q=70",
-    home_bg_torneo: ""
+    home_bg_torneo: "",
+    home_bg_allenamento:
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1000&q=70"
   };
 
   function esc(s) {

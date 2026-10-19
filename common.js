@@ -15,7 +15,7 @@ document.write('<script src="nav-i18n.js?v=1"><\/script>');
 document.write('<script src="messaggi-nav.js?v=1"><\/script>');
 /* Extra: banner torneo in home se pubblicato */
 document.write('<script src="tornei-home.js?v=3"><\/script>');
-/* Extra: banner allenamento in home */
-document.write('<script src="allenamenti-home.js?v=1"><\/script>');
+/* Extra: banner allenamento in home (sotto la riga gara, non dentro wrap meteo) */
+document.write('<script src="allenamenti-home.js?v=2"><\/script>');
 /* Extra: sfondi home personalizzati da admin */
-document.write('<script src="home-sfondi.js?v=1"><\/script>');
+document.write('<script src="home-sfondi.js?v=2"><\/script>');
