@@ -218,6 +218,96 @@
         },
         ["discord_webhook_iscrizioni", "discord_webhook_gare", "discord_webhook"]
       );
+    },
+
+    /* ---- Allenamenti ---- */
+    notifyAllenamento: function (a) {
+      a = a || {};
+      var dataFmt = "";
+      if (a.data_ora) {
+        try {
+          dataFmt = new Date(a.data_ora).toLocaleString("it-IT", {
+            dateStyle: "full",
+            timeStyle: "short"
+          });
+        } catch (e) {
+          dataFmt = String(a.data_ora);
+        }
+      }
+      var fields = [];
+      if (dataFmt) fields.push({ name: "📅 Data", value: dataFmt, inline: true });
+      if (a.classe_barca)
+        fields.push({ name: "⛵ Classe", value: String(a.classe_barca).slice(0, 40), inline: true });
+      if (a.max_iscritti)
+        fields.push({ name: "Max iscritti", value: String(a.max_iscritti), inline: true });
+      if (a.durata_minuti)
+        fields.push({ name: "Durata", value: a.durata_minuti + " min", inline: true });
+      return sendEmbed(
+        {
+          title: "🏋️ Nuovo allenamento: " + (a.titolo || "Allenamento"),
+          description: String(
+            a.descrizione || "Allenamento riservato ai soci. Iscriviti sul sito (nessun punto in classifica)."
+          ).slice(0, 900),
+          color: 0x34d399,
+          url: SITE + "/allenamenti.html",
+          fields: fields
+        },
+        ["discord_webhook_allenamenti", "discord_webhook_gare", "discord_webhook"]
+      );
+    },
+
+    notifyAllenamentiGenerati: function (n, sample) {
+      sample = sample || {};
+      var fields = [];
+      if (n) fields.push({ name: "Slot creati", value: String(n), inline: true });
+      if (sample.classe_barca)
+        fields.push({ name: "Classe", value: String(sample.classe_barca), inline: true });
+      return sendEmbed(
+        {
+          title: "🏋️ Allenamenti programmati: " + n + " nuovi slot",
+          description:
+            "L'admin ha generato " +
+            n +
+            " allenamenti ricorrenti. Vedi calendario e iscriviti su allenamenti.html",
+          color: 0x34d399,
+          url: SITE + "/allenamenti.html",
+          fields: fields
+        },
+        ["discord_webhook_allenamenti", "discord_webhook_gare", "discord_webhook"]
+      );
+    },
+
+    notifyAllenamentoIscrizione: function (a, iscritto) {
+      a = a || {};
+      var fields = [];
+      if (iscritto)
+        fields.push({ name: "Iscritto", value: String(iscritto).slice(0, 100), inline: true });
+      if (a.data_ora) {
+        try {
+          fields.push({
+            name: "📅 Data",
+            value: new Date(a.data_ora).toLocaleString("it-IT", {
+              dateStyle: "medium",
+              timeStyle: "short"
+            }),
+            inline: true
+          });
+        } catch (e) {}
+      }
+      if (a.max_iscritti)
+        fields.push({ name: "Max iscritti", value: String(a.max_iscritti), inline: true });
+      return sendEmbed(
+        {
+          title: "🙋 Iscrizione allenamento: " + (a.titolo || "Allenamento"),
+          description: iscritto
+            ? iscritto + " si è iscritto all'allenamento."
+            : "Nuova iscrizione all'allenamento.",
+          color: 0x38bdf8,
+          url: SITE + "/allenamenti.html",
+          fields: fields
+        },
+        ["discord_webhook_iscrizioni", "discord_webhook_allenamenti", "discord_webhook"]
+      );
     }
   };
 
