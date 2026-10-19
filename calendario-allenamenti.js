@@ -54,40 +54,38 @@
         document.head.appendChild(st);
       }
 
-      // Patch: dopo che calendario ha renderizzato, aggiungi eventi nei giorni
-      // Approccio: per ogni allenamento trova la cella del giorno e appendi link
-  var MONTH_NAMES = {
-    gennaio: 0, febbraio: 1, marzo: 2, aprile: 3, maggio: 4, giugno: 5,
-    luglio: 6, agosto: 7, settembre: 8, ottobre: 9, novembre: 10, dicembre: 11
-  };
+      var MONTH_NAMES = {
+        gennaio: 0, febbraio: 1, marzo: 2, aprile: 3, maggio: 4, giugno: 5,
+        luglio: 6, agosto: 7, settembre: 8, ottobre: 9, novembre: 10, dicembre: 11
+      };
 
-  function visibleMonth() {
-    var title = (document.getElementById("cal-title") || {}).textContent || "";
-    var m = title.match(/(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+(\d{4})/i);
-    if (!m) return null;
-    return { year: parseInt(m[2], 10), month: MONTH_NAMES[m[1].toLowerCase()] };
-  }
+      function visibleMonth() {
+        var title = (document.getElementById("cal-title") || {}).textContent || "";
+        var m = title.match(/(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+(\d{4})/i);
+        if (!m) return null;
+        return { year: parseInt(m[2], 10), month: MONTH_NAMES[m[1].toLowerCase()] };
+      }
 
-  function currentFilter() {
-    var f = document.getElementById("cal-filter");
-    return f ? f.value : "all";
-  }
+      function currentFilter() {
+        var f = document.getElementById("cal-filter");
+        return f ? f.value : "all";
+      }
 
-  function dayKey(iso) {
-    if (!iso) return "";
-    var d = new Date(iso);
-    if (!isNaN(d.getTime())) {
-      return (
-        d.getFullYear() +
-        "-" +
-        String(d.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(d.getDate()).padStart(2, "0")
-      );
-    }
-    var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return m ? m[1] + "-" + m[2] + "-" + m[3] : "";
-  }
+      function dayKey(iso) {
+        if (!iso) return "";
+        var d = new Date(iso);
+        if (!isNaN(d.getTime())) {
+          return (
+            d.getFullYear() +
+            "-" +
+            String(d.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(d.getDate()).padStart(2, "0")
+          );
+        }
+        var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        return m ? m[1] + "-" + m[2] + "-" + m[3] : "";
+      }
 
       function fmtTime(iso) {
         try {
@@ -100,18 +98,50 @@
         }
       }
 
-      function paint() {
-        var box = document.getElementById("cal-container");
-        if (!box || /Caricamento/i.test(box.textContent || "")) return;
+      // Ricava le date delle 7 colonne della vista settimanale
+      // dall'header (es. "Lun<br>19/10") e l'anno dal titolo.
+      function weekColumns(box) {
+        var heads = box.querySelectorAll(".cal-week-head");
+        if (!heads.length) return [];
+        var title = (document.getElementById("cal-title") || {}).textContent || "";
+        var ym = title.match(/(\d{4})/);
+        var titleYear = ym ? parseInt(ym[1], 10) : new Date().getFullYear();
+        var cols = [];
+        heads.forEach(function (head, index) {
+          var m = (head.textContent || "").match(/(\d{1,2})\/(\d{1,2})/);
+          if (!m) return;
+          cols.push({
+            index: index,
+            day: parseInt(m[1], 10),
+            month: parseInt(m[2], 10) - 1
+          });
+        });
+        if (!cols.length) return [];
+        var crossYear =
+          cols.length > 1 &&
+          cols[0].month === 11 &&
+          cols[cols.length - 1].month === 0;
+        cols.forEach(function (c) {
+          c.year = crossYear && c.month === 11 ? titleYear - 1 : titleYear;
+        });
+        return cols;
+      }
 
-        // Inietta solo nel mese attualmente visualizzato.
+      function eventLink(a, cls) {
+        var link = document.createElement("a");
+        link.href = "allenamenti.html";
+        link.className = cls + " allenamento";
+        link.setAttribute("data-al-id", a.id);
+        link.title = a.titolo || "Allenamento";
+        link.textContent =
+          (fmtTime(a.data_ora) ? fmtTime(a.data_ora) + " " : "") +
+          (a.titolo || "Allenamento");
+        return link;
+      }
+
+      function paintMonth(box) {
         var vm = visibleMonth();
         if (!vm) return;
-
-        // Se il filtro nasconde gli allenamenti, non aggiungerli.
-        var f = currentFilter();
-        if (f !== "all" && f !== "allenamenti") return;
-
         r.data.forEach(function (a) {
           if (!a.data_ora) return;
           var dt = new Date(a.data_ora);
@@ -119,37 +149,64 @@
           if (dt.getFullYear() !== vm.year || dt.getMonth() !== vm.month) return;
 
           var key = dayKey(a.data_ora);
-          if (!key) return;
-          var parts = key.split("-");
-          var dayNum = parseInt(parts[2], 10);
+          var dayNum = parseInt(key.split("-")[2], 10);
+          if (!dayNum) return;
 
-          // Trova celle del giorno corrente (mese)
           box.querySelectorAll(".cal-day").forEach(function (cell) {
             if (cell.classList.contains("other-month")) return;
             var numEl = cell.querySelector(".cal-day-num");
-            if (!numEl) return;
-            if (parseInt(numEl.textContent, 10) !== dayNum) return;
+            if (!numEl || parseInt(numEl.textContent, 10) !== dayNum) return;
             if (cell.querySelector('[data-al-id="' + a.id + '"]')) return;
-            var link = document.createElement("a");
-            link.href = "allenamenti.html";
-            link.className = "cal-event allenamento";
-            link.setAttribute("data-al-id", a.id);
-            link.title = a.titolo || "Allenamento";
-            link.textContent =
-              (fmtTime(a.data_ora) ? fmtTime(a.data_ora) + " " : "") +
-              (a.titolo || "Allenamento");
-            cell.appendChild(link);
+            cell.appendChild(eventLink(a, "cal-event"));
             cell.classList.add("has-events");
           });
-
-          // Vista settimana
-          box.querySelectorAll(".cal-week-cell").forEach(function (cell) {
-            // meno preciso: aggiungi se data match nell'header della colonna
-          });
         });
-
-        // Non marcare permanente perché il calendario re-renderizza: ripeti
       }
+
+      function paintWeek(box) {
+        var cols = weekColumns(box);
+        if (!cols.length) return;
+        var cells = box.querySelectorAll(".cal-week-cell");
+        if (!cells.length) return;
+
+        r.data.forEach(function (a) {
+          if (!a.data_ora) return;
+          var dt = new Date(a.data_ora);
+          if (isNaN(dt.getTime())) return;
+
+          var col = null;
+          for (var i = 0; i < cols.length; i++) {
+            if (
+              cols[i].year === dt.getFullYear() &&
+              cols[i].month === dt.getMonth() &&
+              cols[i].day === dt.getDate()
+            ) {
+              col = cols[i];
+              break;
+            }
+          }
+          if (!col) return;
+
+          var hour = dt.getHours();
+          if (hour < 8 || hour > 22) hour = 10;
+          var cell = cells[(hour - 8) * 7 + col.index];
+          if (!cell || cell.querySelector('[data-al-id="' + a.id + '"]')) return;
+          cell.appendChild(eventLink(a, "cal-week-event"));
+        });
+      }
+
+      function paint() {
+        var box = document.getElementById("cal-container");
+        if (!box || /Caricamento/i.test(box.textContent || "")) return;
+
+        // Gli allenamenti compaiono solo con filtro "Tutte" o "Solo allenamenti".
+        var f = currentFilter();
+        if (f !== "all" && f !== "allenamenti") return;
+
+        if (box.querySelector(".cal-month-grid")) paintMonth(box);
+        else if (box.querySelector(".cal-week-grid")) paintWeek(box);
+      }
+
 
       // Osserva re-render del calendario
       var box = document.getElementById("cal-container");

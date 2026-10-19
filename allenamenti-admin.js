@@ -69,6 +69,45 @@
         );
       }
     }
+    // Conferma prima della generazione massiva: evita di creare
+    // decine di date con un click accidentale. Il listener è in capture
+    // phase, quindi intercetta il click prima dell'handler del pulsante.
+    function installGeneratorConfirm() {
+      if (document._cviGenConfirm) return;
+      document._cviGenConfirm = true;
+      document.addEventListener(
+        "click",
+        function (e) {
+          var target = e.target;
+          var btn = target && target.closest ? target.closest("#al-gen-btn") : null;
+          if (!btn) return;
+
+          var days = document.querySelectorAll(".al-gen-day:checked").length;
+          var weeks = parseInt((document.getElementById("al-gen-settimane") || {}).value, 10);
+          if (isNaN(weeks) || weeks < 1) weeks = 8;
+          if (weeks > 26) weeks = 26;
+          var count = days * weeks;
+
+          if (days > 0) {
+            var msg =
+              "Verranno create fino a " +
+              count +
+              " date (" +
+              days +
+              " giorni × " +
+              weeks +
+              " settimane).\n\nContinuare?";
+            if (!window.confirm(msg)) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            }
+          }
+        },
+        true
+      );
+    }
+
+    installGeneratorConfirm();
     setTimeout(patchDiscord, 1200);
     setTimeout(patchDiscord, 3000);
     setTimeout(patchDiscord, 6000);

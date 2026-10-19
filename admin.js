@@ -58,7 +58,7 @@
       s9.textContent = tn;
       document.head.appendChild(s9);
     }
-    var al = await fetch("allenamenti-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var al = await fetch("allenamenti-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (al) {
       var sAl = document.createElement("script");
       sAl.textContent = al;
