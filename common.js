@@ -4,7 +4,7 @@ document.write('<script src="https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circ
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
 document.write('<script src="cvi-flags.js?v=2"><\/script>');
-document.write('<script src="cvi-flags-ui.js?v=2"><\/script>');
+document.write('<script src="cvi-flags-ui.js?v=3"><\/script>');
 /* Extra: regolamento dinamico da admin */
 document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 /* Extra: voce Tornei nel menu Gare & Eventi */
