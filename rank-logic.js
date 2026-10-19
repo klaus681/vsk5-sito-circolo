@@ -9,7 +9,7 @@
     if (profilesReady && cacheProfiles && Object.keys(cacheProfiles).length > 0) return;
     if (!window.CVI || !CVI.supabase) return;
     try {
-      const { data } = await CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, is_admin');
+      const { data } = await CVI.supabase.from('profiles_public').select('id, nickname, team, nome, cognome, is_admin');
       if (data && data.length) {
         if (typeof cacheProfiles === 'undefined' || !cacheProfiles) window.cacheProfiles = {};
         data.forEach(function (p) {

@@ -137,6 +137,6 @@ create policy "torneo_iscrizioni_admin_all" on public.torneo_iscrizioni
 grant select on public.tornei to anon, authenticated;
 grant select on public.torneo_gare to anon, authenticated;
 grant select on public.torneo_iscrizioni to anon, authenticated;
-grant all on public.tornei to authenticated;
-grant all on public.torneo_gare to authenticated;
-grant all on public.torneo_iscrizioni to authenticated;
+grant insert, update, delete on public.tornei to authenticated;
+grant insert, update, delete on public.torneo_gare to authenticated;
+grant insert, update, delete on public.torneo_iscrizioni to authenticated;

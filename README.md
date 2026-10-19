@@ -18,6 +18,7 @@ Sito statico del Circolo Velico Italia Virtual (Virtual Skipper 5), pubblicato s
 fonts/ + fonts.css     font self-hosted (Plus Jakarta Sans, Playfair Display)
                        licenze OFL incluse in fonts/OFL-*.txt
 *.sql                  script SQL / policy RLS da applicare su Supabase
+                       (partire da security-rls-hardening-sql.sql)
 sitemap.xml, robots.txt
 ```
 
@@ -46,7 +47,24 @@ Prima di andare in produzione verifica:
 4. `site_settings` non espone segreti (webhook Discord) al client.
 5. I bucket storage hanno policy di lettura/scrittura coerenti con i ruoli.
 
-Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
+Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
+
+### Migrazione RLS (Sprint 2)
+
+Esegui `security-rls-hardening-sql.sql` nel SQL Editor di Supabase dopo un backup. La migrazione:
+
+- chiude l'accesso anonimo a `profiles` (prima email, `role` e `is_admin` erano leggibili con la sola anon key);
+- crea `profiles_public`, vista con le sole colonne sicure, usata dalle pagine pubbliche;
+- impedisce l'escalation a `admin` tramite trigger;
+- crea il profilo automaticamente alla registrazione (`handle_new_user`);
+- nasconde i webhook/segreti di `site_settings`, lasciando leggibili le chiavi pubbliche;
+- revoca l'accesso anon alle tabelle riservate.
+
+Dopo la migrazione verifica con `security-rls-test-sql.sql` (sostituisci gli UUID di test). I webhook restano leggibili solo dagli admin: le notifiche Discord continuano a funzionare dal pannello admin, ma non sono più esposte agli altri utenti. Per spostarle completamente lato server serve una Edge Function (punto 2 dello Sprint 2).
+
+Le pagine pubbliche leggono i profili da `profiles_public`. Se aggiungi una query pubblica su `profiles`, usa la vista e non la tabella.
+
+**Ordine di deploy:** applica prima `security-rls-hardening-sql.sql` su Supabase e solo dopo pubblica le pagine aggiornate. Se il codice viene deployato prima della vista, le pagine pubbliche non riescono a leggere i profili.
 
 ## Ruoli
 
@@ -81,7 +99,7 @@ Apri una pull request, verifica le pagine principali e poi fai merge su `main`. 
 
 ## Prossimi passi consigliati
 
-- Hardening RLS e spostamento dei webhook Discord in una Edge Function.
+- Spostare i webhook Discord in una Edge Function (punto 2 Sprint 2).
 - Notifiche email e promemoria gara.
 - PWA + push notification.
 - Refactor di `common.js` in locale (oggi carica una versione remota via `document.write`).

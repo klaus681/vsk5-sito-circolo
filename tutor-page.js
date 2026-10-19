@@ -70,7 +70,7 @@
 
   async function loadProfiles(ids) {
     if (!ids.length) return;
-    var r = await CVI.supabase.from("profiles").select("id,nickname,team").in("id", ids);
+    var r = await CVI.supabase.from("profiles_public").select("id,nickname,team").in("id", ids);
     (r.data || []).forEach(function (p) {
       profiles[p.id] = p;
     });

@@ -1,7 +1,7 @@
 async function loadRis(){
   if(!gare.length)await loadGare();else fillGaraSel();
   var ris=await CVI.supabase.from("risultati_gara").select("*");
-  var prof=await CVI.supabase.from("profiles").select("id,nickname,team,nome,cognome,is_admin,role");
+  var prof=await CVI.supabase.from("profiles_public").select("id,nickname,team,nome,cognome,is_admin,role");
   var isc=await CVI.supabase.from("iscrizioni_gare").select("*");
   risultati=ris.data||[];profiles=prof.data||profiles;iscrizioni=isc.data||[];
   document.getElementById("ris-form-wrap").innerHTML='<p class="empty-text">Seleziona una gara.</p>';
@@ -61,7 +61,7 @@ async function upGal(e){
 
 async function prepExport(){
   var info=document.getElementById("export-info");
-  try{var ris=await CVI.supabase.from("risultati_gara").select("*");var prof=await CVI.supabase.from("profiles").select("id,nickname,team,nome,cognome");var g=await CVI.supabase.from("gare").select("id,titolo,data_gara,num_regate");
+  try{var ris=await CVI.supabase.from("risultati_gara").select("*");var prof=await CVI.supabase.from("profiles_public").select("id,nickname,team,nome,cognome");var g=await CVI.supabase.from("gare").select("id,titolo,data_gara,num_regate");
   risultati=ris.data||[];profiles=prof.data||[];gare=g.data||[];
   var years={};risultati.forEach(function(r){var gg=gare.find(function(x){return String(x.id)===String(r.gara_id);});var y=gg&&gg.data_gara?new Date(gg.data_gara).getFullYear():new Date().getFullYear();years[y]=true;});
   var ys=Object.keys(years).sort().reverse();if(!ys.length)ys=[String(new Date().getFullYear())];

@@ -62,5 +62,5 @@ create policy "eventi_ris_write_admin" on public.eventi_aperti_risultati
 
 grant select on public.eventi_aperti to anon, authenticated;
 grant select on public.eventi_aperti_risultati to anon, authenticated;
-grant all on public.eventi_aperti to authenticated;
-grant all on public.eventi_aperti_risultati to authenticated;
+grant insert, update, delete on public.eventi_aperti to authenticated;
+grant insert, update, delete on public.eventi_aperti_risultati to authenticated;

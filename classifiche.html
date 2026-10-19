@@ -665,7 +665,7 @@
       const [gareRes, risRes, profRes, iscrRes, classRes] = await Promise.all([
         CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, num_regate').order('data_gara', { ascending: true }),
         CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note, regata_num'),
-        CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome, is_admin'),
+        CVI.supabase.from('profiles_public').select('id, nickname, team, nome, cognome, is_admin'),
         CVI.supabase.from('iscrizioni_gare').select('id, user_id, gara_id'),
         CVI.supabase.from('classifiche').select('id, user_id, stagione, punti_totali, gare_disputate, posizione').eq('stagione', STAGIONE).order('posizione', { ascending: true })
       ]);
