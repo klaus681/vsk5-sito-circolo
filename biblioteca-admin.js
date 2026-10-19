@@ -132,7 +132,7 @@
     document.getElementById("bib-save").textContent = "Aggiorna";
   }
 
-  async function save() {
+  async function saveItem() {
     var titolo = (document.getElementById("bib-titolo").value || "").trim();
     if (!titolo) {
       alert("Titolo obbligatorio");
@@ -167,7 +167,7 @@
     }
   }
 
-  async function del(id) {
+  async function delItem(id) {
     if (!confirm("Eliminare questa scheda?")) return;
     try {
       var r = await CVI.supabase.from("biblioteca").delete().eq("id", id);
@@ -246,7 +246,7 @@
       });
       box.querySelectorAll(".bib-del").forEach(function (b) {
         b.onclick = function () {
-          del(b.getAttribute("data-id"));
+          delItem(b.getAttribute("data-id"));
         };
       });
     } catch (e) {
@@ -276,15 +276,15 @@
         loadList();
       });
     }
-    var save = document.getElementById("bib-save");
-    if (save && !save._wired) {
-      save._wired = true;
-      save.onclick = save;
+    var saveBtn = document.getElementById("bib-save");
+    if (saveBtn && !saveBtn._wired) {
+      saveBtn._wired = true;
+      saveBtn.onclick = saveItem;
     }
-    var reset = document.getElementById("bib-reset");
-    if (reset && !reset._wired) {
-      reset._wired = true;
-      reset.onclick = resetForm;
+    var resetBtn = document.getElementById("bib-reset");
+    if (resetBtn && !resetBtn._wired) {
+      resetBtn._wired = true;
+      resetBtn.onclick = resetForm;
     }
   }
 

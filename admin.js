@@ -70,7 +70,7 @@
       sTu.textContent = tu;
       document.head.appendChild(sTu);
     }
-    var bib = await fetch("biblioteca-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var bib = await fetch("biblioteca-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (bib) {
       var sBib = document.createElement("script");
       sBib.textContent = bib;
