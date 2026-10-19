@@ -3,7 +3,7 @@
   try {
     var parts = await Promise.all([
       fetch("admin-a.js?v=9").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
-      fetch("admin-b.js?v=3").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
+      fetch("admin-b.js?v=4").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
     ]);
     var s = document.createElement("script");
     s.textContent = parts[0] + parts[1];
@@ -52,7 +52,7 @@
       s8.textContent = rg;
       document.head.appendChild(s8);
     }
-    var tn = await fetch("tornei-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
+    var tn = await fetch("tornei-admin.js?v=7").then(function(r){ return r.ok ? r.text() : ""; });
     if (tn) {
       var s9 = document.createElement("script");
       s9.textContent = tn;
@@ -64,7 +64,7 @@
       sAl.textContent = al;
       document.head.appendChild(sAl);
     }
-    var tu = await fetch("tutor-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var tu = await fetch("tutor-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (tu) {
       var sTu = document.createElement("script");
       sTu.textContent = tu;
