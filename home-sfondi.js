@@ -7,7 +7,9 @@
       "https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1400&q=70",
     home_bg_next_race:
       "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1000&q=70",
-    home_bg_torneo: ""
+    home_bg_torneo: "",
+    home_bg_allenamento:
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1000&q=70"
   };
 
   function waitCVI() {
@@ -66,6 +68,20 @@
     }
   }
 
+  function applyAllenamento(url) {
+    window.__CVI_BG_ALLENAMENTO = url || DEFAULTS.home_bg_allenamento;
+    var el = document.getElementById("home-allenamento-banner");
+    if (!el) return;
+    var u = (url || DEFAULTS.home_bg_allenamento).replace(/"/g, "");
+    el.style.backgroundImage =
+      "linear-gradient(135deg, rgba(11,15,25,0.55) 0%, rgba(6,40,30,0.5) 40%, rgba(11,15,25,0.78) 100%), " +
+      'url("' +
+      u +
+      '")';
+    el.style.backgroundSize = "cover";
+    el.style.backgroundPosition = "center";
+  }
+
   async function loadAndApply() {
     if (!isHome()) return;
     var ok = await waitCVI();
@@ -74,7 +90,12 @@
       var res = await CVI.supabase
         .from("site_settings")
         .select("key,value")
-        .in("key", ["home_bg_hero", "home_bg_next_race", "home_bg_torneo"]);
+        .in("key", [
+          "home_bg_hero",
+          "home_bg_next_race",
+          "home_bg_torneo",
+          "home_bg_allenamento"
+        ]);
       if (res.error) throw res.error;
       var map = {};
       (res.data || []).forEach(function (r) {
@@ -83,16 +104,22 @@
       applyHero(map.home_bg_hero || "");
       applyNextRace(map.home_bg_next_race || "");
       applyTorneo(map.home_bg_torneo || "");
-      // se il banner torneo arriva dopo, riapplica
+      applyAllenamento(map.home_bg_allenamento || "");
+      // banner torneo / allenamento possono arrivare dopo
       setTimeout(function () {
         applyTorneo(map.home_bg_torneo || "");
+        applyAllenamento(map.home_bg_allenamento || "");
       }, 2500);
+      setTimeout(function () {
+        applyAllenamento(map.home_bg_allenamento || "");
+      }, 4500);
     } catch (e) {
       console.warn("[CVI home-sfondi]", e);
     }
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", loadAndApply);
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", loadAndApply);
   else loadAndApply();
   setTimeout(loadAndApply, 1800);
 })();
