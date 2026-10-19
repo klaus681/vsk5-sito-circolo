@@ -525,7 +525,7 @@
       }
     };
     const PAGE_SIZE = 24;
-    const MEMBER_COLUMNS = 'id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url,foto';
+    const MEMBER_COLUMNS = 'id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url';
     let allProfiles = [];
     let currentUserId = null;
     let searchTimer = null;
@@ -845,10 +845,10 @@
       statsLoaded = false;
 
       // Query mirata: evita di scaricare email e altri campi non necessari.
-      let res = await CVI.supabase.from('profiles').select(MEMBER_COLUMNS);
+      let res = await CVI.supabase.from('profiles_public').select(MEMBER_COLUMNS);
       if (res.error) {
         // Fallback per installazioni con colonne opzionali mancanti.
-        res = await CVI.supabase.from('profiles').select('*');
+        res = await CVI.supabase.from('profiles_public').select('*');
       }
       if (res.error) {
         container.setAttribute('aria-busy', 'false');

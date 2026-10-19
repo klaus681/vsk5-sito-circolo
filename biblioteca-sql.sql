@@ -70,4 +70,4 @@ create policy "biblioteca_admin_all" on public.biblioteca
   ));
 
 grant select on public.biblioteca to authenticated;
-grant all on public.biblioteca to authenticated;
+grant insert, update, delete on public.biblioteca to authenticated;

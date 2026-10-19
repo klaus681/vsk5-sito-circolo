@@ -127,11 +127,11 @@
     });
     if (!ids.length) return [];
     var pr = await CVI.supabase
-      .from("profiles")
+      .from("profiles_public")
       .select("id,nickname,nome,cognome,team")
       .in("id", ids);
     if (pr.error) {
-      var all = await CVI.supabase.from("profiles").select("id,nickname,nome,cognome,team");
+      var all = await CVI.supabase.from("profiles_public").select("id,nickname,nome,cognome,team");
       var by = {};
       (all.data || []).forEach(function (p) {
         by[String(p.id)] = p;
