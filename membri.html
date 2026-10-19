@@ -28,6 +28,129 @@
   <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="mobile.css">
   <link rel="stylesheet" href="fix-nav.css?v=2">
+  <style>
+    /* === Area membri: toolbar + card === */
+    .members-header-copy { min-width: 220px; flex: 1; }
+    .members-header-copy .subtitle { margin: .25rem 0 0; }
+    .members-header-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .members-profile-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent-color); color: #0b0f19 !important;
+      padding: .55rem 1.15rem; border-radius: 8px; font-size: .875rem; font-weight: 700;
+      white-space: nowrap; transition: background var(--transition), transform var(--transition);
+    }
+    .members-profile-btn:hover { background: #7dd3fc; transform: translateY(-1px); }
+
+    .members-toolbar[hidden] { display: none; }
+    .members-toolbar {
+      display: flex; flex-wrap: wrap; gap: .65rem; align-items: center;
+      margin: 0 0 1.25rem; padding: .85rem 1rem;
+      background: rgba(15, 21, 36, .7); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+    }
+    .members-search { position: relative; flex: 1 1 240px; min-width: 190px; }
+    .members-search-icon {
+      position: absolute; left: .7rem; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: .9rem; pointer-events: none;
+    }
+    .members-search input {
+      width: 100%; padding: .55rem .75rem .55rem 2.1rem;
+      background: #0b0f19; color: var(--text-main); font-family: inherit; font-size: .9rem;
+      border: 1px solid var(--border-color); border-radius: 9px;
+    }
+    .members-search input::placeholder { color: #64748b; }
+    .members-toolbar select {
+      background: #0b0f19; color: var(--text-main); font-family: inherit; font-size: .85rem;
+      border: 1px solid var(--border-color); border-radius: 9px; padding: .55rem .65rem;
+      max-width: 190px;
+    }
+    .members-count { margin-left: auto; color: var(--text-muted); font-size: .82rem; font-weight: 600; white-space: nowrap; }
+
+    .members-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: .9rem;
+    }
+    .member-card {
+      position: relative; overflow: hidden;
+      background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%);
+      border: 1px solid var(--border-color); border-radius: var(--radius-md);
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .member-card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent-color), #0ea5e9); opacity: .8;
+    }
+    .member-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 14px 30px var(--accent-glow); }
+    .member-card.is-self { border-color: rgba(56, 189, 248, .45); }
+    .member-card-link { display: flex; align-items: center; gap: .85rem; padding: 1rem 1.05rem; }
+    .member-avatar {
+      flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(56, 189, 248, .14); border: 2px solid rgba(56, 189, 248, .35);
+      color: #7dd3fc; font-weight: 800; font-size: 1.05rem; overflow: hidden;
+    }
+    .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .member-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .member-title-row { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+    .member-nick {
+      color: #fff; font-weight: 700; font-size: .98rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .member-name {
+      color: var(--text-muted); font-size: .82rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .member-team { margin-top: .4rem; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+    .member-team .team-badge {
+      display: inline-block; padding: .15rem .55rem; border-radius: 999px;
+      background: rgba(56, 189, 248, .12); border: 1px solid rgba(56, 189, 248, .3);
+      color: #7dd3fc; font-size: .72rem; font-weight: 600;
+    }
+    .member-no-team { color: #64748b; font-size: .72rem; }
+    .member-self-tag {
+      display: inline-block; padding: .1rem .45rem; border-radius: 999px;
+      background: rgba(52, 211, 153, .12); color: var(--success);
+      border: 1px solid rgba(52, 211, 153, .3); font-size: .68rem; font-weight: 700;
+    }
+    .member-role {
+      flex: 0 0 auto; padding: .15rem .5rem; border-radius: 999px;
+      background: rgba(52, 211, 153, .12); color: var(--success);
+      font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+    }
+    .member-chevron { flex: 0 0 auto; color: #475569; font-size: 1.35rem; line-height: 1; }
+    .member-card:hover .member-chevron { color: var(--accent-color); }
+
+    .member-card-actions {
+      display: none; align-items: center; gap: .5rem; flex-wrap: wrap;
+      padding: 0 1.05rem 1rem;
+    }
+    .member-card.is-admin .member-card-actions {
+      display: flex; padding-top: .75rem; border-top: 1px solid rgba(255, 255, 255, .05);
+    }
+    .member-admin-select {
+      flex: 1 1 130px; min-width: 0; max-width: 170px;
+      background: #0b0f19; color: #fff; font-family: inherit; font-size: .78rem;
+      border: 1px solid rgba(56, 189, 248, .35); border-radius: 6px; padding: .35rem .45rem;
+    }
+    .member-expel-btn {
+      background: transparent; color: #f87171; border: 1px solid rgba(248, 113, 113, .45);
+      padding: .35rem .65rem; border-radius: 6px; font-size: .78rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: background var(--transition);
+    }
+    .member-expel-btn:hover { background: rgba(248, 113, 113, .12); }
+
+    .members-error { text-align: center; padding: 2rem 1rem; color: #f87171; }
+    .members-retry {
+      margin-top: .75rem; background: var(--accent-color); color: #0b0f19;
+      border: none; border-radius: 8px; padding: .5rem 1rem;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .members-grid { grid-template-columns: 1fr; }
+      .members-toolbar { padding: .75rem; }
+      .members-count { width: 100%; margin-left: 0; }
+      .members-toolbar select { flex: 1 1 140px; max-width: none; }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -86,10 +209,34 @@
   <main class="page-content">
     <div class="content-box">
       <div class="members-header">
-        <h1 data-i18n="members_title">Albo Soci Iscritti</h1>
-        <button id="logout-btn" class="btn-logout" data-i18n="btn_logout">Disconnetti</button>
+        <div class="members-header-copy">
+          <h1 data-i18n="members_title">Albo Soci Iscritti</h1>
+          <p class="subtitle" data-i18n="members_subtitle">Elenco ufficiale dei membri registrati al Circolo Velico.</p>
+        </div>
+        <div class="members-header-actions">
+          <a href="profilo.html" id="my-profile-link" class="members-profile-btn" data-i18n="my_profile">Il mio profilo</a>
+          <button id="logout-btn" class="btn-logout" data-i18n="btn_logout">Disconnetti</button>
+        </div>
       </div>
-      <p class="subtitle" data-i18n="members_subtitle">Elenco ufficiale dei membri registrati al Circolo Velico.</p>
+
+      <div class="members-toolbar" id="members-toolbar" hidden>
+        <div class="members-search">
+          <span class="members-search-icon" aria-hidden="true">🔎</span>
+          <input type="search" id="members-search" autocomplete="off"
+                 placeholder="Cerca per nome, nickname o team…"
+                 aria-label="Cerca soci" data-i18n-placeholder="members_search_ph">
+        </div>
+        <select id="members-team-filter" aria-label="Filtra per team">
+          <option value="" data-i18n="members_all_teams">Tutti i team</option>
+        </select>
+        <select id="members-sort" aria-label="Ordina soci">
+          <option value="nick" data-i18n="members_sort_nick">Nickname (A–Z)</option>
+          <option value="name" data-i18n="members_sort_name">Nome (A–Z)</option>
+          <option value="team" data-i18n="members_sort_team">Team (A–Z)</option>
+        </select>
+        <span class="members-count" id="members-count" role="status" aria-live="polite"></span>
+      </div>
+
       <div id="members-container">
         <p class="loading-text" data-i18n="members_loading">Caricamento elenco soci in corso...</p>
       </div>
@@ -127,41 +274,325 @@
   <script src="common.js?v=3"></script>
   <script>
     const extra = {
-      it: { members_title: "Albo Soci Iscritti", members_subtitle: "Elenco ufficiale dei membri registrati al Circolo Velico.", members_loading: "Caricamento elenco soci...", members_empty: "Nessun socio iscritto.", btn_logout: "Disconnetti", th_name: "Nome", th_nickname: "Nickname", th_team: "Team", no_team: "Nessun team", alert_auth_required: "Devi effettuare l'accesso per visualizzare l'elenco dei soci." },
-      en: { members_title: "Registered Members", members_subtitle: "Official list of club members.", members_loading: "Loading...", members_empty: "No members.", btn_logout: "Sign Out", th_name: "Name", th_nickname: "Nickname", th_team: "Team", no_team: "No team", alert_auth_required: "You must log in to view members." },
-      fr: { members_title: "Membres Inscrits", members_subtitle: "Liste officielle des membres.", members_loading: "Chargement...", members_empty: "Aucun membre.", btn_logout: "Déconnexion", th_name: "Nom", th_nickname: "Pseudo", th_team: "Équipe", no_team: "Aucune", alert_auth_required: "Connexion requise." },
-      es: { members_title: "Miembros Inscritos", members_subtitle: "Lista oficial de miembros.", members_loading: "Cargando...", members_empty: "Sin miembros.", btn_logout: "Cerrar sesión", th_name: "Nombre", th_nickname: "Apodo", th_team: "Equipo", no_team: "Sin equipo", alert_auth_required: "Debes iniciar sesión." }
+      it: {
+        members_title: "Albo Soci Iscritti", members_subtitle: "Elenco ufficiale dei membri registrati al Circolo Velico.",
+        members_loading: "Caricamento elenco soci...", members_empty: "Nessun socio iscritto.",
+        btn_logout: "Disconnetti", no_team: "Nessun team", my_profile: "Il mio profilo",
+        members_search_ph: "Cerca per nome, nickname o team…", members_all_teams: "Tutti i team",
+        members_sort_nick: "Nickname (A–Z)", members_sort_name: "Nome (A–Z)", members_sort_team: "Team (A–Z)",
+        members_count: "{n} soci", members_count_one: "1 socio", members_count_filtered: "{n} di {total} soci",
+        members_empty_filtered: "Nessun socio corrisponde alla ricerca.",
+        members_error: "Impossibile caricare l'elenco soci.", members_retry: "Riprova",
+        alert_auth_required: "Devi effettuare l'accesso per visualizzare l'elenco dei soci.",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Capo squadra", you: "Sei tu",
+        expel: "Espelli", assign_team: "Assegna team",
+        members_filter_team: "Filtra per team", members_sort_label: "Ordina soci",
+        open_profile: "Apri il profilo di {name}"
+      },
+      en: {
+        members_title: "Registered Members", members_subtitle: "Official list of club members.",
+        members_loading: "Loading...", members_empty: "No members.",
+        btn_logout: "Sign Out", no_team: "No team", my_profile: "My profile",
+        members_search_ph: "Search by name, nickname or team…", members_all_teams: "All teams",
+        members_sort_nick: "Nickname (A–Z)", members_sort_name: "Name (A–Z)", members_sort_team: "Team (A–Z)",
+        members_count: "{n} members", members_count_one: "1 member", members_count_filtered: "{n} of {total} members",
+        members_empty_filtered: "No member matches your search.",
+        members_error: "Unable to load the member list.", members_retry: "Retry",
+        alert_auth_required: "You must log in to view members.",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Team captain", you: "You",
+        expel: "Expel", assign_team: "Assign team",
+        members_filter_team: "Filter by team", members_sort_label: "Sort members",
+        open_profile: "Open {name}'s profile"
+      },
+      fr: {
+        members_title: "Membres Inscrits", members_subtitle: "Liste officielle des membres.",
+        members_loading: "Chargement...", members_empty: "Aucun membre.",
+        btn_logout: "Déconnexion", no_team: "Aucune équipe", my_profile: "Mon profil",
+        members_search_ph: "Rechercher par nom, pseudo ou équipe…", members_all_teams: "Toutes les équipes",
+        members_sort_nick: "Pseudo (A–Z)", members_sort_name: "Nom (A–Z)", members_sort_team: "Équipe (A–Z)",
+        members_count: "{n} membres", members_count_one: "1 membre", members_count_filtered: "{n} sur {total} membres",
+        members_empty_filtered: "Aucun membre ne correspond à la recherche.",
+        members_error: "Impossible de charger la liste des membres.", members_retry: "Réessayer",
+        alert_auth_required: "Connexion requise pour voir les membres.",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Chef d'équipe", you: "Vous",
+        expel: "Exclure", assign_team: "Assigner l'équipe",
+        members_filter_team: "Filtrer par équipe", members_sort_label: "Trier les membres",
+        open_profile: "Ouvrir le profil de {name}"
+      },
+      es: {
+        members_title: "Miembros Inscritos", members_subtitle: "Lista oficial de miembros.",
+        members_loading: "Cargando...", members_empty: "Sin miembros.",
+        btn_logout: "Cerrar sesión", no_team: "Sin equipo", my_profile: "Mi perfil",
+        members_search_ph: "Buscar por nombre, apodo o equipo…", members_all_teams: "Todos los equipos",
+        members_sort_nick: "Apodo (A–Z)", members_sort_name: "Nombre (A–Z)", members_sort_team: "Equipo (A–Z)",
+        members_count: "{n} miembros", members_count_one: "1 miembro", members_count_filtered: "{n} de {total} miembros",
+        members_empty_filtered: "Ningún miembro coincide con la búsqueda.",
+        members_error: "No se pudo cargar la lista de miembros.", members_retry: "Reintentar",
+        alert_auth_required: "Debes iniciar sesión para ver los miembros.",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Jefe de equipo", you: "Tú",
+        expel: "Expulsar", assign_team: "Asignar equipo",
+        members_filter_team: "Filtrar por equipo", members_sort_label: "Ordenar miembros",
+        open_profile: "Abrir el perfil de {name}"
+      }
     };
-    let cachedProfiles = [];
-    function renderizzaTabellaSoci(profiles) {
-      const t = extra[CVI.currentLang] || extra.it;
-      let html = `<table class="members-table"><thead><tr><th>${t.th_name}</th><th>${t.th_nickname}</th><th>${t.th_team}</th></tr></thead><tbody>`;
-      profiles.forEach(p => {
-        const fullName = `${p.nome||''} ${p.cognome||''}`.trim() || p.email || 'Socio';
-        html += `<tr><td>${fullName}</td><td>${p.nickname||'-'}</td><td>${p.team||t.no_team}</td></tr>`;
-      });
-      html += '</tbody></table>';
-      document.getElementById('members-container').innerHTML = html;
+    let allProfiles = [];
+    let currentUserId = null;
+    let searchTimer = null;
+
+    function t(key) {
+      const dict = extra[CVI.currentLang] || extra.it;
+      return dict[key] != null ? dict[key] : (extra.it[key] || '');
     }
+
+    function esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function norm(s) {
+      return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    function fullName(p) { return [p.nome, p.cognome].filter(Boolean).join(' ').trim(); }
+    function nickOf(p) { return (p.nickname || '').trim(); }
+    function nameOf(p) { return fullName(p) || nickOf(p) || 'Socio'; }
+    function teamOf(p) { return (p.team || '').trim(); }
+
+    function isExpelled(p) {
+      if (!p) return true;
+      if (p.expelled === true || p.attivo === false) return true;
+      return norm(p.nickname).indexOf('espulso') >= 0;
+    }
+
+    function roleOf(p) {
+      const r = String((p && p.role) || '').toLowerCase();
+      if (r === 'admin' || r === 'scorer' || r === 'caposquadra' || r === 'socio') return r;
+      return p && p.is_admin === true ? 'admin' : 'socio';
+    }
+
+    function roleLabel(role) {
+      if (role === 'admin') return t('role_admin');
+      if (role === 'scorer') return t('role_scorer');
+      if (role === 'caposquadra') return t('role_capo');
+      return '';
+    }
+
+    function initials(p) {
+      const base = (nickOf(p) || fullName(p) || '?').replace(/^@+/, '');
+      return (base.slice(0, 1) || '?').toUpperCase();
+    }
+
+    function avatarUrl(p) { return p.avatar_url || p.foto || p.photo_url || ''; }
+
+    function avatarHtml(p) {
+      const url = avatarUrl(p);
+      if (url) return '<img src="' + esc(url) + '" alt="" loading="lazy">';
+      return esc(initials(p));
+    }
+
+    function cardHtml(p) {
+      const uid = String(p.id);
+      const nick = nickOf(p);
+      const name = nameOf(p);
+      const team = teamOf(p);
+      const role = roleOf(p);
+      const self = currentUserId != null && uid === String(currentUserId);
+      const title = nick ? '@' + nick : name;
+      const realName = nick && fullName(p) ? fullName(p) : '';
+      const roleHtml = role !== 'socio' ? '<span class="member-role">' + esc(roleLabel(role)) + '</span>' : '';
+      const teamHtml = team
+        ? '<span class="team-badge">' + esc(team) + '</span>'
+        : '<span class="member-no-team">' + esc(t('no_team')) + '</span>';
+      const selfHtml = self ? '<span class="member-self-tag">' + esc(t('you')) + '</span>' : '';
+
+      return '<article class="member-card' + (self ? ' is-self' : '') + '"' +
+        ' data-uid="' + esc(uid) + '"' +
+        ' data-nick="' + esc(nick || name) + '"' +
+        ' data-name="' + esc(name) + '"' +
+        ' data-team="' + esc(team) + '"' +
+        ' data-team-id="' + esc(p.team_id || '') + '">' +
+          '<a class="member-card-link" href="profilo.html?id=' + encodeURIComponent(uid) + '"' +
+            ' title="' + esc(title) + '"' +
+            ' aria-label="' + esc(t('open_profile').replace('{name}', title)) + '">' +
+            '<span class="member-avatar">' + avatarHtml(p) + '</span>' +
+            '<span class="member-main">' +
+              '<span class="member-title-row">' +
+                '<span class="member-nick nick">' + esc(title) + '</span>' + selfHtml +
+              '</span>' +
+              (realName ? '<span class="member-name">' + esc(realName) + '</span>' : '') +
+              '<span class="member-team">' + teamHtml + '</span>' +
+            '</span>' +
+            roleHtml +
+            '<span class="member-chevron" aria-hidden="true">›</span>' +
+          '</a>' +
+          '<div class="member-card-actions"></div>' +
+        '</article>';
+    }
+
+    function teamOptions() {
+      const seen = {};
+      allProfiles.forEach(function (p) {
+        if (isExpelled(p)) return;
+        const team = teamOf(p);
+        if (!team) return;
+        const key = norm(team);
+        if (!Object.prototype.hasOwnProperty.call(seen, key)) seen[key] = team;
+      });
+      return Object.keys(seen).map(function (k) { return seen[k]; })
+        .sort(function (a, b) { return a.localeCompare(b, 'it'); });
+    }
+
+    function populateTeamFilter() {
+      const sel = document.getElementById('members-team-filter');
+      if (!sel) return;
+      const current = sel.value;
+      const teams = teamOptions();
+      let html = '<option value="">' + esc(t('members_all_teams')) + '</option>';
+      teams.forEach(function (team) {
+        html += '<option value="' + esc(team) + '">' + esc(team) + '</option>';
+      });
+      sel.innerHTML = html;
+      sel.value = teams.indexOf(current) >= 0 ? current : '';
+    }
+
+    function render() {
+      const container = document.getElementById('members-container');
+      if (!container) return;
+      const searchEl = document.getElementById('members-search');
+      const teamEl = document.getElementById('members-team-filter');
+      const sortEl = document.getElementById('members-sort');
+      const q = norm(searchEl ? searchEl.value : '');
+      const teamFilter = teamEl ? teamEl.value : '';
+      const sort = sortEl ? sortEl.value : 'nick';
+
+      let list = allProfiles.filter(function (p) {
+        if (isExpelled(p)) return false;
+        if (teamFilter && teamOf(p) !== teamFilter) return false;
+        if (!q) return true;
+        return norm([nickOf(p), fullName(p), teamOf(p)].join(' ')).indexOf(q) >= 0;
+      });
+
+      list.sort(function (a, b) {
+        if (sort === 'name') return nameOf(a).localeCompare(nameOf(b), 'it');
+        if (sort === 'team') {
+          const ta = teamOf(a) || '\uffff';
+          const tb = teamOf(b) || '\uffff';
+          return ta.localeCompare(tb, 'it') || nickOf(a).localeCompare(nickOf(b), 'it');
+        }
+        return (nickOf(a) || nameOf(a)).localeCompare(nickOf(b) || nameOf(b), 'it');
+      });
+
+      const visible = list.length;
+      const total = allProfiles.filter(function (p) { return !isExpelled(p); }).length;
+      const countEl = document.getElementById('members-count');
+      if (countEl) {
+        var countText;
+        if (visible === total) {
+          countText = visible === 1 ? t('members_count_one') : t('members_count').replace('{n}', visible);
+        } else {
+          countText = t('members_count_filtered').replace('{n}', visible).replace('{total}', total);
+        }
+        countEl.textContent = countText;
+      }
+
+      if (!total) {
+        container.innerHTML = '<p class="empty-text">' + esc(t('members_empty')) + '</p>';
+      } else if (!list.length) {
+        container.innerHTML = '<p class="empty-text">' + esc(t('members_empty_filtered')) + '</p>';
+      } else {
+        container.innerHTML = '<div class="members-grid">' + list.map(cardHtml).join('') + '</div>';
+      }
+
+      container.dispatchEvent(new CustomEvent('cvi:members-rendered', {
+        bubbles: true,
+        detail: { profiles: list }
+      }));
+    }
+
+    function bindToolbar() {
+      const search = document.getElementById('members-search');
+      if (search) {
+        search.addEventListener('input', function () {
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(render, 120);
+        });
+      }
+      const team = document.getElementById('members-team-filter');
+      if (team) team.addEventListener('change', render);
+      const sort = document.getElementById('members-sort');
+      if (sort) sort.addEventListener('change', render);
+    }
+
+    function applyPageI18n() {
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+        el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+      });
+      const search = document.getElementById('members-search');
+      if (search) search.setAttribute('aria-label', t('members_search_ph'));
+      const team = document.getElementById('members-team-filter');
+      if (team) team.setAttribute('aria-label', t('members_filter_team'));
+      const sort = document.getElementById('members-sort');
+      if (sort) sort.setAttribute('aria-label', t('members_sort_label'));
+    }
+
     async function initMembers() {
-      const { data: { session } } = await CVI.supabase.auth.getSession();
+      const container = document.getElementById('members-container');
+      const toolbar = document.getElementById('members-toolbar');
+      if (!container) return;
+
+      const sessionRes = await CVI.supabase.auth.getSession();
+      const session = sessionRes.data && sessionRes.data.session;
       if (!session) {
-        alert((extra[CVI.currentLang]||extra.it).alert_auth_required);
+        alert(t('alert_auth_required'));
         window.location.href = 'accedi.html';
         return;
       }
-      const c = document.getElementById('members-container');
-      const { data, error } = await CVI.supabase.from('profiles').select('*');
-      if (error) { c.innerHTML = `<p class="empty-text" style="color:#ef4444;">Errore: ${error.message}</p>`; return; }
-      if (!data || !data.length) { c.innerHTML = `<p class="empty-text">${(extra[CVI.currentLang]||extra.it).members_empty}</p>`; return; }
-      cachedProfiles = data; renderizzaTabellaSoci(data);
+      currentUserId = session.user && session.user.id;
+
+      const res = await CVI.supabase.from('profiles').select('*');
+      if (res.error) {
+        container.innerHTML = '<div class="members-error"><p>' + esc(t('members_error')) + '</p>' +
+          '<button type="button" class="members-retry" id="members-retry">' + esc(t('members_retry')) + '</button></div>';
+        const retry = document.getElementById('members-retry');
+        if (retry) retry.onclick = initMembers;
+        return;
+      }
+
+      allProfiles = res.data || [];
+      if (toolbar) toolbar.hidden = false;
+      populateTeamFilter();
+      render();
     }
+
+    window.CVIMembers = {
+      getProfiles: function () { return allProfiles.slice(); },
+      getCurrentUserId: function () { return currentUserId; },
+      refresh: initMembers,
+      applyFilters: render,
+      updateProfile: function (uid, patch) {
+        allProfiles = allProfiles.map(function (p) {
+          return String(p.id) === String(uid) ? Object.assign({}, p, patch) : p;
+        });
+        render();
+      },
+      t: t
+    };
+
     const _orig = CVI.init;
-    CVI.init = function(a) {
+    CVI.init = function (a) {
       _orig(a, extra);
+      applyPageI18n();
+      bindToolbar();
       const sel = document.getElementById('languageSelect');
-      if (sel) sel.onchange = () => { CVI.cambiaLingua(sel.value, extra); if (cachedProfiles.length) renderizzaTabellaSoci(cachedProfiles); };
-      document.getElementById('logout-btn').addEventListener('click', async () => {
+      if (sel) sel.onchange = function () {
+        CVI.cambiaLingua(sel.value, extra);
+        applyPageI18n();
+        populateTeamFilter();
+        render();
+      };
+      const logout = document.getElementById('logout-btn');
+      if (logout) logout.addEventListener('click', async function () {
         await CVI.supabase.auth.signOut();
         window.location.href = 'accedi.html';
       });
