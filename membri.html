@@ -118,6 +118,49 @@
     .member-chevron { flex: 0 0 auto; color: #475569; font-size: 1.35rem; line-height: 1; }
     .member-card:hover .member-chevron { color: var(--accent-color); }
 
+    .member-stats {
+      display: flex; gap: .7rem; flex-wrap: wrap;
+      padding: 0 1.05rem .85rem; color: var(--text-muted); font-size: .75rem;
+    }
+    .member-stats span { white-space: nowrap; }
+    .member-stats strong { color: #e2e8f0; font-weight: 700; }
+    .member-stats.is-empty { opacity: .55; }
+
+    .members-skeleton {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: .9rem;
+    }
+    .member-skeleton {
+      height: 118px; border-radius: var(--radius-md); border: 1px solid var(--border-color);
+      background: linear-gradient(100deg, #111827 30%, #1a2438 50%, #111827 70%);
+      background-size: 200% 100%; animation: cvi-shimmer 1.3s linear infinite;
+    }
+    @keyframes cvi-shimmer { to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .member-skeleton { animation: none; } }
+
+    .members-pager {
+      display: flex; align-items: center; justify-content: center; gap: .75rem;
+      margin-top: 1.25rem; flex-wrap: wrap;
+    }
+    .members-pager[hidden] { display: none; }
+    .members-page-btn {
+      background: #0b0f19; border: 1px solid var(--border-color); color: var(--text-main);
+      border-radius: 8px; padding: .45rem .9rem; font-family: inherit; font-size: .82rem;
+      font-weight: 600; cursor: pointer; transition: border-color var(--transition), background var(--transition);
+    }
+    .members-page-btn:hover:not(:disabled) { border-color: var(--border-hover); background: var(--card-bg-hover); }
+    .members-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .members-page-info { color: var(--text-muted); font-size: .82rem; font-weight: 600; }
+
+    .cvi-admin-toast {
+      position: fixed; right: 1rem; bottom: 1rem; z-index: 3000;
+      background: #152033; border: 1px solid var(--border-hover); color: #fff;
+      padding: .65rem 1rem; border-radius: 10px; font-size: .85rem; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+      opacity: 0; transform: translateY(8px); pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .cvi-admin-toast.show { opacity: 1; transform: none; }
+
     .member-card-actions {
       display: none; align-items: center; gap: .5rem; flex-wrap: wrap;
       padding: 0 1.05rem 1rem;
@@ -130,12 +173,17 @@
       background: #0b0f19; color: #fff; font-family: inherit; font-size: .78rem;
       border: 1px solid rgba(56, 189, 248, .35); border-radius: 6px; padding: .35rem .45rem;
     }
-    .member-expel-btn {
-      background: transparent; color: #f87171; border: 1px solid rgba(248, 113, 113, .45);
+    .member-expel-btn,
+    .member-admin-btn {
+      background: transparent; color: #cbd5e1; border: 1px solid var(--border-color);
       padding: .35rem .65rem; border-radius: 6px; font-size: .78rem; font-weight: 600;
-      font-family: inherit; cursor: pointer; transition: background var(--transition);
+      font-family: inherit; cursor: pointer; transition: background var(--transition), border-color var(--transition), color var(--transition);
     }
+    .member-expel-btn { color: #f87171; border-color: rgba(248, 113, 113, .45); }
     .member-expel-btn:hover { background: rgba(248, 113, 113, .12); }
+    .member-admin-btn:hover { background: rgba(56, 189, 248, .1); border-color: var(--border-hover); color: #fff; }
+    .member-admin-btn.has-note { color: #fbbf24; border-color: rgba(251, 191, 36, .45); }
+    .member-admin-btn:disabled { opacity: .45; cursor: not-allowed; }
 
     .members-error { text-align: center; padding: 2rem 1rem; color: #f87171; }
     .members-retry {
@@ -237,8 +285,18 @@
         <span class="members-count" id="members-count" role="status" aria-live="polite"></span>
       </div>
 
-      <div id="members-container">
+      <div id="members-container" aria-busy="true">
+        <div class="members-skeleton" aria-hidden="true">
+          <div class="member-skeleton"></div><div class="member-skeleton"></div><div class="member-skeleton"></div>
+          <div class="member-skeleton"></div><div class="member-skeleton"></div><div class="member-skeleton"></div>
+        </div>
         <p class="loading-text" data-i18n="members_loading">Caricamento elenco soci in corso...</p>
+      </div>
+
+      <div class="members-pager" id="members-pager" hidden>
+        <button type="button" class="members-page-btn" id="members-prev" data-i18n="members_prev">← Precedente</button>
+        <span class="members-page-info" id="members-page-info" role="status" aria-live="polite"></span>
+        <button type="button" class="members-page-btn" id="members-next" data-i18n="members_next">Successiva →</button>
       </div>
     </div>
   </main>
@@ -284,10 +342,22 @@
         members_empty_filtered: "Nessun socio corrisponde alla ricerca.",
         members_error: "Impossibile caricare l'elenco soci.", members_retry: "Riprova",
         alert_auth_required: "Devi effettuare l'accesso per visualizzare l'elenco dei soci.",
-        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Capo squadra", you: "Sei tu",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Capo squadra", role_socio: "Socio", you: "Sei tu",
         expel: "Espelli", assign_team: "Assegna team",
         members_filter_team: "Filtra per team", members_sort_label: "Ordina soci",
-        open_profile: "Apri il profilo di {name}"
+        open_profile: "Apri il profilo di {name}",
+        members_prev: "← Precedente", members_next: "Successiva →",
+        members_page_info: "Pagina {page} di {pages}", members_no_team_option: "Senza team",
+        members_no_races: "Nessuna regata", members_stat_races: "{n} gare",
+        members_stat_race_one: "1 gara", members_stat_wins: "{n} vittorie",
+        members_stat_win_one: "1 vittoria", members_stat_podiums: "{n} podi",
+        members_stat_podium_one: "1 podio",
+        admin_actions_label: "Azioni admin", reset_nick: "Reset nick", role_label: "Ruolo",
+        note: "Nota", note_prompt: "Nota interna per {name}", note_saved: "Nota salvata.",
+        note_deleted: "Nota rimossa.", note_error: "Errore nota: ",
+        reset_nick_prompt: "Nuovo nickname per {name}", reset_nick_done: "Nickname aggiornato.",
+        reset_nick_error: "Errore nickname: ", role_updated: "Ruolo aggiornato.",
+        role_error: "Errore ruolo: ", role_change_confirm: "Cambiare il ruolo di {name} in {role}?"
       },
       en: {
         members_title: "Registered Members", members_subtitle: "Official list of club members.",
@@ -299,10 +369,22 @@
         members_empty_filtered: "No member matches your search.",
         members_error: "Unable to load the member list.", members_retry: "Retry",
         alert_auth_required: "You must log in to view members.",
-        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Team captain", you: "You",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Team captain", role_socio: "Member", you: "You",
         expel: "Expel", assign_team: "Assign team",
         members_filter_team: "Filter by team", members_sort_label: "Sort members",
-        open_profile: "Open {name}'s profile"
+        open_profile: "Open {name}'s profile",
+        members_prev: "← Previous", members_next: "Next →",
+        members_page_info: "Page {page} of {pages}", members_no_team_option: "No team",
+        members_no_races: "No races yet", members_stat_races: "{n} races",
+        members_stat_race_one: "1 race", members_stat_wins: "{n} wins",
+        members_stat_win_one: "1 win", members_stat_podiums: "{n} podiums",
+        members_stat_podium_one: "1 podium",
+        admin_actions_label: "Admin actions", reset_nick: "Reset nick", role_label: "Role",
+        note: "Note", note_prompt: "Internal note for {name}", note_saved: "Note saved.",
+        note_deleted: "Note removed.", note_error: "Note error: ",
+        reset_nick_prompt: "New nickname for {name}", reset_nick_done: "Nickname updated.",
+        reset_nick_error: "Nickname error: ", role_updated: "Role updated.",
+        role_error: "Role error: ", role_change_confirm: "Change {name}'s role to {role}?"
       },
       fr: {
         members_title: "Membres Inscrits", members_subtitle: "Liste officielle des membres.",
@@ -314,10 +396,22 @@
         members_empty_filtered: "Aucun membre ne correspond à la recherche.",
         members_error: "Impossible de charger la liste des membres.", members_retry: "Réessayer",
         alert_auth_required: "Connexion requise pour voir les membres.",
-        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Chef d'équipe", you: "Vous",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Chef d'équipe", role_socio: "Membre", you: "Vous",
         expel: "Exclure", assign_team: "Assigner l'équipe",
         members_filter_team: "Filtrer par équipe", members_sort_label: "Trier les membres",
-        open_profile: "Ouvrir le profil de {name}"
+        open_profile: "Ouvrir le profil de {name}",
+        members_prev: "← Précédent", members_next: "Suivant →",
+        members_page_info: "Page {page} sur {pages}", members_no_team_option: "Sans équipe",
+        members_no_races: "Aucune régate", members_stat_races: "{n} régates",
+        members_stat_race_one: "1 régate", members_stat_wins: "{n} victoires",
+        members_stat_win_one: "1 victoire", members_stat_podiums: "{n} podiums",
+        members_stat_podium_one: "1 podium",
+        admin_actions_label: "Actions admin", reset_nick: "Réinit. pseudo", role_label: "Rôle",
+        note: "Note", note_prompt: "Note interne pour {name}", note_saved: "Note enregistrée.",
+        note_deleted: "Note supprimée.", note_error: "Erreur note : ",
+        reset_nick_prompt: "Nouveau pseudo pour {name}", reset_nick_done: "Pseudo mis à jour.",
+        reset_nick_error: "Erreur pseudo : ", role_updated: "Rôle mis à jour.",
+        role_error: "Erreur rôle : ", role_change_confirm: "Changer le rôle de {name} en {role} ?"
       },
       es: {
         members_title: "Miembros Inscritos", members_subtitle: "Lista oficial de miembros.",
@@ -329,15 +423,32 @@
         members_empty_filtered: "Ningún miembro coincide con la búsqueda.",
         members_error: "No se pudo cargar la lista de miembros.", members_retry: "Reintentar",
         alert_auth_required: "Debes iniciar sesión para ver los miembros.",
-        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Jefe de equipo", you: "Tú",
+        role_admin: "Admin", role_scorer: "Scorer", role_capo: "Jefe de equipo", role_socio: "Miembro", you: "Tú",
         expel: "Expulsar", assign_team: "Asignar equipo",
         members_filter_team: "Filtrar por equipo", members_sort_label: "Ordenar miembros",
-        open_profile: "Abrir el perfil de {name}"
+        open_profile: "Abrir el perfil de {name}",
+        members_prev: "← Anterior", members_next: "Siguiente →",
+        members_page_info: "Página {page} de {pages}", members_no_team_option: "Sin equipo",
+        members_no_races: "Sin regatas", members_stat_races: "{n} regatas",
+        members_stat_race_one: "1 regata", members_stat_wins: "{n} victorias",
+        members_stat_win_one: "1 victoria", members_stat_podiums: "{n} podios",
+        members_stat_podium_one: "1 podio",
+        admin_actions_label: "Acciones admin", reset_nick: "Restablecer apodo", role_label: "Rol",
+        note: "Nota", note_prompt: "Nota interna para {name}", note_saved: "Nota guardada.",
+        note_deleted: "Nota eliminada.", note_error: "Error de nota: ",
+        reset_nick_prompt: "Nuevo apodo para {name}", reset_nick_done: "Apodo actualizado.",
+        reset_nick_error: "Error de apodo: ", role_updated: "Rol actualizado.",
+        role_error: "Error de rol: ", role_change_confirm: "¿Cambiar el rol de {name} a {role}?"
       }
     };
+    const PAGE_SIZE = 24;
+    const MEMBER_COLUMNS = 'id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url,foto';
     let allProfiles = [];
     let currentUserId = null;
     let searchTimer = null;
+    let currentPage = 1;
+    let statsByUser = {};
+    let statsLoaded = false;
 
     function t(key) {
       const dict = extra[CVI.currentLang] || extra.it;
@@ -391,6 +502,65 @@
       return esc(initials(p));
     }
 
+    function aggregateStats(rows) {
+      const map = {};
+      (rows || []).forEach(function (r) {
+        if (!r || !r.user_id) return;
+        const uid = String(r.user_id);
+        if (!map[uid]) map[uid] = { gare: {}, wins: 0, podiums: 0 };
+        if (r.gara_id != null) map[uid].gare[String(r.gara_id)] = true;
+        const pos = r.posizione != null ? Number(r.posizione) : null;
+        const stato = String(r.stato || 'ok').toLowerCase();
+        if (stato === 'ok' && pos != null && pos > 0) {
+          if (pos === 1) map[uid].wins++;
+          if (pos <= 3) map[uid].podiums++;
+        }
+      });
+      const out = {};
+      Object.keys(map).forEach(function (uid) {
+        out[uid] = {
+          gare: Object.keys(map[uid].gare).length,
+          wins: map[uid].wins,
+          podiums: map[uid].podiums
+        };
+      });
+      return out;
+    }
+
+    async function loadStats() {
+      statsLoaded = false;
+      try {
+        const res = await CVI.supabase.from('risultati_gara').select('user_id,gara_id,posizione,stato');
+        if (!res.error) {
+          statsByUser = aggregateStats(res.data || []);
+          statsLoaded = true;
+        }
+      } catch (e) { /* statistiche opzionali: non bloccare l'elenco soci */ }
+    }
+
+    function statsHtml(p) {
+      if (!statsLoaded) return '';
+      const s = statsByUser[String(p.id)] || { gare: 0, wins: 0, podiums: 0 };
+      if (!s.gare && !s.wins && !s.podiums) {
+        return '<div class="member-stats is-empty"><span>' + esc(t('members_no_races')) + '</span></div>';
+      }
+      function item(icon, key, oneKey, n) {
+        return '<span>' + icon + ' ' + esc(t(n === 1 ? oneKey : key).replace('{n}', n)) + '</span>';
+      }
+      return '<div class="member-stats">' +
+        item('⛵', 'members_stat_races', 'members_stat_race_one', s.gare) +
+        item('🏆', 'members_stat_wins', 'members_stat_win_one', s.wins) +
+        item('🥉', 'members_stat_podiums', 'members_stat_podium_one', s.podiums) +
+      '</div>';
+    }
+
+    function skeletonHtml() {
+      let html = '<div class="members-skeleton" aria-hidden="true">';
+      for (let i = 0; i < 6; i++) html += '<div class="member-skeleton"></div>';
+      html += '</div><p class="loading-text">' + esc(t('members_loading')) + '</p>';
+      return html;
+    }
+
     function cardHtml(p) {
       const uid = String(p.id);
       const nick = nickOf(p);
@@ -426,6 +596,7 @@
             roleHtml +
             '<span class="member-chevron" aria-hidden="true">›</span>' +
           '</a>' +
+          statsHtml(p) +
           '<div class="member-card-actions"></div>' +
         '</article>';
     }
@@ -452,13 +623,16 @@
       teams.forEach(function (team) {
         html += '<option value="' + esc(team) + '">' + esc(team) + '</option>';
       });
+      html += '<option value="__none__">' + esc(t('members_no_team_option')) + '</option>';
       sel.innerHTML = html;
-      sel.value = teams.indexOf(current) >= 0 ? current : '';
+      sel.value = (current === '__none__' || teams.indexOf(current) >= 0) ? current : '';
     }
 
-    function render() {
+    function render(resetPage) {
       const container = document.getElementById('members-container');
       if (!container) return;
+      if (resetPage) currentPage = 1;
+
       const searchEl = document.getElementById('members-search');
       const teamEl = document.getElementById('members-team-filter');
       const sortEl = document.getElementById('members-sort');
@@ -468,7 +642,11 @@
 
       let list = allProfiles.filter(function (p) {
         if (isExpelled(p)) return false;
-        if (teamFilter && teamOf(p) !== teamFilter) return false;
+        if (teamFilter === '__none__') {
+          if (teamOf(p)) return false;
+        } else if (teamFilter && teamOf(p) !== teamFilter) {
+          return false;
+        }
         if (!q) return true;
         return norm([nickOf(p), fullName(p), teamOf(p)].join(' ')).indexOf(q) >= 0;
       });
@@ -483,30 +661,48 @@
         return (nickOf(a) || nameOf(a)).localeCompare(nickOf(b) || nameOf(b), 'it');
       });
 
-      const visible = list.length;
+      const filteredCount = list.length;
       const total = allProfiles.filter(function (p) { return !isExpelled(p); }).length;
       const countEl = document.getElementById('members-count');
       if (countEl) {
         var countText;
-        if (visible === total) {
-          countText = visible === 1 ? t('members_count_one') : t('members_count').replace('{n}', visible);
+        if (filteredCount === total) {
+          countText = filteredCount === 1 ? t('members_count_one') : t('members_count').replace('{n}', filteredCount);
         } else {
-          countText = t('members_count_filtered').replace('{n}', visible).replace('{total}', total);
+          countText = t('members_count_filtered').replace('{n}', filteredCount).replace('{total}', total);
         }
         countEl.textContent = countText;
       }
 
+      const pages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
+      if (currentPage > pages) currentPage = pages;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageItems = list.slice(start, start + PAGE_SIZE);
+
       if (!total) {
         container.innerHTML = '<p class="empty-text">' + esc(t('members_empty')) + '</p>';
-      } else if (!list.length) {
+      } else if (!filteredCount) {
         container.innerHTML = '<p class="empty-text">' + esc(t('members_empty_filtered')) + '</p>';
       } else {
-        container.innerHTML = '<div class="members-grid">' + list.map(cardHtml).join('') + '</div>';
+        container.innerHTML = '<div class="members-grid">' + pageItems.map(cardHtml).join('') + '</div>';
       }
+
+      const pager = document.getElementById('members-pager');
+      const pageInfo = document.getElementById('members-page-info');
+      const prev = document.getElementById('members-prev');
+      const next = document.getElementById('members-next');
+      const showPager = filteredCount > PAGE_SIZE;
+      if (pager) pager.hidden = !showPager;
+      if (showPager) {
+        if (pageInfo) pageInfo.textContent = t('members_page_info').replace('{page}', currentPage).replace('{pages}', pages);
+        if (prev) prev.disabled = currentPage <= 1;
+        if (next) next.disabled = currentPage >= pages;
+      }
+      container.setAttribute('aria-busy', 'false');
 
       container.dispatchEvent(new CustomEvent('cvi:members-rendered', {
         bubbles: true,
-        detail: { profiles: list }
+        detail: { profiles: pageItems, all: list, page: currentPage, pages: pages }
       }));
     }
 
@@ -515,13 +711,22 @@
       if (search) {
         search.addEventListener('input', function () {
           clearTimeout(searchTimer);
-          searchTimer = setTimeout(render, 120);
+          searchTimer = setTimeout(function () { render(true); }, 120);
         });
       }
       const team = document.getElementById('members-team-filter');
-      if (team) team.addEventListener('change', render);
+      if (team) team.addEventListener('change', function () { render(true); });
       const sort = document.getElementById('members-sort');
-      if (sort) sort.addEventListener('change', render);
+      if (sort) sort.addEventListener('change', function () { render(true); });
+
+      const prev = document.getElementById('members-prev');
+      if (prev) prev.addEventListener('click', function () {
+        if (currentPage > 1) { currentPage--; render(); }
+      });
+      const next = document.getElementById('members-next');
+      if (next) next.addEventListener('click', function () {
+        currentPage++; render();
+      });
     }
 
     function applyPageI18n() {
@@ -541,6 +746,9 @@
       const toolbar = document.getElementById('members-toolbar');
       if (!container) return;
 
+      container.setAttribute('aria-busy', 'true');
+      container.innerHTML = skeletonHtml();
+
       const sessionRes = await CVI.supabase.auth.getSession();
       const session = sessionRes.data && sessionRes.data.session;
       if (!session) {
@@ -549,9 +757,18 @@
         return;
       }
       currentUserId = session.user && session.user.id;
+      currentPage = 1;
+      statsByUser = {};
+      statsLoaded = false;
 
-      const res = await CVI.supabase.from('profiles').select('*');
+      // Query mirata: evita di scaricare email e altri campi non necessari.
+      let res = await CVI.supabase.from('profiles').select(MEMBER_COLUMNS);
       if (res.error) {
+        // Fallback per installazioni con colonne opzionali mancanti.
+        res = await CVI.supabase.from('profiles').select('*');
+      }
+      if (res.error) {
+        container.setAttribute('aria-busy', 'false');
         container.innerHTML = '<div class="members-error"><p>' + esc(t('members_error')) + '</p>' +
           '<button type="button" class="members-retry" id="members-retry">' + esc(t('members_retry')) + '</button></div>';
         const retry = document.getElementById('members-retry');
@@ -560,14 +777,17 @@
       }
 
       allProfiles = res.data || [];
+      await loadStats();
+
       if (toolbar) toolbar.hidden = false;
       populateTeamFilter();
-      render();
+      render(true);
     }
 
     window.CVIMembers = {
       getProfiles: function () { return allProfiles.slice(); },
       getCurrentUserId: function () { return currentUserId; },
+      getStats: function (uid) { return statsByUser[String(uid)] || null; },
       refresh: initMembers,
       applyFilters: render,
       updateProfile: function (uid, patch) {
