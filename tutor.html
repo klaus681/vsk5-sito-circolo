@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutor - CVI Virtual</title>
+  <meta name="description" content="Tutor del Circolo Velico Italia Virtual: regole, tecnica, partenze e setup. Prenota una sessione con un socio esperto.">
+  <link rel="canonical" href="https://circolovelicoitalia.it/tutor.html">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <meta name="theme-color" content="#0b0f19">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css?v=3">
+  <style>
+    .tu-hint{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:.85rem 1rem;color:#94a3b8;font-size:.88rem;line-height:1.5;margin-bottom:1.25rem}
+    .tu-toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:1rem}
+    .tu-toolbar select,.tu-toolbar button{font-family:inherit}
+    .tu-filter{background:#0b0f19;color:#e2e8f0;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.45rem .75rem;font-size:.88rem;font-weight:600}
+    .tu-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+    .tu-card{background:linear-gradient(165deg,#152033,#111827 55%,#0f1524);border:1px solid rgba(56,189,248,.22);border-radius:14px;padding:1.2rem 1.25rem;position:relative;overflow:hidden}
+    .tu-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#a78bfa)}
+    .tu-name{margin:0 0 .35rem;font-size:1.15rem;color:#fff;font-weight:700}
+    .tu-team{color:#94a3b8;font-size:.85rem;margin-bottom:.5rem}
+    .tu-badges{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.65rem}
+    .tu-badge{font-size:.68rem;font-weight:800;letter-spacing:.04em;padding:.15rem .5rem;border-radius:999px;background:rgba(56,189,248,.15);color:#7dd3fc}
+    .tu-badge.pausa{background:rgba(251,191,36,.15);color:#fbbf24}
+    .tu-bio{color:#cbd5e1;font-size:.9rem;line-height:1.45;margin:0 0 .5rem}
+    .tu-note{color:#94a3b8;font-size:.82rem;margin:0 0 .75rem}
+    .tu-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+    .tu-empty{color:#94a3b8;text-align:center;padding:2rem 1rem}
+    .tu-login{text-align:center;padding:2.5rem 1.5rem;background:rgba(15,23,42,.6);border:1px solid rgba(56,189,248,.2);border-radius:16px}
+    .tu-login h2{color:#7dd3fc;margin:0 0 .75rem}
+    .tu-section{margin-top:2rem}
+    .tu-section h2{color:#7dd3fc;font-size:1.1rem;margin:0 0 .75rem}
+    .tu-form{background:rgba(15,23,42,.5);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1rem 1.15rem;margin-bottom:1.25rem}
+    .tu-form label{display:block;color:#94a3b8;font-size:.8rem;font-weight:600;margin:.5rem 0 .25rem}
+    .tu-form input,.tu-form textarea,.tu-form select{width:100%;background:#0b0f19;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.5rem .7rem;font-family:inherit;font-size:.9rem;box-sizing:border-box}
+    .tu-check{display:flex;flex-wrap:wrap;gap:.65rem;color:#e2e8f0;font-size:.88rem;margin:.4rem 0}
+    .tu-check label{display:inline-flex;align-items:center;gap:.3rem;margin:0;color:#e2e8f0;font-weight:500;font-size:.88rem}
+    .tu-msg{font-size:.85rem;margin:.5rem 0 0;color:#94a3b8}
+    .tu-sess{list-style:none;padding:0;margin:0}
+    .tu-sess li{padding:.65rem 0;border-bottom:1px solid rgba(255,255,255,.06);color:#cbd5e1;font-size:.9rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:center}
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html">Calendario</a></li>
+            <li><a href="classifiche.html">Classifiche</a></li>
+            <li><a href="tornei.html">Tornei</a></li>
+            <li><a href="allenamenti.html">Allenamenti</a></li>
+            <li><a href="tutor.html">Tutor</a></li>
+            <li><a href="proteste.html">Proteste</a></li>
+            <li><a href="eventi-aperti.html">Eventi aperti</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html">Albo d'Oro</a></li>
+        <li><a href="regolamento.html">Regolamento</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="membri.html">Membri</a></li>
+        <li><a href="contatti.html">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a href="accedi.html" id="auth-link" class="btn-accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="nav-mobile" id="navMobile">
+    <a href="index.html">Home</a>
+    <a href="team.html">Team</a>
+    <a href="gare.html">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="allenamenti.html">→ Allenamenti</a>
+      <a href="tutor.html">→ Tutor</a>
+      <a href="tornei.html">→ Tornei</a>
+    </div>
+    <a href="membri.html">Membri</a>
+    <a href="accedi.html" id="auth-link-mobile">Accedi</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="content-box" style="max-width:900px;margin:0 auto">
+      <section class="page-hero">
+        <h1>Tutor</h1>
+        <p>Soci esperti disponibili per aiutarti su regole, tecnica, partenze e setup. Nessun punto in classifica.</p>
+      </section>
+
+      <div class="tu-hint">
+        I tutor sono <strong>approvati dall'admin</strong>. Puoi candidarti se sei socio; la candidatura resta in attesa finché non viene confermata.
+        Aree: <strong>Regole</strong>, <strong>Tecnica</strong>, <strong>Partenze</strong>, <strong>Setup</strong>, <strong>Altro</strong>.
+      </div>
+
+      <div id="tu-auth-gate" style="display:none" class="tu-login">
+        <h2>Accedi per vedere i tutor</h2>
+        <p>Sezione riservata ai soci del Circolo Velico Italia.</p>
+        <a href="accedi.html?redirect=tutor.html" class="btn-primary">Accedi</a>
+      </div>
+
+      <div id="tu-app" style="display:none">
+        <div class="tu-toolbar">
+          <select id="tu-filter" class="tu-filter" aria-label="Filtro materia">
+            <option value="all">Tutte le materie</option>
+            <option value="regole">Regole</option>
+            <option value="tecnica">Tecnica</option>
+            <option value="partenza">Partenze</option>
+            <option value="setup">Setup</option>
+            <option value="altro">Altro</option>
+          </select>
+          <button type="button" class="btn-primary" id="tu-btn-candida">Diventa tutor</button>
+        </div>
+
+        <div id="tu-candida-box" class="tu-form" style="display:none">
+          <strong style="color:#7dd3fc">Candidatura tutor</strong>
+          <p style="color:#94a3b8;font-size:.85rem;margin:.35rem 0 .5rem">L'admin dovrà approvare prima che compaia in elenco.</p>
+          <label>Bio breve</label>
+          <textarea id="tu-bio" rows="2" placeholder="Es. esperto di regole e partenze…"></textarea>
+          <label>Materie</label>
+          <div class="tu-check" id="tu-materie-checks">
+            <label><input type="checkbox" value="regole"> Regole</label>
+            <label><input type="checkbox" value="tecnica"> Tecnica</label>
+            <label><input type="checkbox" value="partenza"> Partenze</label>
+            <label><input type="checkbox" value="setup"> Setup</label>
+            <label><input type="checkbox" value="altro"> Altro</label>
+          </div>
+          <label>Disponibilità (note)</label>
+          <input id="tu-disp" placeholder="Es. martedì e giovedì sera">
+          <label>Max allievi contemporanei</label>
+          <input type="number" id="tu-max" min="1" max="10" value="3" style="width:5rem">
+          <div class="tu-actions" style="margin-top:.75rem">
+            <button type="button" class="btn-primary" id="tu-candida-save">Invia candidatura</button>
+            <button type="button" class="btn-ghost" id="tu-candida-cancel">Annulla</button>
+          </div>
+          <p class="tu-msg" id="tu-candida-msg"></p>
+        </div>
+
+        <div id="tu-my-status" class="tu-msg" style="margin-bottom:1rem"></div>
+
+        <div id="tu-list" class="tu-grid"><p class="tu-empty">Caricamento…</p></div>
+
+        <div class="tu-section">
+          <h2>Le tue sessioni</h2>
+          <ul id="tu-sessioni" class="tu-sess"><li class="tu-empty" style="border:0">Nessuna sessione.</li></ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
+  </footer>
+
+  <script src="common.js?v=3"></script>
+  <script src="tutor-page.js?v=1"></script>
+  <script>
+    if (window.CVI && typeof CVI.init === "function") CVI.init("tutor.html");
+    else {
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.CVI && typeof CVI.init === "function") CVI.init("tutor.html");
+      });
+    }
+  </script>
+</body>
+</html>
