@@ -21,10 +21,8 @@
   <meta name="twitter:title" content="Classifiche - CVI Virtual">
   <meta name="twitter:description" content="Classifica generale Low Point, podio e risultati per evento.">
   <meta name="twitter:image" content="https://circolovelicoitalia.it/og-image.jpg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="fix-nav.css?v=2">
   <style>
@@ -111,6 +109,7 @@
   </style>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Vai al contenuto</a>
   <header>
     <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
     <nav class="nav-desktop" aria-label="Menu principale">
@@ -152,7 +151,7 @@
     <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
-  <main class="page-content">
+  <main class="page-content" id="main-content">
     <section class="page-hero">
       <span class="hero-badge">Stagione 2026 · Low Point</span>
       <h1>Risultati & <em>Classifiche</em></h1>
@@ -183,7 +182,7 @@
         </div>
         <div id="inserisci-panel" style="display:none;">
           <div class="info-banner">Solo <strong>admin</strong>. Il vincitore dell'evento viene archiviato automaticamente nell'<strong>Albo d'Oro</strong>.</div>
-          <div class="gara-select-row"><select id="select-gara-insert"><option value="">— Seleziona evento —</option></select></div>
+          <div class="gara-select-row"><select id="select-gara-insert" aria-label="Seleziona evento"><option value="">— Seleziona evento —</option></select></div>
           <div id="form-risultati-container"><p class="empty-hint">Seleziona un evento per iniziare.</p></div>
         </div>
       </div>

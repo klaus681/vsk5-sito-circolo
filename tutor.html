@@ -6,9 +6,22 @@
   <title>Tutor - CVI Virtual</title>
   <meta name="description" content="Tutor del Circolo Velico Italia Virtual: regole, tecnica, partenze e setup. Prenota una sessione con un socio esperto.">
   <link rel="canonical" href="https://circolovelicoitalia.it/tutor.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Circolo Velico Italia">
+  <meta property="og:title" content="Tutor - CVI Virtual">
+  <meta property="og:description" content="Tutor del Circolo Velico Italia Virtual: regole, tecnica, partenze e setup. Prenota una sessione con un socio esperto.">
+  <meta property="og:image" content="https://circolovelicoitalia.it/og-image.jpg">
+  <meta property="og:url" content="https://circolovelicoitalia.it/tutor.html">
+  <meta property="og:locale" content="it_IT">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tutor - CVI Virtual">
+  <meta name="twitter:description" content="Tutor del Circolo Velico Italia Virtual: regole, tecnica, partenze e setup. Prenota una sessione con un socio esperto.">
+  <meta name="twitter:image" content="https://circolovelicoitalia.it/og-image.jpg">
+  <meta name="robots" content="noindex">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <meta name="theme-color" content="#0b0f19">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="mobile.css">
   <link rel="stylesheet" href="fix-nav.css?v=3">
@@ -44,6 +57,7 @@
   </style>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Vai al contenuto</a>
   <header>
     <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
     <nav class="nav-desktop" aria-label="Menu principale">
@@ -87,7 +101,7 @@
     <a href="accedi.html" id="auth-link-mobile">Accedi</a>
   </nav>
 
-  <main class="page-content">
+  <main class="page-content" id="main-content">
     <div class="content-box" style="max-width:900px;margin:0 auto">
       <section class="page-hero">
         <h1>Tutor</h1>
@@ -121,7 +135,7 @@
         <div id="tu-candida-box" class="tu-form" style="display:none">
           <strong style="color:#7dd3fc">Candidatura tutor</strong>
           <p style="color:#94a3b8;font-size:.85rem;margin:.35rem 0 .5rem">L'admin dovrà approvare prima che compaia in elenco.</p>
-          <label>Bio breve</label>
+          <label for="tu-bio">Bio breve</label>
           <textarea id="tu-bio" rows="2" placeholder="Es. esperto di regole e partenze…"></textarea>
           <label>Materie</label>
           <div class="tu-check" id="tu-materie-checks">
@@ -131,9 +145,9 @@
             <label><input type="checkbox" value="setup"> Setup</label>
             <label><input type="checkbox" value="altro"> Altro</label>
           </div>
-          <label>Disponibilità (note)</label>
+          <label for="tu-disp">Disponibilità (note)</label>
           <input id="tu-disp" placeholder="Es. martedì e giovedì sera">
-          <label>Max allievi contemporanei</label>
+          <label for="tu-max">Max allievi contemporanei</label>
           <input type="number" id="tu-max" min="1" max="10" value="3" style="width:5rem">
           <div class="tu-actions" style="margin-top:.75rem">
             <button type="button" class="btn-primary" id="tu-candida-save">Invia candidatura</button>
