@@ -358,7 +358,7 @@ async function caricaClassificaHome() {
         .eq('stagione', STAGIONE)
         .order('posizione', { ascending: true })
         .limit(5),
-      CVI.supabase.from('profiles').select('id, nickname, team, nome, cognome')
+      CVI.supabase.from('profiles_public').select('id, nickname, team, nome, cognome')
     ]);
 
     if (classRes.error) {
@@ -398,7 +398,7 @@ async function caricaClassificaHome() {
 async function caricaStats() {
   try {
     const [profRes, teamsRes, gareRes] = await Promise.all([
-      CVI.supabase.from('profiles').select('id'),
+      CVI.supabase.from('profiles_public').select('id'),
       CVI.supabase.from('teams').select('id'),
       CVI.supabase.from('gare').select('id, data_gara')
     ]);

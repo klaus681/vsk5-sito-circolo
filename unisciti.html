@@ -291,9 +291,10 @@
         msg.style.color = '#f87171';
         return;
       }
-      // Il profilo si crea solo se la sessione è attiva (con la conferma email potrebbe non esserlo).
+      // Il profilo viene creato dal trigger handle_new_user alla registrazione.
+      // Se la sessione è già attiva (conferma email disattivata) lo upsert completa i dati.
       let profileWarn = false;
-      if (data.user) {
+      if (data.user && data.session) {
         const { error: pErr } = await CVI.supabase.from('profiles').upsert({
           id: data.user.id, nome, cognome, nickname, team, email
         });

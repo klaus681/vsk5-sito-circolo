@@ -376,7 +376,7 @@
       if (!ids.length) return;
       try {
         const res = await CVI.supabase
-          .from("profiles")
+          .from("profiles_public")
           .select("id,nickname,nome,cognome")
           .in("id", ids);
         if (res.error) return;
