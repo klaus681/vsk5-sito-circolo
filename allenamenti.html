@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Allenamenti - CVI Virtual</title>
+  <meta name="description" content="Allenamenti programmati riservati ai soci del Circolo Velico Italia Virtual. Nessun punto in classifica.">
+  <link rel="canonical" href="https://circolovelicoitalia.it/allenamenti.html">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+  <link rel="apple-touch-icon" href="apple-touch-180.png">
+  <meta name="theme-color" content="#0b0f19">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Circolo Velico Italia">
+  <meta property="og:title" content="Allenamenti - CVI Virtual">
+  <meta property="og:description" content="Slot fissi settimanali riservati ai soci. Nessun punto in classifica.">
+  <meta property="og:image" content="https://circolovelicoitalia.it/og-image.jpg">
+  <meta property="og:url" content="https://circolovelicoitalia.it/allenamenti.html">
+  <meta property="og:locale" content="it_IT">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Allenamenti - CVI Virtual">
+  <meta name="twitter:description" content="Slot fissi settimanali riservati ai soci. Nessun punto in classifica.">
+  <meta name="twitter:image" content="https://circolovelicoitalia.it/og-image.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css?v=3">
+  <style>
+    .al-hint {
+      background: rgba(56,189,248,.08);
+      border: 1px solid rgba(56,189,248,.2);
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      color: #94a3b8;
+      font-size: .88rem;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+    }
+    .al-grid { display: grid; gap: 1rem; }
+    .al-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(165deg, #152033 0%, #111827 55%, #0f1524 100%);
+      border: 1px solid rgba(56,189,248,.2);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.35rem;
+      transition: border-color .25s ease;
+    }
+    .al-card::before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, #34d399, #0ea5e9);
+      pointer-events: none;
+    }
+    .al-card:hover { border-color: #34d399; }
+    .al-card.annullato { opacity: .65; border-color: rgba(248,113,113,.3); }
+    .al-card.annullato::before { background: linear-gradient(90deg, #f87171, #94a3b8); }
+    .al-title { margin: 0 0 .35rem; font-size: 1.15rem; color: #fff; font-weight: 700; }
+    .al-meta { color: #94a3b8; font-size: .88rem; display: flex; flex-wrap: wrap; gap: .5rem .85rem; }
+    .al-badge {
+      display: inline-block; font-size: .72rem; font-weight: 700;
+      padding: .15rem .55rem; border-radius: 999px;
+      background: rgba(52,211,153,.15); color: #34d399;
+    }
+    .al-badge.annullato { background: rgba(248,113,113,.15); color: #f87171; }
+    .al-badge.concluso { background: rgba(148,163,184,.15); color: #94a3b8; }
+    .al-badge.in_corso { background: rgba(56,189,248,.15); color: #7dd3fc; }
+    .al-desc { color: #cbd5e1; margin: .75rem 0 0; font-size: .92rem; line-height: 1.5; }
+    .al-actions {
+      margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
+    }
+    .al-iscr-count { color: #7dd3fc; font-weight: 600; font-size: .9rem; }
+    .al-msg { margin: .5rem 0 0; font-size: .85rem; color: #94a3b8; }
+    .al-list { list-style: none; padding: 0; margin: .5rem 0 0; }
+    .al-list li {
+      padding: .35rem 0; border-bottom: 1px solid rgba(255,255,255,.04);
+      color: #cbd5e1; font-size: .88rem;
+    }
+    .al-empty { color: #94a3b8; text-align: center; padding: 2rem 1rem; }
+    .al-login-needed {
+      text-align: center; padding: 2.5rem 1.5rem;
+      background: rgba(15,23,42,.6); border: 1px solid rgba(56,189,248,.2);
+      border-radius: 16px;
+    }
+    .al-login-needed h2 { color: #7dd3fc; margin: 0 0 .75rem; }
+    .al-login-needed p { color: #94a3b8; margin: 0 0 1.25rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="live.html">Live</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+            <li><a href="tornei.html">Tornei</a></li>
+            <li><a href="allenamenti.html">Allenamenti</a></li>
+            <li><a href="proteste.html" data-i18n="nav_proteste">Proteste</a></li>
+            <li><a href="eventi-aperti.html">Eventi aperti</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="download.html" data-i18n="nav_download">Download</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+      <a href="tornei.html">→ Tornei</a>
+      <a href="allenamenti.html">→ Allenamenti</a>
+      <a href="live.html">→ Live</a>
+      <a href="proteste.html">→ Proteste</a>
+      <a href="eventi-aperti.html">→ Eventi aperti</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="download.html" data-i18n="nav_download">Download</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+
+  <main class="page-content">
+    <div class="content-box" style="max-width:820px;margin:0 auto">
+      <section class="page-hero">
+        <h1>Allenamenti</h1>
+        <p>Slot fissi settimanali riservati ai soci. Nessun punto in classifica generale.</p>
+      </section>
+
+      <div class="al-hint">
+        Gli allenamenti sono aperti <strong>solo ai soci autenticati</strong>.
+        Non generano punteggi né influenzano la classifica ufficiale del circolo.
+      </div>
+
+      <div id="al-auth-gate" style="display:none" class="al-login-needed">
+        <h2>Accedi per vedere gli allenamenti</h2>
+        <p>Questa sezione è riservata ai soci del Circolo Velico Italia.</p>
+        <a href="accedi.html?redirect=allenamenti.html" class="btn-primary">Accedi</a>
+      </div>
+
+      <div id="al-list" class="al-grid">
+        <p class="al-empty">Caricamento…</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span>
+        <p>Circolo Velico Italia · Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a>
+          <a href="allenamenti.html">Allenamenti</a>
+          <a href="tornei.html">Tornei</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
+  </footer>
+
+  <script src="common.js?v=3"></script>
+  <script src="allenamenti-page.js?v=1"></script>
+  <script>
+    if (window.CVI && typeof CVI.init === "function") {
+      CVI.init("allenamenti.html");
+    } else {
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.CVI && typeof CVI.init === "function") CVI.init("allenamenti.html");
+      });
+      setTimeout(function () {
+        if (window.CVI && typeof CVI.init === "function") CVI.init("allenamenti.html");
+      }, 400);
+    }
+  </script>
+</body>
+</html>
