@@ -9,6 +9,13 @@
     s.textContent = parts[0] + parts[1];
     document.head.appendChild(s);
 
+    var dt = await fetch("admin-datetime.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (dt) {
+      var sDt = document.createElement("script");
+      sDt.textContent = dt;
+      document.head.appendChild(sDt);
+    }
+
     var dl = await fetch("downloads-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (dl) {
       var s2 = document.createElement("script");
