@@ -83,6 +83,31 @@ function panelHTML() {
       '<div id="rsa-sql-hint" style="display:none;color:#fbbf24;font-size:.85rem;margin-top:.6rem">Tabella non trovata: esegui <code>risorse-sql.sql</code> su Supabase. Fino ad allora restano attivi i pannelli Download e Biblioteca.</div>' +
     "</div>";
 }
+function goTab(id) {
+  var t = document.querySelector('.admin-tab[data-tab="' + id + '"]');
+  if (t) { t.click(); return; }
+  setTimeout(function () {
+    var t2 = document.querySelector('.admin-tab[data-tab="' + id + '"]');
+    if (t2) t2.click();
+  }, 600);
+}
+
+function showMissingTable(box) {
+  if (!box) return;
+  box.innerHTML =
+    '<div style="border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);border-radius:10px;padding:.85rem 1rem;color:#fde68a;font-size:.88rem;line-height:1.55">' +
+      "<strong>Tabella <code>public.risorse</code> non trovata.</strong><br>" +
+      "Esegui <code>risorse-sql.sql</code> nel SQL Editor di Supabase: crea la tabella, migra i contenuti esistenti e abilita questo pannello." +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">' +
+        '<button type="button" class="btn-sm" data-goto="download">Apri Download (contenuti attuali)</button>' +
+        '<button type="button" class="btn-sm" data-goto="biblioteca">Apri Biblioteca (contenuti attuali)</button>' +
+      "</div>" +
+    "</div>";
+  box.querySelectorAll("[data-goto]").forEach(function (b) {
+    b.onclick = function () { goTab(b.getAttribute("data-goto")); };
+  });
+}
+
 function activate() {
   document.querySelectorAll(".admin-tab").forEach(function (t) { t.classList.remove("active"); });
   document.querySelectorAll(".admin-panel").forEach(function (p) { p.classList.remove("active"); });
@@ -367,11 +392,13 @@ async function loadList() {
     cache = r.data || [];
     renderList();
   } catch (e) {
-    if (box) box.innerHTML = '<p class="empty-text" style="color:#f87171">' + esc(e.message || e) + "</p>";
     if (isMissing(e)) {
       tableOk = false;
-      var hint = $("rsa-sql-hint");
-      if (hint) hint.style.display = "block";
+      var h = $("rsa-sql-hint");
+      if (h) h.style.display = "block";
+      showMissingTable(box);
+    } else if (box) {
+      box.innerHTML = '<p class="empty-text" style="color:#f87171">' + esc(e.message || e) + "</p>";
     }
   } finally {
     loading = false;
@@ -398,6 +425,8 @@ async function initTable() {
   if (tableOk) {
     hideLegacy();
     loadList();
+  } else {
+    showMissingTable($("rsa-list"));
   }
 }
 

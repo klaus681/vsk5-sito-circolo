@@ -76,7 +76,7 @@
       sBib.textContent = bib;
       document.head.appendChild(sBib);
     }
-    var rsa = await fetch("risorse-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var rsa = await fetch("risorse-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (rsa) {
       var sRsa = document.createElement("script");
       sRsa.textContent = rsa;
