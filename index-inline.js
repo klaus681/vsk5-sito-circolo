@@ -237,6 +237,30 @@ async function fillRegataConIscritti(gara) {
   fillRegata(gara);
 }
 
+async function caricaPasswordBanner(gara) {
+  var el = document.getElementById('regata-password');
+  if (!el) return;
+  el.style.display = 'none';
+  el.textContent = '';
+  if (!isLoggedIn || !gara || !gara.id || !CVI.supabase) return;
+  try {
+    var res = await CVI.supabase.from('gare_password').select('password').eq('gara_id', gara.id).maybeSingle();
+    if (res.error) {
+      if (!/does not exist|schema cache|relation/i.test(res.error.message || '')) console.warn('gare_password:', res.error.message);
+      return;
+    }
+    var pwd = res.data && res.data.password ? String(res.data.password).trim() : '';
+    if (!pwd) return;
+    el.textContent = '🔑 Password server: ';
+    var code = document.createElement('code');
+    code.textContent = pwd;
+    el.appendChild(code);
+    el.style.display = 'inline-flex';
+  } catch (e) {
+    console.warn('gare_password:', e && e.message);
+  }
+}
+
 function fillRegata(gara) {
   const titoloEl = document.getElementById('regata-titolo');
   const dataEl = document.getElementById('regata-data');
@@ -345,6 +369,8 @@ function fillRegata(gara) {
     if (liveBtnEl) liveBtnEl.style.display = (inLive || st2.key === 'corso' || st2.key === 'chiuse') ? '' : 'none';
     card.classList.toggle('is-live', !!(inLive || st2.key === 'corso'));
   }
+
+  caricaPasswordBanner(gara);
 }
 
 async function caricaClassificaHome() {
