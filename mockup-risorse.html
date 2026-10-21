@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup – Risorse | CVI Virtual</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --bg:#0b0f19; --panel:#111827; --panel2:#152033; --border:rgba(148,163,184,.18);
+    --accent:#38bdf8; --accent2:#7dd3fc; --text:#e2e8f0; --muted:#94a3b8;
+    --purple:#a78bfa; --green:#34d399; --amber:#fbbf24; --red:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1100px 520px at 85% -10%,rgba(56,189,248,.09),transparent),var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.55}
+  a{color:var(--accent2);text-decoration:none}
+  button{font-family:inherit}
+  .mock-banner{position:sticky;top:0;z-index:80;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:center;background:#1e293b;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--muted);padding:.4rem .75rem}
+  .mock-banner strong{color:var(--amber);letter-spacing:.1em;font-size:.72rem}
+  .mock-banner .sep{opacity:.4}
+  .mock-toggle{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+  .mock-toggle button{background:transparent;border:0;color:var(--muted);font-size:.75rem;font-weight:700;padding:.25rem .7rem;cursor:pointer}
+  .mock-toggle button.active{background:rgba(56,189,248,.16);color:var(--accent2)}
+  header.site{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.4rem;border-bottom:1px solid var(--border);background:rgba(11,15,25,.75);backdrop-filter:blur(8px);position:sticky;top:33px;z-index:70}
+  .logo{font-weight:800;font-size:1.15rem;color:#fff;letter-spacing:.02em}
+  .logo span{color:var(--accent)}
+  nav.main{display:flex;gap:1.1rem;font-size:.86rem;font-weight:600;color:var(--muted);flex-wrap:wrap}
+  nav.main a.active{color:var(--accent2)}
+  .user-chip{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:.3rem .7rem;white-space:nowrap}
+  .user-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  main{max-width:1120px;margin:0 auto;padding:2.2rem 1.4rem 4rem}
+  .hero h1{margin:0 0 .4rem;font-size:2.05rem;letter-spacing:-.01em}
+  .hero p{margin:0;color:var(--muted);max-width:640px}
+  .search-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.4rem}
+  .search{position:relative;flex:1 1 320px}
+  .search input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:.7rem .9rem .7rem 2.4rem;font-size:.95rem}
+  .search input:focus{outline:none;border-color:rgba(56,189,248,.55)}
+  .search .icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--muted)}
+  select.sort{background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:.7rem .9rem;font-size:.9rem}
+  .anon-note{display:none;margin-top:1.1rem;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.28);border-radius:10px;padding:.7rem .95rem;font-size:.86rem;color:#fde68a}
+  .anon-note.show{display:block}
+  .filters{margin-top:1.6rem;display:flex;flex-direction:column;gap:.75rem}
+  .filter-group{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+  .filter-group .lab{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:.3rem}
+  .chip{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:999px;padding:.35rem .8rem;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s}
+  .chip:hover{border-color:rgba(56,189,248,.4);color:var(--accent2)}
+  .chip.active{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.5);color:var(--accent2)}
+  .results-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin:1.5rem 0 .9rem;font-size:.82rem;color:var(--muted)}
+  .results-head strong{color:var(--text)}
+  .legend{display:flex;gap:.9rem;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:.3rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1rem}
+  .card{display:flex;flex-direction:column;background:linear-gradient(165deg,var(--panel2),var(--panel));border:1px solid var(--border);border-radius:14px;padding:1.05rem 1.1rem;transition:border-color .18s,transform .18s}
+  .card:hover{border-color:rgba(56,189,248,.45);transform:translateY(-1px)}
+  .card-top{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-bottom:.55rem}
+  .badge{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.16rem .5rem;border-radius:999px;white-space:nowrap}
+  .badge.tipo-file{background:rgba(52,211,153,.14);color:var(--green)}
+  .badge.tipo-scheda{background:rgba(56,189,248,.14);color:var(--accent2)}
+  .badge.tipo-video{background:rgba(167,139,250,.16);color:var(--purple)}
+  .badge.tipo-link{background:rgba(148,163,184,.16);color:#cbd5e1}
+  .badge.cat{background:transparent;border:1px solid var(--border);color:var(--muted)}
+  .badge.vis-pubblico{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.25)}
+  .badge.vis-soci{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+  .badge.locked{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+  .card h3{margin:0 0 .3rem;font-size:1.03rem;color:#fff;line-height:1.3}
+  .card .sum{color:var(--muted);font-size:.87rem;margin:0 0 .8rem}
+  .card .meta{display:flex;gap:.7rem;flex-wrap:wrap;font-size:.75rem;color:#64748b;margin-bottom:.9rem}
+  .card .foot{margin-top:auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:.35rem;border-radius:8px;font-weight:700;font-size:.83rem;padding:.5rem .9rem;cursor:pointer;border:1px solid transparent}
+  .btn.primary{background:linear-gradient(135deg,#38bdf8,#0ea5e9);color:#0b0f19}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;border-color:var(--border);color:var(--text)}
+  .btn.ghost:hover{border-color:rgba(56,189,248,.45);color:var(--accent2)}
+  .btn.locked{background:rgba(148,163,184,.1);color:var(--muted);border-color:var(--border);cursor:not-allowed}
+  .btn.purple{background:rgba(167,139,250,.18);color:#ddd6fe;border-color:rgba(167,139,250,.4)}
+  .empty{display:none;text-align:center;color:var(--muted);padding:3rem 1rem;border:1px dashed var(--border);border-radius:14px;margin-top:1rem}
+  .empty.show{display:block}
+  .footnote{margin-top:2.2rem;border-top:1px solid var(--border);padding-top:1.1rem;font-size:.82rem;color:#64748b}
+  .footnote strong{color:var(--muted)}
+  .modal{position:fixed;inset:0;z-index:100;display:none;align-items:flex-start;justify-content:center;padding:4vh 1rem;background:rgba(2,6,23,.78);backdrop-filter:blur(4px);overflow:auto}
+  .modal.open{display:flex}
+  .modal-panel{width:100%;max-width:760px;background:var(--panel);border:1px solid rgba(56,189,248,.28);border-radius:16px;padding:1.4rem 1.5rem 1.6rem;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .modal-head{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}
+  .modal-head h2{margin:.35rem 0 .2rem;font-size:1.35rem;color:#fff}
+  .modal-close{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;width:34px;height:34px;font-size:1.05rem;cursor:pointer;flex:0 0 auto}
+  .modal-close:hover{color:#fff;border-color:rgba(248,113,113,.5)}
+  .modal .sum{color:var(--muted);font-size:.92rem;margin:.2rem 0 1rem}
+  .modal .body{color:#cbd5e1;font-size:.94rem;line-height:1.65;white-space:pre-wrap}
+  .modal .tags{display:flex;gap:.35rem;flex-wrap:wrap;margin:1rem 0}
+  .tag{font-size:.72rem;color:var(--muted);background:rgba(148,163,184,.1);border-radius:999px;padding:.15rem .55rem}
+  .modal .actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1.1rem}
+  .video-ph{position:relative;padding-bottom:56.25%;background:#000;border-radius:12px;margin-top:1rem;border:1px solid var(--border)}
+  .video-ph span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;color:#94a3b8;font-size:.85rem}
+  .video-ph .play{width:52px;height:52px;border-radius:50%;background:rgba(167,139,250,.22);border:1px solid rgba(167,139,250,.5);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#ddd6fe}
+  footer.site{border-top:1px solid var(--border);padding:1.6rem 1.4rem;text-align:center;color:#64748b;font-size:.8rem}
+  @media(max-width:820px){
+    header.site{top:0;padding:.85rem 1rem}
+    nav.main{display:none}
+    main{padding:1.6rem 1rem 3rem}
+    .hero h1{font-size:1.65rem}
+    .grid{grid-template-columns:1fr}
+  }
+  @media(max-width:520px){
+    .search-row{flex-direction:column}
+    select.sort{width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="mock-banner">
+  <strong>MOCKUP</strong>
+  <span class="sep">·</span>
+  <span>dati di esempio, nessun database collegato</span>
+  <span class="sep">·</span>
+  <span>Anteprima:</span>
+  <span class="mock-toggle" role="group" aria-label="Anteprima modalità utente">
+    <button type="button" id="btnSocio" class="active">Socio loggato</button>
+    <button type="button" id="btnAnon">Visitatore</button>
+  </span>
+</div>
+
+<header class="site">
+  <div class="logo">⚓ CVI <span>Virtual</span></div>
+  <nav class="main">
+    <a href="#">Home</a>
+    <a href="#">Team</a>
+    <a href="#">Gare &amp; Eventi</a>
+    <a href="#">Albo d'Oro</a>
+    <a href="#">Regolamento</a>
+    <a href="#" class="active">Risorse</a>
+    <a href="#">Membri</a>
+    <a href="#">Contatti</a>
+  </nav>
+  <div class="user-chip"><span class="dot" id="userDot"></span><span id="userLabel">Mario · Socio</span></div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Risorse</h1>
+    <p>Tutto il materiale del circolo in un unico posto: file da scaricare, guide, video e FAQ. Cerca o filtra per trovare subito quello che ti serve.</p>
+    <div class="search-row">
+      <div class="search">
+        <span class="icon">🔎</span>
+        <input type="search" id="q" placeholder="Cerca per titolo, descrizione o tag…" aria-label="Cerca risorse">
+      </div>
+      <select class="sort" id="sort" aria-label="Ordina risorse">
+        <option value="ordine">Consigliati</option>
+        <option value="recenti">Più recenti</option>
+        <option value="az">Titolo A–Z</option>
+      </select>
+    </div>
+    <div class="anon-note" id="anonNote">
+      👋 Stai navigando come <strong>visitatore</strong>. Le risorse con badge <em>Soci</em> richiedono l'accesso: <a href="#">Accedi</a> per scaricarle o leggere le guide riservate.
+    </div>
+  </section>
+
+  <section class="filters" aria-label="Filtri">
+    <div class="filter-group" id="filtriTipo">
+      <span class="lab">Tipologia</span>
+      <button type="button" class="chip active" data-tipo="tutti">Tutti</button>
+      <button type="button" class="chip" data-tipo="file">📦 Da scaricare</button>
+      <button type="button" class="chip" data-tipo="scheda">📘 Guide e schede</button>
+      <button type="button" class="chip" data-tipo="video">▶️ Video</button>
+      <button type="button" class="chip" data-tipo="link">🔗 Link</button>
+    </div>
+    <div class="filter-group" id="filtriCat">
+      <span class="lab">Categoria</span>
+      <button type="button" class="chip active" data-cat="tutte">Tutte</button>
+      <button type="button" class="chip" data-cat="software">Software</button>
+      <button type="button" class="chip" data-cat="skin">Skin</button>
+      <button type="button" class="chip" data-cat="mappe">Mappe</button>
+      <button type="button" class="chip" data-cat="regolamenti">Regolamenti</button>
+      <button type="button" class="chip" data-cat="guide">Guide</button>
+      <button type="button" class="chip" data-cat="polar">Polar</button>
+      <button type="button" class="chip" data-cat="setup">Setup</button>
+      <button type="button" class="chip" data-cat="faq">FAQ</button>
+    </div>
+  </section>
+
+  <div class="results-head">
+    <span><strong id="count">8</strong> risorse trovate</span>
+    <span class="legend">
+      <span><span class="badge vis-pubblico">Pubblico</span> visibile a tutti</span>
+      <span><span class="badge vis-soci">Soci</span> solo dopo il login</span>
+    </span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty">Nessuna risorsa corrisponde ai filtri selezionati. <button type="button" class="btn ghost" id="resetFiltri" style="margin-left:.5rem">Azzera filtri</button></div>
+
+  <p class="footnote">
+    <strong>Nota di progetto:</strong> ogni risorsa ha un campo <em>Visibilità</em> (Pubblico / Soci).
+    Le risorse pubbliche possono essere indicizzate e aperte senza login; quelle “Soci” restano protette da RLS e non compaiono ai visitatori.
+  </p>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div>
+        <div class="card-top" id="modalBadges"></div>
+        <h2 id="modalTitle">Titolo</h2>
+      </div>
+      <button type="button" class="modal-close" id="modalClose" aria-label="Chiudi">✕</button>
+    </div>
+    <p class="sum" id="modalSum"></p>
+    <div class="body" id="modalBody"></div>
+    <div class="video-ph" id="modalVideo" style="display:none">
+      <span><span class="play">▶</span>Qui va l'embed YouTube / Vimeo</span>
+    </div>
+    <div class="tags" id="modalTags"></div>
+    <div class="actions" id="modalActions"></div>
+  </div>
+</div>
+
+<footer class="site">Mockup statico · Circolo Velico Italia Virtual · nessun dato reale</footer>
+
+
+<script>
+  const CAT_LABEL = { software:"Software", skin:"Skin", mappe:"Mappe", regolamenti:"Regolamenti", guide:"Guide", polar:"Polar", setup:"Setup", faq:"FAQ" };
+  const TIPO_LABEL = { file:"File", scheda:"Scheda", video:"Video", link:"Link" };
+  const TIPO_ICON = { file:"📦", scheda:"📘", video:"▶️", link:"🔗" };
+
+  const RISORSE = [
+    {
+      id:"patch-vs5", tipo:"file", cat:"software", visibilita:"soci", ordine:1, data:"2026-10-12",
+      titolo:"Virtual Skipper 5 – Patch 1.2.1",
+      sommario:"Patch ufficiale del circolo: correzioni di rete e compatibilità con Windows 11.",
+      meta:"ZIP · 48 MB · aggiornato il 12 ott 2026",
+      corpo:"La patch va applicata su un'installazione pulita di Virtual Skipper 5. Chiudi il gioco prima di avviare l'installer, poi riavvia il client.\n\nIn caso di problemi di connessione, verifica di aver completato anche il setup della rete indicato nella guida dedicata.",
+      tag:["vs5","patch","windows"]
+    },
+    {
+      id:"skin-cvi-2026", tipo:"file", cat:"skin", visibilita:"soci", ordine:2, data:"2026-09-28",
+      titolo:"Skin CVI 2026 – livrea ufficiale",
+      sommario:"Livree ufficiali del circolo per la stagione 2026, con numeri e colori sociali.",
+      meta:"ZIP · 12 MB · aggiornato il 28 set 2026",
+      corpo:"Il pacchetto contiene le livree per tutte le classi usate in campionato. Sostituisci la cartella Skin nella directory del gioco e avvia una regata di prova per verificare la corretta installazione.",
+      tag:["skin","livrea","2026"]
+    },
+    {
+      id:"guida-setup", tipo:"scheda", cat:"setup", visibilita:"pubblico", ordine:3, data:"2026-09-10",
+      titolo:"Guida al setup base",
+      sommario:"Come regolare vele, terzaroli e tensione del sartiame prima di una regata.",
+      meta:"Lettura · 5 min",
+      corpo:"Un buon setup parte da tre domande: che vento avrò, che onda troverò e quanto equipaggio ho a bordo.\n\nCon vento leggero conviene cercare superficie velica e ridurre la tensione del sartiame; con vento forte si privilegia la stabilità e si riduce la tela esposta.\n\nQuesta scheda è un punto di partenza: i valori esatti dipendono dalla classe e dalle condizioni del campo di regata.",
+      tag:["setup","vele","base"]
+    },
+    {
+      id:"polar-vento-leggero", tipo:"link", cat:"polar", visibilita:"soci", ordine:4, data:"2026-08-22",
+      titolo:"Polar CVI – vento leggero",
+      sommario:"Tabella delle velocità target per andature e intensità di vento da 4 a 10 nodi.",
+      meta:"PDF · 2,4 MB",
+      corpo:"Documento riservato ai soci. Contiene i target di velocità per bolina, traverso e poppa con vento leggero, con note sull'effetto delle correnti.",
+      tag:["polar","vento leggero","target"],
+      url:"#"
+    },
+    {
+      id:"video-partenza-12", tipo:"video", cat:"guide", visibilita:"soci", ordine:5, data:"2026-07-30",
+      titolo:"Tutorial: partire in regime di 12 nodi",
+      sommario:"Analisi video di una partenza tipo con vento medio: timing, lato favorito e accelerazione.",
+      meta:"Video · 8 min",
+      corpo:"Nel video vengono commentate tre partenze dello stesso evento, con focus su timing della linea, scelta del lato e gestione della prima bolina.",
+      tag:["partenza","video","12 nodi"],
+      video:true
+    },
+    {
+      id:"faq-dnc", tipo:"scheda", cat:"faq", visibilita:"pubblico", ordine:6, data:"2026-07-04",
+      titolo:"FAQ – Come funziona la penalità DNC?",
+      sommario:"Cosa significa DNC, quando viene assegnata e come incide sulla classifica generale.",
+      meta:"Lettura · 3 min",
+      corpo:"DNC significa \"Did Not Compete\": il concorrente non si è presentato alla partenza. Nella classifica generale del circolo ogni prova conta per tutti i soci e chi non partecipa riceve una penalità pari al numero dei partecipanti più uno.\n\nLa penalità viene calcolata automaticamente dal sistema al momento della pubblicazione dei risultati.",
+      tag:["faq","dnc","classifica"]
+    },
+    {
+      id:"regolamento-2026", tipo:"link", cat:"regolamenti", visibilita:"pubblico", ordine:7, data:"2026-06-15",
+      titolo:"Regolamento ufficiale 2026",
+      sommario:"Il testo completo del regolamento del circolo per la stagione in corso.",
+      meta:"PDF · 180 KB",
+      corpo:"Regolamento ufficiale approvato per la stagione 2026: iscrizioni, svolgimento delle regate, penalità e gestione dei reclami.",
+      tag:["regolamento","2026"],
+      url:"#"
+    },
+    {
+      id:"mappe-mediterraneo", tipo:"file", cat:"mappe", visibilita:"soci", ordine:8, data:"2026-05-20",
+      titolo:"Pacchetto mappe Mediterraneo",
+      sommario:"Raccolta delle mappe usate negli eventi del circolo, con note di installazione.",
+      meta:"ZIP · 210 MB · 6 mappe",
+      corpo:"Il pacchetto include le mappe di regata più usate negli eventi CVI. Estrai l'archivio nella cartella mappe del gioco e verifica la presenza dei file nella schermata di selezione.",
+      tag:["mappe","mediterraneo","eventi"]
+    }
+  ];
+</script>
+<script>
+  const state = { tipo:"tutti", cat:"tutte", q:"", sort:"ordine", socio:true };
+  const $ = function(id){ return document.getElementById(id); };
+  function esc(s){
+    if(s==null)return"";
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function byId(id){ return RISORSE.find(function(r){ return r.id===id; }); }
+  function canAccess(r){ return state.socio || r.visibilita==="pubblico"; }
+
+  function actionHTML(r, locked){
+    if(locked) return '<button type="button" class="btn locked" disabled>🔒 Solo soci</button>';
+    if(r.tipo==="file") return '<button type="button" class="btn primary" data-dl="'+r.id+'">⬇ Scarica</button>';
+    if(r.tipo==="video") return '<button type="button" class="btn purple" data-open="'+r.id+'">▶ Guarda</button>';
+    if(r.tipo==="link") return '<a class="btn primary" href="'+(r.url||"#")+'" target="_blank" rel="noopener">Apri link ↗</a>';
+    return '<button type="button" class="btn primary" data-open="'+r.id+'">Leggi</button>';
+  }
+
+  function cardHTML(r){
+    var locked = !canAccess(r);
+    return '<article class="card">'+
+      '<div class="card-top">'+
+        '<span class="badge tipo-'+r.tipo+'">'+TIPO_ICON[r.tipo]+' '+TIPO_LABEL[r.tipo]+'</span>'+
+        '<span class="badge cat">'+CAT_LABEL[r.cat]+'</span>'+
+        '<span class="badge vis-'+r.visibilita+'">'+(r.visibilita==="pubblico"?"Pubblico":"Soci")+'</span>'+
+        (locked?'<span class="badge locked">🔒 Bloccata</span>':'')+
+      '</div>'+
+      '<h3>'+esc(r.titolo)+'</h3>'+
+      '<p class="sum">'+esc(r.sommario)+'</p>'+
+      '<div class="meta"><span>'+esc(r.meta)+'</span></div>'+
+      '<div class="foot">'+actionHTML(r,locked)+
+        '<button type="button" class="btn ghost" data-open="'+r.id+'">Dettagli</button>'+
+      '</div></article>';
+  }
+
+  function filtered(){
+    var rows = RISORSE.filter(function(r){
+      if(state.tipo!=="tutti" && r.tipo!==state.tipo) return false;
+      if(state.cat!=="tutte" && r.cat!==state.cat) return false;
+      if(state.q){
+        var hay = (r.titolo+" "+r.sommario+" "+(r.tag||[]).join(" ")+" "+CAT_LABEL[r.cat]).toLowerCase();
+        if(hay.indexOf(state.q.toLowerCase())<0) return false;
+      }
+      return true;
+    });
+    if(state.sort==="az") rows = rows.slice().sort(function(a,b){ return a.titolo.localeCompare(b.titolo,"it"); });
+    else if(state.sort==="recenti") rows = rows.slice().sort(function(a,b){ return String(b.data).localeCompare(String(a.data)); });
+    else rows = rows.slice().sort(function(a,b){ return (a.ordine||0)-(b.ordine||0); });
+    return rows;
+  }
+
+  function render(){
+    var rows = filtered();
+    $("grid").innerHTML = rows.map(cardHTML).join("");
+    $("count").textContent = rows.length;
+    $("empty").classList.toggle("show", rows.length===0);
+    document.querySelectorAll("#grid [data-open]").forEach(function(b){
+      b.onclick = function(){ openModal(b.getAttribute("data-open")); };
+    });
+    document.querySelectorAll("#grid [data-dl]").forEach(function(b){
+      b.onclick = function(){
+        var r = byId(b.getAttribute("data-dl"));
+        alert('Mockup: qui partirebbe il download di "'+r.titolo+'".');
+      };
+    });
+  }
+</script>
+
+<script>
+  function badgesHTML(r){
+    return '<span class="badge tipo-'+r.tipo+'">'+TIPO_ICON[r.tipo]+' '+TIPO_LABEL[r.tipo]+'</span>'+
+      '<span class="badge cat">'+CAT_LABEL[r.cat]+'</span>'+
+      '<span class="badge vis-'+r.visibilita+'">'+(r.visibilita==="pubblico"?"Pubblico":"Soci")+'</span>';
+  }
+
+  function openModal(id){
+    var r = byId(id); if(!r) return;
+    var locked = !canAccess(r);
+    $("modalBadges").innerHTML = badgesHTML(r);
+    $("modalTitle").textContent = r.titolo;
+    $("modalSum").textContent = r.sommario;
+    $("modalBody").textContent = locked
+      ? "Questa risorsa è riservata ai soci. Effettua l'accesso per leggere il contenuto o scaricare il file."
+      : (r.corpo || "");
+    $("modalVideo").style.display = (!locked && r.video) ? "block" : "none";
+
+    var tags = $("modalTags");
+    tags.innerHTML = (r.tag||[]).map(function(t){ return '<span class="tag">#'+esc(t)+'</span>'; }).join("");
+
+    var acts = $("modalActions");
+    if(locked){
+      acts.innerHTML = '<a class="btn primary" href="#">Accedi per continuare</a>'+
+        '<button type="button" class="btn ghost" data-close="1">Chiudi</button>';
+    } else if(r.tipo==="file"){
+      acts.innerHTML = '<button type="button" class="btn primary" data-dl-modal="'+r.id+'">⬇ Scarica</button>'+
+        '<button type="button" class="btn ghost" data-close="1">Chiudi</button>';
+    } else if(r.tipo==="link"){
+      acts.innerHTML = '<a class="btn primary" href="'+(r.url||"#")+'" target="_blank" rel="noopener">Apri link ↗</a>'+
+        '<button type="button" class="btn ghost" data-close="1">Chiudi</button>';
+    } else {
+      acts.innerHTML = '<button type="button" class="btn ghost" data-close="1">Chiudi</button>';
+    }
+    acts.querySelectorAll("[data-close]").forEach(function(b){ b.onclick = closeModal; });
+    var dl = acts.querySelector("[data-dl-modal]");
+    if(dl) dl.onclick = function(){
+      alert('Mockup: qui partirebbe il download di "'+r.titolo+'".');
+    };
+
+    $("modal").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(){
+    $("modal").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  function setSocio(v){
+    state.socio = v;
+    $("btnSocio").classList.toggle("active", v);
+    $("btnAnon").classList.toggle("active", !v);
+    $("userLabel").textContent = v ? "Mario · Socio" : "Ospite · visitatore";
+    $("userDot").style.background = v ? "#34d399" : "#94a3b8";
+    $("anonNote").classList.toggle("show", !v);
+    render();
+  }
+
+  function init(){
+    $("btnSocio").onclick = function(){ setSocio(true); };
+    $("btnAnon").onclick = function(){ setSocio(false); };
+    $("modalClose").onclick = closeModal;
+    $("modal").addEventListener("click", function(e){ if(e.target === $("modal")) closeModal(); });
+    document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeModal(); });
+
+    $("q").addEventListener("input", function(e){ state.q = e.target.value.trim(); render(); });
+    $("sort").addEventListener("change", function(e){ state.sort = e.target.value; render(); });
+
+    document.querySelectorAll("#filtriTipo .chip").forEach(function(chip){
+      chip.onclick = function(){
+        state.tipo = chip.getAttribute("data-tipo");
+        document.querySelectorAll("#filtriTipo .chip").forEach(function(c){ c.classList.remove("active"); });
+        chip.classList.add("active");
+        render();
+      };
+    });
+    document.querySelectorAll("#filtriCat .chip").forEach(function(chip){
+      chip.onclick = function(){
+        state.cat = chip.getAttribute("data-cat");
+        document.querySelectorAll("#filtriCat .chip").forEach(function(c){ c.classList.remove("active"); });
+        chip.classList.add("active");
+        render();
+      };
+    });
+
+    $("resetFiltri").onclick = function(){
+      state.tipo = "tutti"; state.cat = "tutte"; state.q = ""; state.sort = "ordine";
+      $("q").value = ""; $("sort").value = "ordine";
+      document.querySelectorAll("#filtriTipo .chip").forEach(function(c){ c.classList.toggle("active", c.getAttribute("data-tipo")==="tutti"); });
+      document.querySelectorAll("#filtriCat .chip").forEach(function(c){ c.classList.toggle("active", c.getAttribute("data-cat")==="tutte"); });
+      render();
+    };
+
+    render();
+  }
+
+  init();
+</script>
+</body>
+</html>
+
