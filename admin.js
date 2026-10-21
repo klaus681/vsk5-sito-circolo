@@ -76,6 +76,12 @@
       sBib.textContent = bib;
       document.head.appendChild(sBib);
     }
+    var rsa = await fetch("risorse-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (rsa) {
+      var sRsa = document.createElement("script");
+      sRsa.textContent = rsa;
+      document.head.appendChild(sRsa);
+    }
     var sf = await fetch("sfondi-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
     if (sf) {
       var s10 = document.createElement("script");

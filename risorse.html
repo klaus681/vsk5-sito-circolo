@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Download e Risorse - CVI Virtual</title>
+<meta name="description" content="File da scaricare, guide, video e FAQ del Circolo Velico Italia Virtual: tutto il materiale dei soci in un unico posto.">
+<link rel="canonical" href="https://circolovelicoitalia.it/risorse.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Circolo Velico Italia">
+<meta property="og:title" content="Download e Risorse - CVI Virtual">
+<meta property="og:description" content="File da scaricare, guide, video e FAQ del Circolo Velico Italia Virtual: tutto il materiale dei soci in un unico posto.">
+<meta property="og:image" content="https://circolovelicoitalia.it/og-image.jpg">
+<meta property="og:url" content="https://circolovelicoitalia.it/risorse.html">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" href="apple-touch-180.png">
+<meta name="theme-color" content="#0b0f19">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="mobile.css">
+<link rel="stylesheet" href="fix-nav.css?v=3">
+<style>
+  #risorse-app .rs-hero h1{margin:0 0 .4rem;font-size:2.05rem;letter-spacing:-.01em;color:#fff}
+  #risorse-app .rs-hero p{margin:0;color:var(--text-muted);max-width:660px;line-height:1.6}
+  .rs-toolbar{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.35rem}
+  .rs-search{position:relative;flex:1 1 320px}
+  .rs-search input{width:100%;background:#111827;border:1px solid var(--border-color);border-radius:10px;color:var(--text-main);padding:.7rem .9rem .7rem 2.4rem;font-size:.95rem;font-family:inherit}
+  .rs-search input:focus{outline:none;border-color:rgba(56,189,248,.55)}
+  .rs-search .rs-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--text-muted)}
+  .rs-sort{background:#111827;border:1px solid var(--border-color);border-radius:10px;color:var(--text-main);padding:.7rem .9rem;font-size:.9rem;font-family:inherit}
+  .rs-guest{margin-top:1.1rem;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.28);border-radius:10px;padding:.7rem .95rem;font-size:.87rem;color:#fde68a;line-height:1.5}
+  .rs-guest a{color:#fbbf24;font-weight:700}
+  .rs-filters{margin-top:1.5rem;display:flex;flex-direction:column;gap:.7rem}
+  .rs-filter-row{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+  .rs-filter-row .rs-lab{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-right:.3rem}
+  .rs-chip{background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:999px;padding:.35rem .8rem;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+  .rs-chip:hover{border-color:rgba(56,189,248,.4);color:#7dd3fc}
+  .rs-chip.active{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.5);color:#7dd3fc}
+  .rs-count{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin:1.4rem 0 .9rem;font-size:.82rem;color:var(--text-muted)}
+  .rs-count strong{color:var(--text-main)}
+  .rs-legend{display:flex;gap:.8rem;flex-wrap:wrap}
+  .rs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1rem}
+  .rs-card{display:flex;flex-direction:column;background:linear-gradient(165deg,#152033,#111827);border:1px solid rgba(56,189,248,.2);border-radius:14px;padding:1.05rem 1.1rem;transition:border-color .18s,transform .18s}
+  .rs-card:hover{border-color:rgba(56,189,248,.45);transform:translateY(-1px)}
+  .rs-badges{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-bottom:.55rem}
+  .rs-badge{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.16rem .5rem;border-radius:999px;white-space:nowrap}
+  .rs-badge.t-file{background:rgba(52,211,153,.14);color:#34d399}
+  .rs-badge.t-scheda{background:rgba(56,189,248,.14);color:#7dd3fc}
+  .rs-badge.t-video{background:rgba(167,139,250,.16);color:#a78bfa}
+  .rs-badge.t-link{background:rgba(148,163,184,.16);color:#cbd5e1}
+  .rs-badge.cat{background:transparent;border:1px solid var(--border-color);color:var(--text-muted)}
+  .rs-badge.vis-pubblico{background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.25)}
+  .rs-badge.vis-soci{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.25)}
+  .rs-card h3{margin:0 0 .3rem;font-size:1.03rem;color:#fff;line-height:1.3}
+  .rs-card .rs-sum{color:var(--text-muted);font-size:.87rem;margin:0 0 .8rem;line-height:1.5}
+  .rs-card .rs-meta{display:flex;gap:.7rem;flex-wrap:wrap;font-size:.75rem;color:#64748b;margin-bottom:.9rem}
+  .rs-card .rs-foot{margin-top:auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .rs-btn{display:inline-flex;align-items:center;gap:.35rem;border-radius:8px;font-weight:700;font-size:.83rem;padding:.5rem .9rem;cursor:pointer;border:1px solid transparent;font-family:inherit;text-decoration:none}
+  .rs-btn.primary{background:linear-gradient(135deg,#38bdf8,#0ea5e9);color:#0b0f19}
+  .rs-btn.primary:hover{filter:brightness(1.08)}
+  .rs-btn.ghost{background:transparent;border-color:var(--border-color);color:var(--text-main)}
+  .rs-btn.ghost:hover{border-color:rgba(56,189,248,.45);color:#7dd3fc}
+  .rs-btn.locked{background:rgba(148,163,184,.1);color:var(--text-muted);border-color:var(--border-color);cursor:not-allowed}
+  .rs-btn.video{background:rgba(167,139,250,.18);color:#ddd6fe;border-color:rgba(167,139,250,.4)}
+  .rs-empty{display:none;text-align:center;color:var(--text-muted);padding:3rem 1rem;border:1px dashed var(--border-color);border-radius:14px;margin-top:1rem}
+  .rs-empty.show{display:block}
+  .rs-loading{color:var(--text-muted);padding:1.2rem 0}
+  .rs-note{margin-top:2.2rem;border-top:1px solid var(--border-color);padding-top:1.1rem;font-size:.82rem;color:#64748b;line-height:1.55}
+  .rs-note strong{color:var(--text-muted)}
+  .rs-modal{position:fixed;inset:0;z-index:100;display:none;align-items:flex-start;justify-content:center;padding:4vh 1rem;background:rgba(2,6,23,.78);backdrop-filter:blur(4px);overflow:auto}
+  .rs-modal.open{display:flex}
+  .rs-modal-panel{width:100%;max-width:760px;background:#111827;border:1px solid rgba(56,189,248,.28);border-radius:16px;padding:1.4rem 1.5rem 1.6rem;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .rs-modal-head{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}
+  .rs-modal-head h2{margin:.35rem 0 .2rem;font-size:1.35rem;color:#fff}
+  .rs-modal-close{background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:8px;width:34px;height:34px;font-size:1.05rem;cursor:pointer;flex:0 0 auto}
+  .rs-modal-close:hover{color:#fff;border-color:rgba(248,113,113,.5)}
+  .rs-modal-sum{color:var(--text-muted);font-size:.92rem;margin:.2rem 0 1rem}
+  .rs-modal-body{color:#cbd5e1;font-size:.94rem;line-height:1.65;white-space:pre-wrap}
+  .rs-tags{display:flex;gap:.35rem;flex-wrap:wrap;margin:1rem 0}
+  .rs-tag{font-size:.72rem;color:var(--text-muted);background:rgba(148,163,184,.1);border-radius:999px;padding:.15rem .55rem}
+  .rs-modal-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1.1rem}
+  .rs-video{display:none;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin-top:1rem;background:#000}
+  .rs-video iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+  @media(max-width:640px){
+    #risorse-app .rs-hero h1{font-size:1.65rem}
+    .rs-grid{grid-template-columns:1fr}
+    .rs-toolbar{flex-direction:column}
+    .rs-sort{width:100%}
+  }
+</style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Vai al contenuto</a>
+<header>
+<a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
+<nav class="nav-desktop" aria-label="Menu principale">
+<ul>
+<li><a href="index.html" data-i18n="nav_home">Home</a></li>
+<li><a href="team.html" data-i18n="nav_team">Team</a></li>
+<li class="dropdown">
+<a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+<ul class="dropdown-menu">
+<li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+<li><a href="live.html">Live</a></li>
+<li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+</ul>
+</li>
+<li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+<li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+<li><a href="risorse.html" data-i18n="nav_risorse" class="active">Download e Risorse</a></li>
+<li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+<li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+</ul>
+</nav>
+<div class="header-actions">
+<select id="languageSelect" class="lang-selector" aria-label="Lingua">
+<option value="it">🇮🇹 IT</option><option value="en">🇬🇧 EN</option><option value="fr">🇫🇷 FR</option><option value="es">🇪🇸 ES</option>
+</select>
+<a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+<button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</div>
+</header>
+<nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+<a href="index.html" data-i18n="nav_home">Home</a>
+<a href="team.html" data-i18n="nav_team">Team</a>
+<a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+<div class="mobile-dropdown"><a href="gare.html">→ Calendario</a><a href="live.html">→ Live</a><a href="classifiche.html">→ Classifiche</a></div>
+<a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+<a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+<a href="risorse.html" data-i18n="nav_risorse">Download e Risorse</a>
+<a href="membri.html" data-i18n="nav_membri">Membri</a>
+<a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+<a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+<a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+</nav>
+
+<main class="page-content" id="main-content">
+<div class="content-box" id="risorse-app" style="max-width:1120px;margin:0 auto">
+  <section class="rs-hero">
+    <h1>Download e Risorse</h1>
+    <p>File da scaricare, guide, video e FAQ del circolo in un unico posto. Cerca o filtra per trovare subito quello che ti serve.</p>
+    <div class="rs-toolbar">
+      <div class="rs-search">
+        <span class="rs-icon">🔎</span>
+        <input type="search" id="rs-q" placeholder="Cerca per titolo, descrizione o tag…" aria-label="Cerca risorse">
+      </div>
+      <select class="rs-sort" id="rs-sort" aria-label="Ordina risorse">
+        <option value="ordine">Consigliati</option>
+        <option value="recenti">Più recenti</option>
+        <option value="az">Titolo A–Z</option>
+      </select>
+    </div>
+    <div class="rs-guest" id="rs-guest" style="display:none">
+      👋 Stai vedendo solo le risorse <strong>pubbliche</strong>. <a href="accedi.html?redirect=risorse.html">Accedi</a> per scaricare i file e consultare i contenuti riservati ai soci.
+    </div>
+  </section>
+
+  <section class="rs-filters" aria-label="Filtri">
+    <div class="rs-filter-row" id="rs-filter-tipo">
+      <span class="rs-lab">Tipologia</span>
+      <button type="button" class="rs-chip active" data-tipo="tutti">Tutti</button>
+      <button type="button" class="rs-chip" data-tipo="file">📦 File</button>
+      <button type="button" class="rs-chip" data-tipo="scheda">📘 Schede</button>
+      <button type="button" class="rs-chip" data-tipo="video">▶️ Video</button>
+      <button type="button" class="rs-chip" data-tipo="link">🔗 Link</button>
+    </div>
+    <div class="rs-filter-row" id="rs-filter-cat">
+      <span class="rs-lab">Categoria</span>
+      <button type="button" class="rs-chip active" data-cat="tutte">Tutte</button>
+      <button type="button" class="rs-chip" data-cat="software">Software</button>
+      <button type="button" class="rs-chip" data-cat="skin">Skin</button>
+      <button type="button" class="rs-chip" data-cat="mappe">Mappe</button>
+      <button type="button" class="rs-chip" data-cat="regolamenti">Regolamenti</button>
+      <button type="button" class="rs-chip" data-cat="guide">Guide</button>
+      <button type="button" class="rs-chip" data-cat="polar">Polar</button>
+      <button type="button" class="rs-chip" data-cat="setup">Setup</button>
+      <button type="button" class="rs-chip" data-cat="faq">FAQ</button>
+      <button type="button" class="rs-chip" data-cat="altro">Altro</button>
+    </div>
+  </section>
+
+  <div class="rs-count">
+    <span><strong id="rs-count">0</strong> risorse trovate</span>
+    <span class="rs-legend">
+      <span><span class="rs-badge vis-pubblico">Pubblico</span> visibile a tutti</span>
+      <span><span class="rs-badge vis-soci">Soci</span> solo dopo il login</span>
+    </span>
+  </div>
+
+  <div class="rs-grid" id="rs-grid"><p class="rs-loading">Caricamento risorse…</p></div>
+  <div class="rs-empty" id="rs-empty">Nessuna risorsa corrisponde ai filtri selezionati. <button type="button" class="rs-btn ghost" id="rs-reset" style="margin-left:.5rem">Azzera filtri</button></div>
+
+  <p class="rs-note">
+    <strong>Nota:</strong> le risorse con badge <em>Pubblico</em> sono visibili a tutti; quelle con badge <em>Soci</em> richiedono l'accesso e sono protette lato database (RLS).
+    I file caricati dagli admin sono conservati in uno spazio privato e scaricati tramite link temporaneo.
+  </p>
+</div>
+</main>
+
+<div class="rs-modal" id="rs-modal" role="dialog" aria-modal="true" aria-labelledby="rs-modal-title">
+  <div class="rs-modal-panel">
+    <div class="rs-modal-head">
+      <div>
+        <div class="rs-badges" id="rs-modal-badges"></div>
+        <h2 id="rs-modal-title"></h2>
+      </div>
+      <button type="button" class="rs-modal-close" id="rs-modal-close" aria-label="Chiudi">✕</button>
+    </div>
+    <p class="rs-modal-sum" id="rs-modal-sum"></p>
+    <div class="rs-modal-body" id="rs-modal-body"></div>
+    <div class="rs-video" id="rs-modal-video"></div>
+    <div class="rs-tags" id="rs-modal-tags"></div>
+    <div class="rs-modal-actions" id="rs-modal-actions"></div>
+  </div>
+</div>
+
+<footer class="site-footer">
+<div class="footer-inner">
+<div class="footer-brand"><span class="logo-text">⚓ CVI <span style="color:var(--accent-color)">Virtual</span></span><p>Il punto d'incontro degli skipper italiani di Virtual Skipper dal 2003.</p></div>
+<div class="footer-links">
+<div class="footer-col"><h4>Circolo</h4><a href="team.html">Team</a><a href="classifiche.html">Classifiche</a><a href="albo-doro.html">Albo d'Oro</a><a href="regolamento.html">Regolamento</a></div>
+<div class="footer-col"><h4>Gare</h4><a href="gare.html">Calendario</a><a href="risorse.html">Download e Risorse</a><a href="contatti.html">Contatti</a><a href="unisciti.html">Unisciti</a></div>
+</div>
+</div>
+<div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
+</footer>
+
+<script src="common.js?v=5"></script>
+<script src="risorse-page.js?v=1"></script>
+<script>
+  if (window.CVI && typeof CVI.init === "function") CVI.init("risorse.html");
+  else document.addEventListener("DOMContentLoaded", function () {
+    if (window.CVI && typeof CVI.init === "function") CVI.init("risorse.html");
+  });
+</script>
+</body>
+</html>
+
