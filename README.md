@@ -49,6 +49,8 @@ Prima di andare in produzione verifica:
 
 Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
 
+La password server delle gare (`gare-password-sql.sql`) è volutamente in una tabella separata (`gare_password`) e non in `gare`: `gare` è leggibile anche in anonimo, quindi la password è restituita solo agli utenti autenticati tramite RLS.
+
 ### Migrazione RLS (Sprint 2)
 
 Esegui `security-rls-hardening-sql.sql` nel SQL Editor di Supabase dopo un backup. La migrazione è divisa in **6 blocchi con commit separati**: se un blocco fallisce, i precedenti restano applicati. L'ordine è: helper → vista pubblica → profili → site_settings → revoche → trigger di registrazione. L'ultimo blocco (`auth.users`) è opzionale e isolato: se fallisce, la sicurezza di profili e impostazioni resta attiva.
