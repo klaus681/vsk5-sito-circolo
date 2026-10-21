@@ -10,7 +10,8 @@
       nav_cal_vista: "Vista calendario",
       nav_proteste: "Proteste",
       nav_gare_sub: "Calendario",
-      nav_classifiche: "Classifiche"
+      nav_classifiche: "Classifiche",
+      nav_risorse: "Download e Risorse"
     },
     en: {
       nav_live: "Live",
@@ -19,7 +20,8 @@
       nav_cal_vista: "Calendar view",
       nav_proteste: "Protests",
       nav_gare_sub: "Calendar",
-      nav_classifiche: "Standings"
+      nav_classifiche: "Standings",
+      nav_risorse: "Downloads & Resources"
     },
     fr: {
       nav_live: "Direct",
@@ -28,7 +30,8 @@
       nav_cal_vista: "Vue calendrier",
       nav_proteste: "Réclamations",
       nav_gare_sub: "Calendrier",
-      nav_classifiche: "Classements"
+      nav_classifiche: "Classements",
+      nav_risorse: "Téléchargements & Ressources"
     },
     es: {
       nav_live: "En vivo",
@@ -37,7 +40,8 @@
       nav_cal_vista: "Vista calendario",
       nav_proteste: "Protestas",
       nav_gare_sub: "Calendario",
-      nav_classifiche: "Clasificación"
+      nav_classifiche: "Clasificación",
+      nav_risorse: "Descargas y Recursos"
     }
   };
 

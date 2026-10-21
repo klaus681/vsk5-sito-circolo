@@ -22,7 +22,7 @@ fonts/ + fonts.css     font self-hosted (Plus Jakarta Sans, Playfair Display)
 sitemap.xml, robots.txt
 ```
 
-Le pagine principali sono `index.html`, `gare.html`, `classifiche.html`, `calendario.html`, `team.html`, `membri.html`, `profilo.html`, `admin.html`, `download.html` e le sezioni tornei/allenamenti/biblioteca/tutor.
+Le pagine principali sono `index.html`, `gare.html`, `classifiche.html`, `calendario.html`, `team.html`, `membri.html`, `profilo.html`, `admin.html`, `risorse.html` (Download e Risorse) e le sezioni tornei/allenamenti/biblioteca/tutor.
 
 ## Sviluppo locale
 
@@ -50,6 +50,8 @@ Prima di andare in produzione verifica:
 Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
 
 La password server delle gare (`gare-password-sql.sql`) è volutamente in una tabella separata (`gare_password`) e non in `gare`: `gare` è leggibile anche in anonimo, quindi la password è restituita solo agli utenti autenticati tramite RLS.
+
+Il comparto **Download e Risorse** (`risorse.html`) unifica le vecchie pagine Download e Biblioteca. I dati sono in `public.risorse`; la migrazione da `downloads` e `biblioteca` è inclusa in `risorse-sql.sql` (idempotente, le vecchie tabelle restano intatte come fallback). Fino all'esecuzione dello script la pagina funziona in modalità compatibilità leggendo le vecchie tabelle per gli utenti loggati.
 
 ### Migrazione RLS (Sprint 2)
 
