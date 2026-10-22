@@ -2,9 +2,21 @@
 (function(){
 "use strict";
 var STATI={bozza:"Bozza",aperto:"Aperto",in_corso:"In corso",chiuso:"Chiuso"};
-var torneiCache=[],gareCache=[],linksCache={};
+var torneiCache=[],gareCache=[],linksCache={},passwordsCache={},passwordsMissing=false;
 var _tnLoading=false;
 function esc(s){if(s==null)return"";return String(s).replace(/&/g,String.fromCharCode(38,97,109,112,59)).replace(/</g,String.fromCharCode(38,108,116,59)).replace(/>/g,String.fromCharCode(38,103,116,59)).replace(/"/g,String.fromCharCode(38,113,117,111,116,59));}
+function isMissingTable(err){return /does not exist|schema cache|relation .* does not exist|42P01/i.test((err&&err.message)||"");}
+function updatePasswordWarning(){var el=document.getElementById("tn-password-warning");if(!el)return;el.style.display=passwordsMissing?"block":"none";}
+async function saveTorneoPassword(torneoId,pwd){
+  try{
+    if(!pwd){
+      var del=await CVI.supabase.from("torneo_password").delete().eq("torneo_id",torneoId);
+      return del.error?(isMissingTable(del.error)?{ok:false,missing:true}:{ok:false,error:del.error}):{ok:true};
+    }
+    var up=await CVI.supabase.from("torneo_password").upsert({torneo_id:torneoId,password:pwd},{onConflict:"torneo_id"});
+    return up.error?(isMissingTable(up.error)?{ok:false,missing:true}:{ok:false,error:up.error}):{ok:true};
+  }catch(e){return{ok:false,error:e};}
+}
 function notify(msg,type){if(typeof status==="function"){status(msg,type);return;}var el=document.getElementById("admin-status");if(!el)return;el.textContent=msg||"";el.className="admin-status"+(type?" "+type:"");clearTimeout(notify._t);if(msg)notify._t=setTimeout(function(){el.textContent="";el.className="admin-status";},4000);}
 function panelHTML(){
 return '<div class="admin-card"><h3 id="tn-form-title" style="margin:0 0 0.5rem;color:#7dd3fc">Nuovo torneo</h3>'+
@@ -19,6 +31,8 @@ return '<div class="admin-card"><h3 id="tn-form-title" style="margin:0 0 0.5rem;
 '<div><label class="adm-label" for="tn-gare-prev">Gare previste</label><input type="number" min="0" max="50" class="adm-input" id="tn-gare-prev" value="0" style="width:5rem"></div>'+
 '<div><label class="adm-label" for="tn-max">Max partecipanti</label><input type="number" min="0" max="500" class="adm-input" id="tn-max" value="" style="width:6rem" placeholder="illimitati"></div>'+
 '</div>'+
+'<div style="grid-column:1/-1"><label class="adm-label" for="tn-password">Password server (solo soci loggati)</label><input type="text" class="adm-input" id="tn-password" maxlength="120" autocomplete="off" style="width:100%" placeholder="Testo libero, es. cvi2026"><span style="display:block;margin-top:.25rem;font-size:.76rem;color:#94a3b8">Mostrata nel banner home e nella pagina del torneo solo ai soci loggati. Vuoto = nascosta.</span></div>'+
+'<p id="tn-password-warning" style="display:none;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:8px;padding:.6rem .8rem;font-size:.85rem;line-height:1.45;margin:0;grid-column:1/-1">⚠️ La tabella <code>torneo_password</code> non esiste su Supabase: le password dei tornei non vengono salvate né mostrate. Esegui <strong>tornei-password-sql.sql</strong> nel SQL Editor di Supabase, poi ricarica questa pagina.</p>'+
 '<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center">'+
 '<div><label class="adm-label" for="tn-stato">Stato</label><select class="adm-select" id="tn-stato"><option value="bozza">Bozza</option><option value="aperto">Aperto</option><option value="in_corso">In corso</option><option value="chiuso">Chiuso</option></select></div>'+
 '<label style="color:#e2e8f0;font-size:0.88rem;margin-top:1.2rem"><input type="checkbox" id="tn-pub"> Pubblicato</label></div>'+
@@ -60,6 +74,7 @@ function resetForm(){
   document.getElementById("tn-scarti").value="0";
   var gp=document.getElementById("tn-gare-prev"); if(gp) gp.value="0";
   var mx=document.getElementById("tn-max"); if(mx) mx.value="";
+  var pw=document.getElementById("tn-password"); if(pw) pw.value="";
   document.getElementById("tn-stato").value="bozza"; document.getElementById("tn-pub").checked=false;
   document.getElementById("tn-form-title").textContent="Nuovo torneo"; document.getElementById("tn-save-btn").textContent="Salva torneo";
   var c=document.getElementById("tn-cancel-btn"); if(c) c.style.display="none";
@@ -87,6 +102,13 @@ async function loadTornei(){
     await loadGareList();
     var r=await CVI.supabase.from("tornei").select("*").order("created_at",{ascending:false});
     if(r.error) throw r.error; torneiCache=r.data||[]; if(hint) hint.style.display="none";
+    passwordsCache={};passwordsMissing=false;
+    try{
+      var pwr=await CVI.supabase.from("torneo_password").select("torneo_id,password");
+      if(!pwr.error){(pwr.data||[]).forEach(function(x){var v=String(x.password||"").trim();if(v)passwordsCache[String(x.torneo_id)]=v;});}
+      else{passwordsMissing=isMissingTable(pwr.error);if(!passwordsMissing)console.warn("torneo_password:",pwr.error.message);}
+    }catch(pe){console.warn("torneo_password:",pe&&pe.message);}
+    updatePasswordWarning();
     if(!torneiCache.length){ box.innerHTML='<p class="empty-text">Nessun torneo. Creane uno con il form sopra.</p>'; return; }
     var allLinks=await CVI.supabase.from("torneo_gare").select("torneo_id,gara_id");
     var countMap={}; (allLinks.data||[]).forEach(function(l){ countMap[l.torneo_id]=(countMap[l.torneo_id]||0)+1; });
@@ -97,6 +119,7 @@ async function loadTornei(){
         '<div class="meta">'+esc(st)+(t.pubblicato?" · pubblicato":" · non pubblicato")+" · scarti "+esc(String(t.scarti!=null?t.scarti:0))+
         " · "+n+"/"+(t.gare_previste!=null?t.gare_previste:0)+" gare"+
         (t.max_partecipanti?" · max "+esc(String(t.max_partecipanti)):"")+
+        (passwordsCache[String(t.id)]?" · 🔑 password":"")+
         (dates.length?" · "+esc(dates.join(" / ")):"")+'</div></div>'+
         '<div style="display:flex;gap:0.4rem;flex-wrap:wrap">'+
         '<button type="button" class="btn-sm tn-edit" data-id="'+esc(t.id)+'">Modifica</button>'+
@@ -113,6 +136,7 @@ async function loadTornei(){
       document.getElementById("tn-fine").value=t.data_fine||""; document.getElementById("tn-scarti").value=String(t.scarti!=null?t.scarti:0);
       var gpe=document.getElementById("tn-gare-prev"); if(gpe) gpe.value=String(t.gare_previste!=null?t.gare_previste:0);
       var mxe=document.getElementById("tn-max"); if(mxe) mxe.value=(t.max_partecipanti!=null&&t.max_partecipanti>0)?String(t.max_partecipanti):"";
+      var pwe=document.getElementById("tn-password"); if(pwe) pwe.value=passwordsCache[String(t.id)]||"";
       document.getElementById("tn-stato").value=t.stato||"bozza"; document.getElementById("tn-pub").checked=!!t.pubblicato;
       document.getElementById("tn-form-title").textContent="Modifica torneo"; document.getElementById("tn-save-btn").textContent="Aggiorna";
       var c=document.getElementById("tn-cancel-btn"); if(c) c.style.display="inline-block";
@@ -180,16 +204,29 @@ async function saveTorneo(e){
   var maxPart=maxRaw===""?null:parseInt(maxRaw,10); if(maxPart!==null&&(isNaN(maxPart)||maxPart<=0)) maxPart=null;
   var stato=(document.getElementById("tn-stato")||{}).value||"bozza";
   var pub=!!(document.getElementById("tn-pub")||{}).checked;
+  var pwd=((document.getElementById("tn-password")||{}).value||"").trim();
   var payload={titolo:titolo,descrizione:desc||null,data_inizio:inizio||null,data_fine:fine||null,scarti:scarti,gare_previste:garePrev,max_partecipanti:maxPart,stato:stato,pubblicato:pub,updated_at:new Date().toISOString()};
   var prev=id?torneiCache.find(function(x){ return String(x.id)===String(id); }):null;
   var wasPub=!!(prev&&prev.pubblicato);
   var btn=document.getElementById("tn-save-btn"); if(btn) btn.disabled=true;
   try{
-    var r; if(id) r=await CVI.supabase.from("tornei").update(payload).eq("id",id); else r=await CVI.supabase.from("tornei").insert(payload);
-    if(r.error) throw r.error; notify(id?"Torneo aggiornato":"Torneo creato","ok");
+    var r; if(id) r=await CVI.supabase.from("tornei").update(payload).eq("id",id); else r=await CVI.supabase.from("tornei").insert(payload).select("id").single();
+    if(r.error) throw r.error;
+    var savedId=id||(r.data&&(r.data.id||(r.data[0]&&r.data[0].id)))||null;
+    notify(id?"Torneo aggiornato":"Torneo creato","ok");
     if(pub && !wasPub && window.CVIDiscord && CVIDiscord.notifyTorneo){
-      var newId=(r.data&&r.data[0]&&r.data[0].id)||id||null;
+      var newId=savedId;
       try{ await CVIDiscord.notifyTorneo({ id:newId, titolo:titolo, descrizione:desc, stato:stato, data_inizio:inizio, data_fine:fine, gare_previste:garePrev, max_partecipanti:maxPart }); }catch(e){ console.warn(e); }
+    }
+    if(savedId&&(pwd||passwordsCache[String(savedId)])){
+      var p=await saveTorneoPassword(String(savedId),pwd);
+      if(p.ok){ if(pwd) passwordsCache[String(savedId)]=pwd; else delete passwordsCache[String(savedId)]; }
+      else{
+        if(p.missing){ passwordsMissing=true; updatePasswordWarning(); }
+        alert(p.missing
+          ? "Torneo salvato, ma la password no: esegui tornei-password-sql.sql su Supabase per attivare il campo."
+          : "Torneo salvato, ma la password no: "+((p.error&&p.error.message)||"errore sconosciuto"));
+      }
     }
     resetForm(); loadTornei();
   }catch(err){

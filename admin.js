@@ -2,7 +2,7 @@
 (async function(){
   try {
     var parts = await Promise.all([
-      fetch("admin-a.js?v=10").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
+      fetch("admin-a.js?v=11").then(function(r){ if(!r.ok) throw new Error("admin-a "+r.status); return r.text(); }),
       fetch("admin-b.js?v=4").then(function(r){ if(!r.ok) throw new Error("admin-b "+r.status); return r.text(); })
     ]);
     var s = document.createElement("script");
@@ -52,13 +52,13 @@
       s8.textContent = rg;
       document.head.appendChild(s8);
     }
-    var tn = await fetch("tornei-admin.js?v=7").then(function(r){ return r.ok ? r.text() : ""; });
+    var tn = await fetch("tornei-admin.js?v=8").then(function(r){ return r.ok ? r.text() : ""; });
     if (tn) {
       var s9 = document.createElement("script");
       s9.textContent = tn;
       document.head.appendChild(s9);
     }
-    var al = await fetch("allenamenti-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
+    var al = await fetch("allenamenti-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (al) {
       var sAl = document.createElement("script");
       sAl.textContent = al;

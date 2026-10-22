@@ -3,7 +3,7 @@
 "use strict";
 var ROLES=["admin","scorer","caposquadra","socio"];
 var RL={admin:"Admin",scorer:"Scorer",caposquadra:"Caposquadra",socio:"Socio"};
-var user=null,role="socio",teams=[],profiles=[],gare=[],avvisi=[],gallery=[],risultati=[],iscrizioni=[],cacheIscrittiAdmin={},garaPasswords={};
+var user=null,role="socio",teams=[],profiles=[],gare=[],avvisi=[],gallery=[],risultati=[],iscrizioni=[],cacheIscrittiAdmin={},garaPasswords={},garaPasswordMissing=false;
 
 function esc(s){if(s==null)return"";return String(s).replace(/&/g,"&"+"amp;").replace(/</g,"&"+"lt;").replace(/>/g,"&"+"gt;").replace(/"/g,"&"+"quot;");}
 function resolveRole(p){if(!p)return"socio";var r=String(p.role||"").toLowerCase();if(ROLES.indexOf(r)>=0)return r;return p.is_admin===true?"admin":"socio";}
@@ -14,6 +14,7 @@ function profileLabel(p){if(!p)return"?";var n=(p.nickname||"").trim(),nm=[p.nom
 function fmt(iso){if(!iso)return"—";try{return new Date(iso).toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return String(iso);}}
 function toLocal(iso){if(!iso)return"";var d=new Date(iso);if(isNaN(d.getTime()))return"";function p(n){return String(n).padStart(2,"0");}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());}
 function isMissingTable(err){return /does not exist|schema cache|relation .* does not exist|42P01/i.test((err&&err.message)||"");}
+function updateGaraPasswordWarning(){var el=document.getElementById("admin-password-warning");if(!el)return;el.style.display=garaPasswordMissing?"block":"none";}
 async function saveGaraPassword(garaId,pwd){
   try{
     if(!pwd){
@@ -139,11 +140,11 @@ async function loadGare(){
       res=await CVI.supabase.from("gare").select("id,titolo,descrizione,data_gara,num_regate,chiusura_ore").order("data_gara",{ascending:false});
     }
     if(res.error)throw res.error;gare=res.data||[];
-    garaPasswords={};
+    garaPasswords={};garaPasswordMissing=false;
     try{
       var pwdRes=await CVI.supabase.from("gare_password").select("gara_id,password");
       if(!pwdRes.error){(pwdRes.data||[]).forEach(function(r){var v=String(r.password||"").trim();if(v)garaPasswords[String(r.gara_id)]=v;});}
-      else if(!isMissingTable(pwdRes.error)){console.warn("gare_password:",pwdRes.error.message);}
+      else{garaPasswordMissing=isMissingTable(pwdRes.error);if(!garaPasswordMissing)console.warn("gare_password:",pwdRes.error.message);}
     }catch(e){console.warn("gare_password:",e&&e.message);}
     var iscrRes=await CVI.supabase.from("iscrizioni_gare").select("gara_id,user_id");
     var profRes=await CVI.supabase.from("profiles").select("id,nickname,team,nome,cognome");
@@ -175,6 +176,7 @@ async function loadGare(){
     box.querySelectorAll(".gara-del").forEach(function(b){b.onclick=async function(){if(!confirm("Eliminare?"))return;await CVI.supabase.from("gare").delete().eq("id",b.getAttribute("data-id"));status("Eliminata","ok");loadGare();};});
     box.querySelectorAll(".gara-dl-iscr").forEach(function(b){b.onclick=function(){downloadIscrittiAdmin(b.getAttribute("data-id"));};});
     fillGaraSel();
+    updateGaraPasswordWarning();
   }catch(e){box.innerHTML='<p style="color:#f87171">'+esc(e.message)+'</p>';}
 }
 
@@ -215,7 +217,7 @@ async function saveGara(e){
     }
     if(res&&res.error)throw res.error;
     var savedId=id||(res.data&&res.data.id),pwdNotice="";
-    if(savedId){
+    if(savedId&&(password||garaPasswords[String(savedId)])){
       var pr=await saveGaraPassword(String(savedId),password);
       if(pr.ok){if(password)garaPasswords[String(savedId)]=password;else delete garaPasswords[String(savedId)];}
       else{pwdNotice=pr.missing?"Esegui gare-password-sql.sql su Supabase per attivare la password server.":("Password non salvata: "+((pr.error&&pr.error.message)||"errore"));}

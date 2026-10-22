@@ -24,7 +24,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css?v=2">
-  <link rel="stylesheet" href="fix-nav.css?v=2">
+  <link rel="stylesheet" href="fix-nav.css?v=3">
   <style>
     .tabs { display: flex; gap: 0.35rem; margin-bottom: 1.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
     .tab-btn { background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 0.55rem 1.1rem; border-radius: 8px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
@@ -198,7 +198,7 @@
     </div>
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
-  <script src="common.js?v=5"></script>
+  <script src="common.js?v=6"></script>
   <script>
     const STAGIONE = '2026';
     let cacheGare = [], cacheProfiles = {}, cacheRisultati = [], cacheIscrizioni = [], cacheClassifiche = [];
@@ -215,7 +215,7 @@
 
     function esc(s) {
       if (s == null) return '';
-      return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     function numRegate(g) {
@@ -665,7 +665,7 @@
       const [gareRes, risRes, profRes, iscrRes, classRes] = await Promise.all([
         CVI.supabase.from('gare').select('id, titolo, descrizione, data_gara, num_regate').order('data_gara', { ascending: true }),
         CVI.supabase.from('risultati_gara').select('id, gara_id, user_id, posizione, punti, stato, note, regata_num'),
-        CVI.supabase.from('profiles_public').select('id, nickname, team, nome, cognome, is_admin'),
+        CVI.supabase.from('profiles_public').select('id, nickname, team, nome, cognome, is_admin, role'),
         CVI.supabase.from('iscrizioni_gare').select('id, user_id, gara_id'),
         CVI.supabase.from('classifiche').select('id, user_id, stagione, punti_totali, gare_disputate, posizione').eq('stagione', STAGIONE).order('posizione', { ascending: true })
       ]);
@@ -675,7 +675,9 @@
       cacheClassifiche = classRes.data || [];
       cacheProfiles = {};
       (profRes.data || []).forEach(p => { if (p.id != null) cacheProfiles[String(p.id)] = p; });
-      isAdmin = !!(currentUserId && cacheProfiles[String(currentUserId)] && cacheProfiles[String(currentUserId)].is_admin === true);
+      const meProfile = currentUserId ? cacheProfiles[String(currentUserId)] : null;
+      const meRole = (window.CVI && CVI.resolveRole) ? CVI.resolveRole(meProfile) : ((meProfile && meProfile.role) || (meProfile && meProfile.is_admin ? 'admin' : 'socio'));
+      isAdmin = meRole === 'admin' || meRole === 'scorer';
       if (cacheRisultati.length && !cacheClassifiche.length && isAdmin) {
         try { await syncClassifiche(); } catch (e) { console.warn(e); }
       }

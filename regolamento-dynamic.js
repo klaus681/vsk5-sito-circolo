@@ -5,10 +5,10 @@
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function chevronSvg() {
@@ -129,6 +129,9 @@
 
   async function loadDynamic() {
     try {
+      // Solo sulle pagine che contengono il regolamento: evita una query
+      // a site_settings su ogni pagina del sito.
+      if (!document.getElementById("rulesAccordion") && !document.querySelector(".rules-toc")) return;
       if (!window.CVI || !CVI.supabase) return;
       var res = await CVI.supabase
         .from("site_settings")
