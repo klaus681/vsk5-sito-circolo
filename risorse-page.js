@@ -361,7 +361,12 @@ async function download(id) {
     }
     alert("File non disponibile. Contatta un amministratore.");
   } catch (e) {
-    alert("Errore durante il download: " + (e.message || e));
+    var msg = (e && e.message) || String(e);
+    if (/row-level|permission|not authorized|denied|403/i.test(msg)) {
+      alert("Contenuto riservato ai soci approvati. Il tuo account potrebbe essere in attesa di approvazione.");
+    } else {
+      alert("Errore durante il download: " + msg);
+    }
   }
 }
 

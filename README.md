@@ -47,7 +47,7 @@ Prima di andare in produzione verifica:
 4. `site_settings` non espone segreti (webhook Discord) al client.
 5. I bucket storage hanno policy di lettura/scrittura coerenti con i ruoli.
 
-Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
+Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `membership-gating-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
 
 La password server delle gare (`gare-password-sql.sql`) è volutamente in una tabella separata (`gare_password`) e non in `gare`: `gare` è leggibile anche in anonimo, quindi la password è restituita solo agli utenti autenticati tramite RLS. Lo script va eseguito una volta nel SQL Editor di Supabase: finché la tabella non esiste il campo password non viene salvato e il pannello admin mostra un avviso.
 
@@ -62,6 +62,8 @@ Lo stesso criterio vale per i tornei (`tornei-password-sql.sql`, tabella `torneo
 - `public.audit_log` con trigger su gare, risultati, tornei, torneo_gare, risorse e profili (visibile solo agli admin).
 
 Dopo l'esecuzione approva o rifiuta i nuovi soci da **Admin → Membri** (pulsanti sulle card).
+
+`membership-gating-sql.sql` estende il blocco ai contenuti riservati: un account `pending`/`sospeso` vede solo le risorse pubbliche (non quelle `visibilita='soci'`), non scarica i file del bucket `risorse` riservati, non accede a download/biblioteca/tutor e non può iscriversi a gare, tornei e allenamenti né inviare proteste. Anche l'elenco soci è nascosto finché non viene approvato.
 
 Il comparto **Download e Risorse** (`risorse.html`) unifica le vecchie pagine Download e Biblioteca. I dati sono in `public.risorse`; la migrazione da `downloads` e `biblioteca` è inclusa in `risorse-sql.sql` (idempotente, le vecchie tabelle restano intatte come fallback). Fino all'esecuzione dello script la pagina funziona in modalità compatibilità leggendo le vecchie tabelle per gli utenti loggati.
 
