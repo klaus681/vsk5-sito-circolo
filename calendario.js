@@ -82,7 +82,10 @@
     if (!iso) return "Data da definire";
     try {
       var d = parseEventLocal(iso) || new Date(iso);
-      return d.toLocaleString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleString("it-IT", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      });
     } catch (e) { return String(iso); }
   }
 
@@ -91,6 +94,7 @@
     if (state.filter === "ufficiali") list = list.filter(function (e) { return e.type === "ufficiale" || e.type === "speciale"; });
     if (state.filter === "aperti") list = list.filter(function (e) { return e.type === "aperto"; });
     if (state.filter === "speciali") list = list.filter(function (e) { return e.type === "speciale"; });
+    if (state.filter === "allenamenti") list = list.filter(function (e) { return e.type === "allenamento"; });
     return list;
   }
 
@@ -167,18 +171,18 @@
       var day = addDays(start, i);
       var inMonth = day.getMonth() === month;
       var isToday = isSameDay(day, today);
-      // Solo eventi del mese corrente: i giorni "other-month" (es. 28 ott nella griglia di novembre)
-      // non devono mostrare eventi, altrimenti sembra che la gara sia il 28 del mese sbagliato.
+      // FIX: non mostrare eventi sui giorni fuori mese (es. 28 ott nella griglia di novembre)
       var dayEvents = inMonth ? eventsOnDay(day) : [];
       var cls = "cal-day" + (inMonth ? "" : " other-month") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "");
       var dayNumLabel = inMonth
         ? String(day.getDate())
-        : (String(day.getDate()) + " " + MONTHS[day.getMonth()].slice(0, 3).toLowerCase());
+        : (String(day.getDate()) + "\u00a0" + MONTHS[day.getMonth()].slice(0, 3).toLowerCase());
       html += '<div class="' + cls + '"><div class="cal-day-num">' + dayNumLabel + "</div>";
-      dayEvents.forEach(function (ev) {
+      dayEvents.slice(0, 3).forEach(function (ev) {
         var past = (parseEventLocal(ev.date) || new Date(ev.date)).getTime() < now;
         html += '<a href="#" class="cal-event ' + esc(ev.type) + (past ? " past" : "") + '" data-id="' + esc(ev.id) + '" title="' + esc(ev.title) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
       });
+      if (dayEvents.length > 3) html += '<div class="cal-more">+' + (dayEvents.length - 3) + " altri</div>";
       html += "</div>";
     }
     html += "</div>";
@@ -201,7 +205,7 @@
         var day = addDays(mon, d);
         var dayEvents = eventsOnDay(day).filter(function (ev) {
           var t = parseEventLocal(ev.date) || new Date(ev.date);
-          return t.getHours() === hour;
+          return !isNaN(t.getTime()) && t.getHours() === hour;
         });
         html += '<div class="cal-week-cell">';
         dayEvents.forEach(function (ev) {
@@ -216,10 +220,10 @@
 
   function render() {
     updateTitle();
-    var box = document.getElementById("cal-grid");
+    var box = document.getElementById("cal-container") || document.getElementById("cal-grid");
     if (!box) return;
     if (state.loading) {
-      box.innerHTML = '<p class="loading-text">Caricamento calendario…</p>';
+      box.innerHTML = '<p class="cal-loading loading-text">Caricamento calendario…</p>';
       return;
     }
     if (state.view === "month") renderMonth(box);
@@ -239,19 +243,23 @@
     if (!modal || !ev) return;
     document.getElementById("cal-modal-title").textContent = ev.title || "Evento";
     document.getElementById("cal-modal-meta").textContent =
-      fmtFull(ev.date) + " · " + (ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : "Gara ufficiale"));
+      fmtFull(ev.date) + " · " + (ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : (ev.type === "allenamento" ? "Allenamento" : "Gara ufficiale")));
     document.getElementById("cal-modal-desc").textContent = ev.desc || "";
     var link = document.getElementById("cal-modal-link");
     if (link) {
       link.href = ev.link || "#";
       link.style.display = ev.link ? "inline-flex" : "none";
     }
+    modal.classList.add("open");
     modal.style.display = "flex";
   }
 
   function closeModal() {
     var modal = document.getElementById("cal-modal");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+      modal.classList.remove("open");
+      modal.style.display = "none";
+    }
     openEventId = null;
   }
 
@@ -354,13 +362,23 @@
     };
     if (todayBtn) todayBtn.onclick = function () { state.cursor = new Date(); render(); };
 
-    document.querySelectorAll("[data-cal-view]").forEach(function (btn) {
+    document.querySelectorAll("[data-view], [data-cal-view]").forEach(function (btn) {
       btn.onclick = function () {
-        state.view = btn.getAttribute("data-cal-view") || "month";
-        document.querySelectorAll("[data-cal-view]").forEach(function (b) { b.classList.toggle("active", b === btn); });
+        state.view = btn.getAttribute("data-view") || btn.getAttribute("data-cal-view") || "month";
+        document.querySelectorAll("[data-view], [data-cal-view]").forEach(function (b) {
+          b.classList.toggle("active", b === btn);
+        });
         render();
       };
     });
+
+    var filterSel = document.getElementById("cal-filter");
+    if (filterSel) {
+      filterSel.onchange = function () {
+        state.filter = filterSel.value || "all";
+        render();
+      };
+    }
     document.querySelectorAll("[data-cal-filter]").forEach(function (btn) {
       btn.onclick = function () {
         state.filter = btn.getAttribute("data-cal-filter") || "all";
@@ -374,7 +392,7 @@
     var modal = document.getElementById("cal-modal");
     if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
 
-    var icsBtn = document.getElementById("cal-ics");
+    var icsBtn = document.getElementById("cal-ics") || document.getElementById("cal-ics-all");
     if (icsBtn) icsBtn.onclick = downloadICS;
 
     loadEvents();
