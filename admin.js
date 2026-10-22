@@ -40,7 +40,7 @@
       s7.textContent = ea;
       document.head.appendChild(s7);
     }
-    var sa = await fetch("serie-aperte-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var sa = await fetch("4-serie-aperte-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
     if (sa) {
       var sSa = document.createElement("script");
       sSa.textContent = sa;
