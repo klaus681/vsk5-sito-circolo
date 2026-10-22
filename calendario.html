@@ -35,79 +35,55 @@
     .cal-nav button { background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.35); color: #7dd3fc; width: 38px; height: 38px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; font-family: inherit; font-weight: 700; }
     .cal-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; color: #fff; margin: 0; min-width: 180px; text-align: center; }
     .cal-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-    .cal-view-toggle, .cal-filter { background: #0b0f19; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 0.45rem 0.75rem; font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
-    .cal-view-toggle.active { background: rgba(56,189,248,0.18); color: #7dd3fc; border-color: rgba(56,189,248,0.45); }
+    .cal-view-toggle { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; padding: 0.4rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+    .cal-view-toggle.active { background: rgba(56,189,248,0.15); color: #7dd3fc; border-color: rgba(56,189,248,0.45); }
+    .cal-filter { background: #0b0f19; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.4rem 0.65rem; font-family: inherit; font-size: 0.85rem; }
     .cal-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; font-size: 0.82rem; color: #94a3b8; }
     .cal-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
     .cal-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
     .cal-dot.ufficiale { background: #38bdf8; }
     .cal-dot.aperto { background: #34d399; }
-    .cal-dot.speciale { background: #c084fc; }
+    .cal-dot.speciale { background: #a78bfa; }
     .cal-dot.allenamento { background: #fbbf24; }
     .cal-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; }
-    .cal-weekday { background: #111827; color: #94a3b8; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.55rem 0.4rem; text-align: center; }
-    .cal-day { background: #0f1524; min-height: 92px; padding: 0.35rem 0.4rem; position: relative; }
-    .cal-day.other-month { background: #0b0f19; opacity: 0.45; }
-    .cal-day.today { background: rgba(56,189,248,0.08); }
-    .cal-day.has-events { box-shadow: inset 0 0 0 1px rgba(56,189,248,0.25); }
-    .cal-day-num { font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.25rem; }
-    .cal-day.today .cal-day-num { color: #7dd3fc; }
-    .cal-event { display: block; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.35rem; border-radius: 4px; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-decoration: none; color: #0b0f19; line-height: 1.25; }
-    .cal-event.ufficiale { background: #38bdf8; }
+    .cal-weekday { background: #152033; color: #94a3b8; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.55rem 0.35rem; text-align: center; }
+    .cal-day { background: #111827; min-height: 88px; padding: 0.35rem; vertical-align: top; }
+    .cal-day.other-month { opacity: 0.45; }
+    .cal-day.today { outline: 1px solid rgba(56,189,248,0.5); outline-offset: -1px; }
+    .cal-day-num { font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.25rem; }
+    .cal-event { display: block; font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.3rem; border-radius: 4px; margin-bottom: 0.15rem; text-decoration: none; color: #0b0f19; background: #38bdf8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal-event.aperto { background: #34d399; }
-    .cal-event.speciale { background: #c084fc; }
-    .cal-event.allenamento { background: #fbbf24; color: #0b0f19; }
-    .cal-event:hover { filter: brightness(1.12); }
-    .cal-event.past { opacity: 0.65; }
-    .cal-more { font-size: 0.7rem; color: #7dd3fc; cursor: pointer; margin-top: 0.15rem; }
-    .cal-week-grid { display: grid; grid-template-columns: 56px repeat(7, 1fr); gap: 1px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; }
-    .cal-week-corner, .cal-week-head { background: #111827; color: #94a3b8; font-size: 0.75rem; font-weight: 700; padding: 0.55rem 0.35rem; text-align: center; }
+    .cal-event.speciale { background: #a78bfa; }
+    .cal-event.past { opacity: 0.55; }
+    .cal-more { font-size: 0.65rem; color: #94a3b8; }
+    .cal-week-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); gap: 1px; background: rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
+    .cal-week-corner, .cal-week-hour { background: #152033; color: #64748b; font-size: 0.72rem; padding: 0.35rem; text-align: right; }
+    .cal-week-head { background: #152033; color: #e2e8f0; font-size: 0.78rem; font-weight: 700; padding: 0.5rem; text-align: center; }
     .cal-week-head.today-col { color: #7dd3fc; }
-    .cal-week-hour { background: #0f1524; color: #64748b; font-size: 0.7rem; padding: 0.35rem 0.25rem; text-align: right; min-height: 48px; }
-    .cal-week-cell { background: #0f1524; min-height: 48px; padding: 0.2rem; position: relative; }
-    .cal-week-cell.today-col { background: rgba(56,189,248,0.06); }
-    .cal-week-event { display: block; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.4rem; border-radius: 5px; margin-bottom: 0.2rem; text-decoration: none; color: #0b0f19; line-height: 1.3; }
-    .cal-week-event.ufficiale { background: #38bdf8; }
-    .cal-week-event.aperto { background: #34d399; }
-    .cal-week-event.speciale { background: #c084fc; }
-    .cal-week-event.allenamento { background: #fbbf24; color: #0b0f19; }
-    .cal-week-event:hover { filter: brightness(1.12); }
-    .cal-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 9500; display: none; align-items: center; justify-content: center; padding: 1rem; }
-    .cal-modal-backdrop.open { display: flex; }
-    .cal-modal { background: #111827; border: 1px solid rgba(56,189,248,0.3); border-radius: 14px; padding: 1.35rem 1.5rem; max-width: 420px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-    .cal-modal h3 { margin: 0 0 0.4rem; color: #7dd3fc; font-size: 1.15rem; }
+    .cal-week-cell { background: #111827; min-height: 36px; padding: 0.2rem; }
+    .cal-week-event { display: block; font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.3rem; border-radius: 4px; background: #38bdf8; color: #0b0f19; text-decoration: none; margin-bottom: 0.1rem; }
+    .cal-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; padding: 1rem; }
+    .cal-modal { background: #152033; border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 1.25rem; max-width: 480px; width: 100%; }
+    .cal-modal h3 { margin: 0 0 0.35rem; color: #fff; }
     .cal-modal .meta { color: #94a3b8; font-size: 0.88rem; margin-bottom: 0.75rem; }
-    .cal-modal .desc { color: #cbd5e1; font-size: 0.92rem; line-height: 1.5; margin-bottom: 1rem; white-space: pre-wrap; }
-    .cal-modal-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-    .cal-modal-actions a, .cal-modal-actions button { padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.88rem; font-family: inherit; cursor: pointer; text-decoration: none; }
-    .cal-btn-primary { background: #38bdf8; color: #0b0f19; border: none; }
-    .cal-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); }
-    .cal-loading, .cal-empty { color: #94a3b8; text-align: center; padding: 2.5rem 1rem; }
+    .cal-modal .desc { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1rem; white-space: pre-wrap; }
+    .cal-modal-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .cal-btn-primary { background: #38bdf8; color: #0b0f19; border: none; padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem; }
+    .cal-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; text-decoration: none; }
+    .cal-loading { color: #94a3b8; text-align: center; padding: 2rem; }
   </style>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
   <header>
-    <a href="index.html" class="logo-container"><span class="logo-text">CVI <span>Virtual</span></span></a>
+    <a href="index.html" class="logo-container"><span class="logo-text">⚓ CVI <span>Virtual</span></span></a>
     <nav class="nav-desktop" aria-label="Menu principale">
       <ul>
         <li><a href="index.html">Home</a></li>
-        <li><a href="team.html">Team</a></li>
-        <li class="dropdown">
-          <a href="gare.html">Gare & Eventi</a>
-          <ul class="dropdown-menu">
-            <li><a href="gare.html">Calendario</a></li>
-            <li><a href="calendario.html" class="active">Vista calendario</a></li>
-            <li><a href="classifiche.html">Classifiche</a></li>
-            <li><a href="tornei.html">Tornei</a></li>
-            <li><a href="allenamenti.html">Allenamenti</a></li>
-          </ul>
-        </li>
-        <li><a href="albo-doro.html">Albo d'Oro</a></li>
-        <li><a href="regolamento.html">Regolamento</a></li>
-        <li><a href="risorse.html" data-i18n="nav_risorse">Download e Risorse</a></li>
+        <li><a href="gare.html">Gare</a></li>
+        <li><a href="calendario.html" style="color:#38bdf8">Calendario</a></li>
+        <li><a href="classifiche.html">Classifiche</a></li>
         <li><a href="membri.html">Membri</a></li>
-        <li><a href="contatti.html">Contatti</a></li>
       </ul>
     </nav>
     <div class="header-actions">
@@ -117,26 +93,18 @@
   </header>
   <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
     <a href="index.html">Home</a>
-    <a href="team.html">Team</a>
-    <a href="gare.html">Gare & Eventi</a>
-    <div class="mobile-dropdown">
-      <a href="gare.html">Calendario lista</a>
-      <a href="calendario.html">Vista calendario</a>
-      <a href="classifiche.html">Classifiche</a>
-      <a href="tornei.html">Tornei</a>
-      <a href="allenamenti.html">Allenamenti</a>
-    </div>
-    <a href="albo-doro.html">Albo d'Oro</a>
-    <a href="regolamento.html">Regolamento</a>
-    <a href="risorse.html" data-i18n="nav_risorse">Download e Risorse</a>
+    <a href="gare.html">Gare</a>
+    <a href="calendario.html">Calendario</a>
+    <a href="classifiche.html">Classifiche</a>
     <a href="membri.html">Membri</a>
-    <a href="contatti.html">Contatti</a>
     <a href="accedi.html" id="auth-link-mobile">Accedi</a>
   </nav>
   <main class="page-content" id="main-content">
-    <div class="content-box cal-page">
-      <h1>Calendario</h1>
-      <p class="subtitle">Vista mensile e settimanale di gare ufficiali, eventi aperti e allenamenti.</p>
+    <div class="cal-page">
+      <section class="page-hero">
+        <h1>Calendario</h1>
+        <p>Vista mensile e settimanale di gare ufficiali, eventi aperti e allenamenti.</p>
+      </section>
       <div class="cal-toolbar">
         <div class="cal-nav">
           <button type="button" id="cal-prev" aria-label="Precedente">‹</button>
@@ -187,7 +155,7 @@
     </div>
   </footer>
   <script src="common.js?v=8"></script>
-  <script src="calendario.js?v=2"></script>
+  <script src="calendario.js?v=5"></script>
   <script src="calendario-allenamenti.js?v=3"></script>
 </body>
 </html>
