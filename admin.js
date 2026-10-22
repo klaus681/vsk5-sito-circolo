@@ -40,6 +40,12 @@
       s7.textContent = ea;
       document.head.appendChild(s7);
     }
+    var sa = await fetch("serie-aperte-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (sa) {
+      var sSa = document.createElement("script");
+      sSa.textContent = sa;
+      document.head.appendChild(sSa);
+    }
     var pr = await fetch("proteste-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (pr) {
       var s6 = document.createElement("script");
