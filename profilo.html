@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Il mio profilo – CVI Virtual</title>
   <meta name="description" content="Il tuo profilo skipper.">
@@ -48,6 +49,8 @@
     .stat-card .num{font-size:1.75rem;font-weight:800;color:#38bdf8;line-height:1.2}
     .stat-card .lbl{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.3rem;font-weight:600}
     .section-box{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.25rem 1.35rem;margin-bottom:1.25rem}
+    .profile-status{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:10px;padding:.75rem 1rem;font-size:.9rem;line-height:1.45;margin:0 0 1.1rem}
+    .profile-status.is-sospeso{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.4);color:#f87171}
     .section-box h2{margin:0 0 1rem;font-size:1.05rem;color:#38bdf8;font-weight:700}
     .edit-form{display:grid;gap:.75rem;max-width:420px}
     .edit-form label{font-size:.75rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:.25rem}
@@ -123,6 +126,7 @@
         <a href="accedi.html">Vai al login</a>
       </div>
       <div id="profile-app" style="display:none">
+        <div id="profile-status" class="profile-status" style="display:none"></div>
         <div class="profile-hero">
           <div class="avatar-wrap">
             <div class="avatar" id="avatar-box">?</div>
@@ -164,6 +168,8 @@
         </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:2rem">
           <a href="membri.html" class="btn-ghost" style="text-decoration:none;display:inline-block">← Elenco soci</a>
+          <button type="button" class="btn-ghost" id="btn-export-data">Scarica i miei dati</button>
+          <a href="privacy.html" class="btn-ghost" style="text-decoration:none;display:inline-block">Privacy</a>
           <button type="button" class="btn-ghost" id="btn-logout">Disconnetti</button>
         </div>
       </div>
@@ -176,7 +182,7 @@
     </div></div>
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
-  <script src="common.js?v=6"></script>
+  <script src="common.js?v=7"></script>
   <script>
   (function(){
     function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -290,7 +296,7 @@
     }
 
     async function loadProfile(userId,isOwn){
-      var cols='id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url';
+      var cols='id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url,stato';
       var res=await CVI.supabase.from('profiles_public').select(cols).eq('id',userId).maybeSingle();
       if(res.error)res=await CVI.supabase.from('profiles_public').select('*').eq('id',userId).maybeSingle();
       var prof=res.data;if(res.error||!prof){document.getElementById('profile-app').innerHTML='<p class="empty-hint" style="color:#f87171">Profilo non trovato.</p>';return;}
@@ -301,6 +307,16 @@
       document.getElementById('prof-meta').innerHTML=(isOwn?'Il tuo profilo':'Profilo socio')+(role!=='socio'?' <span class="role-pill">'+role+'</span>':'');
       document.getElementById('prof-team-wrap').innerHTML=prof.team?'<span class="team-badge">'+esc(prof.team)+'</span>':'<span class="team-badge" style="opacity:.6">Nessun team</span>';
       renderAvatar(prof);
+      var statusEl=document.getElementById('profile-status');
+      if(statusEl){
+        if(isOwn&&prof.stato&&prof.stato!=='attivo'){
+          statusEl.style.display='block';
+          statusEl.classList.toggle('is-sospeso',prof.stato==='sospeso');
+          statusEl.textContent=(prof.stato==='pending')
+            ? 'Il tuo account è in attesa di approvazione da parte di un amministratore. Fino all\'approvazione non puoi leggere le password server di gare e tornei.'
+            : 'Il tuo account è sospeso. Contatta un amministratore per maggiori informazioni.';
+        }else{statusEl.style.display='none';}
+      }
       var iscrTitle=document.querySelector('#iscrizioni-section h2');
       if(iscrTitle)iscrTitle.textContent=isOwn?'Le mie iscrizioni':'Iscrizioni alle gare';
 
@@ -324,6 +340,33 @@
       document.getElementById('stat-best').textContent=stats.best==='—'?'—':stats.best+'°';
       renderHistory(risultati,gare);
       await loadIscrizioni(userId, isOwn);
+    }
+    async function exportMyData(userId){
+      var btn=document.getElementById('btn-export-data');
+      var old=btn?btn.textContent:'';
+      if(btn){btn.disabled=true;btn.textContent='Preparazione…';}
+      var out={esportato_il:new Date().toISOString(),utente_id:userId,profilo:null,dati:{},errori:[]};
+      function err(label,e){out.errori.push(label+': '+((e&&e.message)||e));}
+      try{
+        var pr=await CVI.supabase.from('profiles').select('*').eq('id',userId).maybeSingle();
+        if(pr.error)throw pr.error;out.profilo=pr.data;
+      }catch(e){err('profilo',e);}
+      async function grab(label,q){
+        try{var r=await q;if(r.error)throw r.error;out.dati[label]=r.data||[];}catch(e){err(label,e);}
+      }
+      await grab('iscrizioni_gare',CVI.supabase.from('iscrizioni_gare').select('*').eq('user_id',userId));
+      await grab('risultati_gara',CVI.supabase.from('risultati_gara').select('*').eq('user_id',userId));
+      await grab('torneo_iscrizioni',CVI.supabase.from('torneo_iscrizioni').select('*').eq('user_id',userId));
+      await grab('allenamento_iscrizioni',CVI.supabase.from('allenamento_iscrizioni').select('*').eq('user_id',userId));
+      await grab('messaggi_ricevuti',CVI.supabase.from('member_messages').select('*').eq('recipient_id',userId));
+      try{
+        var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+        var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+        a.download='cvi-dati-'+new Date().toISOString().slice(0,10)+'.json';
+        document.body.appendChild(a);a.click();a.remove();
+        setTimeout(function(){URL.revokeObjectURL(a.href);},800);
+      }catch(e){alert('Errore export: '+(e.message||e));}
+      if(btn){btn.disabled=false;btn.textContent=old;}
     }
     async function saveProfile(e){
       e.preventDefault();
@@ -375,6 +418,9 @@
       await loadProfile(targetId,isOwn);
       document.getElementById('edit-form').onsubmit=saveProfile;
       document.getElementById('btn-logout').onclick=async function(){await CVI.supabase.auth.signOut();window.location.href='accedi.html';};
+      var exportBtn=document.getElementById('btn-export-data');
+      if(exportBtn&&isOwn)exportBtn.onclick=function(){exportMyData(session.user.id);};
+      else if(exportBtn)exportBtn.style.display='none';
       document.getElementById('btn-avatar').onclick=function(){document.getElementById('avatar-file').click();};
       document.getElementById('avatar-file').onchange=function(){var f=this.files&&this.files[0];if(f)uploadAvatar(f);};
     }

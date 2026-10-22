@@ -382,6 +382,20 @@
     });
   }
 
+  async function setMemberStatus(uid, stato, card, confirmKey) {
+    var nick = (card && card.getAttribute("data-nick")) || "";
+    var msg = (t(confirmKey) || "").replace("{name}", nick);
+    if (msg && !confirm(msg)) return;
+    try {
+      var r = await CVI.supabase.from("profiles").update({ stato: stato }).eq("id", uid);
+      if (r.error) throw r.error;
+      if (window.CVIMembers && CVIMembers.updateProfile) CVIMembers.updateProfile(uid, { stato: stato });
+      toast(t("status_updated") || "Stato socio aggiornato.");
+    } catch (e) {
+      alert((t("status_error") || "Errore stato: ") + (e.message || e));
+    }
+  }
+
   function addControls(card, profiles) {
     var uid = card.getAttribute("data-uid");
     var actions = card.querySelector(".member-card-actions");
@@ -413,6 +427,23 @@
         esc(t("message") || "Messaggio") + "</button>";
     }
 
+    // Approvazione / sospensione (solo se la colonna stato esiste già)
+    if (Object.prototype.hasOwnProperty.call(p, "stato")) {
+      var stato = p.stato || "attivo";
+      if (stato === "pending") {
+        html += '<button type="button" class="member-approve-btn" data-action="approve">' +
+          esc(t("approve") || "Approva") + "</button>" +
+          '<button type="button" class="member-reject-btn" data-action="reject">' +
+          esc(t("reject") || "Rifiuta") + "</button>";
+      } else if (stato === "sospeso") {
+        html += '<button type="button" class="member-approve-btn" data-action="reactivate">' +
+          esc(t("reactivate") || "Riattiva") + "</button>";
+      } else {
+        html += '<button type="button" class="member-admin-btn" data-action="suspend">' +
+          esc(t("suspend") || "Sospendi") + "</button>";
+      }
+    }
+
     html += '<button type="button" class="member-expel-btn">' +
       esc(t("expel") || "Espelli") + "</button>";
 
@@ -433,6 +464,18 @@
     if (expelBtn) expelBtn.addEventListener("click", function () {
       expelMember(uid, card.getAttribute("data-nick"));
     });
+
+    function bindStatus(action, stato, confirmKey) {
+      var btn = actions.querySelector('[data-action="' + action + '"]');
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        setMemberStatus(uid, stato, card, confirmKey);
+      });
+    }
+    bindStatus("approve", "attivo", "status_approve_confirm");
+    bindStatus("reject", "sospeso", "status_reject_confirm");
+    bindStatus("suspend", "sospeso", "status_suspend_confirm");
+    bindStatus("reactivate", "attivo", "status_reactivate_confirm");
   }
 
   function augment() {

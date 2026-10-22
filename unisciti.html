@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unisciti - CVI Virtual</title>
   <link rel="canonical" href="https://circolovelicoitalia.it/unisciti.html">
@@ -121,7 +122,7 @@
           <input type="checkbox" id="privacy" required style="margin-top:0.25rem">
           <div>
             <label for="privacy" data-i18n="label_privacy" style="font-size:0.85rem;margin:0">Ho letto e accetto il trattamento dei miei dati.</label>
-            <a href="regolamento.html" data-i18n="label_privacy_link" style="font-size:0.85rem;display:inline-block;margin-top:0.15rem">Leggi il regolamento</a>
+            <a href="privacy.html" data-i18n="label_privacy_link" style="font-size:0.85rem;display:inline-block;margin-top:0.15rem">Leggi l'informativa privacy</a>
           </div>
         </div>
         <button type="submit" class="btn-submit" data-i18n="btn_register">Registrati</button>
@@ -160,7 +161,7 @@
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
-  <script src="common.js?v=6"></script>
+  <script src="common.js?v=7"></script>
   <script>
     const extra = {
       it: {
@@ -172,8 +173,9 @@
         placeholder_team: "Nome del team", placeholder_email: "tuamail@example.com", placeholder_password: "Almeno 8 caratteri",
         hint_password: "Almeno 8 caratteri.",
         team_none: "— Nessun team / scegli —", team_other: "Altro (scrivi il nome)…",
-        label_privacy: "Ho letto e accetto il trattamento dei miei dati.", label_privacy_link: "Leggi il regolamento",
+        label_privacy: "Ho letto e accetto il trattamento dei miei dati.", label_privacy_link: "Leggi l'informativa privacy",
         msg_register_ok: "Registrazione completata! Controlla la email se è richiesta la conferma, poi accedi.",
+        msg_register_pending: "Il tuo account è in attesa di approvazione: potrai accedere alle aree riservate dopo l'ok di un amministratore.",
         msg_profile_warn: "Nota: se la conferma email è attiva, il profilo verrà completato al primo accesso.",
         msg_error_prefix: "Errore: "
       },
@@ -186,8 +188,9 @@
         placeholder_team: "Team name", placeholder_email: "you@example.com", placeholder_password: "At least 8 characters",
         hint_password: "At least 8 characters.",
         team_none: "— No team / choose —", team_other: "Other (type the name)…",
-        label_privacy: "I have read and accept the processing of my data.", label_privacy_link: "Read the rules",
+        label_privacy: "I have read and accept the processing of my data.", label_privacy_link: "Read the privacy policy",
         msg_register_ok: "Registration complete! Check your email if confirmation is required, then log in.",
+        msg_register_pending: "Your account is awaiting approval: you will get access to the members area once an admin approves it.",
         msg_profile_warn: "Note: if email confirmation is enabled, your profile will be completed at first login.",
         msg_error_prefix: "Error: "
       },
@@ -200,8 +203,9 @@
         placeholder_team: "Nom de l'équipe", placeholder_email: "vous@example.com", placeholder_password: "Au moins 8 caractères",
         hint_password: "Au moins 8 caractères.",
         team_none: "— Aucune équipe / choisir —", team_other: "Autre (saisir le nom)…",
-        label_privacy: "J'ai lu et j'accepte le traitement de mes données.", label_privacy_link: "Lire le règlement",
+        label_privacy: "J'ai lu et j'accepte le traitement de mes données.", label_privacy_link: "Lire la politique de confidentialité",
         msg_register_ok: "Inscription terminée ! Vérifiez votre email si une confirmation est requise, puis connectez-vous.",
+        msg_register_pending: "Votre compte est en attente d'approbation : l'accès à l'espace membres sera activé par un administrateur.",
         msg_profile_warn: "Remarque : si la confirmation par email est activée, le profil sera complété à la première connexion.",
         msg_error_prefix: "Erreur : "
       },
@@ -214,8 +218,9 @@
         placeholder_team: "Nombre del equipo", placeholder_email: "tu@example.com", placeholder_password: "Al menos 8 caracteres",
         hint_password: "Al menos 8 caracteres.",
         team_none: "— Sin equipo / elegir —", team_other: "Otro (escribe el nombre)…",
-        label_privacy: "He leído y acepto el tratamiento de mis datos.", label_privacy_link: "Leer el reglamento",
+        label_privacy: "He leído y acepto el tratamiento de mis datos.", label_privacy_link: "Leer la política de privacidad",
         msg_register_ok: "¡Registro completado! Revisa tu correo si se requiere confirmación y luego inicia sesión.",
+        msg_register_pending: "Tu cuenta está pendiente de aprobación: podrás acceder al área de socios cuando un administrador la apruebe.",
         msg_profile_warn: "Nota: si la confirmación por correo está activada, el perfil se completará al primer inicio de sesión.",
         msg_error_prefix: "Error: "
       }
@@ -305,7 +310,7 @@
         if (pErr) { profileWarn = true; console.warn('profiles upsert:', pErr.message); }
       }
       msg.style.whiteSpace = 'pre-line';
-      msg.textContent = t.msg_register_ok + (profileWarn ? '\n' + t.msg_profile_warn : '');
+      msg.textContent = t.msg_register_ok + (t.msg_register_pending ? '\n' + t.msg_register_pending : '') + (profileWarn ? '\n' + t.msg_profile_warn : '');
       msg.style.display = 'block';
       msg.style.background = 'rgba(52,211,153,0.15)';
       msg.style.color = '#34d399';
