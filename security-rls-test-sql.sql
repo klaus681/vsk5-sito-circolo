@@ -5,6 +5,7 @@
 -- Sostituire:
 --   SOCIO_UUID  con l'id di un profilo con role='socio'
 --   ADMIN_UUID  con l'id di un profilo admin
+--   GARA_UUID   con l'id di una gara esistente
 -- Ogni blocco è in transazione e termina con rollback:
 -- non modifica i dati.
 -- ============================================================
@@ -88,3 +89,54 @@ set local "request.jwt.claims" = '{"sub":"ADMIN_UUID","role":"authenticated"}';
 update public.profiles set role = 'socio', is_admin = false where id = 'SOCIO_UUID';
 -- Atteso: UPDATE 1
 rollback;
+
+-- ============================================================
+-- gare_password (eseguire dopo gare-password-sql.sql)
+-- ============================================================
+
+-- 9) Diagnostica: tabella presente, RLS attiva, 2 policy
+select
+  to_regclass('public.gare_password') as gare_password,
+  (select relrowsecurity from pg_class
+    where oid = to_regclass('public.gare_password')) as rls_attiva;
+
+select policyname, roles, cmd
+from pg_policies
+where schemaname = 'public' and tablename = 'gare_password'
+order by policyname;
+-- Atteso: 2 policy (gare_password_admin_all, gare_password_auth_read)
+
+-- 10) Anon non deve poter leggere le password delle gare
+begin;
+set local role anon;
+select count(*) from public.gare_password;
+-- Atteso: ERROR: permission denied for table gare_password
+rollback;
+
+-- 11) Socio loggato: può leggere le password
+begin;
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"SOCIO_UUID","role":"authenticated"}';
+select count(*) from public.gare_password;
+-- Atteso: nessun errore (le righe dipendono dalle gare configurate)
+rollback;
+
+-- 12) Socio loggato: non può scrivere le password
+begin;
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"SOCIO_UUID","role":"authenticated"}';
+insert into public.gare_password (gara_id, password)
+values ('GARA_UUID', 'test');
+-- Atteso: ERROR: new row violates row-level security policy
+rollback;
+
+-- 13) Admin: può creare/aggiornare la password di una gara
+begin;
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"ADMIN_UUID","role":"authenticated"}';
+insert into public.gare_password (gara_id, password)
+values ('GARA_UUID', 'test')
+on conflict (gara_id) do update set password = excluded.password;
+-- Atteso: INSERT 0 1
+rollback;
+
