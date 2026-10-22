@@ -11,10 +11,10 @@
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, String.fromCharCode(38, 97, 109, 112, 59))
-      .replace(/</g, String.fromCharCode(38, 108, 116, 59))
-      .replace(/>/g, String.fromCharCode(38, 103, 116, 59))
-      .replace(/"/g, String.fromCharCode(38, 113, 117, 111, 116, 59));
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """);
   }
 
   function startOfDay(d) {
@@ -123,8 +123,7 @@
       var events = [];
       gare.forEach(function (g) {
         if (!g.data_gara) return;
-        var gTipo = (g.tipo || "ufficiale").toLowerCase();
-        var calType = gTipo === "aperto" ? "aperto" : (gTipo === "speciale" ? "speciale" : "ufficiale");
+        var calType = g.tipo === "speciale" ? "speciale" : (g.tipo === "aperto" ? "aperto" : "ufficiale");
         events.push({ id: "g-" + g.id, type: calType, title: g.titolo || "Gara", date: g.data_gara, desc: g.descrizione || "", link: "gare.html" });
       });
       aperti.forEach(function (e) {
@@ -133,14 +132,14 @@
       });
       state.events = events;
     } catch (err) {
-      console.error("[calendario]", err);
+      console.warn("[calendario]", err);
       state.events = [];
     }
     state.loading = false;
     render();
   }
 
-  function renderTitle() {
+  function updateTitle() {
     var el = document.getElementById("cal-title");
     if (!el) return;
     if (state.view === "month") {
@@ -168,14 +167,18 @@
       var day = addDays(start, i);
       var inMonth = day.getMonth() === month;
       var isToday = isSameDay(day, today);
-      var dayEvents = eventsOnDay(day);
+      // Solo eventi del mese corrente: i giorni "other-month" (es. 28 ott nella griglia di novembre)
+      // non devono mostrare eventi, altrimenti sembra che la gara sia il 28 del mese sbagliato.
+      var dayEvents = inMonth ? eventsOnDay(day) : [];
       var cls = "cal-day" + (inMonth ? "" : " other-month") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "");
-      html += '<div class="' + cls + '"><div class="cal-day-num">' + day.getDate() + "</div>";
-      dayEvents.slice(0, 3).forEach(function (ev) {
+      var dayNumLabel = inMonth
+        ? String(day.getDate())
+        : (String(day.getDate()) + " " + MONTHS[day.getMonth()].slice(0, 3).toLowerCase());
+      html += '<div class="' + cls + '"><div class="cal-day-num">' + dayNumLabel + "</div>";
+      dayEvents.forEach(function (ev) {
         var past = (parseEventLocal(ev.date) || new Date(ev.date)).getTime() < now;
         html += '<a href="#" class="cal-event ' + esc(ev.type) + (past ? " past" : "") + '" data-id="' + esc(ev.id) + '" title="' + esc(ev.title) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
       });
-      if (dayEvents.length > 3) html += '<div class="cal-more">+' + (dayEvents.length - 3) + " altri</div>";
       html += "</div>";
     }
     html += "</div>";
@@ -200,15 +203,7 @@
           var t = parseEventLocal(ev.date) || new Date(ev.date);
           return t.getHours() === hour;
         });
-        if (hour === 10) {
-          eventsOnDay(day).forEach(function (ev) {
-            var t = parseEventLocal(ev.date) || new Date(ev.date);
-            if (t.getHours() < 8 || t.getHours() > 22) {
-              if (dayEvents.indexOf(ev) < 0) dayEvents.push(ev);
-            }
-          });
-        }
-        html += '<div class="cal-week-cell' + (isSameDay(day, today) ? " today-col" : "") + '">';
+        html += '<div class="cal-week-cell">';
         dayEvents.forEach(function (ev) {
           html += '<a href="#" class="cal-week-event ' + esc(ev.type) + '" data-id="' + esc(ev.id) + '">' + esc(fmtTime(ev.date)) + " " + esc(ev.title) + "</a>";
         });
@@ -220,52 +215,50 @@
   }
 
   function render() {
-    renderTitle();
-    var box = document.getElementById("cal-container");
+    updateTitle();
+    var box = document.getElementById("cal-grid");
     if (!box) return;
     if (state.loading) {
-      box.innerHTML = '<p class="cal-loading">Caricamento calendario…</p>';
+      box.innerHTML = '<p class="loading-text">Caricamento calendario…</p>';
       return;
     }
     if (state.view === "month") renderMonth(box);
     else renderWeek(box);
-    box.querySelectorAll("[data-id]").forEach(function (el) {
-      el.addEventListener("click", function (e) {
+    box.querySelectorAll("[data-id]").forEach(function (a) {
+      a.onclick = function (e) {
         e.preventDefault();
-        openModal(el.getAttribute("data-id"));
-      });
+        openEvent(a.getAttribute("data-id"));
+      };
     });
   }
 
-  function openModal(id) {
-    var ev = state.events.find(function (x) { return x.id === id; });
-    if (!ev) return;
+  function openEvent(id) {
     openEventId = id;
-    document.getElementById("cal-modal-title").textContent = ev.title;
+    var ev = state.events.find(function (x) { return x.id === id; });
+    var modal = document.getElementById("cal-modal");
+    if (!modal || !ev) return;
+    document.getElementById("cal-modal-title").textContent = ev.title || "Evento";
     document.getElementById("cal-modal-meta").textContent =
       fmtFull(ev.date) + " · " + (ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : "Gara ufficiale"));
-    document.getElementById("cal-modal-desc").textContent = ev.desc || "Nessuna descrizione.";
+    document.getElementById("cal-modal-desc").textContent = ev.desc || "";
     var link = document.getElementById("cal-modal-link");
     if (link) {
       link.href = ev.link || "#";
-      link.style.display = ev.link ? "inline-block" : "none";
+      link.style.display = ev.link ? "inline-flex" : "none";
     }
-    document.getElementById("cal-modal").classList.add("open");
+    modal.style.display = "flex";
   }
 
   function closeModal() {
-    var m = document.getElementById("cal-modal");
-    if (m) m.classList.remove("open");
+    var modal = document.getElementById("cal-modal");
+    if (modal) modal.style.display = "none";
+    openEventId = null;
   }
 
   function pad2(n) { return String(n).padStart(2, "0"); }
 
   function icsEscape(s) {
-    return String(s == null ? "" : s)
-      .replace(/\\/g, "\\\\")
-      .replace(/;/g, "\\;")
-      .replace(/,/g, "\\,")
-      .replace(/\r?\n/g, "\\n");
+    return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
   }
 
   function foldLine(line) {
@@ -320,58 +313,29 @@
     lines.push("SUMMARY:" + icsEscape(ev.title || "Evento"));
     if (ev.desc) lines.push("DESCRIPTION:" + icsEscape(ev.desc));
     lines.push("URL:" + url);
-    lines.push("LOCATION:Virtual Skipper \u2013 Circolo Velico Italia");
     lines.push("END:VEVENT");
     return lines.map(foldLine).join("\r\n");
   }
 
-  function buildICS(events) {
-    var parts = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//CVI Virtual//Calendario//IT", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
-    (events || []).forEach(function (ev) { var v = buildVEvent(ev); if (v) parts.push(v); });
-    parts.push("END:VCALENDAR");
-    return parts.join("\r\n") + "\r\n";
-  }
-
-  function downloadICS(filename, content) {
-    var blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-  }
-
-  function exportAllICS() {
+  function downloadICS() {
     var list = filteredEvents();
     if (!list.length) { alert("Nessun evento da esportare."); return; }
-    downloadICS("calendario-cvi.ics", buildICS(list));
-  }
-
-  function exportEventICS(ev) {
-    if (!ev) return;
-    var safe = String(ev.title || "evento").replace(/[^\w\-]+/g, "_").slice(0, 40);
-    downloadICS("cvi-" + safe + ".ics", buildICS([ev]));
-  }
-
-  function gcalUrl(ev) {
-    var st = icsStamp(ev.date);
-    if (!st) return "";
-    var dates;
-    if (st.allDay) {
-      dates = st.value + "/" + addDaysToStamp(st.value, 1);
-    } else {
-      var end = new Date(ev.date); end.setTime(end.getTime() + 2 * 3600 * 1000);
-      dates = st.value + "/" + utcStamp(end);
-    }
-    return "https://calendar.google.com/calendar/render?action=TEMPLATE"
-      + "&text=" + encodeURIComponent(ev.title || "Evento")
-      + "&dates=" + dates
-      + "&details=" + encodeURIComponent(ev.desc || "")
-      + "&location=" + encodeURIComponent("Virtual Skipper \u2013 Circolo Velico Italia");
-  }
-
-  function currentEvent() {
-    return state.events.find(function (x) { return x.id === openEventId; });
+    var body = list.map(buildVEvent).filter(Boolean).join("\r\n");
+    var ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Circolo Velico Italia//Calendario//IT",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      body,
+      "END:VCALENDAR"
+    ].join("\r\n");
+    var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "cvi-calendario.ics";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
   }
 
   function wire() {
@@ -389,50 +353,33 @@
       render();
     };
     if (todayBtn) todayBtn.onclick = function () { state.cursor = new Date(); render(); };
-    document.querySelectorAll(".cal-view-toggle").forEach(function (btn) {
-      if (btn.id === "cal-today") return;
+
+    document.querySelectorAll("[data-cal-view]").forEach(function (btn) {
       btn.onclick = function () {
-        document.querySelectorAll(".cal-view-toggle").forEach(function (b) {
-          if (b.id !== "cal-today") b.classList.remove("active");
-        });
-        btn.classList.add("active");
-        state.view = btn.getAttribute("data-view") || "month";
+        state.view = btn.getAttribute("data-cal-view") || "month";
+        document.querySelectorAll("[data-cal-view]").forEach(function (b) { b.classList.toggle("active", b === btn); });
         render();
       };
     });
-    var filter = document.getElementById("cal-filter");
-    if (filter) filter.onchange = function () { state.filter = filter.value || "all"; render(); };
-    var modal = document.getElementById("cal-modal");
+    document.querySelectorAll("[data-cal-filter]").forEach(function (btn) {
+      btn.onclick = function () {
+        state.filter = btn.getAttribute("data-cal-filter") || "all";
+        document.querySelectorAll("[data-cal-filter]").forEach(function (b) { b.classList.toggle("active", b === btn); });
+        render();
+      };
+    });
+
     var closeBtn = document.getElementById("cal-modal-close");
     if (closeBtn) closeBtn.onclick = closeModal;
+    var modal = document.getElementById("cal-modal");
     if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
-    var icsAllBtn = document.getElementById("cal-ics-all");
-    if (icsAllBtn) icsAllBtn.onclick = exportAllICS;
-    var icsBtn = document.getElementById("cal-modal-ics");
-    if (icsBtn) icsBtn.onclick = function () { exportEventICS(currentEvent()); };
-    var gcalBtn = document.getElementById("cal-modal-gcal");
-    if (gcalBtn) gcalBtn.onclick = function () {
-      var ev = currentEvent();
-      var u = ev && gcalUrl(ev);
-      if (u) window.open(u, "_blank", "noopener");
-    };
+
+    var icsBtn = document.getElementById("cal-ics");
+    if (icsBtn) icsBtn.onclick = downloadICS;
+
+    loadEvents();
   }
 
-  function waitCVI(cb) {
-    var n = 0;
-    (function tick() {
-      if (window.CVI && CVI.supabase) return cb();
-      if (++n > 80) return cb();
-      setTimeout(tick, 50);
-    })();
-  }
-
-  function boot() {
-    wire();
-    waitCVI(loadEvents);
-  }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-  else boot();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire);
+  else wire();
 })();
