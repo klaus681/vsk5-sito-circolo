@@ -40,7 +40,13 @@
       s7.textContent = ea;
       document.head.appendChild(s7);
     }
-    var sa = await fetch("4-serie-aperte-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var saBoot = await fetch("serie-aperte-ui-boot.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
+    if (saBoot) {
+      var sBoot = document.createElement("script");
+      sBoot.textContent = saBoot;
+      document.head.appendChild(sBoot);
+    }
+    var sa = await fetch("4-serie-aperte-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (sa) {
       var sSa = document.createElement("script");
       sSa.textContent = sa;
