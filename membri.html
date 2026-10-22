@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Soci Iscritti - CVI Virtual</title>
   <meta name="description" content="Elenco dei soci e degli skipper del Circolo Velico Italia.">
@@ -201,6 +202,15 @@
     .cvi-modal-status { margin: .6rem 0 0; font-size: .82rem; color: #f87171; min-height: 1em; }
     body.cvi-modal-open { overflow: hidden; }
 
+    .member-role.member-pending { background: rgba(251,191,36,.15); color: #fbbf24; border-color: rgba(251,191,36,.35); }
+    .member-role.member-suspended { background: rgba(248,113,113,.15); color: #f87171; border-color: rgba(248,113,113,.35); }
+    .member-approve-btn { background: rgba(52,211,153,.14); color: #34d399; border: 1px solid rgba(52,211,153,.4); }
+    .member-reject-btn { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.35); }
+    .member-approve-btn,
+    .member-reject-btn {
+      padding: .35rem .7rem; border-radius: 6px; font-size: .78rem; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+    }
     .member-card-actions {
       display: none; align-items: center; gap: .5rem; flex-wrap: wrap;
       padding: 0 1.05rem 1rem;
@@ -392,7 +402,7 @@
     </div>
   </footer>
 
-  <script src="common.js?v=6"></script>
+  <script src="common.js?v=7"></script>
   <script>
     const extra = {
       it: {
@@ -406,6 +416,11 @@
         members_error: "Impossibile caricare l'elenco soci.", members_retry: "Riprova",
         alert_auth_required: "Devi effettuare l'accesso per visualizzare l'elenco dei soci.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Capo squadra", role_socio: "Socio", you: "Sei tu",
+        status_pending: "In attesa", status_suspended: "Sospeso",
+        approve: "Approva", reject: "Rifiuta", suspend: "Sospendi", reactivate: "Riattiva",
+        status_updated: "Stato socio aggiornato.", status_error: "Errore stato: ",
+        status_approve_confirm: "Approvare {name} come socio?", status_reject_confirm: "Rifiutare la richiesta di {name}?",
+        status_suspend_confirm: "Sospendere {name}?", status_reactivate_confirm: "Riattivare {name}?",
         expel: "Espelli", assign_team: "Assegna team",
         members_filter_team: "Filtra per team", members_sort_label: "Ordina soci",
         open_profile: "Apri il profilo di {name}",
@@ -438,6 +453,11 @@
         members_error: "Unable to load the member list.", members_retry: "Retry",
         alert_auth_required: "You must log in to view members.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Team captain", role_socio: "Member", you: "You",
+        status_pending: "Pending", status_suspended: "Suspended",
+        approve: "Approve", reject: "Reject", suspend: "Suspend", reactivate: "Reactivate",
+        status_updated: "Member status updated.", status_error: "Status error: ",
+        status_approve_confirm: "Approve {name} as a member?", status_reject_confirm: "Reject {name}'s request?",
+        status_suspend_confirm: "Suspend {name}?", status_reactivate_confirm: "Reactivate {name}?",
         expel: "Expel", assign_team: "Assign team",
         members_filter_team: "Filter by team", members_sort_label: "Sort members",
         open_profile: "Open {name}'s profile",
@@ -470,6 +490,11 @@
         members_error: "Impossible de charger la liste des membres.", members_retry: "Réessayer",
         alert_auth_required: "Connexion requise pour voir les membres.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Chef d'équipe", role_socio: "Membre", you: "Vous",
+        status_pending: "En attente", status_suspended: "Suspendu",
+        approve: "Approuver", reject: "Refuser", suspend: "Suspendre", reactivate: "Réactiver",
+        status_updated: "Statut du membre mis à jour.", status_error: "Erreur statut : ",
+        status_approve_confirm: "Approuver {name} comme membre ?", status_reject_confirm: "Refuser la demande de {name} ?",
+        status_suspend_confirm: "Suspendre {name} ?", status_reactivate_confirm: "Réactiver {name} ?",
         expel: "Exclure", assign_team: "Assigner l'équipe",
         members_filter_team: "Filtrer par équipe", members_sort_label: "Trier les membres",
         open_profile: "Ouvrir le profil de {name}",
@@ -502,6 +527,11 @@
         members_error: "No se pudo cargar la lista de miembros.", members_retry: "Reintentar",
         alert_auth_required: "Debes iniciar sesión para ver los miembros.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Jefe de equipo", role_socio: "Miembro", you: "Tú",
+        status_pending: "Pendiente", status_suspended: "Suspendido",
+        approve: "Aprobar", reject: "Rechazar", suspend: "Suspender", reactivate: "Reactivar",
+        status_updated: "Estado del socio actualizado.", status_error: "Error de estado: ",
+        status_approve_confirm: "¿Aprobar a {name} como socio?", status_reject_confirm: "¿Rechazar la solicitud de {name}?",
+        status_suspend_confirm: "¿Suspender a {name}?", status_reactivate_confirm: "¿Reactivar a {name}?",
         expel: "Expulsar", assign_team: "Asignar equipo",
         members_filter_team: "Filtrar por equipo", members_sort_label: "Ordenar miembros",
         open_profile: "Abrir el perfil de {name}",
@@ -525,9 +555,10 @@
       }
     };
     const PAGE_SIZE = 24;
-    const MEMBER_COLUMNS = 'id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url';
+    const MEMBER_COLUMNS = 'id,nickname,nome,cognome,team,team_id,nazionalita,role,is_admin,avatar_url,stato';
     let allProfiles = [];
     let currentUserId = null;
+    let isAdminView = false;
     let searchTimer = null;
     let currentPage = 1;
     let statsByUser = {};
@@ -654,6 +685,11 @@
       const title = nick ? '@' + nick : name;
       const realName = nick && fullName(p) ? fullName(p) : '';
       const roleHtml = role !== 'socio' ? '<span class="member-role">' + esc(roleLabel(role)) + '</span>' : '';
+      const stato = (p.stato || 'attivo');
+      const statoHtml = (isAdminView && stato !== 'attivo')
+        ? '<span class="member-role ' + (stato === 'pending' ? 'member-pending' : 'member-suspended') + '">' +
+            esc(stato === 'pending' ? t('status_pending') : t('status_suspended')) + '</span>'
+        : '';
       const teamHtml = team
         ? '<span class="team-badge">' + esc(team) + '</span>'
         : '<span class="member-no-team">' + esc(t('no_team')) + '</span>';
@@ -676,6 +712,7 @@
               (realName ? '<span class="member-name">' + esc(realName) + '</span>' : '') +
               '<span class="member-team">' + teamHtml + '</span>' +
             '</span>' +
+            statoHtml +
             roleHtml +
             '<span class="member-chevron" aria-hidden="true">›</span>' +
           '</a>' +
@@ -688,6 +725,7 @@
       const seen = {};
       allProfiles.forEach(function (p) {
         if (isExpelled(p)) return;
+        if (!isAdminView && p.stato && p.stato !== 'attivo') return;
         const team = teamOf(p);
         if (!team) return;
         const key = norm(team);
@@ -725,6 +763,7 @@
 
       let list = allProfiles.filter(function (p) {
         if (isExpelled(p)) return false;
+        if (!isAdminView && p.stato && p.stato !== 'attivo') return false;
         if (teamFilter === '__none__') {
           if (teamOf(p)) return false;
         } else if (teamFilter && teamOf(p) !== teamFilter) {
@@ -745,7 +784,9 @@
       });
 
       const filteredCount = list.length;
-      const total = allProfiles.filter(function (p) { return !isExpelled(p); }).length;
+      const total = allProfiles.filter(function (p) {
+        return !isExpelled(p) && (isAdminView || !p.stato || p.stato === 'attivo');
+      }).length;
       const countEl = document.getElementById('members-count');
       if (countEl) {
         var countText;
@@ -860,6 +901,9 @@
       }
 
       allProfiles = res.data || [];
+      var meProfile = allProfiles.filter(function (p) { return String(p.id) === String(currentUserId); })[0] || null;
+      var meRole = meProfile ? String(meProfile.role || '').toLowerCase() : '';
+      isAdminView = !!(meProfile && (meProfile.is_admin === true || meRole === 'admin'));
       await loadStats();
 
       if (toolbar) toolbar.hidden = false;
@@ -904,6 +948,6 @@
 
     CVI.init('membri.html');
   </script>
-  <script src="membri-admin.js?v=1"></script>
+  <script src="membri-admin.js?v=2"></script>
 </body>
 </html>

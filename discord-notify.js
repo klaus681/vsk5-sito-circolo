@@ -4,6 +4,7 @@
   var SITE = "https://www.circolovelicoitalia.it";
   var CACHE = {};
   var CACHE_AT = {};
+  var PROXY_OK = null; // null = da provare, true = attiva, false = non disponibile
 
   async function getWebhook(key) {
     key = key || "discord_webhook";
@@ -42,8 +43,6 @@
   }
 
   async function sendEmbed(opts, webhookKey) {
-    var webhook = await resolveWebhook(webhookKey);
-    if (!isValidWebhook(webhook)) return false;
     var embed = {
       title: String(opts.title || "").slice(0, 256),
       description: String(opts.description || "").slice(0, 2000),
@@ -53,6 +52,15 @@
       footer: { text: "Circolo Velico Italia · Virtual Skipper" }
     };
     if (opts.fields && opts.fields.length) embed.fields = opts.fields;
+
+    // 1) Proxy server-side (Edge Function): i webhook restano nel database
+    var keys = Array.isArray(webhookKey) ? webhookKey.slice() : [webhookKey || "discord_webhook"];
+    if (keys.indexOf("discord_webhook") < 0) keys.push("discord_webhook");
+    if (await sendViaProxy(keys, embed)) return true;
+
+    // 2) Fallback diretto: funziona solo per gli admin (la RLS nasconde i webhook agli altri)
+    var webhook = await resolveWebhook(webhookKey);
+    if (!isValidWebhook(webhook)) return false;
     try {
       var r = await fetch(webhook, {
         method: "POST",
@@ -62,6 +70,28 @@
       return r.ok || r.status === 204;
     } catch (e) {
       console.warn("[CVI Discord]", e);
+      return false;
+    }
+  }
+
+  async function sendViaProxy(keys, embed) {
+    if (PROXY_OK === false) return false;
+    if (!window.CVI || !CVI.supabase || !CVI.supabase.functions) {
+      PROXY_OK = false;
+      return false;
+    }
+    try {
+      var r = await CVI.supabase.functions.invoke("notify-discord", {
+        body: { keys: keys, embed: embed }
+      });
+      if (r && !r.error) {
+        PROXY_OK = true;
+        return true;
+      }
+      PROXY_OK = false;
+      return false;
+    } catch (e) {
+      PROXY_OK = false;
       return false;
     }
   }

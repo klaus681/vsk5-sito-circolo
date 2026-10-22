@@ -47,11 +47,21 @@ Prima di andare in produzione verifica:
 4. `site_settings` non espone segreti (webhook Discord) al client.
 5. I bucket storage hanno policy di lettura/scrittura coerenti con i ruoli.
 
-Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
+Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
 
 La password server delle gare (`gare-password-sql.sql`) è volutamente in una tabella separata (`gare_password`) e non in `gare`: `gare` è leggibile anche in anonimo, quindi la password è restituita solo agli utenti autenticati tramite RLS. Lo script va eseguito una volta nel SQL Editor di Supabase: finché la tabella non esiste il campo password non viene salvato e il pannello admin mostra un avviso.
 
 Lo stesso criterio vale per i tornei (`tornei-password-sql.sql`, tabella `torneo_password`): `tornei` è leggibile in anonimo, quindi la password del server è mostrata nel banner home e nella pagina del torneo solo ai soci loggati.
+
+### Approvazione soci e audit log
+
+`membership-audit-sql.sql` introduce:
+- `public.profiles.stato` (`pending` / `attivo` / `sospeso`): i profili esistenti diventano `attivo`, i nuovi account nascono `pending`.
+- helper `public.is_club_member()`: le password di gare e tornei sono leggibili **solo dai soci approvati**.
+- guard trigger: un socio non può auto-approvarsi né cambiarsi ruolo.
+- `public.audit_log` con trigger su gare, risultati, tornei, torneo_gare, risorse e profili (visibile solo agli admin).
+
+Dopo l'esecuzione approva o rifiuta i nuovi soci da **Admin → Membri** (pulsanti sulle card).
 
 Il comparto **Download e Risorse** (`risorse.html`) unifica le vecchie pagine Download e Biblioteca. I dati sono in `public.risorse`; la migrazione da `downloads` e `biblioteca` è inclusa in `risorse-sql.sql` (idempotente, le vecchie tabelle restano intatte come fallback). Fino all'esecuzione dello script la pagina funziona in modalità compatibilità leggendo le vecchie tabelle per gli utenti loggati.
 
@@ -106,7 +116,22 @@ Apri una pull request, verifica le pagine principali e poi fai merge su `main`. 
 
 ## Prossimi passi consigliati
 
-- Spostare i webhook Discord in una Edge Function (punto 2 Sprint 2).
 - Notifiche email e promemoria gara.
 - PWA + push notification.
-- Refactor di `common.js` in locale (oggi carica una versione remota via `document.write`).
+- Header di sicurezza completi (CSP, HSTS): GitHub Pages non li consente, valutare Cloudflare Pages mantenendo lo stesso repo. La meta `referrer` è già impostata su tutte le pagine.
+
+## Notifiche Discord (Edge Function)
+
+Il client (`discord-notify.js`) prova prima la function `notify-discord` e, solo se non è disponibile, usa il fallback diretto (che funziona unicamente per gli admin, perché la RLS nasconde i webhook agli altri ruoli). La function:
+
+- autentica il chiamante e verifica che sia un socio `attivo`;
+- legge il webhook da `site_settings` con la service role (il segreto non viene mai inviato al browser);
+- accetta solo chiavi `discord_webhook*` e limita la dimensione dell'embed.
+
+Deploy (dalla root del repo, con Supabase CLI autenticata):
+
+```bash
+supabase functions deploy notify-discord
+```
+
+Le variabili `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` sono iniettate automaticamente da Supabase. Se la function non viene deployata il sito continua a funzionare con il fallback.
