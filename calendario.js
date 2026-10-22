@@ -1,20 +1,19 @@
-/* CVI Virtual – Calendario mensile/settimanale */
+/* CVI Virtual - Calendario mensile/settimanale */
 (function () {
   "use strict";
 
   var state = { view: "month", filter: "all", cursor: new Date(), events: [], loading: true };
   var SITE = "https://www.circolovelicoitalia.it";
-  var openEventId = null;
   var WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
   var MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+      .replace(/&/g, "\u0026amp;")
+      .replace(/</g, "\u0026lt;")
+      .replace(/>/g, "\u0026gt;")
+      .replace(/"/g, "\u0026quot;");
   }
 
   function startOfDay(d) {
@@ -113,6 +112,9 @@
       state.loading = false;
       state.events = [];
       render();
+      setTimeout(function () {
+        if (window.CVI && CVI.supabase) loadEvents();
+      }, 800);
       return;
     }
     try {
@@ -152,9 +154,9 @@
       var mon = mondayOf(state.cursor);
       var sun = addDays(mon, 6);
       if (mon.getMonth() === sun.getMonth()) {
-        el.textContent = mon.getDate() + "–" + sun.getDate() + " " + MONTHS[mon.getMonth()] + " " + mon.getFullYear();
+        el.textContent = mon.getDate() + "\u2013" + sun.getDate() + " " + MONTHS[mon.getMonth()] + " " + mon.getFullYear();
       } else {
-        el.textContent = mon.getDate() + " " + MONTHS[mon.getMonth()].slice(0, 3) + " – " + sun.getDate() + " " + MONTHS[sun.getMonth()].slice(0, 3) + " " + sun.getFullYear();
+        el.textContent = mon.getDate() + " " + MONTHS[mon.getMonth()].slice(0, 3) + " \u2013 " + sun.getDate() + " " + MONTHS[sun.getMonth()].slice(0, 3) + " " + sun.getFullYear();
       }
     }
   }
@@ -171,12 +173,11 @@
       var day = addDays(start, i);
       var inMonth = day.getMonth() === month;
       var isToday = isSameDay(day, today);
-      // FIX: non mostrare eventi sui giorni fuori mese (es. 28 ott nella griglia di novembre)
       var dayEvents = inMonth ? eventsOnDay(day) : [];
       var cls = "cal-day" + (inMonth ? "" : " other-month") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "");
       var dayNumLabel = inMonth
         ? String(day.getDate())
-        : (String(day.getDate()) + "\u00a0" + MONTHS[day.getMonth()].slice(0, 3).toLowerCase());
+        : (String(day.getDate()) + " " + MONTHS[day.getMonth()].slice(0, 3).toLowerCase());
       html += '<div class="' + cls + '"><div class="cal-day-num">' + dayNumLabel + "</div>";
       dayEvents.slice(0, 3).forEach(function (ev) {
         var past = (parseEventLocal(ev.date) || new Date(ev.date)).getTime() < now;
@@ -223,7 +224,7 @@
     var box = document.getElementById("cal-container") || document.getElementById("cal-grid");
     if (!box) return;
     if (state.loading) {
-      box.innerHTML = '<p class="cal-loading loading-text">Caricamento calendario…</p>';
+      box.innerHTML = '<p class="cal-loading">Caricamento calendario\u2026</p>';
       return;
     }
     if (state.view === "month") renderMonth(box);
@@ -237,36 +238,37 @@
   }
 
   function openEvent(id) {
-    openEventId = id;
     var ev = state.events.find(function (x) { return x.id === id; });
     var modal = document.getElementById("cal-modal");
     if (!modal || !ev) return;
     document.getElementById("cal-modal-title").textContent = ev.title || "Evento";
-    document.getElementById("cal-modal-meta").textContent =
-      fmtFull(ev.date) + " · " + (ev.type === "aperto" ? "Evento aperto" : (ev.type === "speciale" ? "Evento speciale" : (ev.type === "allenamento" ? "Allenamento" : "Gara ufficiale")));
+    var tipo =
+      ev.type === "aperto" ? "Evento aperto" :
+      ev.type === "speciale" ? "Evento speciale" :
+      ev.type === "allenamento" ? "Allenamento" : "Gara ufficiale";
+    document.getElementById("cal-modal-meta").textContent = fmtFull(ev.date) + " \u00b7 " + tipo;
     document.getElementById("cal-modal-desc").textContent = ev.desc || "";
     var link = document.getElementById("cal-modal-link");
     if (link) {
       link.href = ev.link || "#";
       link.style.display = ev.link ? "inline-flex" : "none";
     }
-    modal.classList.add("open");
     modal.style.display = "flex";
   }
 
   function closeModal() {
     var modal = document.getElementById("cal-modal");
-    if (modal) {
-      modal.classList.remove("open");
-      modal.style.display = "none";
-    }
-    openEventId = null;
+    if (modal) modal.style.display = "none";
   }
 
   function pad2(n) { return String(n).padStart(2, "0"); }
 
   function icsEscape(s) {
-    return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+    return String(s || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\n/g, "\\n");
   }
 
   function foldLine(line) {
@@ -281,7 +283,9 @@
     return out;
   }
 
-  function isDateOnly(iso) { return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || "").trim()); }
+  function isDateOnly(iso) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || "").trim());
+  }
 
   function icsStamp(iso) {
     var s = String(iso || "").trim();
@@ -315,7 +319,8 @@
       lines.push("DTEND;VALUE=DATE:" + addDaysToStamp(st.value, 1));
     } else {
       lines.push("DTSTART:" + st.value);
-      var end = new Date(ev.date); end.setTime(end.getTime() + 2 * 3600 * 1000);
+      var end = new Date(ev.date);
+      end.setTime(end.getTime() + 2 * 3600 * 1000);
       lines.push("DTEND:" + utcStamp(end));
     }
     lines.push("SUMMARY:" + icsEscape(ev.title || "Evento"));
@@ -327,7 +332,10 @@
 
   function downloadICS() {
     var list = filteredEvents();
-    if (!list.length) { alert("Nessun evento da esportare."); return; }
+    if (!list.length) {
+      alert("Nessun evento da esportare.");
+      return;
+    }
     var body = list.map(buildVEvent).filter(Boolean).join("\r\n");
     var ics = [
       "BEGIN:VCALENDAR",
@@ -350,17 +358,26 @@
     var prev = document.getElementById("cal-prev");
     var next = document.getElementById("cal-next");
     var todayBtn = document.getElementById("cal-today");
-    if (prev) prev.onclick = function () {
-      if (state.view === "month") state.cursor.setMonth(state.cursor.getMonth() - 1);
-      else state.cursor = addDays(state.cursor, -7);
-      render();
-    };
-    if (next) next.onclick = function () {
-      if (state.view === "month") state.cursor.setMonth(state.cursor.getMonth() + 1);
-      else state.cursor = addDays(state.cursor, 7);
-      render();
-    };
-    if (todayBtn) todayBtn.onclick = function () { state.cursor = new Date(); render(); };
+    if (prev) {
+      prev.onclick = function () {
+        if (state.view === "month") state.cursor.setMonth(state.cursor.getMonth() - 1);
+        else state.cursor = addDays(state.cursor, -7);
+        render();
+      };
+    }
+    if (next) {
+      next.onclick = function () {
+        if (state.view === "month") state.cursor.setMonth(state.cursor.getMonth() + 1);
+        else state.cursor = addDays(state.cursor, 7);
+        render();
+      };
+    }
+    if (todayBtn) {
+      todayBtn.onclick = function () {
+        state.cursor = new Date();
+        render();
+      };
+    }
 
     document.querySelectorAll("[data-view], [data-cal-view]").forEach(function (btn) {
       btn.onclick = function () {
@@ -379,18 +396,15 @@
         render();
       };
     }
-    document.querySelectorAll("[data-cal-filter]").forEach(function (btn) {
-      btn.onclick = function () {
-        state.filter = btn.getAttribute("data-cal-filter") || "all";
-        document.querySelectorAll("[data-cal-filter]").forEach(function (b) { b.classList.toggle("active", b === btn); });
-        render();
-      };
-    });
 
     var closeBtn = document.getElementById("cal-modal-close");
     if (closeBtn) closeBtn.onclick = closeModal;
     var modal = document.getElementById("cal-modal");
-    if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    if (modal) {
+      modal.addEventListener("click", function (e) {
+        if (e.target === modal) closeModal();
+      });
+    }
 
     var icsBtn = document.getElementById("cal-ics") || document.getElementById("cal-ics-all");
     if (icsBtn) icsBtn.onclick = downloadICS;
@@ -398,6 +412,9 @@
     loadEvents();
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire);
-  else wire();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wire);
+  } else {
+    wire();
+  }
 })();
