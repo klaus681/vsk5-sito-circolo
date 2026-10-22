@@ -23,3 +23,5 @@ document.write('<script src="allenamenti-home.js?v=3"><\/script>');
 document.write('<script src="home-sfondi.js?v=2"><\/script>');
 /* Extra: link Privacy nel footer */
 document.write('<script src="privacy-link.js?v=1"><\/script>');
+/* Extra: banner account in attesa/sospeso */
+document.write('<script src="membership-banner.js?v=1"><\/script>');

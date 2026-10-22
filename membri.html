@@ -402,7 +402,7 @@
     </div>
   </footer>
 
-  <script src="common.js?v=7"></script>
+  <script src="common.js?v=8"></script>
   <script>
     const extra = {
       it: {
@@ -904,6 +904,17 @@
       var meProfile = allProfiles.filter(function (p) { return String(p.id) === String(currentUserId); })[0] || null;
       var meRole = meProfile ? String(meProfile.role || '').toLowerCase() : '';
       isAdminView = !!(meProfile && (meProfile.is_admin === true || meRole === 'admin'));
+      var myStato = meProfile && meProfile.stato;
+      if (myStato && myStato !== 'attivo') {
+        container.setAttribute('aria-busy', 'false');
+        container.innerHTML = '<div class="members-error"><p>' +
+          (myStato === 'pending'
+            ? 'Il tuo account è in attesa di approvazione: l’elenco soci sarà disponibile dopo l’ok di un amministratore.'
+            : 'Il tuo account è sospeso: contatta un amministratore.') +
+          ' <a href="profilo.html">Vai al profilo</a></p></div>';
+        if (toolbar) toolbar.hidden = true;
+        return;
+      }
       await loadStats();
 
       if (toolbar) toolbar.hidden = false;
