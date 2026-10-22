@@ -269,6 +269,6 @@ order by c.relname;
 select tgname, tgrelid::regclass as tabella
 from pg_trigger
 where not tgisinternal and tgname like 'trg_audit_%'
-order by tabella::text;
+order by 2;
 
 
