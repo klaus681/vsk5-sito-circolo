@@ -3,6 +3,14 @@ const STAGIONE = '2026';
 let isLoggedIn = false;
 let isAdminHome = false;
 
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 const extra = {
   it: {
     home_community: "Circolo Velico Italia",
@@ -410,8 +418,8 @@ async function caricaClassificaHome() {
       const pos = r.posizione != null ? r.posizione : (i + 1);
       return `<li>
         <span class="rank-pos">${pos}</span>
-        <div class="rank-info"><strong>${nick}</strong>${nome ? `<span>${nome}</span>` : ''}</div>
-        ${team ? `<span class="team-badge">${team}</span>` : ''}
+        <div class="rank-info"><strong>${escHtml(nick)}</strong>${nome ? `<span>${escHtml(nome)}</span>` : ''}</div>
+        ${team ? `<span class="team-badge">${escHtml(team)}</span>` : ''}
         <span class="rank-points">${r.punti_totali ?? '—'}</span>
       </li>`;
     }).join('');
@@ -492,13 +500,13 @@ async function caricaBacheca() {
         : '';
       return `<div class="avviso-item">
         <div class="avviso-meta">
-          <span class="avviso-titolo">${(a.titolo || '').replace(/</g,'<')}</span>
+          <span class="avviso-titolo">${escHtml(a.titolo)}</span>
           <div class="avviso-actions">
             <span class="avviso-data">${dataFmt}</span>
             ${delBtn}
           </div>
         </div>
-        <div class="avviso-testo">${(a.testo || '').replace(/</g,'<')}</div>
+        <div class="avviso-testo">${escHtml(a.testo)}</div>
       </div>`;
     }).join('');
 

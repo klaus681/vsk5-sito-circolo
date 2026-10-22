@@ -102,6 +102,7 @@ Apri una pull request, verifica le pagine principali e poi fai merge su `main`. 
 - Aggiorna `sitemap.xml` quando aggiungi una pagina pubblica.
 - Aggiungi `noindex` alle pagine riservate (profilo, messaggi, admin, biblioteca, tutor).
 - Per i font usare `fonts.css`; non reintrodurre Google Fonts via CDN.
+- Il core condiviso è self-hosted in `cvi-core.js` (caricato da `common.js`) e il calendario in `calendario.js`: non reintrodurre dipendenze da CDN GitHub/jsDelivr.
 
 ## Prossimi passi consigliati
 

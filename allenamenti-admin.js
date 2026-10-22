@@ -2,9 +2,9 @@
 (async function () {
   "use strict";
   try {
-    // Base funzionante (CRUD + generatore ricorrente)
-    var baseUrl =
-      "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@874b89a41903e1e5b65a95f645145f4dca08e63c/allenamenti-admin.js";
+    // Base funzionante (CRUD + generatore ricorrente) – copia locale,
+    // nessuna dipendenza da CDN esterni.
+    var baseUrl = "allenamenti-admin-core.js?v=1";
     var code = await fetch(baseUrl).then(function (r) {
       if (!r.ok) throw new Error("admin base " + r.status);
       return r.text();

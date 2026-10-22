@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="mobile.css">
-  <link rel="stylesheet" href="fix-nav.css?v=2">
+  <link rel="stylesheet" href="fix-nav.css?v=3">
   <link rel="stylesheet" href="forms.css">
 </head>
 <body>
@@ -160,7 +160,7 @@
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
-  <script src="common.js?v=5"></script>
+  <script src="common.js?v=6"></script>
   <script>
     const extra = {
       it: {
@@ -237,7 +237,11 @@
       const sel = document.getElementById('team-select');
       if (!sel || !window.CVI || !CVI.supabase) return;
       try {
-        const { data, error } = await CVI.supabase.from('teams').select('id,nome_team,nome');
+        let { data, error } = await CVI.supabase.from('teams').select('id,nome_team');
+        if (error) {
+          const fb = await CVI.supabase.from('teams').select('id,nome');
+          data = fb.data || data; error = fb.error;
+        }
         if (error) throw error;
         const names = (data || []).map(function (t) { return (t.nome_team || t.nome || '').trim(); })
           .filter(Boolean).sort(function (a, b) { return a.localeCompare(b, 'it'); });
