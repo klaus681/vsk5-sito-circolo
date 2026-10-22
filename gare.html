@@ -268,7 +268,7 @@ async function saveGara(e){
     if(res.error)throw res.error;
     const savedId=id||(res.data&&res.data.id);
     let pwdNotice='';
-    if(savedId){
+    if(savedId&&(password||cachePasswordByGara[String(savedId)])){
       const p=await saveGaraPassword(String(savedId),password);
       if(p.ok){if(password)cachePasswordByGara[String(savedId)]=password;else delete cachePasswordByGara[String(savedId)];}
       else{pwdNotice=p.missing?' La password non è stata salvata: esegui gare-password-sql.sql su Supabase per attivare il campo.':' La password non è stata salvata: '+((p.error&&p.error.message)||'errore sconosciuto');}

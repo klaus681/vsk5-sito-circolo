@@ -217,7 +217,7 @@ async function saveGara(e){
     }
     if(res&&res.error)throw res.error;
     var savedId=id||(res.data&&res.data.id),pwdNotice="";
-    if(savedId){
+    if(savedId&&(password||garaPasswords[String(savedId)])){
       var pr=await saveGaraPassword(String(savedId),password);
       if(pr.ok){if(password)garaPasswords[String(savedId)]=password;else delete garaPasswords[String(savedId)];}
       else{pwdNotice=pr.missing?"Esegui gare-password-sql.sql su Supabase per attivare la password server.":("Password non salvata: "+((pr.error&&pr.error.message)||"errore"));}

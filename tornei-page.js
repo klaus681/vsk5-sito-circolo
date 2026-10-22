@@ -297,6 +297,36 @@
     }
   }
 
+  async function renderPassword(t) {
+    var el = document.getElementById("tn-detail-password");
+    if (!el) return;
+    el.style.display = "none";
+    el.textContent = "";
+    try {
+      var uid = await getSessionUserId();
+      if (!uid) return;
+      var r = await withTimeout(
+        CVI.supabase
+          .from("torneo_password")
+          .select("password")
+          .eq("torneo_id", t.id)
+          .maybeSingle(),
+        8000,
+        "Password torneo"
+      );
+      if (r.error || !r.data || !r.data.password) return;
+      var pwd = String(r.data.password).trim();
+      if (!pwd) return;
+      el.innerHTML =
+        '🔑 Password server: <code style="color:#7dd3fc;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">' +
+        esc(pwd) +
+        "</code>";
+      el.style.display = "block";
+    } catch (e) {
+      // Tabella non ancora creata (tornei-password-sql.sql): nessun errore visibile.
+    }
+  }
+
   async function loadList() {
     var box = document.getElementById("tn-list");
     if (!box) return;
@@ -420,6 +450,7 @@
         meta += " · " + [t.data_inizio, t.data_fine].filter(Boolean).join(" / ");
       document.getElementById("tn-detail-meta").textContent = meta;
       document.getElementById("tn-detail-desc").textContent = t.descrizione || "";
+      await renderPassword(t);
 
       try {
         await loadIscrizioni(t.id);

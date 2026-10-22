@@ -97,6 +97,25 @@
         nIsc = ir.count != null ? ir.count : 0;
       } catch (e) {}
 
+      // Password server: mostrata solo ai soci loggati (RLS su torneo_password
+      // non restituisce nulla in anonimo). Se la tabella non esiste la
+      // migrazione tornei-password-sql.sql non è stata eseguita: si ignora.
+      var pwd = "";
+      try {
+        var sr = await CVI.supabase.auth.getSession();
+        var logged = !!(sr && sr.data && sr.data.session);
+        if (logged) {
+          var pr = await CVI.supabase
+            .from("torneo_password")
+            .select("password")
+            .eq("torneo_id", t.id)
+            .maybeSingle();
+          if (!pr.error && pr.data && pr.data.password) {
+            pwd = String(pr.data.password).trim();
+          }
+        }
+      } catch (e) {}
+
       var max =
         t.max_partecipanti != null && t.max_partecipanti > 0
           ? t.max_partecipanti
@@ -161,6 +180,11 @@
           ? '<div style="font-size:0.88rem;color:#cbd5e1;margin-bottom:0.35rem;line-height:1.45">' +
             esc(String(t.descrizione).slice(0, 120)) +
             "</div>"
+          : "") +
+        (pwd
+          ? '<div style="margin-top:0.55rem;display:inline-flex;align-items:center;gap:0.35rem;background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);border-radius:8px;padding:0.3rem 0.65rem;font-size:0.85rem;color:#cbd5e1">🔑 Password server: <code style="color:#7dd3fc;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">' +
+            esc(pwd) +
+            "</code></div>"
           : "") +
         '<div style="margin-top:0.7rem;font-size:0.88rem;font-weight:700;color:#7dd3fc">Vai al torneo →</div>' +
         "</div>";
