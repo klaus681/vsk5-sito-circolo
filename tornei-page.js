@@ -420,6 +420,189 @@
     }
   }
 
+  /* ---------- Classifica regate VSK (log Virtual Skipper) ---------- */
+  async function renderVsk(t) {
+    var box = document.getElementById("tn-vsk-box");
+    if (!box) return;
+    var L = window.CVISerieAperte;
+    if (!L) {
+      box.style.display = "none";
+      return;
+    }
+    try {
+      var rr = await withTimeout(
+        CVI.supabase
+          .from("torneo_regate")
+          .select("id,titolo,data_regata,ordine")
+          .eq("torneo_id", t.id)
+          .order("ordine")
+          .order("data_regata", { ascending: true, nullsFirst: false }),
+        8000,
+        "Regate VSK"
+      );
+      if (rr.error) {
+        box.style.display = "none";
+        return;
+      }
+      var regs = rr.data || [];
+      if (!regs.length) {
+        box.style.display = "none";
+        return;
+      }
+      var ids = regs.map(function (r) {
+        return r.id;
+      });
+      var rs = await withTimeout(
+        CVI.supabase.from("torneo_risultati").select("*").in("regata_id", ids),
+        10000,
+        "Risultati VSK"
+      );
+      if (rs.error) throw rs.error;
+
+      var byReg = {};
+      (rs.data || []).forEach(function (r) {
+        var k = String(r.regata_id);
+        if (!byReg[k]) byReg[k] = [];
+        byReg[k].push(r);
+      });
+
+      var sistema =
+        t.vsk_sistema_punteggio === "high_point" ? "high_point" : "low_point";
+      var scartiAuto = !!t.vsk_scarti_auto;
+      var scarti = t.vsk_scarti != null ? Number(t.vsk_scarti) : 0;
+
+      var forCl = regs.map(function (reg) {
+        return {
+          id: reg.id,
+          titolo: reg.titolo,
+          results: L.calcPuntiRegata(byReg[String(reg.id)] || [], sistema)
+        };
+      });
+      var cl = L.calcClassificaSerie(forCl, scarti, {
+        sistema: sistema,
+        scartiAuto: scartiAuto
+      });
+      if (!cl.length) {
+        box.style.display = "none";
+        return;
+      }
+      var scartiN = cl[0].scartiUsati || 0;
+
+      var html =
+        '<h2 style="margin:1.5rem 0 .5rem;font-size:1.1rem;color:#7dd3fc">Classifica regate VSK</h2>' +
+        '<p class="tn-meta" style="margin-bottom:.5rem">' +
+        (sistema === "high_point" ? "High Point" : "Low Point") +
+        " · " +
+        regs.length +
+        " regate · scarti: " +
+        scartiN +
+        (scartiAuto ? " (automatici)" : "") +
+        " · " +
+        cl.length +
+        " skipper</p>" +
+        '<div style="overflow-x:auto"><table class="tn-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th>';
+      regs.forEach(function (_, i) {
+        html += "<th>R" + (i + 1) + "</th>";
+      });
+      html += "<th>Totali</th><th>Netti</th></tr></thead><tbody>";
+      cl.forEach(function (r, i) {
+        html +=
+          '<tr><td class="pos">' +
+          (i + 1) +
+          "</td><td>" +
+          esc(r.nickname) +
+          "</td><td>" +
+          esc(r.team || "-") +
+          "</td>";
+        (r.punti || []).forEach(function (p, idx) {
+          var disc = (r.scartiIdx || []).indexOf(idx) !== -1;
+          html += disc
+            ? '<td style="color:#f87171;text-decoration:line-through" title="Scartato">' +
+              p +
+              "</td>"
+            : "<td>" + p + "</td>";
+        });
+        html +=
+          "<td>" + r.totali + '</td><td class="pts">' + r.netti + "</td></tr>";
+      });
+      html += "</tbody></table></div>";
+
+      html +=
+        '<div style="margin-top:1rem"><h3 style="margin:0 0 .6rem;color:#94a3b8;font-size:.95rem;text-transform:uppercase;letter-spacing:.04em">Dettaglio regate VSK</h3>';
+      regs.forEach(function (reg, rIdx) {
+        var rows = (forCl[rIdx].results || []).slice();
+        rows.sort(function (a, b) {
+          if (a.stato === "FIN" && b.stato === "FIN")
+            return (a.posizione || 99) - (b.posizione || 99);
+          if (a.stato === "FIN") return -1;
+          if (b.stato === "FIN") return 1;
+          return String(a.nickname).localeCompare(String(b.nickname), "it");
+        });
+        var winner = null;
+        rows.forEach(function (r) {
+          if (r.tempo_ms && (winner == null || r.tempo_ms < winner))
+            winner = r.tempo_ms;
+        });
+        var list = rows.length
+          ? '<ol style="margin:.5rem 0 0;padding-left:1.2rem;color:#e2e8f0;font-size:.9rem;line-height:1.55">' +
+            rows
+              .map(function (r) {
+                var tempo = "";
+                if (r.tempo_ms) {
+                  tempo = L.formatMs(r.tempo_ms);
+                  if (winner && r.tempo_ms > winner)
+                    tempo +=
+                      " (+" + ((r.tempo_ms - winner) / 1000).toFixed(1) + "s)";
+                }
+                return (
+                  "<li>" +
+                  (r.stato !== "FIN"
+                    ? '<span style="color:#f87171;font-weight:700">' +
+                      esc(r.stato) +
+                      "</span> "
+                    : "") +
+                  (r.stato === "FIN" && r.posizione
+                    ? "<strong>" + esc(r.posizione) + "°</strong> "
+                    : "") +
+                  esc(r.nickname) +
+                  (r.team ? " (" + esc(r.team) + ")" : "") +
+                  (tempo
+                    ? ' <span style="color:#64748b;font-family:ui-monospace,monospace;font-size:.82rem">' +
+                      esc(tempo) +
+                      "</span>"
+                    : "") +
+                  ' <span style="color:#94a3b8">(' +
+                  r.punti +
+                  " pt)</span></li>"
+                );
+              })
+              .join("") +
+            "</ol>"
+          : '<p style="color:#64748b;margin:.4rem 0 0;font-size:.88rem">Risultati non ancora inseriti</p>';
+
+        html +=
+          '<div style="background:rgba(15,23,42,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.85rem 1rem;margin-bottom:.65rem">' +
+          '<div style="font-weight:700;color:#fff">' +
+          esc(reg.titolo) +
+          "</div>" +
+          (reg.data_regata
+            ? '<div style="color:#94a3b8;font-size:.82rem;margin-top:.15rem">📅 ' +
+              esc(String(reg.data_regata).slice(0, 10)) +
+              "</div>"
+            : "") +
+          list +
+          "</div>";
+      });
+      html += "</div>";
+
+      box.innerHTML = html;
+      box.style.display = "block";
+    } catch (e) {
+      box.style.display = "none";
+      if (window.console) console.warn("[CVI tornei vsk]", e);
+    }
+  }
+
   async function showDetail(id) {
     document.getElementById("tn-list-view").style.display = "none";
     document.getElementById("tn-detail-view").style.display = "block";
@@ -451,6 +634,9 @@
       document.getElementById("tn-detail-meta").textContent = meta;
       document.getElementById("tn-detail-desc").textContent = t.descrizione || "";
       await renderPassword(t);
+      try {
+        await renderVsk(t);
+      } catch (ve) {}
 
       try {
         await loadIscrizioni(t.id);
