@@ -18,11 +18,13 @@
     st.className = "admin-status" + (ok === true ? " ok" : ok === false ? " err" : "");
   }
 
-  function isAdminOrScorer() {
+  /* Il gate admin (admin-a.js) ha già verificato admin/scorer.
+     Qui controlliamo solo che ci sia una sessione attiva. */
+  async function ensureSession() {
+    if (!window.CVI || !CVI.supabase) return false;
     try {
-      var p = window.CVI && CVI.profile;
-      if (!p) return false;
-      return !!(p.is_admin || ["admin", "scorer"].indexOf(String(p.role || "").toLowerCase()) >= 0);
+      var res = await CVI.supabase.auth.getSession();
+      return !!(res.data && res.data.session && res.data.session.user);
     } catch (e) {
       return false;
     }
@@ -147,8 +149,8 @@
 
   async function saveSito(ev) {
     if (ev && ev.preventDefault) ev.preventDefault();
-    if (!isAdminOrScorer()) {
-      alert("Solo admin/scorer possono modificare i siti amici.");
+    if (!(await ensureSession())) {
+      alert("Sessione scaduta: effettua di nuovo il login.");
       return;
     }
     var id = document.getElementById("sam-id").value.trim();
@@ -194,23 +196,6 @@
   }
 
   function wire() {
-    var tab = document.querySelector('.admin-tab[data-tab="siti-amici"]');
-    if (tab && !tab._saWired) {
-      tab._saWired = true;
-      tab.onclick = function () {
-        document.querySelectorAll(".admin-tab").forEach(function (t) {
-          t.classList.remove("active");
-        });
-        document.querySelectorAll(".admin-panel").forEach(function (p) {
-          p.classList.remove("active");
-        });
-        tab.classList.add("active");
-        var panel = document.getElementById("panel-siti-amici");
-        if (panel) panel.classList.add("active");
-        loadSitiAmiciAdmin();
-      };
-    }
-
     var form = document.getElementById("sam-form");
     if (form && !form._saWired) {
       form._saWired = true;
