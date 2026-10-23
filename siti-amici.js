@@ -1,42 +1,8 @@
 /* CVI – blocco "Siti amici & link utili" in Home
-   Per aggiungere/togliere un sito basta modificare la lista SITI qui sotto:
-   { nome: "...", url: "https://...", desc: "...", emoji: "⚓" }
-   Le voci con url vuoto vengono ignorate. */
+   I link sono gestiti dal pannello Admin → Siti amici.
+   Fallback: se Supabase non risponde, non mostra nulla. */
 (function () {
   "use strict";
-
-  var SITI = [
-    {
-      nome: "Federazione Italiana Vela",
-      url: "https://www.federvela.it/",
-      desc: "FIV – la federazione della vela italiana",
-      emoji: "\ud83c\uddee\ud83c\uddf9"
-    },
-    {
-      nome: "World Sailing",
-      url: "https://www.sailing.org/",
-      desc: "La federazione internazionale della vela",
-      emoji: "\ud83c\udf0d"
-    },
-    {
-      nome: "Virtual Skipper",
-      url: "https://www.virtualskipper-game.com/",
-      desc: "Il simulatore di regate su cui corriamo",
-      emoji: "\u26f5"
-    },
-    {
-      nome: "Nadeo",
-      url: "https://www.nadeo.com/",
-      desc: "La software house di Virtual Skipper",
-      emoji: "\ud83c\udfae"
-    },
-    {
-      nome: "Community CVI su Discord",
-      url: "https://discord.gg/Z4FUc79hX8",
-      desc: "Il server ufficiale del circolo",
-      emoji: "\ud83d\udcac"
-    }
-  ];
 
   var STYLE =
     ".lb-section{margin:1.6rem 0 0}" +
@@ -61,9 +27,9 @@
       .replace(/"/g, "&quot;");
   }
 
-  function render() {
+  function renderList(list) {
     if (document.getElementById("cvi-link-amici")) return;
-    var list = (SITI || []).filter(function (s) {
+    list = (list || []).filter(function (s) {
       return s && s.url && /^https?:\/\//i.test(s.url);
     });
     if (!list.length) return;
@@ -101,7 +67,9 @@
             '<span class="lb-name">' +
             esc(s.nome) +
             "</span>" +
-            (s.desc ? '<span class="lb-desc">' + esc(s.desc) + "</span>" : "") +
+            (s.descrizione
+              ? '<span class="lb-desc">' + esc(s.descrizione) + "</span>"
+              : "") +
             '<span class="lb-go">Visita →</span>' +
             "</span></a>"
           );
@@ -114,8 +82,34 @@
     else main.insertAdjacentHTML("beforeend", html);
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", render);
-  else render();
-  setTimeout(render, 600);
-  setTimeout(render, 1800);
+  async function loadAndRender() {
+    if (document.getElementById("cvi-link-amici")) return;
+    try {
+      if (!window.CVI || !CVI.supabase) return;
+      var res = await CVI.supabase
+        .from("siti_amici")
+        .select("nome,url,descrizione,emoji,ordine")
+        .eq("attivo", true)
+        .order("ordine", { ascending: true });
+      if (res.error) {
+        console.warn("siti-amici:", res.error.message || res.error);
+        return;
+      }
+      renderList(res.data || []);
+    } catch (e) {
+      console.warn("siti-amici load error", e);
+    }
+  }
+
+  function boot() {
+    loadAndRender();
+    setTimeout(loadAndRender, 800);
+    setTimeout(loadAndRender, 2200);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();
