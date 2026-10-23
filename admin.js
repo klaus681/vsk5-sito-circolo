@@ -46,7 +46,7 @@
       sBoot.textContent = saBoot;
       document.head.appendChild(sBoot);
     }
-    var sa = await fetch("4-serie-aperte-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
+    var sa = await fetch("4-serie-aperte-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (sa) {
       var sSa = document.createElement("script");
       sSa.textContent = sa;

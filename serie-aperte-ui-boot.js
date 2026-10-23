@@ -5,7 +5,7 @@
   var PANEL_HTML =
     '<div class="admin-card">' +
     '<h3 id="sa-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuova serie aperta</h3>' +
-    '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.75rem">Classifiche Low Point per skipper non soci (FIN, DNF, DNS, DSQ, RET). Separate dalla classifica ufficiale.</p>' +
+    '<p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.75rem">Classifiche Low Point / High Point per skipper non soci (FIN, DNF, DNS, DSQ, RET), con import log VSK. Separate dalla classifica ufficiale.</p>' +
     '<form id="sa-form" class="form-grid">' +
     '<input type="hidden" id="sa-id">' +
     '<div><label class="adm-label" for="sa-titolo">Titolo serie *</label><input class="adm-input" id="sa-titolo" required style="width:100%" placeholder="Es. Serie Settimanale Ottobre 2026"></div>' +
@@ -48,11 +48,11 @@
     '<button type="button" class="btn-sm" id="sa-import-csv">⬆ Importa CSV</button>' +
     '<button type="button" class="btn-sm" id="sa-csv-template">Modello CSV</button>' +
     '<button type="button" class="btn-sm" id="sa-add-ris-row">+ Riga</button></div>' +
-    '<p id="sa-csv-hint" style="margin:0 0 0.5rem;font-size:0.78rem;color:#94a3b8">CSV: <strong>Stato;Posizione;Nickname;Team;Note</strong></p>' +
+    '<p id="sa-csv-hint" style="margin:0 0 0.5rem;font-size:0.78rem;color:#94a3b8">CSV manuale: <strong>Stato;Posizione;Nickname;Team;Note</strong> — oppure trascina un log VSK <strong>Result_*.csv</strong></p>' +
     '<details style="margin:0 0 0.6rem"><summary style="cursor:pointer;font-size:0.8rem;color:#7dd3fc;font-weight:600">Incolla testo CSV</summary>' +
     '<textarea id="sa-csv-text" class="adm-input" rows="5" style="width:100%;margin-top:0.5rem;font-family:ui-monospace,monospace;font-size:0.82rem" placeholder="Stato;Posizione;Nickname;Team;Note"></textarea>' +
     '<button type="button" class="btn-sm" id="sa-import-csv-text" style="margin-top:0.4rem">Compila dalle righe</button></details>' +
-    '<table class="admin-table"><thead><tr><th>Stato</th><th>Pos</th><th>Nickname</th><th>Team</th><th>Note</th><th></th></tr></thead>' +
+    '<table class="admin-table"><thead><tr><th>Stato</th><th>Pos</th><th>Nickname</th><th>Team</th><th>Tempo</th><th>Note</th><th></th></tr></thead>' +
     '<tbody id="sa-ris-body"></tbody></table>' +
     '<div class="form-actions" style="margin-top:0.85rem">' +
     '<button type="button" class="btn-primary" id="sa-save-ris">Salva risultati</button>' +
