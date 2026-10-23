@@ -48,7 +48,7 @@ Alternative manuali:
 - **Modifica risultati**: tabella con Stato / Pos / Nickname / Team / Tempo / Note
 - **Importa CSV** dentro il modale: accetta sia `Stato;Posizione;Nickname;Team;Note`
   sia un log VSK completo
-- **Esporta classifica CSV** e **Copia HTML** (tabella pronta per il forum) dal riepilogo classifica
+- **Esporta classifica CSV**, **Esporta Excel (.xlsx)** (SheetJS caricato solo al volo, con fallback CSV) e **Copia HTML** per il forum
 
 ## 4. Formati CSV accettati
 

@@ -678,6 +678,7 @@
     html +=
       '<div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap">' +
       '<button type="button" class="btn-sm" id="sa-export-classifica">⬇ Esporta classifica CSV</button>' +
+      '<button type="button" class="btn-sm" id="sa-export-excel">⬇ Esporta Excel (.xlsx)</button>' +
       '<button type="button" class="btn-sm" id="sa-copy-classifica">📋 Copia HTML</button>' +
       "</div>";
     el.innerHTML = html;
@@ -688,12 +689,156 @@
         exportClassificaCSV(classifica, regs, sistema);
       };
     }
+    var xlsBtn = document.getElementById("sa-export-excel");
+    if (xlsBtn) {
+      xlsBtn.onclick = function () {
+        exportClassificaExcel(classifica, regs, sistema, xlsBtn);
+      };
+    }
     var copyBtn = document.getElementById("sa-copy-classifica");
     if (copyBtn) {
       copyBtn.onclick = function () {
         copiaTesto(buildClassificaHtml(classifica, regs, sistema));
       };
     }
+  }
+
+  /* SheetJS caricato on-demand: nessun impatto sulle pagine pubbliche */
+  function loadXlsx(cb) {
+    if (window.XLSX) return cb(null);
+    var prev = document.getElementById("sa-xlsx-lib");
+    if (prev) {
+      prev.addEventListener("load", function () {
+        cb(window.XLSX ? null : new Error("modulo non disponibile"));
+      });
+      return;
+    }
+    var s = document.createElement("script");
+    s.id = "sa-xlsx-lib";
+    s.async = true;
+    s.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = function () {
+      cb(window.XLSX ? null : new Error("modulo non disponibile"));
+    };
+    s.onerror = function () {
+      cb(new Error("CDN non raggiungibile"));
+    };
+    document.head.appendChild(s);
+  }
+
+  function exportClassificaExcel(classifica, regate, sistema, btn) {
+    var label = "⬇ Esporta Excel (.xlsx)";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "⏳ Preparo Excel…";
+    }
+    loadXlsx(function (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+      if (err || !window.XLSX) {
+        alert(
+          "Modulo Excel non disponibile (" +
+            (err && err.message ? err.message : "errore") +
+            "). Esporto il CSV."
+        );
+        exportClassificaCSV(classifica, regate, sistema);
+        return;
+      }
+      try {
+        var XLSX = window.XLSX;
+        var wb = XLSX.utils.book_new();
+
+        /* Foglio 1: classifica generale */
+        var head = ["Pos", "Skipper", "Team"];
+        (regate || []).forEach(function (_, i) {
+          head.push("R" + (i + 1));
+        });
+        head.push("Totali", "Netti", "Gare");
+        var aoa = [head];
+        (classifica || []).forEach(function (r, i) {
+          var row = [i + 1, r.nickname, r.team || ""];
+          (r.punti || []).forEach(function (p, idx) {
+            var disc = (r.scartiIdx || []).indexOf(idx) !== -1;
+            row.push(disc ? p + " (scartato)" : p);
+          });
+          row.push(r.totali, r.netti, r.gare);
+          aoa.push(row);
+        });
+        var ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws["!cols"] = [{ wch: 5 }, { wch: 24 }, { wch: 16 }].concat(
+          (regate || []).map(function () {
+            return { wch: 11 };
+          }),
+          [{ wch: 9 }, { wch: 9 }, { wch: 7 }]
+        );
+        XLSX.utils.book_append_sheet(wb, ws, "Classifica");
+
+        /* Fogli 2..N: singole regate */
+        (regate || []).forEach(function (reg, rIdx) {
+          var rows = [["Pos", "Skipper", "Stato", "Tempo", "Punti"]];
+          var entries = [];
+          (classifica || []).forEach(function (r) {
+            var d = (r.dettaglio || [])[rIdx];
+            if (!d) return;
+            entries.push({
+              pos: d.posizione || 999,
+              nick: r.nickname,
+              stato: d.stato,
+              tempo: d.tempo_ms ? fmtTempo(d.tempo_ms) : "",
+              punti: d.punti
+            });
+          });
+          entries.sort(function (a, b) {
+            return a.pos - b.pos;
+          });
+          entries.forEach(function (e) {
+            rows.push([
+              e.pos === 999 ? "" : e.pos,
+              e.nick,
+              e.stato,
+              e.tempo,
+              e.punti
+            ]);
+          });
+          var wsR = XLSX.utils.aoa_to_sheet(rows);
+          wsR["!cols"] = [
+            { wch: 5 },
+            { wch: 24 },
+            { wch: 8 },
+            { wch: 12 },
+            { wch: 7 }
+          ];
+          var name = ("R" + (rIdx + 1) + " " + (reg.titolo || ""))
+            .replace(/[\\\/\?\*\[\]:]/g, "")
+            .slice(0, 31);
+          XLSX.utils.book_append_sheet(wb, wsR, name || "R" + (rIdx + 1));
+        });
+
+        XLSX.writeFile(
+          wb,
+          "Classifica_Serie_Aperta_" +
+            new Date().toISOString().slice(0, 10) +
+            ".xlsx"
+        );
+        alert(
+          "Excel generato: " +
+            (sistema === "high_point" ? "High Point" : "Low Point") +
+            ", " +
+            (regate || []).length +
+            " regate."
+        );
+      } catch (e) {
+        alert(
+          "Errore nella creazione dell'Excel: " +
+            (e.message || e) +
+            ". Esporto il CSV."
+        );
+        exportClassificaCSV(classifica, regate, sistema);
+      }
+    });
   }
 
   function buildClassificaHtml(classifica, regate, sistema) {
