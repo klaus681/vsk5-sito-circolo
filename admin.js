@@ -64,13 +64,7 @@
       sRg.textContent = rg;
       document.head.appendChild(sRg);
     }
-    var gal = await fetch("gallery-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
-    if (gal) {
-      var sGal = document.createElement("script");
-      sGal.textContent = gal;
-      document.head.appendChild(sGal);
-    }
-    var tn = await fetch("tornei-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
+    var tn = await fetch("tornei-admin.js?v=9").then(function(r){ return r.ok ? r.text() : ""; });
     if (tn) {
       var s9 = document.createElement("script");
       s9.textContent = tn;
