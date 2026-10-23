@@ -676,7 +676,10 @@
         (classifica.length - 20) +
         " skipper</p>";
     html +=
-      '<div style="margin-top:0.5rem"><button type="button" class="btn-sm" id="sa-export-classifica">⬇ Esporta classifica CSV</button></div>';
+      '<div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap">' +
+      '<button type="button" class="btn-sm" id="sa-export-classifica">⬇ Esporta classifica CSV</button>' +
+      '<button type="button" class="btn-sm" id="sa-copy-classifica">📋 Copia HTML</button>' +
+      "</div>";
     el.innerHTML = html;
 
     var btn = document.getElementById("sa-export-classifica");
@@ -685,6 +688,78 @@
         exportClassificaCSV(classifica, regs, sistema);
       };
     }
+    var copyBtn = document.getElementById("sa-copy-classifica");
+    if (copyBtn) {
+      copyBtn.onclick = function () {
+        copiaTesto(buildClassificaHtml(classifica, regs, sistema));
+      };
+    }
+  }
+
+  function buildClassificaHtml(classifica, regate, sistema) {
+    var out =
+      '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px">\n' +
+      '  <tr style="background-color:#1B365D;color:#ffffff">\n' +
+      "    <th>Pos</th><th>Skipper</th><th>Team</th>";
+    (regate || []).forEach(function (_, i) {
+      out += "<th>R" + (i + 1) + "</th>";
+    });
+    out += "<th>Totali</th><th>Netti</th></tr>\n";
+    (classifica || []).forEach(function (r, i) {
+      out += "  <tr>\n";
+      out += '    <td align="center"><b>' + (i + 1) + "</b></td>\n";
+      out += "    <td>" + esc(r.nickname) + "</td>\n";
+      out += "    <td>" + esc(r.team || "") + "</td>\n";
+      (r.punti || []).forEach(function (p, idx) {
+        var disc = (r.scartiIdx || []).indexOf(idx) !== -1;
+        out += disc
+          ? '    <td align="center" style="color:#e53e3e;text-decoration:line-through">' +
+            p +
+            "</td>\n"
+          : '    <td align="center">' + p + "</td>\n";
+      });
+      out += '    <td align="center">' + r.totali + "</td>\n";
+      out +=
+        '    <td align="center" style="font-weight:bold;color:#00A8CC">' +
+        r.netti +
+        "</td>\n";
+      out += "  </tr>\n";
+    });
+    out += "</table>\n";
+    out +=
+      "<p><small>" +
+      (sistema === "high_point" ? "High Point" : "Low Point") +
+      " · barrato = scarto</small></p>";
+    return out;
+  }
+
+  function copiaTesto(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () {
+          alert("HTML della classifica copiato negli appunti.");
+        },
+        function () {
+          copiaFallback(text);
+        }
+      );
+    } else {
+      copiaFallback(text);
+    }
+  }
+
+  function copiaFallback(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand("copy");
+      alert("HTML della classifica copiato negli appunti.");
+    } catch (e) {
+      alert("Impossibile copiare: " + (e.message || e));
+    }
+    document.body.removeChild(ta);
   }
 
   function exportClassificaCSV(classifica, regate, sistema) {
