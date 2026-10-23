@@ -1,1 +1,180 @@
-<PLACEHOLDER>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Circolo Velico Italia – regate virtuali su Virtual Skipper 5. Squadre, classifiche, calendario e community dal 2003.">
+  <meta name="keywords" content="Virtual Skipper, Circolo Velico Italia, VSK5, regate virtuali, sailing simulation">
+  <meta name="author" content="Circolo Velico Italia">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Circolo Velico Italia">
+  <meta property="og:title" content="Circolo Velico Italia - Virtual Skipper">
+  <meta property="og:description" content="Regate vere, mari virtuali. Il punto d'incontro degli skipper italiani di Virtual Skipper.">
+  <meta property="og:url" content="https://circolovelicoitalia.it/">
+  <meta property="og:image" content="https://circolovelicoitalia.it/og-image.jpg">
+  <meta property="og:locale" content="it_IT">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://circolovelicoitalia.it/og-image.jpg">
+  <meta name="twitter:title" content="Circolo Velico Italia - Virtual Skipper">
+  <meta name="twitter:description" content="Regate vere, mari virtuali. Community italiana di Virtual Skipper.">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+  <link rel="apple-touch-icon" href="apple-touch-180.png">
+  <link rel="canonical" href="https://circolovelicoitalia.it/">
+  <title>Circolo Velico Italia - Virtual Skipper</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="mobile.css">
+  <link rel="stylesheet" href="fix-nav.css?v=3">
+  <link rel="stylesheet" href="hero-home.css">
+  <link rel="stylesheet" href="gare-meteo.css?v=2">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Vai al contenuto</a>
+  <header>
+    <a href="index.html" class="logo-container">
+      <img src="logo-64.png" alt="Logo Circolo Velico Italia" class="logo-img" width="32" height="32" loading="eager" decoding="async"><span class="logo-text">CVI <span>Virtual</span></span>
+    </a>
+    <nav class="nav-desktop" aria-label="Menu principale">
+      <ul>
+        <li><a href="index.html" class="active" data-i18n="nav_home">Home</a></li>
+        <li><a href="team.html" data-i18n="nav_team">Team</a></li>
+        <li class="dropdown">
+          <a href="gare.html" data-i18n="nav_gare">Gare & Eventi ▾</a>
+          <ul class="dropdown-menu">
+            <li><a href="gare.html" data-i18n="nav_gare_sub">Calendario</a></li>
+            <li><a href="live.html">Live</a></li>
+            <li><a href="classifiche.html" data-i18n="nav_classifiche">Classifiche</a></li>
+          </ul>
+        </li>
+        <li><a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a></li>
+        <li><a href="galleria.html" data-i18n="nav_galleria">Galleria</a></li>
+        <li><a href="discord.html" data-i18n="nav_discord">Discord</a></li>
+        <li><a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a></li>
+        <li><a href="risorse.html" data-i18n="nav_risorse">Download e Risorse</a></li>
+        <li><a href="membri.html" data-i18n="nav_membri">Membri</a></li>
+        <li><a href="contatti.html" data-i18n="nav_contatti">Contatti</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <select id="languageSelect" class="lang-selector" aria-label="Lingua">
+        <option value="it">🇮🇹 IT</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="fr">🇫🇷 FR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
+      <a href="accedi.html" id="auth-link" class="btn-accedi" data-i18n="nav_accedi">Accedi</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Apri menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+  <nav class="nav-mobile" id="navMobile" aria-label="Menu mobile">
+    <a href="index.html" data-i18n="nav_home" class="active">Home</a>
+    <a href="team.html" data-i18n="nav_team">Team</a>
+    <a href="gare.html" data-i18n="nav_gare">Gare & Eventi</a>
+    <div class="mobile-dropdown">
+      <a href="gare.html">→ Calendario</a>
+      <a href="classifiche.html">→ Classifiche</a>
+    </div>
+    <a href="albo-doro.html" data-i18n="nav_albo">Albo d'Oro</a>
+    <a href="galleria.html" data-i18n="nav_galleria">Galleria</a>
+    <a href="discord.html" data-i18n="nav_discord">Discord</a>
+    <a href="regolamento.html" data-i18n="nav_regolamento">Regolamento</a>
+    <a href="risorse.html" data-i18n="nav_risorse">Download e Risorse</a>
+    <a href="contatti.html" data-i18n="nav_contatti">Contatti</a>
+    <a href="membri.html" data-i18n="nav_membri">Membri</a>
+    <a href="unisciti.html" data-i18n="nav_unisciti">Unisciti</a>
+    <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
+  </nav>
+  <div class="hero-wrap">
+    <section class="hero-section">
+      <img src="logo-256.webp" alt="Logo Circolo Velico Italia" class="hero-logo" width="140" height="140">
+      <p class="hero-community" id="hero-community" data-i18n="home_community">Circolo Velico Italia</p>
+      <h1 id="hero-title" data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
+      <p id="hero-subtitle" data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
+      <div class="hero-actions">
+        <a href="gare.html" class="btn-primary" id="hero-cta1">Calendario Regate</a>
+        <a href="unisciti.html" class="btn-secondary" id="hero-cta2" data-i18n="nav_unisciti">Unisciti al Circolo</a>
+      </div>
+    </section>
+  </div>
+  <main class="page-content" id="main-content">
+    <div class="dashboard-grid">
+      <div class="stats-box" id="home-stats">
+        <div class="stat-item"><span class="stat-number" id="stat-soci">—</span><span class="stat-label" id="stat-soci-label">Soci</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-squadre">—</span><span class="stat-label" id="stat-squadre-label">Squadre</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-regate">—</span><span class="stat-label" id="stat-regate-label">Regate 2026</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-fondazione">2003</span><span class="stat-label" id="stat-fondazione-label">Dal</span></div>
+      </div>
+      <div class="next-regata-wrap">
+      <a href="gare.html" id="next-regata-card" class="next-regata-card">
+        <div>
+          <div class="regata-badges" id="regata-badges">
+            <span class="badge-tag" id="regata-badge-tipo">Prossima gara</span>
+            <span class="badge-stato" id="regata-badge-stato" style="display:none"></span>
+            <span class="badge-live" id="regata-badge-live" style="display:none">LIVE</span>
+          </div>
+          <h2 id="regata-titolo">Caricamento da database...</h2>
+        </div>
+        <div class="regata-meta">
+          <span id="regata-data">📅 --</span>
+          <span id="regata-descrizione">--</span>
+        <span class="btn-segui-live" id="regata-live-btn" style="display:none">Segui LIVE</span>
+        </div>
+        <div class="regata-password" id="regata-password" style="display:none"></div>
+      </a>
+      <button type="button" class="btn-meteo" id="regata-meteo-btn" style="display:none">🌤 Meteo</button>
+      </div>
+    </div>
+    <section class="content-row">
+      <div class="card-box">
+        <div class="card-header-flex">
+          <h2>Classifica generale</h2>
+          <a href="classifiche.html" class="link-more">Vedi tutto →</a>
+        </div>
+        <ol class="ranking-list" id="home-ranking">
+          <li class="loading-rank"><span class="rank-pos skeleton-block">·</span><div class="rank-info"><strong class="skeleton-block">Caricamento classifica…</strong></div></li>
+        </ol>
+      </div>
+      <div class="card-box">
+        <h2>Ultime Regate & Highlights</h2>
+        <div class="video-container" id="home-video-box">
+          <iframe id="home-youtube" src="https://www.youtube-nocookie.com/embed/GYKltIx2TLQ" title="Circolo Velico Italia GP Spot" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-text">⚓ CVI <span style="color: var(--accent-color);">Virtual</span></span>
+        <p>Circolo Velico Italia · Virtual Skipper dal 2003.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Circolo</h4>
+          <a href="team.html">Team</a><a href="classifiche.html">Classifiche</a><a href="albo-doro.html">Albo d'Oro</a><a href="galleria.html">Galleria</a><a href="discord.html">Discord</a><a href="regolamento.html">Regolamento</a>
+        </div>
+        <div class="footer-col">
+          <h4>Gare</h4>
+          <a href="gare.html">Calendario</a><a href="risorse.html" data-i18n="nav_risorse">Download e Risorse</a><a href="contatti.html">Contatti</a><a href="unisciti.html">Unisciti</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
+  </footer>
+  <script src="common.js?v=8"></script>
+  <script src="2-serie-aperte-lib.js?v=2"></script>
+  <script src="eventi-aperti-home.js?v=2"></script>
+  <script src="5-serie-aperte-home.js?v=2"></script>
+  <script src="tornei-vsk-home.js?v=1"></script>
+  <script src="home-hero.js?v=2"></script>
+  <script src="gare-meteo.js?v=1"></script>
+  <script src="index-inline.js?v=15"></script>
+  <script src="siti-amici.js?v=2"></script>
+</body>
+</html>
