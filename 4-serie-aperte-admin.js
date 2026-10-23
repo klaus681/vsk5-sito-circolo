@@ -68,117 +68,59 @@
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
 
-  /* ---------- Calcolo punti Low Point ---------- */
-  function calcPuntiRegata(rows) {
-    // rows: [{stato, posizione, nickname, ...}]
-    var starters = rows.filter(function (r) {
-      return r.stato !== "DNS";
-    }).length;
-    var penalty = Math.max(starters, 1) + 1;
-
-    return rows.map(function (r) {
-      var punti;
-      if (r.stato === "FIN" && r.posizione != null && r.posizione >= 1) {
-        punti = r.posizione;
-      } else {
-        punti = penalty;
-      }
-      return {
-        nickname: r.nickname,
-        team: r.team || null,
-        stato: r.stato,
-        posizione: r.posizione,
-        punti: punti,
-        note: r.note || null
-      };
-    });
+  /* ---------- Calcolo punti (delegato a 2-serie-aperte-lib.js) ---------- */
+  function lib() {
+    return window.CVISerieAperte || null;
   }
 
-  function calcClassificaSerie(regateWithResults, scarti) {
-    // regateWithResults: [{id, titolo, ordine, results: [{nickname, punti, stato, ...}]}]
-    var byNick = {};
-    var regateCount = regateWithResults.length;
+  function calcPuntiRegata(rows, sistema) {
+    var L = lib();
+    return L ? L.calcPuntiRegata(rows, sistema) : rows || [];
+  }
 
-    regateWithResults.forEach(function (reg) {
-      (reg.results || []).forEach(function (r) {
-        var k = String(r.nickname).trim().toLowerCase();
-        if (!byNick[k]) {
-          byNick[k] = {
-            nickname: r.nickname,
-            team: r.team || null,
-            punti: [],
-            totali: 0,
-            netti: 0,
-            gare: 0
-          };
-        }
-        if (r.team && !byNick[k].team) byNick[k].team = r.team;
-        byNick[k].punti.push({
-          regata_id: reg.id,
-          punti: r.punti,
-          stato: r.stato,
-          posizione: r.posizione
-        });
-        byNick[k].gare += 1;
-      });
-    });
+  function calcClassificaSerie(regateWithResults, scarti, opts) {
+    var L = lib();
+    return L ? L.calcClassificaSerie(regateWithResults, scarti, opts) : [];
+  }
 
-    // Per chi non ha corso una regata: assegna penalty della regata (starters+1)
-    // Per semplicità e professionalità: se non risulta in una regata = DNS di quella regata
-    regateWithResults.forEach(function (reg) {
-      var starters = (reg.results || []).filter(function (r) {
-        return r.stato !== "DNS";
-      }).length;
-      var penalty = Math.max(starters, 1) + 1;
-      var present = {};
-      (reg.results || []).forEach(function (r) {
-        present[String(r.nickname).trim().toLowerCase()] = true;
-      });
-      Object.keys(byNick).forEach(function (k) {
-        if (!present[k]) {
-          byNick[k].punti.push({
-            regata_id: reg.id,
-            punti: penalty,
-            stato: "DNS",
-            posizione: null
-          });
-        }
-      });
-    });
+  /* Configurazione corrente del pannello regate */
+  function saCfg() {
+    var p = document.getElementById("sa-regate-panel");
+    return {
+      scarti: parseInt((p && p.dataset.scarti) || "0", 10) || 0,
+      sistema: (p && p.dataset.sistema) || "low_point",
+      scartiAuto: !!(p && p.dataset.scartiAuto === "1")
+    };
+  }
 
-    var list = Object.keys(byNick).map(function (k) {
-      var s = byNick[k];
-      var pts = s.punti.map(function (p) {
-        return p.punti;
-      });
-      pts.sort(function (a, b) {
-        return b - a;
-      }); // peggiori prima
-      var discard = Math.min(scarti || 0, pts.length);
-      var netti = pts.slice(discard).reduce(function (a, b) {
-        return a + b;
-      }, 0);
-      var totali = pts.reduce(function (a, b) {
-        return a + b;
-      }, 0);
-      return {
-        nickname: s.nickname,
-        team: s.team,
-        totali: totali,
-        netti: netti,
-        scarti_usati: discard,
-        gare: s.gare,
-        dettaglio: s.punti
-      };
-    });
+  function avvisoSqlMancante() {
+    var st = document.getElementById("admin-status");
+    if (st) {
+      st.textContent =
+        "Serie salvata. Esegui serie-aperte-vsk-sql.sql su Supabase per attivare tempi, sistema punteggio e scarti automatici.";
+      st.className = "admin-status";
+    }
+  }
 
-    list.sort(function (a, b) {
-      if (a.netti !== b.netti) return a.netti - b.netti;
-      if (a.totali !== b.totali) return a.totali - b.totali;
-      return a.nickname.localeCompare(b.nickname, "it");
-    });
-
-    return list;
+  /* Campi extra nel form serie (iniettati: valgono anche col pannello generato) */
+  function ensureExtraOpts() {
+    var form = document.getElementById("sa-form");
+    if (!form || document.getElementById("sa-extra-opts")) return;
+    var wrap = document.createElement("div");
+    wrap.id = "sa-extra-opts";
+    wrap.style.cssText =
+      "display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:0.75rem;align-items:end";
+    wrap.innerHTML =
+      '<div><label class="adm-label" for="sa-sistema">Sistema punteggio</label>' +
+      '<select class="adm-input" id="sa-sistema" style="width:100%">' +
+      '<option value="low_point">Low Point (1° = 1 pt · DNF/DNS = N+1)</option>' +
+      '<option value="high_point">High Point (1° = N pt · DNF = 0)</option>' +
+      "</select></div>" +
+      '<label style="color:#e2e8f0;font-size:0.88rem;padding-bottom:0.5rem">' +
+      '<input type="checkbox" id="sa-scarti-auto"> Scarti automatici (1 ogni 4 regate)</label>';
+    var actions = form.querySelector(".form-actions");
+    if (actions && actions.parentNode === form) form.insertBefore(wrap, actions);
+    else form.appendChild(wrap);
   }
 
   /* ---------- UI helpers ---------- */
@@ -288,7 +230,9 @@
                 (s.data_fine ? toDateInput(s.data_fine) : "—")
             ) +
             " · Scarti: " +
-            (s.scarti || 0) +
+            (s.scarti_auto ? "auto (1/4)" : s.scarti || 0) +
+            " · " +
+            (s.sistema_punteggio === "high_point" ? "High Point" : "Low Point") +
             " · " +
             flags.join(" · ") +
             "</div></div>" +
@@ -351,6 +295,7 @@
   }
 
   function fillSerieForm(s) {
+    ensureExtraOpts();
     document.getElementById("sa-id").value = s.id || "";
     document.getElementById("sa-titolo").value = s.titolo || "";
     document.getElementById("sa-desc").value = s.descrizione || "";
@@ -359,6 +304,10 @@
     document.getElementById("sa-scarti").value = s.scarti != null ? s.scarti : 0;
     document.getElementById("sa-pub").checked = !!s.pubblicato;
     document.getElementById("sa-home").checked = !!s.mostra_home;
+    var sis = document.getElementById("sa-sistema");
+    if (sis) sis.value = s.sistema_punteggio || "low_point";
+    var sau = document.getElementById("sa-scarti-auto");
+    if (sau) sau.checked = !!s.scarti_auto;
     document.getElementById("sa-form-title").textContent = s.id
       ? "Modifica serie aperta"
       : "Nuova serie aperta";
@@ -376,6 +325,8 @@
       data_inizio: null,
       data_fine: null,
       scarti: 0,
+      sistema_punteggio: "low_point",
+      scarti_auto: false,
       pubblicato: false,
       mostra_home: false
     });
@@ -388,6 +339,8 @@
     if (!titolo) return alert("Titolo obbligatorio");
 
     var mostraHome = document.getElementById("sa-home").checked;
+    var sisEl = document.getElementById("sa-sistema");
+    var sauEl = document.getElementById("sa-scarti-auto");
     var payload = {
       titolo: titolo,
       descrizione: document.getElementById("sa-desc").value.trim() || null,
@@ -398,6 +351,17 @@
       mostra_home: mostraHome,
       updated_at: new Date().toISOString()
     };
+    if (sisEl) payload.sistema_punteggio = sisEl.value || "low_point";
+    if (sauEl) payload.scarti_auto = !!sauEl.checked;
+
+    /* retro-compatibilità: se le colonne non esistono ancora, salva senza */
+    function senzaExtra(p) {
+      var c = {};
+      Object.keys(p).forEach(function (k) {
+        if (k !== "sistema_punteggio" && k !== "scarti_auto") c[k] = p[k];
+      });
+      return c;
+    }
 
     var btn = document.getElementById("sa-save");
     if (btn) btn.disabled = true;
@@ -417,9 +381,22 @@
           .from("serie_aperte")
           .update(payload)
           .eq("id", id);
+        if (u.error && colonnaMancante(u.error)) {
+          u = await CVI.supabase
+            .from("serie_aperte")
+            .update(senzaExtra(payload))
+            .eq("id", id);
+          if (!u.error) avvisoSqlMancante();
+        }
         if (u.error) throw u.error;
       } else {
         var ins = await CVI.supabase.from("serie_aperte").insert(payload);
+        if (ins.error && colonnaMancante(ins.error)) {
+          ins = await CVI.supabase
+            .from("serie_aperte")
+            .insert(senzaExtra(payload));
+          if (!ins.error) avvisoSqlMancante();
+        }
         if (ins.error) throw ins.error;
       }
 
@@ -460,16 +437,20 @@
 
     panel.style.display = "block";
     panel.dataset.serieId = serieId;
+    panel.dataset.scarti = String(s.scarti || 0);
+    panel.dataset.sistema = s.sistema_punteggio || "low_point";
+    panel.dataset.scartiAuto = s.scarti_auto ? "1" : "0";
     document.getElementById("sa-regate-title").textContent =
       "Regate & Risultati – " + (s.titolo || "");
 
-    await loadRegateOfSerie(serieId, s.scarti || 0);
+    await loadRegateOfSerie(serieId);
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  async function loadRegateOfSerie(serieId, scarti) {
+  async function loadRegateOfSerie(serieId) {
     var box = document.getElementById("sa-regate-list");
     if (!box) return;
+    var cfg = saCfg();
     box.innerHTML = '<p class="loading-text">Caricamento regate…</p>';
 
     try {
@@ -483,10 +464,16 @@
       if (regRes.error) throw regRes.error;
       var regate = regRes.data || [];
 
+      if (!lib()) {
+        box.innerHTML =
+          '<p style="color:#f87171">Libreria serie-aperte non caricata (2-serie-aperte-lib.js).</p>';
+        return;
+      }
+
       if (!regate.length) {
         box.innerHTML =
-          '<p class="empty-text">Nessuna regata in questa serie. Aggiungine una sotto.</p>';
-        renderClassificaPreview([], scarti);
+          '<p class="empty-text">Nessuna regata in questa serie. Aggiungine una sotto oppure importa i log VSK.</p>';
+        renderClassificaPreview([], cfg, []);
         return;
       }
 
@@ -508,7 +495,7 @@
       // Prepara dati per classifica
       var forClassifica = regate.map(function (reg) {
         var raw = byReg[String(reg.id)] || [];
-        var scored = calcPuntiRegata(raw);
+        var scored = calcPuntiRegata(raw, cfg.sistema);
         return {
           id: reg.id,
           titolo: reg.titolo,
@@ -517,8 +504,8 @@
         };
       });
 
-      var classifica = calcClassificaSerie(forClassifica, scarti);
-      renderClassificaPreview(classifica, scarti);
+      var classifica = calcClassificaSerie(forClassifica, cfg.scarti, cfg);
+      renderClassificaPreview(classifica, cfg, regate);
 
       box.innerHTML = regate
         .map(function (reg, idx) {
@@ -531,7 +518,7 @@
             return String(a.nickname).localeCompare(String(b.nickname), "it");
           });
 
-          var scored = calcPuntiRegata(rows);
+          var scored = calcPuntiRegata(rows, cfg.sistema);
           var listHtml =
             rows.length === 0
               ? '<span style="color:#64748b">Nessun risultato</span>'
@@ -547,6 +534,11 @@
                       esc(r.nickname) +
                       "</strong>" +
                       (r.team ? " (" + esc(r.team) + ")" : "") +
+                      (r.tempo_ms
+                        ? ' <span style="color:#64748b">' +
+                          esc(fmtTempo(r.tempo_ms)) +
+                          "</span>"
+                        : "") +
                       ' <span style="color:#94a3b8">→ ' +
                       r.punti +
                       " pt</span>"
@@ -610,7 +602,7 @@
             .from("serie_aperte_regate")
             .delete()
             .eq("id", b.getAttribute("data-id"));
-          loadRegateOfSerie(serieId, scarti);
+          loadRegateOfSerie(serieId);
         };
       });
     } catch (e) {
@@ -619,19 +611,38 @@
     }
   }
 
-  function renderClassificaPreview(classifica, scarti) {
+  function renderClassificaPreview(classifica, cfg, regate) {
     var el = document.getElementById("sa-classifica-preview");
     if (!el) return;
+    var sistema = (cfg && cfg.sistema) || "low_point";
+    var numScarti = classifica && classifica.length
+      ? classifica[0].scartiUsati || 0
+      : 0;
+    var label =
+      '<div style="margin-bottom:0.5rem;font-weight:700;color:#7dd3fc">Classifica generale' +
+      '<span style="color:#94a3b8;font-weight:500;font-size:0.82rem"> · ' +
+      (sistema === "high_point" ? "High Point" : "Low Point") +
+      " · scarti: " +
+      numScarti +
+      (cfg && cfg.scartiAuto ? " (auto)" : "") +
+      "</span></div>";
+
     if (!classifica || !classifica.length) {
       el.innerHTML =
-        '<p style="color:#64748b;margin:0">Classifica generale: nessuna regata con risultati.</p>';
+        label +
+        '<p style="color:#64748b;margin:0">Nessuna regata con risultati.</p>';
       return;
     }
-    var html =
-      '<div style="margin-bottom:0.5rem;font-weight:700;color:#7dd3fc">Classifica generale' +
-      (scarti > 0 ? " (scarti: " + scarti + ")" : "") +
-      "</div>" +
-      '<table class="admin-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Netti</th><th>Totali</th><th>Gare</th></tr></thead><tbody>';
+
+    var regs = regate || [];
+    var html = label + '<div style="overflow-x:auto">';
+    html +=
+      '<table class="admin-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th>';
+    regs.forEach(function (_, i) {
+      html += "<th>R" + (i + 1) + "</th>";
+    });
+    html += "<th>Totali</th><th>Netti</th><th>Gare</th></tr></thead><tbody>";
+
     classifica.slice(0, 20).forEach(function (r, i) {
       html +=
         "<tr><td><strong>" +
@@ -640,21 +651,75 @@
         esc(r.nickname) +
         "</td><td>" +
         esc(r.team || "—") +
+        "</td>";
+      (r.punti || []).forEach(function (p, idx) {
+        if ((r.scartiIdx || []).indexOf(idx) !== -1) {
+          html +=
+            '<td style="color:#f87171;text-decoration:line-through">' + p + "</td>";
+        } else {
+          html += "<td>" + p + "</td>";
+        }
+      });
+      html +=
+        "<td>" +
+        r.totali +
         "</td><td><strong>" +
         r.netti +
         "</strong></td><td>" +
-        r.totali +
-        "</td><td>" +
         r.gare +
         "</td></tr>";
     });
-    html += "</tbody></table>";
+    html += "</tbody></table></div>";
     if (classifica.length > 20)
       html +=
         '<p style="color:#94a3b8;font-size:0.82rem;margin:0.4rem 0 0">… e altri ' +
         (classifica.length - 20) +
         " skipper</p>";
+    html +=
+      '<div style="margin-top:0.5rem"><button type="button" class="btn-sm" id="sa-export-classifica">⬇ Esporta classifica CSV</button></div>';
     el.innerHTML = html;
+
+    var btn = document.getElementById("sa-export-classifica");
+    if (btn) {
+      btn.onclick = function () {
+        exportClassificaCSV(classifica, regs, sistema);
+      };
+    }
+  }
+
+  function exportClassificaCSV(classifica, regate, sistema) {
+    var lines = [];
+    var head = ["Pos", "Skipper", "Team"];
+    (regate || []).forEach(function (_, i) {
+      head.push("R" + (i + 1));
+    });
+    head.push("Totali", "Netti", "Gare");
+    lines.push(head.join(";"));
+    (classifica || []).forEach(function (r, i) {
+      var cells = [i + 1, r.nickname, r.team || ""];
+      (r.punti || []).forEach(function (p, idx) {
+        var disc = (r.scartiIdx || []).indexOf(idx) !== -1;
+        cells.push(disc ? "(" + p + ")" : p);
+      });
+      cells.push(r.totali, r.netti, r.gare);
+      lines.push(cells.join(";"));
+    });
+    lines.push("");
+    lines.push(
+      "# Sistema: " +
+        (sistema === "high_point" ? "High Point" : "Low Point") +
+        " · (n) = scartato"
+    );
+    var blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8;"
+    });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "classifica-serie-aperta.csv";
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+    }, 2000);
   }
 
   /* ---------- Editor risultati di una regata ---------- */
@@ -670,16 +735,30 @@
     body.innerHTML = "";
     if (rows && rows.length) {
       rows.forEach(function (r) {
-        addRisRow(r.stato || "FIN", r.posizione, r.nickname, r.team, r.note);
+        addRisRow(
+          r.stato || "FIN",
+          r.posizione,
+          r.nickname,
+          r.team,
+          r.note,
+          r.tempo_ms ? r.tempo_ms : ""
+        );
       });
     } else {
-      for (var i = 0; i < 5; i++) addRisRow("FIN", i + 1, "", "", "");
+      for (var i = 0; i < 5; i++) addRisRow("FIN", i + 1, "", "", "", "");
     }
   }
 
-  function addRisRow(stato, pos, nick, team, note) {
+  function addRisRow(stato, pos, nick, team, note, tempo) {
     var body = document.getElementById("sa-ris-body");
     if (!body) return;
+    var tempoFmt = "";
+    if (tempo !== "" && tempo != null) {
+      tempoFmt =
+        lib() && isFinite(Number(tempo)) && Number(tempo) > 0
+          ? lib().formatMs(Number(tempo))
+          : String(tempo);
+    }
     var tr = document.createElement("tr");
     var opts = STATI.map(function (s) {
       return (
@@ -706,6 +785,9 @@
       '<td><input type="text" class="adm-input sa-team" value="' +
       esc(team || "") +
       '" placeholder="Team" style="width:100%"></td>' +
+      '<td><input type="text" class="adm-input sa-tempo" value="' +
+      esc(tempoFmt) +
+      '" placeholder="mm:ss.mmm" style="width:7.5rem"></td>' +
       '<td><input type="text" class="adm-input sa-note" value="' +
       esc(note || "") +
       '" placeholder="Note" style="width:100%"></td>' +
@@ -741,6 +823,8 @@
       var stato = (tr.querySelector(".sa-stato") || {}).value || "FIN";
       var posRaw = (tr.querySelector(".sa-pos") || {}).value;
       var pos = posRaw ? parseInt(posRaw, 10) : null;
+      var tempoRaw = (tr.querySelector(".sa-tempo") || {}).value || "";
+      var tempoMs = lib() ? lib().parseTimeToMs(tempoRaw) : 0;
       if (stato === "FIN" && (!pos || pos < 1)) {
         // se manca posizione ma è FIN, mettiamo comunque e avvisiamo dopo
       }
@@ -750,6 +834,7 @@
         team: ((tr.querySelector(".sa-team") || {}).value || "").trim() || null,
         stato: stato,
         posizione: stato === "FIN" ? pos : null,
+        tempo_ms: tempoMs > 0 ? tempoMs : null,
         note: ((tr.querySelector(".sa-note") || {}).value || "").trim() || null
       });
     });
@@ -763,17 +848,27 @@
         var ir = await CVI.supabase
           .from("serie_aperte_risultati")
           .insert(rows);
+        if (ir.error && colonnaMancante(ir.error)) {
+          var rowsLegacy = rows.map(function (r) {
+            return {
+              regata_id: r.regata_id,
+              nickname: r.nickname,
+              team: r.team,
+              stato: r.stato,
+              posizione: r.posizione,
+              note: r.note
+            };
+          });
+          ir = await CVI.supabase
+            .from("serie_aperte_risultati")
+            .insert(rowsLegacy);
+          if (!ir.error) avvisoSqlMancante();
+        }
         if (ir.error) throw ir.error;
       }
       document.getElementById("sa-ris-modal").style.display = "none";
       var serieId = document.getElementById("sa-regate-panel").dataset.serieId;
-      var scarti =
-        parseInt(
-          (document.getElementById("sa-scarti") || {}).value || "0",
-          10
-        ) || 0;
-      // ricarica scarti dalla serie se possibile
-      loadRegateOfSerie(serieId, scarti);
+      loadRegateOfSerie(serieId);
       var st = document.getElementById("admin-status");
       if (st) {
         st.textContent = "Risultati salvati (" + rows.length + " skipper)";
@@ -782,6 +877,277 @@
     } catch (err) {
       alert(err.message || err);
     }
+  }
+
+  /* ---------- Import log VSK (multi-file) ---------- */
+
+  function fmtTempo(ms) {
+    var L = lib();
+    return L && ms ? L.formatMs(ms) : "—";
+  }
+
+  function vskLog(msg, color) {
+    var el = document.getElementById("sa-vsk-log");
+    if (!el) return;
+    var p = document.createElement("div");
+    p.style.color = color || "#cbd5e1";
+    p.textContent = msg;
+    el.appendChild(p);
+  }
+
+  function titoloDaFile(name) {
+    var base = String(name || "").replace(/\.(csv|txt)$/i, "");
+    var m = base.match(
+      /(\d{4})[-_](\d{2})[-_](\d{2})[-_](\d{2})[-_](\d{2})[-_](\d{2})/
+    );
+    if (m) {
+      var d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+      if (!isNaN(d.getTime())) {
+        return {
+          titolo:
+            "Regata " +
+            d.toLocaleString("it-IT", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            }),
+          data: d.toISOString()
+        };
+      }
+    }
+    var m2 = base.match(/(\d{4})[-_](\d{2})[-_](\d{2})/);
+    if (m2) {
+      var d2 = new Date(+m2[1], +m2[2] - 1, +m2[3], 12, 0, 0);
+      return {
+        titolo: "Regata " + d2.toLocaleDateString("it-IT"),
+        data: d2.toISOString()
+      };
+    }
+    return { titolo: base || "Regata VSK", data: null };
+  }
+
+  function readFileText(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () {
+        resolve(String(r.result || ""));
+      };
+      r.onerror = function () {
+        reject(r.error || new Error("lettura fallita"));
+      };
+      r.readAsText(file, "UTF-8");
+    });
+  }
+
+  function colonnaMancante(err) {
+    return /column|schema cache|sorgente_file|sistema_punteggio|scarti_auto|tempo_ms|account_vsk|nickname_raw/i.test(
+      String((err && err.message) || err || "")
+    );
+  }
+
+  async function importVskFiles(fileList) {
+    var panel = document.getElementById("sa-regate-panel");
+    var serieId = panel && panel.dataset.serieId;
+    if (!serieId) return alert("Apri prima una serie (Regate & Risultati).");
+    if (!lib()) return alert("Libreria serie-aperte non caricata.");
+
+    var files = Array.prototype.slice
+      .call(fileList || [])
+      .filter(function (f) {
+        return /\.(csv|txt)$/i.test(f.name);
+      });
+    if (!files.length) {
+      alert("Seleziona uno o più file .csv di Virtual Skipper.");
+      return;
+    }
+
+    var logEl = document.getElementById("sa-vsk-log");
+    if (logEl) logEl.innerHTML = "";
+    var cleanEl = document.getElementById("sa-vsk-clean");
+    var doClean = !cleanEl || cleanEl.checked;
+
+    var prev = await CVI.supabase
+      .from("serie_aperte_regate")
+      .select("ordine,sorgente_file")
+      .eq("serie_id", serieId);
+    if (prev.error)
+      prev = await CVI.supabase
+        .from("serie_aperte_regate")
+        .select("ordine")
+        .eq("serie_id", serieId);
+    var existing = {};
+    var ordine = 0;
+    (prev.data || []).forEach(function (r) {
+      if (r.sorgente_file) existing[String(r.sorgente_file)] = true;
+      if ((r.ordine || 0) > ordine) ordine = r.ordine || 0;
+    });
+
+    var ok = 0,
+      skip = 0,
+      fail = 0;
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (existing[file.name]) {
+        skip++;
+        vskLog("⏭ " + file.name + " già importata, saltata.", "#fbbf24");
+        continue;
+      }
+      try {
+        var text = await readFileText(file);
+        var rows = lib().parseVskCsv(text);
+        if (!rows.length) {
+          fail++;
+          vskLog("⚠ " + file.name + ": nessuno skipper riconosciuto.", "#fbbf24");
+          continue;
+        }
+        var meta = titoloDaFile(file.name);
+        ordine += 1;
+
+        var regPayload = {
+          serie_id: serieId,
+          titolo: meta.titolo,
+          data_regata: meta.data,
+          ordine: ordine,
+          sorgente_file: file.name
+        };
+        var regIns = await CVI.supabase
+          .from("serie_aperte_regate")
+          .insert(regPayload)
+          .select("id")
+          .single();
+        if (regIns.error && colonnaMancante(regIns.error)) {
+          delete regPayload.sorgente_file;
+          regIns = await CVI.supabase
+            .from("serie_aperte_regate")
+            .insert(regPayload)
+            .select("id")
+            .single();
+          if (!regIns.error)
+            vskLog(
+              "⚠ Colonna sorgente_file assente: esegui serie-aperte-vsk-sql.sql.",
+              "#fbbf24"
+            );
+        }
+        if (regIns.error) throw regIns.error;
+
+        var regId = regIns.data && regIns.data.id;
+        var payload = rows.map(function (r) {
+          return {
+            regata_id: regId,
+            nickname: doClean
+              ? lib().cleanNick(r.nickname_raw) || r.nickname
+              : r.nickname_raw,
+            nickname_raw: r.nickname_raw,
+            account_vsk: r.account_vsk,
+            stato: r.stato,
+            posizione: r.posizione,
+            tempo_ms: r.tempo_ms
+          };
+        });
+        var ins = await CVI.supabase
+          .from("serie_aperte_risultati")
+          .insert(payload);
+        if (ins.error && colonnaMancante(ins.error)) {
+          payload = payload.map(function (r) {
+            return {
+              regata_id: r.regata_id,
+              nickname: r.nickname,
+              stato: r.stato,
+              posizione: r.posizione
+            };
+          });
+          ins = await CVI.supabase
+            .from("serie_aperte_risultati")
+            .insert(payload);
+          if (!ins.error)
+            vskLog(
+              "⚠ Tempi e account non salvati: esegui serie-aperte-vsk-sql.sql.",
+              "#fbbf24"
+            );
+        }
+        if (ins.error) throw ins.error;
+
+        ok++;
+        vskLog(
+          "✅ " +
+            file.name +
+            " → " +
+            meta.titolo +
+            " (" +
+            rows.length +
+            " skipper)",
+          "#34d399"
+        );
+      } catch (e) {
+        fail++;
+        vskLog("❌ " + file.name + ": " + (e.message || e), "#f87171");
+      }
+    }
+
+    vskLog(
+      "Import terminati: " + ok + " ok · " + skip + " saltati · " + fail + " errori.",
+      fail ? "#fbbf24" : "#7dd3fc"
+    );
+    await loadRegateOfSerie(serieId);
+
+    var st = document.getElementById("admin-status");
+    if (st && ok) {
+      st.textContent = "Importate " + ok + " regate VSK";
+      st.className = "admin-status ok";
+    }
+  }
+
+  function ensureVskImport() {
+    var panel = document.getElementById("sa-regate-panel");
+    if (!panel || document.getElementById("sa-vsk-import")) return;
+    var box = document.createElement("details");
+    box.id = "sa-vsk-import";
+    box.style.cssText =
+      "margin-bottom:1rem;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:0.85rem 1rem";
+    box.innerHTML =
+      '<summary style="cursor:pointer;color:#7dd3fc;font-weight:700;font-size:0.92rem">⚡ Importa log VSK (.csv multipli)</summary>' +
+      '<div id="sa-vsk-drop" style="margin-top:0.75rem;border:2px dashed rgba(125,211,252,0.35);border-radius:12px;padding:1.1rem;text-align:center;cursor:pointer;color:#94a3b8;font-size:0.88rem">' +
+      "Trascina qui i file <strong>Result_YYYY_MM_DD_HH_MM_SS.csv</strong> oppure " +
+      '<span style="color:#7dd3fc;text-decoration:underline">sfoglia dal computer</span>' +
+      "</div>" +
+      '<input type="file" id="sa-vsk-files" multiple accept=".csv,.txt,text/csv" style="display:none">' +
+      '<label style="display:block;margin-top:0.6rem;color:#e2e8f0;font-size:0.85rem">' +
+      '<input type="checkbox" id="sa-vsk-clean" checked> Rimuovi i codici colore Nadeo ($) dai nickname</label>' +
+      '<p style="margin:0.5rem 0 0;font-size:0.78rem;color:#64748b">Ogni file crea una regata nella serie corrente. I file già importati vengono saltati.</p>' +
+      '<div id="sa-vsk-log" style="margin-top:0.5rem;font-size:0.82rem;line-height:1.5;color:#cbd5e1"></div>';
+    var anchor = document.getElementById("sa-classifica-preview");
+    if (anchor && anchor.parentNode === panel) panel.insertBefore(box, anchor);
+    else panel.insertBefore(box, panel.firstChild);
+  }
+
+  function wireVskImport() {
+    ensureVskImport();
+    var drop = document.getElementById("sa-vsk-drop");
+    var input = document.getElementById("sa-vsk-files");
+    if (!drop || !input || drop._saWired) return;
+    drop._saWired = true;
+    drop.onclick = function () {
+      input.click();
+    };
+    drop.ondragover = function (e) {
+      e.preventDefault();
+      drop.style.borderColor = "#7dd3fc";
+    };
+    drop.ondragleave = function () {
+      drop.style.borderColor = "rgba(125,211,252,0.35)";
+    };
+    drop.ondrop = function (e) {
+      e.preventDefault();
+      drop.style.borderColor = "rgba(125,211,252,0.35)";
+      importVskFiles(e.dataTransfer.files);
+    };
+    input.onchange = function () {
+      importVskFiles(input.files);
+      input.value = "";
+    };
   }
 
   /* ---------- Nuova regata ---------- */
@@ -808,7 +1174,7 @@
       document.getElementById("sa-new-reg-titolo").value = "";
       document.getElementById("sa-new-reg-data").value = "";
       document.getElementById("sa-new-reg-ordine").value = "";
-      loadRegateOfSerie(serieId, 0);
+      loadRegateOfSerie(serieId);
     } catch (err) {
       alert(err.message || err);
     }
@@ -903,6 +1269,20 @@
   }
 
   function importRisultatiCsv(text) {
+    var L = lib();
+    if (L && L.looksLikeVskCsv(text)) {
+      var vsk = L.parseVskCsv(text);
+      if (!vsk.length) {
+        alert("Log VSK non riconosciuto.");
+        return 0;
+      }
+      var bodyV = document.getElementById("sa-ris-body");
+      if (bodyV) bodyV.innerHTML = "";
+      vsk.forEach(function (p) {
+        addRisRow(p.stato, p.posizione, p.nickname, "", "", p.tempo_ms || "");
+      });
+      return vsk.length;
+    }
     var rows = parseCSVText(text);
     if (!rows.length) {
       alert("CSV vuoto o non leggibile.");
@@ -990,6 +1370,8 @@
 
   /* ---------- Wire ---------- */
   function wire() {
+    ensureExtraOpts();
+    wireVskImport();
     var tab = document.querySelector('.admin-tab[data-tab="serie-aperte"]');
     if (tab && !tab._saWired) {
       tab._saWired = true;
@@ -1003,6 +1385,8 @@
         tab.classList.add("active");
         var panel = document.getElementById("panel-serie-aperte");
         if (panel) panel.classList.add("active");
+        ensureExtraOpts();
+        wireVskImport();
         loadSerieAperteAdmin();
       };
     }

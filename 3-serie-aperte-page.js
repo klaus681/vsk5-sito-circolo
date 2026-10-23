@@ -56,10 +56,13 @@
         });
         serieList.forEach(function (serie) {
           var regate = bySerieReg[String(serie.id)] || [];
+          var sistema = serie.sistema_punteggio === "high_point" ? "high_point" : "low_point";
+          var scartiAuto = !!serie.scarti_auto;
+          var scartiN = CVISerieAperte.calcolaNumScarti(serie.scarti || 0, scartiAuto, regate.length);
           var forCl = regate.map(function (reg) {
-            return { id: reg.id, titolo: reg.titolo, results: calcPunti(byReg[String(reg.id)] || []) };
+            return { id: reg.id, titolo: reg.titolo, results: calcPunti(byReg[String(reg.id)] || [], sistema) };
           });
-          var classifica = calcCl(forCl, serie.scarti || 0);
+          var classifica = calcCl(forCl, serie.scarti || 0, { sistema: sistema, scartiAuto: scartiAuto });
           var top = classifica.slice(0, 3);
           var podium = "";
           if (top.length) {
@@ -70,32 +73,53 @@
           }
           var table = "";
           if (classifica.length) {
-            table = '<div class="ea-table-wrap"><table class="ea-results-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th><th>Netti</th><th>Totali</th></tr></thead><tbody>' +
-              classifica.map(function (r, i) {
-                return '<tr class="' + medalClass(i + 1) + '"><td><strong>' + (i + 1) + "</strong></td><td>" + esc(r.nickname) + "</td><td>" + esc(r.team || "—") + "</td><td><strong>" + r.netti + "</strong></td><td>" + r.totali + "</td></tr>";
-              }).join("") + "</tbody></table></div>";
+            table = '<div class="ea-table-wrap"><table class="ea-results-table"><thead><tr><th>#</th><th>Skipper</th><th>Team</th>';
+            regate.forEach(function (_, i) {
+              table += "<th>R" + (i + 1) + "</th>";
+            });
+            table += "<th>Totali</th><th>Netti</th></tr></thead><tbody>";
+            classifica.forEach(function (r, i) {
+              table += '<tr class="' + medalClass(i + 1) + '"><td><strong>' + (i + 1) + "</strong></td><td>" + esc(r.nickname) + "</td><td>" + esc(r.team || "—") + "</td>";
+              (r.punti || []).forEach(function (p, idx) {
+                var disc = (r.scartiIdx || []).indexOf(idx) !== -1;
+                table += disc
+                  ? '<td><span style="color:#f87171;text-decoration:line-through" title="Scartato">' + p + "</span></td>"
+                  : "<td>" + p + "</td>";
+              });
+              table += "<td>" + r.totali + "</td><td><strong>" + r.netti + "</strong></td></tr>";
+            });
+            table += "</tbody></table></div>";
           }
           var regateHtml = "";
           if (regate.length) {
             regateHtml = '<div style="margin-top:1.25rem"><h3 style="margin:0 0 0.75rem;color:#94a3b8;font-size:0.95rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Regate della serie</h3>' +
               regate.map(function (reg) {
-                var rows = calcPunti(byReg[String(reg.id)] || []);
+                var rows = calcPunti(byReg[String(reg.id)] || [], sistema);
                 rows.sort(function (a, b) {
                   if (a.stato === "FIN" && b.stato === "FIN") return (a.posizione || 99) - (b.posizione || 99);
                   if (a.stato === "FIN") return -1;
                   if (b.stato === "FIN") return 1;
                   return String(a.nickname).localeCompare(String(b.nickname), "it");
                 });
+                var winner = null;
+                rows.forEach(function (r) {
+                  if (r.tempo_ms && (winner == null || r.tempo_ms < winner)) winner = r.tempo_ms;
+                });
                 var list = rows.length === 0
                   ? '<p style="color:#64748b;margin:0.4rem 0 0;font-size:0.88rem">Risultati non ancora inseriti</p>'
                   : '<ol style="margin:0.5rem 0 0;padding-left:1.2rem;color:#e2e8f0;font-size:0.9rem;line-height:1.55">' +
                     rows.map(function (r) {
-                      return "<li>" + statusBadge(r.stato, esc) + " " + (r.stato === "FIN" ? "<strong>" + esc(r.posizione) + "°</strong> " : "") + esc(r.nickname) + (r.team ? " (" + esc(r.team) + ")" : "") + ' <span style="color:#94a3b8">(' + r.punti + " pt)</span></li>";
+                      var tempo = "";
+                      if (r.tempo_ms) {
+                        tempo = CVISerieAperte.formatMs(r.tempo_ms);
+                        if (winner && r.tempo_ms > winner) tempo += " (+" + ((r.tempo_ms - winner) / 1000).toFixed(1) + "s)";
+                      }
+                      return "<li>" + statusBadge(r.stato, esc) + " " + (r.stato === "FIN" ? "<strong>" + esc(r.posizione) + "°</strong> " : "") + esc(r.nickname) + (r.team ? " (" + esc(r.team) + ")" : "") + (tempo ? ' <span style="color:#64748b;font-family:ui-monospace,monospace;font-size:0.82rem">' + esc(tempo) + "</span>" : "") + ' <span style="color:#94a3b8">(' + r.punti + " pt)</span></li>";
                     }).join("") + "</ol>";
                 return '<div style="background:rgba(15,23,42,0.5);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.65rem"><div style="font-weight:700;color:#fff">' + esc(reg.titolo) + "</div>" + (reg.data_regata ? '<div style="color:#94a3b8;font-size:0.82rem;margin-top:0.15rem">📅 ' + esc(fmt(reg.data_regata)) + "</div>" : "") + list + "</div>";
               }).join("") + "</div>";
           }
-          htmlParts.push('<article class="ea-event-card"><div class="ea-event-head"><div><span class="sa-badge-inline">Serie Aperta</span><h2 class="ea-event-title">' + esc(serie.titolo) + "</h2></div></div>" + (serie.descrizione ? '<p class="ea-event-desc">' + esc(serie.descrizione) + "</p>" : "") + '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 0.75rem">Sistema Low Point' + (serie.scarti > 0 ? " · scarti: " + serie.scarti : "") + "</p>" + podium + table + regateHtml + "</article>");
+          htmlParts.push('<article class="ea-event-card"><div class="ea-event-head"><div><span class="sa-badge-inline">Serie Aperta</span><h2 class="ea-event-title">' + esc(serie.titolo) + "</h2></div></div>" + (serie.descrizione ? '<p class="ea-event-desc">' + esc(serie.descrizione) + "</p>" : "") + '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 0.75rem">' + (sistema === "high_point" ? "High Point" : "Low Point") + " · scarti: " + scartiN + (scartiAuto ? " (automatici)" : "") + " · " + regate.length + " regate</p>" + podium + table + regateHtml + "</article>");
         });
       }
       if (oldEventi.length) {
