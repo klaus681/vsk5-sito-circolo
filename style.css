@@ -215,6 +215,79 @@ header {
   border-radius: 6px;
   border: 1px solid rgba(56, 189, 248, 0.3);
 }
+
+/* Riga badge della card "prossima gara" in Home:
+   senza queste regole i badge si accavallavano e il testo veniva tagliato. */
+.regata-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.5rem;
+  max-width: 100%;
+  margin-bottom: 0.45rem;
+}
+.regata-badges .badge-tag { margin-bottom: 0; }
+.badge-stato {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(11, 15, 25, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.badge-stato.is-aperte {
+  background: rgba(52, 211, 153, 0.16);
+  border-color: rgba(52, 211, 153, 0.38);
+  color: #34d399;
+}
+.badge-stato.is-chiuse {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(251, 191, 36, 0.38);
+  color: #fbbf24;
+}
+.badge-stato.is-corso {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #f87171;
+}
+.badge-stato.is-conclusa {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.32);
+  color: #94a3b8;
+}
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.45);
+  animation: cvi-live-pulse 1.8s ease-in-out infinite;
+}
+@keyframes cvi-live-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.35); }
+  50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-live { animation: none; }
+}
+@media (max-width: 520px) {
+  .badge-stato, .badge-tag, .badge-live { font-size: 0.68rem; white-space: normal; }
+}
 .next-regata-card h2 {
   font-size: 1.45rem;
   font-weight: 700;
