@@ -1,9 +1,11 @@
--- ============================================
--- CVI Virtual – Siti amici & link utili
--- Esegui nel SQL Editor di Supabase
--- (sicuro da rieseguire: IF NOT EXISTS / DROP POLICY IF EXISTS)
--- ============================================
+-- ============================================================
+-- CVI Virtual – "Siti amici & link utili"
+-- Tabella usata dal pannello Admin → Siti amici e dal banner in Home.
+-- Esegui tutto nel SQL Editor di Supabase.
+-- È sicuro rieseguirlo (IF NOT EXISTS / DROP POLICY IF EXISTS).
+-- ============================================================
 
+-- 1) Tabella ---------------------------------------------------
 create table if not exists public.siti_amici (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -16,12 +18,22 @@ create table if not exists public.siti_amici (
   attivo boolean not null default true
 );
 
+-- Compatibilità con installazioni precedenti
+alter table public.siti_amici add column if not exists descrizione text;
+alter table public.siti_amici add column if not exists emoji text default '⚓';
+alter table public.siti_amici add column if not exists ordine int not null default 0;
+alter table public.siti_amici add column if not exists attivo boolean not null default true;
+alter table public.siti_amici add column if not exists updated_at timestamptz not null default now();
+
+-- 2) Indice per la lettura pubblica ----------------------------
 create index if not exists siti_amici_attivo_ordine_idx
   on public.siti_amici (attivo, ordine);
 
--- updated_at automatico
+-- 3) updated_at automatico ------------------------------------
 create or replace function public.siti_amici_touch_updated_at()
-returns trigger language plpgsql as $$
+returns trigger
+language plpgsql
+as $$
 begin
   new.updated_at = now();
   return new;
@@ -32,17 +44,21 @@ create trigger trg_siti_amici_updated_at
   before update on public.siti_amici
   for each row execute function public.siti_amici_touch_updated_at();
 
+-- 4) RLS ------------------------------------------------------
 alter table public.siti_amici enable row level security;
 
--- Lettura pubblica: solo link attivi
+-- Lettura pubblica (Home): solo i link attivi
 drop policy if exists "siti_amici_select_pub" on public.siti_amici;
 create policy "siti_amici_select_pub" on public.siti_amici
-  for select using (attivo = true);
+  for select
+  to anon, authenticated
+  using (attivo = true);
 
 -- Admin / scorer: lettura completa + scrittura
 drop policy if exists "siti_amici_admin_all" on public.siti_amici;
 create policy "siti_amici_admin_all" on public.siti_amici
-  for all to authenticated
+  for all
+  to authenticated
   using (
     exists (
       select 1 from public.profiles p
@@ -58,10 +74,12 @@ create policy "siti_amici_admin_all" on public.siti_amici
     )
   );
 
+-- 5) Permessi -------------------------------------------------
+grant usage on schema public to anon, authenticated;
 grant select on public.siti_amici to anon, authenticated;
 grant insert, update, delete on public.siti_amici to authenticated;
 
--- Seed iniziale (solo se la tabella è vuota)
+-- 6) Seed iniziale (solo se la tabella è vuota) ---------------
 insert into public.siti_amici (nome, url, descrizione, emoji, ordine, attivo)
 select * from (values
   ('Federazione Italiana Vela', 'https://www.federvela.it/', 'FIV – la federazione della vela italiana', '🇮🇹', 10, true),
@@ -71,3 +89,6 @@ select * from (values
   ('Community CVI su Discord', 'https://discord.gg/Z4FUc79hX8', 'Il server ufficiale del circolo', '💬', 50, true)
 ) as v(nome, url, descrizione, emoji, ordine, attivo)
 where not exists (select 1 from public.siti_amici limit 1);
+
+-- 7) Forza PostgREST a ricaricare lo schema (utile subito dopo la creazione)
+notify pgrst, 'reload schema';

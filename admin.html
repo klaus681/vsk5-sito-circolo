@@ -115,7 +115,7 @@
         <button type="button" class="admin-tab" data-tab="download">Download</button>
         <button type="button" class="admin-tab" data-tab="impostazioni">Impostazioni</button>
         <button type="button" class="admin-tab" data-tab="regolamento">Regolamento</button>
-        <button type="button" class="admin-tab" data-tab="siti-amici">Siti amici</button>
+        <button type="button" class="admin-tab" data-tab="siti-amici">Link amici</button>
         <button type="button" class="admin-tab" data-tab="export">Export</button>
       </div>
       <div id="panel-proteste" class="admin-panel">
@@ -407,27 +407,31 @@
       </div>
       <div id="panel-siti-amici" class="admin-panel">
         <div class="admin-card">
-          <h3 id="sam-form-title" style="margin:0 0 0.75rem;color:#7dd3fc">Nuovo link</h3>
-          <p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.75rem">Gestisci i banner “Siti amici &amp; link utili” mostrati in Home. L’aspetto resta quello attuale.</p>
+          <h3 id="sam-form-title" style="margin:0 0 0.35rem;color:#7dd3fc">Nuovo link</h3>
+          <p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.9rem">Gestisci il banner “Siti amici &amp; link utili” mostrato in Home. I link con <strong style="color:#e2e8f0">Attivo</strong> spuntato compaiono subito; l’ordine più basso appare per primo.</p>
           <form id="sam-form" class="form-grid">
             <input type="hidden" id="sam-id">
-            <div><label class="adm-label" for="sam-nome">Nome *</label><input class="adm-input" id="sam-nome" required style="width:100%" placeholder="Es. Federazione Italiana Vela"></div>
-            <div><label class="adm-label" for="sam-url">URL *</label><input class="adm-input" id="sam-url" required style="width:100%" placeholder="https://..."></div>
-            <div><label class="adm-label" for="sam-desc">Descrizione</label><input class="adm-input" id="sam-desc" style="width:100%" placeholder="Breve testo sotto il nome"></div>
+            <div><label class="adm-label" for="sam-nome">Nome *</label><input class="adm-input" id="sam-nome" required maxlength="80" style="width:100%" placeholder="Es. Federazione Italiana Vela"></div>
+            <div><label class="adm-label" for="sam-url">URL *</label><input class="adm-input" id="sam-url" required maxlength="500" style="width:100%" placeholder="https://..." autocomplete="off"></div>
+            <div><label class="adm-label" for="sam-desc">Descrizione</label><input class="adm-input" id="sam-desc" maxlength="160" style="width:100%" placeholder="Breve testo sotto il nome (facoltativo)"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
               <div><label class="adm-label" for="sam-emoji">Emoji</label><input class="adm-input" id="sam-emoji" value="⚓" style="width:100%" maxlength="8"></div>
-              <div><label class="adm-label" for="sam-ordine">Ordine</label><input type="number" class="adm-input" id="sam-ordine" value="0" style="width:100%"></div>
+              <div><label class="adm-label" for="sam-ordine">Ordine</label><input type="number" class="adm-input" id="sam-ordine" value="0" step="10" style="width:100%"></div>
               <div style="display:flex;align-items:flex-end;padding-bottom:0.35rem">
                 <label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="sam-attivo" checked> Attivo (visibile in Home)</label>
               </div>
             </div>
             <div class="form-actions">
-              <button type="submit" class="btn-primary" id="sam-save">Salva link</button>
+              <button type="submit" class="btn-primary" id="sam-save">Aggiungi link</button>
               <button type="button" class="btn-ghost" id="sam-cancel" style="display:none">Annulla</button>
             </div>
           </form>
         </div>
-        <div id="siti-amici-list" style="margin-top:1rem"><p class="loading-text">Apri questa scheda per caricare.</p></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin:1rem 0 0.5rem">
+          <h3 style="margin:0;color:#7dd3fc;font-size:1rem">Link presenti</h3>
+          <button type="button" class="btn-sm" id="sam-refresh">↻ Aggiorna elenco</button>
+        </div>
+        <div id="siti-amici-list"><p class="loading-text">Apri questa scheda per caricare.</p></div>
       </div>
       <div id="panel-export" class="admin-panel">
         <div class="admin-card">
@@ -449,7 +453,7 @@
   <script src="gare-meteo.js?v=1"></script>
   <script src="admin.js?v=22"></script>
   <script src="regolamento-admin.js?v=2"></script>
-  <script src="siti-amici-admin.js?v=2"></script>
+  <script src="siti-amici-admin.js?v=3"></script>
   <script>
   (function(){
     function wireLogout(){

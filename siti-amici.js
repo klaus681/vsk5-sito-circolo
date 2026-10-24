@@ -1,22 +1,75 @@
-/* CVI – blocco "Siti amici & link utili" in Home
-   I link sono gestiti dal pannello Admin → Siti amici.
-   Fallback: se Supabase non risponde, non mostra nulla. */
+/* CVI – Banner "Siti amici & link utili" in Home
+   I link sono gestiti dal pannello Admin → Siti amici (tabella public.siti_amici).
+
+   Comportamento:
+   - il contenitore viene creato subito: nessun "buco" se Supabase è lento;
+   - cache locale (localStorage) per mostrare il banner istantaneamente;
+   - se la tabella/il DB non risponde si mostrano i link di fallback;
+   - se l'admin svuota la lista (0 link attivi) il banner sparisce.
+*/
 (function () {
   "use strict";
 
+  var TABLE = "siti_amici";
+  var CACHE_KEY = "cvi_siti_amici_v1";
+  var CACHE_TTL = 10 * 60 * 1000; // 10 minuti
+  var SECTION_ID = "cvi-link-amici";
+
+  /* Mostrati solo se la lettura da Supabase fallisce (DB irraggiungibile,
+     tabella non ancora creata, ecc.). Se l'admin disattiva tutti i link
+     il banner viene nascosto e questo elenco NON viene usato. */
+  var FALLBACK = [
+    {
+      nome: "Federazione Italiana Vela",
+      url: "https://www.federvela.it/",
+      descrizione: "FIV – la federazione della vela italiana",
+      emoji: "🇮🇹",
+      ordine: 10
+    },
+    {
+      nome: "World Sailing",
+      url: "https://www.sailing.org/",
+      descrizione: "La federazione internazionale della vela",
+      emoji: "🌍",
+      ordine: 20
+    },
+    {
+      nome: "Virtual Skipper",
+      url: "https://www.virtualskipper-game.com/",
+      descrizione: "Il simulatore di regate su cui corriamo",
+      emoji: "⛵",
+      ordine: 30
+    },
+    {
+      nome: "Community CVI su Discord",
+      url: "https://discord.gg/Z4FUc79hX8",
+      descrizione: "Il server ufficiale del circolo",
+      emoji: "💬",
+      ordine: 40
+    }
+  ];
+
   var STYLE =
-    ".lb-section{margin:1.6rem 0 0}" +
-    ".lb-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem}" +
-    ".lb-title{margin:0;font-size:1.2rem;font-weight:700;color:#fff}" +
-    ".lb-sub{margin:0;font-size:.85rem;color:#94a3b8}" +
-    ".lb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}" +
-    ".lb-card{display:flex;gap:.7rem;align-items:flex-start;text-decoration:none;background:var(--card-bg,#111827);border:1px solid rgba(56,189,248,.22);border-radius:12px;padding:.85rem .95rem;transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease}" +
-    ".lb-card:hover{border-color:rgba(56,189,248,.65);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.25)}" +
-    ".lb-ico{flex:0 0 auto;width:2.1rem;height:2.1rem;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.28)}" +
-    ".lb-name{display:block;color:#e2e8f0;font-weight:700;font-size:.94rem;line-height:1.25}" +
-    ".lb-desc{display:block;color:#94a3b8;font-size:.8rem;line-height:1.35;margin-top:.15rem}" +
-    ".lb-go{display:inline-block;margin-top:.3rem;color:#7dd3fc;font-size:.78rem;font-weight:700}" +
-    "@media(max-width:520px){.lb-grid{grid-template-columns:1fr}}";
+    ".lb-banner{margin:1.5rem 0 0}" +
+    ".lb-inner{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(56,189,248,.10) 0%,rgba(15,23,42,.55) 45%,var(--card-bg,#111827) 100%);border:1px solid rgba(56,189,248,.26);border-radius:16px;padding:1.15rem 1.35rem 1.3rem;box-shadow:0 10px 30px rgba(0,0,0,.28)}" +
+    ".lb-inner::before{content:\"\";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#22d3ee,#38bdf8);pointer-events:none}" +
+    ".lb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:.75rem 1rem;flex-wrap:wrap;margin-bottom:.95rem}" +
+    ".lb-eyebrow{display:inline-block;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#38bdf8,#7dd3fc);padding:.2rem .6rem;border-radius:999px;margin-bottom:.4rem}" +
+    ".lb-title{margin:0;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.25}" +
+    ".lb-sub{margin:0;font-size:.82rem;color:#94a3b8}" +
+    ".lb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:.7rem}" +
+    ".lb-card{display:flex;gap:.7rem;align-items:flex-start;text-decoration:none;background:rgba(15,23,42,.62);border:1px solid rgba(56,189,248,.2);border-radius:12px;padding:.8rem .9rem;transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease,background .2s ease;min-width:0}" +
+    ".lb-card:hover,.lb-card:focus-visible{border-color:rgba(56,189,248,.65);background:rgba(21,32,51,.9);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.3);outline:none}" +
+    ".lb-ico{flex:0 0 auto;width:2.15rem;height:2.15rem;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem;line-height:1;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.28)}" +
+    ".lb-txt{display:block;min-width:0}" +
+    ".lb-name{display:block;color:#e2e8f0;font-weight:700;font-size:.93rem;line-height:1.25;word-break:break-word}" +
+    ".lb-desc{display:block;color:#94a3b8;font-size:.79rem;line-height:1.35;margin-top:.18rem}" +
+    ".lb-go{display:inline-block;margin-top:.32rem;color:#7dd3fc;font-size:.76rem;font-weight:700}" +
+    ".lb-card:hover .lb-go{color:#bae6fd}" +
+    ".lb-skel{height:3.4rem;border-radius:12px;background:linear-gradient(90deg,rgba(148,163,184,.08),rgba(148,163,184,.18),rgba(148,163,184,.08));background-size:200% 100%;animation:lb-shimmer 1.4s linear infinite}" +
+    "@keyframes lb-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}" +
+    "@media(max-width:520px){.lb-grid{grid-template-columns:1fr}.lb-inner{padding:1rem 1.05rem 1.1rem}}" +
+    "@media(prefers-reduced-motion:reduce){.lb-skel{animation:none}.lb-card{transition:none}}";
 
   function esc(s) {
     if (s == null) return "";
@@ -24,88 +77,216 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
-  function renderList(list) {
-    if (document.getElementById("cvi-link-amici")) return;
-    list = (list || []).filter(function (s) {
-      return s && s.url && /^https?:\/\//i.test(s.url);
-    });
-    if (!list.length) return;
+  function isHttpUrl(url) {
+    return /^https?:\/\/[^\s]+$/i.test(String(url || "").trim());
+  }
 
-    var main =
+  /* Pulisce e ordina i dati che arrivano da Supabase / cache / fallback. */
+  function normalize(rows) {
+    var out = [];
+    (rows || []).forEach(function (r) {
+      if (!r || !r.nome || !isHttpUrl(r.url)) return;
+      out.push({
+        nome: String(r.nome).trim(),
+        url: String(r.url).trim(),
+        descrizione: r.descrizione ? String(r.descrizione).trim() : "",
+        emoji: r.emoji ? String(r.emoji).trim() : "⚓",
+        ordine: Number(r.ordine) || 0
+      });
+    });
+    out.sort(function (a, b) {
+      return a.ordine - b.ordine || a.nome.localeCompare(b.nome, "it");
+    });
+    return out;
+  }
+
+  function readCache() {
+    try {
+      var raw = window.localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (!obj || !Array.isArray(obj.items)) return null;
+      if (Date.now() - (Number(obj.ts) || 0) > CACHE_TTL) return null;
+      return normalize(obj.items);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeCache(items) {
+    try {
+      window.localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({ ts: Date.now(), items: items })
+      );
+    } catch (e) {
+      /* storage pieno / disabilitato: non è un problema */
+    }
+  }
+
+  function ensureStyle() {
+    if (document.getElementById("lb-home-styles")) return;
+    var st = document.createElement("style");
+    st.id = "lb-home-styles";
+    st.textContent = STYLE;
+    document.head.appendChild(st);
+  }
+
+  function findMain() {
+    return (
       document.getElementById("main-content") ||
       document.querySelector("main.page-content") ||
-      document.querySelector("main");
-    if (!main) return;
-
-    if (!document.getElementById("lb-home-styles")) {
-      var st = document.createElement("style");
-      st.id = "lb-home-styles";
-      st.textContent = STYLE;
-      document.head.appendChild(st);
-    }
-
-    var html =
-      '<section id="cvi-link-amici" class="lb-section" aria-labelledby="lb-title">' +
-      '<div class="lb-head">' +
-      '<h2 class="lb-title" id="lb-title">Siti amici &amp; link utili</h2>' +
-      '<p class="lb-sub">Realtà e risorse che seguiamo</p>' +
-      "</div>" +
-      '<div class="lb-grid">' +
-      list
-        .map(function (s) {
-          return (
-            '<a class="lb-card" href="' +
-            esc(s.url) +
-            '" target="_blank" rel="noopener noreferrer nofollow">' +
-            '<span class="lb-ico" aria-hidden="true">' +
-            (s.emoji ? esc(s.emoji) : "⚓") +
-            "</span>" +
-            "<span>" +
-            '<span class="lb-name">' +
-            esc(s.nome) +
-            "</span>" +
-            (s.descrizione
-              ? '<span class="lb-desc">' + esc(s.descrizione) + "</span>"
-              : "") +
-            '<span class="lb-go">Visita →</span>' +
-            "</span></a>"
-          );
-        })
-        .join("") +
-      "</div></section>";
-
-    var row = main.querySelector(".content-row");
-    if (row) row.insertAdjacentHTML("afterend", html);
-    else main.insertAdjacentHTML("beforeend", html);
+      document.querySelector("main")
+    );
   }
 
-  async function loadAndRender() {
-    if (document.getElementById("cvi-link-amici")) return;
+  function ensureSection() {
+    var section = document.getElementById(SECTION_ID);
+    if (section) return section;
+
+    var main = findMain();
+    if (!main) return null;
+
+    ensureStyle();
+
+    section = document.createElement("section");
+    section.id = SECTION_ID;
+    section.className = "lb-banner";
+    section.setAttribute("aria-labelledby", "lb-title");
+    section.innerHTML =
+      '<div class="lb-inner">' +
+      '<div class="lb-head">' +
+      '<div><span class="lb-eyebrow">Community</span>' +
+      '<h2 class="lb-title" id="lb-title">Siti amici &amp; link utili</h2></div>' +
+      '<p class="lb-sub">Realtà e risorse che seguiamo</p>' +
+      "</div>" +
+      '<div class="lb-body" id="lb-body" aria-live="polite">' +
+      '<div class="lb-grid" aria-hidden="true">' +
+      '<div class="lb-skel"></div><div class="lb-skel"></div><div class="lb-skel"></div>' +
+      "</div></div></div>";
+
+    var dash = main.querySelector(".dashboard-grid");
+    var row = main.querySelector(".content-row");
+    if (dash && dash.parentNode) dash.parentNode.insertBefore(section, dash.nextSibling);
+    else if (row && row.parentNode) row.parentNode.insertBefore(section, row);
+    else main.appendChild(section);
+
+    return section;
+  }
+
+  function cardHtml(link) {
+    var label = link.descrizione
+      ? link.nome + " – " + link.descrizione + " (si apre in una nuova scheda)"
+      : link.nome + " (si apre in una nuova scheda)";
+    return (
+      '<a class="lb-card" href="' +
+      esc(link.url) +
+      '" target="_blank" rel="noopener noreferrer nofollow" aria-label="' +
+      esc(label) +
+      '">' +
+      '<span class="lb-ico" aria-hidden="true">' +
+      esc(link.emoji || "⚓") +
+      "</span>" +
+      '<span class="lb-txt">' +
+      '<span class="lb-name">' +
+      esc(link.nome) +
+      "</span>" +
+      (link.descrizione
+        ? '<span class="lb-desc">' + esc(link.descrizione) + "</span>"
+        : "") +
+      '<span class="lb-go">Visita →</span>' +
+      "</span></a>"
+    );
+  }
+
+  function render(items) {
+    var body = document.getElementById("lb-body");
+    var section = document.getElementById(SECTION_ID);
+    if (!body || !section) return;
+
+    items = normalize(items);
+    if (!items.length) {
+      /* Lista volutamente vuota (tutti i link disattivati): niente banner. */
+      if (section.parentNode) section.parentNode.removeChild(section);
+      return;
+    }
+
+    body.innerHTML =
+      '<div class="lb-grid">' + items.map(cardHtml).join("") + "</div>";
+  }
+
+  var loading = false;
+  var lastLoad = 0;
+
+  async function load(force) {
+    if (loading) return;
+    var now = Date.now();
+    if (!force && now - lastLoad < 800) return;
+    loading = true;
+    lastLoad = now;
     try {
-      if (!window.CVI || !CVI.supabase) return;
-      var res = await CVI.supabase
-        .from("siti_amici")
+      if (!window.CVI || !window.CVI.supabase) {
+        throw new Error("client Supabase non disponibile");
+      }
+      var res = await window.CVI.supabase
+        .from(TABLE)
         .select("nome,url,descrizione,emoji,ordine")
         .eq("attivo", true)
         .order("ordine", { ascending: true });
-      if (res.error) {
-        console.warn("siti-amici:", res.error.message || res.error);
-        return;
-      }
-      renderList(res.data || []);
+
+      if (res.error) throw res.error;
+
+      var items = normalize(res.data);
+      writeCache(items);
+      render(items);
     } catch (e) {
-      console.warn("siti-amici load error", e);
+      if (window.console) {
+        console.warn(
+          "[CVI siti amici] lettura non riuscita:",
+          (e && (e.message || e)) || e
+        );
+      }
+      var cached = readCache();
+      render(cached && cached.length ? cached : normalize(FALLBACK));
+    } finally {
+      loading = false;
     }
   }
 
   function boot() {
-    loadAndRender();
-    setTimeout(loadAndRender, 800);
-    setTimeout(loadAndRender, 2200);
+    if (!ensureSection()) return;
+
+    /* 1) mostra subito la cache, se c'è (nessun flicker) */
+    var cached = readCache();
+    if (cached && cached.length) render(cached);
+
+    /* 2) poi aggiorna dal database */
+    load(true);
+
+    /* 3) riallinea quando si torna sulla scheda o l'admin salva altrove */
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) load();
+    });
+    window.addEventListener("storage", function (ev) {
+      if (ev.key === CACHE_KEY) load(true);
+    });
+    window.addEventListener("focus", function () {
+      load();
+    });
   }
+
+  /* API usata dal pannello admin per forzare l'aggiornamento */
+  window.CVISitiAmici = {
+    load: function () {
+      return load(true);
+    },
+    render: render,
+    cacheKey: CACHE_KEY
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
