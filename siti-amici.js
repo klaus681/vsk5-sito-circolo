@@ -15,6 +15,10 @@
   var CACHE_TTL = 10 * 60 * 1000; // 10 minuti
   var SECTION_ID = "cvi-link-amici";
 
+  /* ultima lista valida renderizzata: serve anche a ripristinare il banner
+     se un altro script dovesse rimuoverlo dal DOM */
+  var lastItems = [];
+
   /* Mostrati solo se la lettura da Supabase fallisce (DB irraggiungibile,
      tabella non ancora creata, ecc.). Se l'admin disattiva tutti i link
      il banner viene nascosto e questo elenco NON viene usato. */
@@ -50,9 +54,9 @@
   ];
 
   var STYLE =
-    ".lb-banner{margin:1.5rem 0 0}" +
-    ".lb-inner{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(56,189,248,.10) 0%,rgba(15,23,42,.55) 45%,var(--card-bg,#111827) 100%);border:1px solid rgba(56,189,248,.26);border-radius:16px;padding:1.15rem 1.35rem 1.3rem;box-shadow:0 10px 30px rgba(0,0,0,.28)}" +
-    ".lb-inner::before{content:\"\";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#22d3ee,#38bdf8);pointer-events:none}" +
+    ".lb-strip{margin:1.5rem 0 0}" +
+    ".lb-strip-inner{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(56,189,248,.10) 0%,rgba(15,23,42,.55) 45%,var(--card-bg,#111827) 100%);border:1px solid rgba(56,189,248,.26);border-radius:16px;padding:1.15rem 1.35rem 1.3rem;box-shadow:0 10px 30px rgba(0,0,0,.28)}" +
+    ".lb-strip-inner::before{content:\"\";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#22d3ee,#38bdf8);pointer-events:none}" +
     ".lb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:.75rem 1rem;flex-wrap:wrap;margin-bottom:.95rem}" +
     ".lb-eyebrow{display:inline-block;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#38bdf8,#7dd3fc);padding:.2rem .6rem;border-radius:999px;margin-bottom:.4rem}" +
     ".lb-title{margin:0;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.25}" +
@@ -68,7 +72,7 @@
     ".lb-card:hover .lb-go{color:#bae6fd}" +
     ".lb-skel{height:3.4rem;border-radius:12px;background:linear-gradient(90deg,rgba(148,163,184,.08),rgba(148,163,184,.18),rgba(148,163,184,.08));background-size:200% 100%;animation:lb-shimmer 1.4s linear infinite}" +
     "@keyframes lb-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}" +
-    "@media(max-width:520px){.lb-grid{grid-template-columns:1fr}.lb-inner{padding:1rem 1.05rem 1.1rem}}" +
+    "@media(max-width:520px){.lb-grid{grid-template-columns:1fr}.lb-strip-inner{padding:1rem 1.05rem 1.1rem}}" +
     "@media(prefers-reduced-motion:reduce){.lb-skel{animation:none}.lb-card{transition:none}}";
 
   function esc(s) {
@@ -155,10 +159,10 @@
 
     section = document.createElement("section");
     section.id = SECTION_ID;
-    section.className = "lb-banner";
+    section.className = "lb-strip";
     section.setAttribute("aria-labelledby", "lb-title");
     section.innerHTML =
-      '<div class="lb-inner">' +
+      '<div class="lb-strip-inner">' +
       '<div class="lb-head">' +
       '<div><span class="lb-eyebrow">Community</span>' +
       '<h2 class="lb-title" id="lb-title">Siti amici &amp; link utili</h2></div>' +
@@ -169,11 +173,10 @@
       '<div class="lb-skel"></div><div class="lb-skel"></div><div class="lb-skel"></div>' +
       "</div></div></div>";
 
-    var dash = main.querySelector(".dashboard-grid");
-    var row = main.querySelector(".content-row");
-    if (dash && dash.parentNode) dash.parentNode.insertBefore(section, dash.nextSibling);
-    else if (row && row.parentNode) row.parentNode.insertBefore(section, row);
-    else main.appendChild(section);
+    /* Posizione fissa: in fondo al contenuto della Home, subito sopra il footer.
+       Indipendente dai blocchi dinamici (eventi, serie, tornei) che vengono
+       inseriti/rimossi da altri script. */
+    main.appendChild(section);
 
     return section;
   }
@@ -210,11 +213,13 @@
 
     items = normalize(items);
     if (!items.length) {
+      lastItems = [];
       /* Lista volutamente vuota (tutti i link disattivati): niente banner. */
       if (section.parentNode) section.parentNode.removeChild(section);
       return;
     }
 
+    lastItems = items;
     body.innerHTML =
       '<div class="lb-grid">' + items.map(cardHtml).join("") + "</div>";
   }
@@ -277,6 +282,21 @@
     window.addEventListener("focus", function () {
       load();
     });
+
+    /* 4) se un altro script rimuove il contenitore, lo rimettiamo */
+    var main = findMain();
+    if (main && window.MutationObserver) {
+      try {
+        new window.MutationObserver(function () {
+          if (!lastItems.length) return;
+          if (document.getElementById(SECTION_ID)) return;
+          var sec = ensureSection();
+          if (sec) render(lastItems);
+        }).observe(main, { childList: true });
+      } catch (e) {
+        /* observer non disponibile: nessun problema */
+      }
+    }
   }
 
   /* API usata dal pannello admin per forzare l'aggiornamento */
