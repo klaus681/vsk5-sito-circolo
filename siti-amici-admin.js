@@ -83,7 +83,13 @@
         descrizione: r.descrizione || "",
         emoji: r.emoji || "⚓",
         ordine: Number(r.ordine) || 0,
-        attivo: r.attivo !== false
+        attivo: r.attivo !== false,
+        nome_en: r.nome_en || "",
+        nome_fr: r.nome_fr || "",
+        nome_es: r.nome_es || "",
+        descrizione_en: r.descrizione_en || "",
+        descrizione_fr: r.descrizione_fr || "",
+        descrizione_es: r.descrizione_es || ""
       });
     });
     out.sort(function (a, b) {
@@ -105,7 +111,13 @@
             url: r.url,
             descrizione: r.descrizione,
             emoji: r.emoji,
-            ordine: r.ordine
+            ordine: r.ordine,
+            nome_en: r.nome_en,
+            nome_fr: r.nome_fr,
+            nome_es: r.nome_es,
+            descrizione_en: r.descrizione_en,
+            descrizione_fr: r.descrizione_fr,
+            descrizione_es: r.descrizione_es
           };
         });
       window.localStorage.setItem(
@@ -177,6 +189,14 @@
           (s.descrizione
             ? '<p class="card-desc">' + esc(s.descrizione) + "</p>"
             : "") +
+          (function () {
+            var langs = ["en", "fr", "es"].filter(function (l) {
+              return String(s["nome_" + l] || "").trim() !== "";
+            });
+            return langs.length
+              ? '<div class="meta" style="margin-top:.25rem">Traduzioni: ' + langs.join(" / ").toUpperCase() + "</div>"
+              : "";
+          })() +
           "</div>" +
           '<div style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end">' +
           '<button type="button" class="btn-sm sa-move" data-id="' +
@@ -287,7 +307,13 @@
       "sam-url": s.url || "",
       "sam-desc": s.descrizione || "",
       "sam-emoji": s.emoji || "⚓",
-      "sam-ordine": s.ordine != null ? s.ordine : 0
+      "sam-ordine": s.ordine != null ? s.ordine : 0,
+      "sam-nome-en": s.nome_en || "",
+      "sam-nome-fr": s.nome_fr || "",
+      "sam-nome-es": s.nome_es || "",
+      "sam-desc-en": s.descrizione_en || "",
+      "sam-desc-fr": s.descrizione_fr || "",
+      "sam-desc-es": s.descrizione_es || ""
     };
     Object.keys(map).forEach(function (id) {
       var el = document.getElementById(id);
@@ -316,7 +342,21 @@
   }
 
   function resetForm() {
-    fillForm({ id: "", nome: "", url: "", descrizione: "", emoji: "⚓", ordine: 0, attivo: true });
+    fillForm({
+      id: "",
+      nome: "",
+      url: "",
+      descrizione: "",
+      emoji: "⚓",
+      ordine: 0,
+      attivo: true,
+      nome_en: "",
+      nome_fr: "",
+      nome_es: "",
+      descrizione_en: "",
+      descrizione_fr: "",
+      descrizione_es: ""
+    });
   }
 
   async function saveSito(ev) {
@@ -357,8 +397,22 @@
       emoji: val("sam-emoji") || "⚓",
       ordine: parseInt(val("sam-ordine"), 10) || 0,
       attivo: !!(document.getElementById("sam-attivo") || {}).checked,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      /* Traduzioni facoltative: se la migrazione SQL non è stata eseguita
+         il salvataggio viene ritentato senza questi campi. */
+      nome_en: val("sam-nome-en") || null,
+      nome_fr: val("sam-nome-fr") || null,
+      nome_es: val("sam-nome-es") || null,
+      descrizione_en: val("sam-desc-en") || null,
+      descrizione_fr: val("sam-desc-fr") || null,
+      descrizione_es: val("sam-desc-es") || null
     };
+
+    function write(p) {
+      return id
+        ? client.from(TABLE).update(p).eq("id", id).select("id")
+        : client.from(TABLE).insert(p).select("id");
+    }
 
     var btn = document.getElementById("sam-save");
     var oldLabel = btn ? btn.textContent : "";
@@ -368,20 +422,26 @@
     }
 
     try {
+      var res = await write(payload);
+      if (res.error && /column .* does not exist|schema cache|PGRST204/i.test(res.error.message || "")) {
+        var base = Object.assign({}, payload);
+        ["nome_en", "nome_fr", "nome_es", "descrizione_en", "descrizione_fr", "descrizione_es"].forEach(function (k) {
+          delete base[k];
+        });
+        res = await write(base);
+        if (!res.error) {
+          alert(
+            "Link salvato, ma le traduzioni no: esegui siti-amici-sql.sql in Supabase per abilitare i campi multilingua."
+          );
+        }
+      }
+      if (res.error) throw res.error;
       if (id) {
-        var up = await client
-          .from(TABLE)
-          .update(payload)
-          .eq("id", id)
-          .select("id");
-        if (up.error) throw up.error;
-        if (!up.data || !up.data.length) {
+        if (!res.data || !res.data.length) {
           throw new Error("Modifica non applicata: verifica i permessi (RLS) della tabella siti_amici.");
         }
         setStatus("Link aggiornato", true);
       } else {
-        var ins = await client.from(TABLE).insert(payload).select("id");
-        if (ins.error) throw ins.error;
         setStatus("Link creato: ora è visibile in Home", true);
       }
       resetForm();

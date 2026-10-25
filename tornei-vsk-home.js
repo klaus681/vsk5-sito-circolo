@@ -12,6 +12,14 @@
       .replace(/"/g, "&quot;");
   }
 
+  function tr(key, fallback) {
+    return window.CVI && typeof CVI.t === "function" ? CVI.t(key, fallback) : fallback;
+  }
+
+  function locale() {
+    return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
+
   function medal(pos) {
     if (pos === 1)
       return { bg: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#0b0f19", label: "1°" };
@@ -59,7 +67,7 @@
 
     var SA = window.CVISerieAperte;
     try {
-      var tr = await CVI.supabase
+      var tRes = await CVI.supabase
         .from("tornei")
         .select(
           "id,titolo,descrizione,data_inizio,data_fine,vsk_sistema_punteggio,vsk_scarti,vsk_scarti_auto"
@@ -68,8 +76,8 @@
         .eq("vsk_mostra_home", true)
         .order("created_at", { ascending: false })
         .limit(1);
-      if (tr.error || !tr.data || !tr.data.length) return;
-      var t = tr.data[0];
+      if (tRes.error || !tRes.data || !tRes.data.length) return;
+      var t = tRes.data[0];
 
       var rr = await CVI.supabase
         .from("torneo_regate")
@@ -143,7 +151,7 @@
               (r.team ? '<div class="tv-team">' + esc(r.team) + "</div>" : "") +
               '<div class="tv-pts">' +
               r.netti +
-              " pt</div></div>"
+              " " + esc(tr("banner_points_short", "pt")) + "</div></div>"
             );
           })
           .join("") +
@@ -151,7 +159,7 @@
 
       var dates = [t.data_inizio, t.data_fine].filter(Boolean).map(function (d) {
         try {
-          return new Date(d).toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+          return new Date(d).toLocaleDateString(locale(), { day: "numeric", month: "short" });
         } catch (e) {
           return String(d);
         }
@@ -161,7 +169,7 @@
         '<section id="cvi-torneo-vsk-home" class="tv-home-section">' +
         '<div class="tv-home-card">' +
         '<div class="tv-home-header"><div>' +
-        '<span class="tv-badge">Torneo · classifica VSK</span>' +
+        '<span class="tv-badge">' + esc(tr("banner_tournament_vsk", "Torneo · classifica VSK")) + '</span>' +
         '<h2 class="tv-home-title">' +
         esc(t.titolo) +
         "</h2>" +
@@ -171,7 +179,7 @@
         "</div>" +
         '<a href="tornei.html?id=' +
         encodeURIComponent(t.id) +
-        '" class="tv-link-more">Vedi il torneo →</a></div>' +
+        '" class="tv-link-more">' + esc(tr("banner_view_tournament", "Vedi il torneo →")) + '</a></div>' +
         (t.descrizione
           ? '<p style="color:#cbd5e1;font-size:.9rem;margin:0 0 .5rem;line-height:1.5">' +
             esc(String(t.descrizione).slice(0, 160)) +
@@ -180,18 +188,18 @@
           : "") +
         podium +
         (lastRace
-          ? '<p style="margin:.3rem 0 0;font-size:.85rem;color:#cbd5e1">Ultima regata: <strong style="color:#fbbf24">' +
+          ? '<p style="margin:.3rem 0 0;font-size:.85rem;color:#cbd5e1">' + esc(tr("banner_last_race", "Ultima regata:")) + ' <strong style="color:#fbbf24">' +
             esc(lastRace.titolo) +
             "</strong></p>"
           : "") +
         '<p class="tv-home-note">' +
         (sistema === "high_point" ? "High Point" : "Low Point") +
-        " · scarti: " +
+        " · " + esc(tr("banner_discards", "scarti")) + ": " +
         (cl[0].scartiUsati || 0) +
-        (scartiAuto ? " (automatici)" : "") +
+        (scartiAuto ? " " + esc(tr("banner_automatic", "(automatici)")) : "") +
         " · " +
         regs.length +
-        " regate VSK</p>" +
+        " " + esc(tr("banner_races_vsk", "regate VSK")) + "</p>" +
         "</div></section>";
 
       var main = document.getElementById("main-content") || document.querySelector("main.page-content");
@@ -215,6 +223,13 @@
     setTimeout(run, 2000);
     setTimeout(run, 3800);
   }
+
+  /* cambio lingua: rimuove e ridisegna il box nella lingua corrente */
+  document.addEventListener("cvi:langchange", function () {
+    var el = document.getElementById("cvi-torneo-vsk-home");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    run();
+  });
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();

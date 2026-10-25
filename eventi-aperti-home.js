@@ -11,6 +11,14 @@
       .replace(/"/g, "&quot;");
   }
 
+  function tr(key, fallback) {
+    return window.CVI && typeof CVI.t === "function" ? CVI.t(key, fallback) : fallback;
+  }
+
+  function locale() {
+    return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
+
   function medal(pos) {
     if (pos === 1) return { bg: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#0b0f19", label: "1°" };
     if (pos === 2) return { bg: "linear-gradient(135deg,#94a3b8,#64748b)", color: "#0b0f19", label: "2°" };
@@ -53,7 +61,7 @@
       var dateStr = "";
       try {
         if (e.data_evento) {
-          dateStr = new Date(e.data_evento).toLocaleDateString("it-IT", {
+          dateStr = new Date(e.data_evento).toLocaleDateString(locale(), {
             weekday: "short",
             day: "numeric",
             month: "short",
@@ -120,7 +128,7 @@
 
       if (!rows.length) {
         restHtml =
-          '<p class="ea-empty">Classifica in aggiornamento</p>';
+          '<p class="ea-empty">' + esc(tr("banner_standings_updating", "Classifica in aggiornamento")) + '</p>';
       }
 
       var html =
@@ -128,7 +136,7 @@
         '<div class="ea-home-card">' +
         '<div class="ea-home-header">' +
         "<div>" +
-        '<span class="ea-badge">Evento aperto</span>' +
+        '<span class="ea-badge">' + esc(tr("banner_open_event", "Evento aperto")) + '</span>' +
         '<h2 class="ea-home-title">' +
         esc(e.titolo) +
         "</h2>" +
@@ -136,14 +144,14 @@
           ? '<div class="ea-home-date">📅 ' + esc(dateStr) + "</div>"
           : "") +
         "</div>" +
-        '<a href="eventi-aperti.html" class="ea-link-more">Vedi tutto →</a>' +
+        '<a href="eventi-aperti.html" class="ea-link-more">' + esc(tr("banner_see_all", "Vedi tutto →")) + '</a>' +
         "</div>" +
         (e.descrizione
           ? '<p class="ea-home-desc">' + esc(e.descrizione) + "</p>"
           : "") +
         podiumHtml +
         restHtml +
-        '<p class="ea-home-note">Classifica separata · non ufficiale soci</p>' +
+        '<p class="ea-home-note">' + esc(tr("banner_open_note", "Classifica separata · non ufficiale soci")) + '</p>' +
         "</div>" +
         "</section>";
 
@@ -198,6 +206,13 @@
     setTimeout(run, 1800);
     setTimeout(run, 3500);
   }
+
+  /* cambio lingua: rimuove e ridisegna il box nella lingua corrente */
+  document.addEventListener("cvi:langchange", function () {
+    var el = document.getElementById("cvi-eventi-aperti-home");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    run();
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);

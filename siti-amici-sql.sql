@@ -25,6 +25,15 @@ alter table public.siti_amici add column if not exists ordine int not null defau
 alter table public.siti_amici add column if not exists attivo boolean not null default true;
 alter table public.siti_amici add column if not exists updated_at timestamptz not null default now();
 
+-- Traduzioni opzionali (usate dal banner in Home quando la lingua non è IT).
+-- Se restano vuote si mostra il testo italiano.
+alter table public.siti_amici add column if not exists nome_en text;
+alter table public.siti_amici add column if not exists nome_fr text;
+alter table public.siti_amici add column if not exists nome_es text;
+alter table public.siti_amici add column if not exists descrizione_en text;
+alter table public.siti_amici add column if not exists descrizione_fr text;
+alter table public.siti_amici add column if not exists descrizione_es text;
+
 -- 2) Indice per la lettura pubblica ----------------------------
 create index if not exists siti_amici_attivo_ordine_idx
   on public.siti_amici (attivo, ordine);
@@ -90,5 +99,51 @@ select * from (values
 ) as v(nome, url, descrizione, emoji, ordine, attivo)
 where not exists (select 1 from public.siti_amici limit 1);
 
--- 7) Forza PostgREST a ricaricare lo schema (utile subito dopo la creazione)
+-- 7) Traduzioni dei link di esempio (solo dove il campo è ancora vuoto) ----
+update public.siti_amici set
+  nome_en = case url
+    when 'https://www.federvela.it/' then 'Italian Sailing Federation'
+    when 'https://www.sailing.org/' then 'World Sailing'
+    when 'https://www.virtualskipper-game.com/' then 'Virtual Skipper'
+    when 'https://www.nadeo.com/' then 'Nadeo'
+    when 'https://discord.gg/Z4FUc79hX8' then 'CVI Community on Discord'
+    else nome_en end,
+  descrizione_en = case url
+    when 'https://www.federvela.it/' then 'FIV – the Italian sailing federation'
+    when 'https://www.sailing.org/' then 'The international sailing federation'
+    when 'https://www.virtualskipper-game.com/' then 'The racing simulator we sail on'
+    when 'https://www.nadeo.com/' then 'The software house behind Virtual Skipper'
+    when 'https://discord.gg/Z4FUc79hX8' then 'The club official server'
+    else descrizione_en end,
+  nome_fr = case url
+    when 'https://www.federvela.it/' then 'Fédération Italienne de Voile'
+    when 'https://www.sailing.org/' then 'World Sailing'
+    when 'https://www.virtualskipper-game.com/' then 'Virtual Skipper'
+    when 'https://www.nadeo.com/' then 'Nadeo'
+    when 'https://discord.gg/Z4FUc79hX8' then 'Communauté CVI sur Discord'
+    else nome_fr end,
+  descrizione_fr = case url
+    when 'https://www.federvela.it/' then 'FIV – la fédération italienne de voile'
+    when 'https://www.sailing.org/' then 'La fédération internationale de voile'
+    when 'https://www.virtualskipper-game.com/' then 'Le simulateur de course que nous utilisons'
+    when 'https://www.nadeo.com/' then 'Le studio derrière Virtual Skipper'
+    when 'https://discord.gg/Z4FUc79hX8' then 'Le serveur officiel du club'
+    else descrizione_fr end,
+  nome_es = case url
+    when 'https://www.federvela.it/' then 'Federación Italiana de Vela'
+    when 'https://www.sailing.org/' then 'World Sailing'
+    when 'https://www.virtualskipper-game.com/' then 'Virtual Skipper'
+    when 'https://www.nadeo.com/' then 'Nadeo'
+    when 'https://discord.gg/Z4FUc79hX8' then 'Comunidad CVI en Discord'
+    else nome_es end,
+  descrizione_es = case url
+    when 'https://www.federvela.it/' then 'FIV – la federación italiana de vela'
+    when 'https://www.sailing.org/' then 'La federación internacional de vela'
+    when 'https://www.virtualskipper-game.com/' then 'El simulador de regatas que usamos'
+    when 'https://www.nadeo.com/' then 'El estudio detrás de Virtual Skipper'
+    when 'https://discord.gg/Z4FUc79hX8' then 'El servidor oficial del club'
+    else descrizione_es end
+where coalesce(nome_en, '') = '' or coalesce(nome_fr, '') = '' or coalesce(nome_es, '');
+
+-- 8) Forza PostgREST a ricaricare lo schema (utile subito dopo la creazione)
 notify pgrst, 'reload schema';

@@ -14,6 +14,20 @@
       .replace(/"/g, String.fromCharCode(38, 113, 117, 111, 116, 59));
   }
 
+  function tr(key, fallback) {
+    return window.CVI && typeof CVI.t === "function" ? CVI.t(key, fallback) : fallback;
+  }
+
+  function fmtDate(d) {
+    if (!d) return "";
+    try {
+      var loc = window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+      return new Date(d).toLocaleDateString(loc, { day: "numeric", month: "short" });
+    } catch (e) {
+      return String(d);
+    }
+  }
+
   function waitCVI() {
     return new Promise(function (resolve) {
       var n = 0;
@@ -122,14 +136,14 @@
           : null;
       var stLabel =
         t.stato === "in_corso"
-          ? "IN CORSO"
+          ? tr("banner_status_in_progress", "IN CORSO")
           : t.stato === "aperto"
-            ? "ISCRIZIONI APERTE"
+            ? tr("banner_status_reg_open", "ISCRIZIONI APERTE")
             : String(t.stato || "").toUpperCase();
 
       var dates = [];
-      if (t.data_inizio) dates.push(t.data_inizio);
-      if (t.data_fine) dates.push(t.data_fine);
+      if (t.data_inizio) dates.push(fmtDate(t.data_inizio));
+      if (t.data_fine) dates.push(fmtDate(t.data_fine));
 
       var card = document.createElement("a");
       card.id = "home-torneo-banner";
@@ -154,17 +168,17 @@
       card.innerHTML =
         '<div style="position:relative;z-index:1">' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.55rem">' +
-        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(56,189,248,0.9);color:#0b0f19">TORNEO</span>' +
+        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(56,189,248,0.9);color:#0b0f19">' + esc(tr("banner_tournament", "TORNEO")) + '</span>' +
         '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.35)">' +
         esc(stLabel) +
         "</span>" +
         (max != null
-          ? '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">ISCRITTI ' +
+          ? '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">' + esc(tr("banner_entries", "ISCRITTI")) + ' ' +
             nIsc +
             " / " +
             max +
             "</span>"
-          : '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">ISCRITTI ' +
+          : '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">' + esc(tr("banner_entries", "ISCRITTI")) + ' ' +
             nIsc +
             "</span>") +
         "</div>" +
@@ -182,11 +196,11 @@
             "</div>"
           : "") +
         (pwd
-          ? '<div style="margin-top:0.55rem;display:inline-flex;align-items:center;gap:0.35rem;background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);border-radius:8px;padding:0.3rem 0.65rem;font-size:0.85rem;color:#cbd5e1">🔑 Password server: <code style="color:#7dd3fc;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">' +
+          ? '<div style="margin-top:0.55rem;display:inline-flex;align-items:center;gap:0.35rem;background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);border-radius:8px;padding:0.3rem 0.65rem;font-size:0.85rem;color:#cbd5e1">🔑 ' + esc(tr("race_password", "Password server:")) + ' <code style="color:#7dd3fc;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">' +
             esc(pwd) +
             "</code></div>"
           : "") +
-        '<div style="margin-top:0.7rem;font-size:0.88rem;font-weight:700;color:#7dd3fc">Vai al torneo →</div>' +
+        '<div style="margin-top:0.7rem;font-size:0.88rem;font-weight:700;color:#7dd3fc">' + esc(tr("banner_go_tournament", "Vai al torneo →")) + '</div>' +
         "</div>";
 
       card.addEventListener("mouseenter", function () {
@@ -217,4 +231,11 @@
   else loadBanner();
   setTimeout(loadBanner, 2000);
   setTimeout(loadBanner, 4000);
+
+  /* cambio lingua: ridisegna il banner */
+  document.addEventListener("cvi:langchange", function () {
+    var el = document.getElementById("home-torneo-banner");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    loadBanner();
+  });
 })();

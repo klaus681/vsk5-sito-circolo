@@ -16,6 +16,14 @@
       .replace(/"/g, "&quot;");
   }
 
+  function tr(key, fallback) {
+    return window.CVI && typeof CVI.t === "function" ? CVI.t(key, fallback) : fallback;
+  }
+
+  function locale() {
+    return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
+
   function waitCVI() {
     return new Promise(function (resolve) {
       var n = 0;
@@ -30,7 +38,7 @@
   function fmt(iso) {
     if (!iso) return "";
     try {
-      return new Date(iso).toLocaleString("it-IT", {
+      return new Date(iso).toLocaleString(locale(), {
         weekday: "short",
         day: "numeric",
         month: "short",
@@ -163,15 +171,17 @@
       card.innerHTML =
         '<div style="position:relative;z-index:1">' +
         '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.55rem">' +
-        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(52,211,153,0.9);color:#0b0f19">ALLENAMENTO</span>' +
-        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35)">SOLO SOCI</span>' +
+        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(52,211,153,0.9);color:#0b0f19">' + esc(tr('banner_training', 'ALLENAMENTO')) + '</span>' +
+        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35)">' + esc(tr('banner_members_only', 'SOLO SOCI')) + '</span>' +
         (max != null
-          ? '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">ISCRITTI ' +
+          ? '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">' +
+            esc(tr('banner_entries', 'ISCRITTI')) + ' ' +
             nIsc +
             " / " +
             max +
             "</span>"
-          : '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">ISCRITTI ' +
+          : '<span style="font-size:0.68rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(15,23,42,0.55);color:#cbd5e1;border:1px solid rgba(255,255,255,0.1)">' +
+            esc(tr('banner_entries', 'ISCRITTI')) + ' ' +
             nIsc +
             "</span>") +
         "</div>" +
@@ -187,7 +197,7 @@
             esc(String(a.descrizione).slice(0, 120)) +
             "</div>"
           : "") +
-        '<div style="margin-top:0.7rem;font-size:0.88rem;font-weight:700;color:#34d399">Iscriviti all\'allenamento →</div>' +
+        '<div style="margin-top:0.7rem;font-size:0.88rem;font-weight:700;color:#34d399">' + esc(tr('banner_training_cta', "Iscriviti all'allenamento →")) + '</div>' +
         "</div>";
 
       card.addEventListener("mouseenter", function () {
@@ -221,4 +231,11 @@
   else loadBanner();
   setTimeout(loadBanner, 1800);
   setTimeout(loadBanner, 3500);
+
+  /* cambio lingua: ridisegna il banner */
+  document.addEventListener("cvi:langchange", function () {
+    var el = document.getElementById("home-allenamento-banner");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    loadBanner();
+  });
 })();

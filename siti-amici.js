@@ -14,6 +14,11 @@
   var CACHE_KEY = "cvi_siti_amici_v1";
   var CACHE_TTL = 10 * 60 * 1000; // 10 minuti
   var SECTION_ID = "cvi-link-amici";
+  var LANGS = ["en", "fr", "es"];
+
+  var FIELDS_BASE = "nome,url,descrizione,emoji,ordine";
+  var FIELDS_I18N =
+    FIELDS_BASE + ",nome_en,nome_fr,nome_es,descrizione_en,descrizione_fr,descrizione_es";
 
   /* ultima lista valida renderizzata: serve anche a ripristinare il banner
      se un altro script dovesse rimuoverlo dal DOM */
@@ -96,6 +101,18 @@
     return /^https?:\/\/[^\s]+$/i.test(String(url || "").trim());
   }
 
+  /* Valore tradotto del record per la lingua corrente, con fallback
+     sull'italiano (i campi extra sono opzionali: se la migrazione SQL
+     non è stata eseguita restano undefined e si usa il testo base). */
+  function localized(link, field) {
+    var lang = (window.CVI && window.CVI.currentLang) || "it";
+    if (LANGS.indexOf(lang) !== -1) {
+      var v = link[field + "_" + lang];
+      if (v != null && String(v).trim() !== "") return String(v).trim();
+    }
+    return link[field] != null ? String(link[field]).trim() : "";
+  }
+
   /* Pulisce e ordina i dati che arrivano da Supabase / cache / fallback. */
   function normalize(rows) {
     var out = [];
@@ -106,7 +123,13 @@
         url: String(r.url).trim(),
         descrizione: r.descrizione ? String(r.descrizione).trim() : "",
         emoji: r.emoji ? String(r.emoji).trim() : "⚓",
-        ordine: Number(r.ordine) || 0
+        ordine: Number(r.ordine) || 0,
+        nome_en: r.nome_en || "",
+        nome_fr: r.nome_fr || "",
+        nome_es: r.nome_es || "",
+        descrizione_en: r.descrizione_en || "",
+        descrizione_fr: r.descrizione_fr || "",
+        descrizione_es: r.descrizione_es || ""
       });
     });
     out.sort(function (a, b) {
@@ -190,9 +213,11 @@
 
   function cardHtml(link) {
     var newTab = tr("opens_new_tab", "si apre in una nuova scheda");
-    var label = link.descrizione
-      ? link.nome + " – " + link.descrizione + " (" + newTab + ")"
-      : link.nome + " (" + newTab + ")";
+    var nome = localized(link, "nome");
+    var descrizione = localized(link, "descrizione");
+    var label = descrizione
+      ? nome + " – " + descrizione + " (" + newTab + ")"
+      : nome + " (" + newTab + ")";
     return (
       '<a class="lb-card" href="' +
       esc(link.url) +
@@ -204,10 +229,10 @@
       "</span>" +
       '<span class="lb-txt">' +
       '<span class="lb-name">' +
-      esc(link.nome) +
+      esc(nome) +
       "</span>" +
-      (link.descrizione
-        ? '<span class="lb-desc">' + esc(link.descrizione) + "</span>"
+      (descrizione
+        ? '<span class="lb-desc">' + esc(descrizione) + "</span>"
         : "") +
       '<span class="lb-go">' + esc(tr("friends_visit", "Visita")) + ' →</span>' +
       "</span></a>"
@@ -258,11 +283,21 @@
       if (!window.CVI || !window.CVI.supabase) {
         throw new Error("client Supabase non disponibile");
       }
+      /* I campi tradotti sono opzionali: se la migrazione SQL non è ancora
+         stata eseguita la query fallisce e si riprova con i soli campi base. */
       var res = await window.CVI.supabase
         .from(TABLE)
-        .select("nome,url,descrizione,emoji,ordine")
+        .select(FIELDS_I18N)
         .eq("attivo", true)
         .order("ordine", { ascending: true });
+
+      if (res.error) {
+        res = await window.CVI.supabase
+          .from(TABLE)
+          .select(FIELDS_BASE)
+          .eq("attivo", true)
+          .order("ordine", { ascending: true });
+      }
 
       if (res.error) throw res.error;
 

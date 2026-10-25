@@ -16,15 +16,23 @@
                    "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 
   var FIELD_DEFS = [
-    { key: "ora", label: "Ora regata", type: "time" },
-    { key: "vento_nodi", label: "Vento (nodi)", type: "number", min: "0", max: "80", step: "0.1", ph: "es. 12.5" },
-    { key: "vento_dir", label: "Direzione vento (°)", type: "number", min: "0", max: "360", step: "1", ph: "0-360", dir: true },
-    { key: "corrente_nodi", label: "Corrente (nodi)", type: "number", min: "0", max: "50", step: "0.1", ph: "es. 0.8" },
-    { key: "corrente_dir", label: "Direzione corrente (°)", type: "number", min: "0", max: "360", step: "1", ph: "0-360", dir: true },
-    { key: "temperatura", label: "Temperatura (°C)", type: "number", min: "-20", max: "60", step: "1", ph: "es. 16" },
-    { key: "condizioni", label: "Condizioni", type: "text", ph: "es. Ventoso" },
-    { key: "nuvole", label: "Nuvole", type: "text", ph: "es. Sparse" }
+    { key: "ora", labelKey: "meteo_f_ora", type: "time" },
+    { key: "vento_nodi", labelKey: "meteo_f_vento", phKey: "meteo_ph_wind", type: "number", min: "0", max: "80", step: "0.1" },
+    { key: "vento_dir", labelKey: "meteo_f_vento_dir", type: "number", min: "0", max: "360", step: "1", ph: "0-360", dir: true },
+    { key: "corrente_nodi", labelKey: "meteo_f_corrente", phKey: "meteo_ph_current", type: "number", min: "0", max: "50", step: "0.1" },
+    { key: "corrente_dir", labelKey: "meteo_f_corrente_dir", type: "number", min: "0", max: "360", step: "1", ph: "0-360", dir: true },
+    { key: "temperatura", labelKey: "meteo_f_temp", phKey: "meteo_ph_temp", type: "number", min: "-20", max: "60", step: "1" },
+    { key: "condizioni", labelKey: "meteo_f_cond", phKey: "meteo_ph_cond", type: "text" },
+    { key: "nuvole", labelKey: "meteo_f_nuvole", phKey: "meteo_ph_clouds", type: "text" }
   ];
+
+  function tr(key, fallback) {
+    return window.CVI && typeof CVI.t === "function" ? CVI.t(key, fallback) : fallback;
+  }
+
+  function locale() {
+    return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
 
   function esc(s) {
     if (s == null) return "";
@@ -68,14 +76,14 @@
   function beaufort(kn) {
     var n = toNum(kn);
     if (n == null) return "";
-    if (n < 1) return "Calma";
-    if (n < 4) return "Bava di vento";
-    if (n < 7) return "Brezza leggera";
-    if (n < 11) return "Brezza tesa";
-    if (n < 17) return "Vento moderato";
-    if (n < 22) return "Vento fresco";
-    if (n < 28) return "Vento forte";
-    return "Burrasca";
+    if (n < 1) return tr("bf_calm", "Calma");
+    if (n < 4) return tr("bf_light_air", "Bava di vento");
+    if (n < 7) return tr("bf_light_breeze", "Brezza leggera");
+    if (n < 11) return tr("bf_moderate_breeze", "Brezza tesa");
+    if (n < 17) return tr("bf_moderate", "Vento moderato");
+    if (n < 22) return tr("bf_fresh", "Vento fresco");
+    if (n < 28) return tr("bf_strong", "Vento forte");
+    return tr("bf_gale", "Burrasca");
   }
 
   function hasData(r) {
@@ -155,17 +163,18 @@
     for (var i = 0; i < count; i++) {
       var r = list[i] || {};
       out.push('<div class="meteo-admin-race" data-meteo-race="' + i + '">' +
-        "<h4>Regata " + (i + 1) + "</h4>" +
+        "<h4>" + esc(tr("meteo_race", "Regata")) + " " + (i + 1) + "</h4>" +
         '<div class="meteo-admin-grid">');
       FIELD_DEFS.forEach(function (f) {
         var val = r[f.key] == null ? "" : String(r[f.key]);
-        out.push("<label>" + esc(f.label) +
+        var ph = f.phKey ? tr(f.phKey, f.ph) : f.ph;
+        out.push("<label>" + esc(tr(f.labelKey, f.label)) +
           '<input type="' + f.type + '" data-mf="' + f.key + '" value="' + esc(val) + '"' +
           (f.type === "number" ? ' inputmode="decimal"' : "") +
           (f.min != null ? ' min="' + f.min + '"' : "") +
           (f.max != null ? ' max="' + f.max + '"' : "") +
           (f.step != null ? ' step="' + f.step + '"' : "") +
-          (f.ph ? ' placeholder="' + esc(f.ph) + '"' : "") + ">" +
+          (ph ? ' placeholder="' + esc(ph) + '"' : "") + ">" +
           (f.dir ? '<span class="meteo-admin-dir-hint" data-met-dir="' + f.key + '">' +
             (toNum(val) == null ? "—" : directionLabel(val)) + "</span>" : "") +
           "</label>");
@@ -222,7 +231,7 @@
 
   /* ---------- Modale pubblico ---------- */
   function raceTitle(gara) {
-    return gara && gara.titolo ? String(gara.titolo) : "Gara CVI";
+    return gara && gara.titolo ? String(gara.titolo) : tr("meteo_default_race", "Gara CVI");
   }
 
   function raceDate(gara, r) {
@@ -234,7 +243,7 @@
       base.setHours(parseInt(parts[0], 10) || 0, parseInt(parts[1], 10) || 0, 0, 0);
     }
     try {
-      return base.toLocaleString("it-IT", {
+      return base.toLocaleString(locale(), {
         weekday: "short", day: "numeric", month: "short",
         year: "numeric", hour: "2-digit", minute: "2-digit"
       });
@@ -256,7 +265,7 @@
     var pct = Math.max(0, Math.min(100, (n / 40) * 100));
     var w = pct.toFixed(1);
     return '<div class="cvi-gauge">' +
-      '<div class="cvi-gauge-head"><span>Intensità vento</span><span>' + esc(beaufort(n)) + "</span></div>" +
+      '<div class="cvi-gauge-head"><span>' + esc(tr("meteo_wind_intensity", "Intensità vento")) + '</span><span>' + esc(beaufort(n)) + "</span></div>" +
       '<div class="cvi-gauge-track">' +
         '<span class="cvi-gauge-fill" style="width:' + w + '%"></span>' +
         '<span class="cvi-gauge-marker" style="left:' + w + '%"></span>' +
@@ -267,11 +276,11 @@
 
   function conditionsHTML(r) {
     var items = [];
-    if (r.condizioni) items.push("<li><span>Condizioni:</span> <strong>" + esc(r.condizioni) + "</strong></li>");
-    if (r.nuvole) items.push("<li><span>Nuvole:</span> <strong>" + esc(r.nuvole) + "</strong></li>");
-    if (r.temperatura != null) items.push("<li><span>Temperatura:</span> <strong>" + esc(fmtNum(r.temperatura, 1)) + " °C</strong></li>");
+    if (r.condizioni) items.push("<li><span>" + esc(tr("meteo_conditions", "Condizioni")) + ':</span> <strong>' + esc(r.condizioni) + "</strong></li>");
+    if (r.nuvole) items.push("<li><span>" + esc(tr("meteo_clouds", "Nuvole")) + ':</span> <strong>' + esc(r.nuvole) + "</strong></li>");
+    if (r.temperatura != null) items.push("<li><span>" + esc(tr("meteo_temp", "Temperatura")) + ':</span> <strong>' + esc(fmtNum(r.temperatura, 1)) + " °C</strong></li>");
     if (!items.length) return "";
-    return '<div class="cvi-conditions"><h3>Condizioni</h3><ul>' + items.join("") + "</ul></div>";
+    return '<div class="cvi-conditions"><h3>' + esc(tr("meteo_conditions", "Condizioni")) + "</h3><ul>" + items.join("") + "</ul></div>";
   }
 
   function panelHTML(gara, r, index) {
@@ -279,17 +288,17 @@
     var dirTxt = r.vento_dir != null ? directionLabel(r.vento_dir) : "";
     var current = null;
     if (r.corrente_nodi != null) {
-      current = fmtNum(r.corrente_nodi, 1) + " nodi" +
+      current = fmtNum(r.corrente_nodi, 1) + " " + tr("meteo_knots", "nodi") +
         (r.corrente_dir != null ? " (" + cardinal(r.corrente_dir) + ")" : "");
     }
-    var info = infoLine("📅", "Data gara", raceDate(gara, r)) +
-      infoLine("🌊", "Corrente", current);
+    var info = infoLine("📅", tr("meteo_date", "Data gara"), raceDate(gara, r)) +
+      infoLine("🌊", tr("meteo_current", "Corrente"), current);
     var windBlock = wind != null
       ? '<div class="cvi-wind-value"><span class="num">' + esc(fmtNum(wind, 1)) +
-        '</span><span class="unit">nodi</span></div>' +
-        '<div class="cvi-wind-caption"><span>Direzione vento</span><span>Intensità vento</span></div>' +
+        '</span><span class="unit">' + esc(tr("meteo_knots", "nodi")) + '</span></div>' +
+        '<div class="cvi-wind-caption"><span>' + esc(tr("meteo_wind_dir", "Direzione vento")) + '</span><span>' + esc(tr("meteo_wind_intensity", "Intensità vento")) + '</span></div>' +
         (dirTxt ? '<div class="cvi-wind-dir">' + esc(dirTxt) + "</div>" : "")
-      : '<div class="cvi-meteo-empty">Dati del vento non inseriti.</div>';
+      : '<div class="cvi-meteo-empty">' + esc(tr("meteo_no_wind", "Dati del vento non inseriti.")) + '</div>';
     return '<div class="cvi-meteo-panel' + (index === 0 ? " is-active" : "") +
       '" role="tabpanel">' +
       '<div class="cvi-meteo-grid">' +
@@ -302,25 +311,26 @@
     var tabs = m.regate.map(function (r, i) {
       return '<button type="button" class="cvi-meteo-tab' + (i === 0 ? " is-active" : "") +
         '" role="tab" data-cvi-tab="' + i + '" aria-selected="' + (i === 0 ? "true" : "false") +
-        '">Regata ' + (i + 1) + "</button>";
+        '">' + esc(tr("meteo_race", "Regata")) + " " + (i + 1) + "</button>";
     }).join("");
     var panels = m.regate.map(function (r, i) {
       return panelHTML(gara, r, i);
     }).join("");
     return '<div class="cvi-meteo-modal" role="dialog" aria-modal="true" aria-labelledby="cvi-meteo-title">' +
-      '<button type="button" class="cvi-meteo-close" aria-label="Chiudi">&times;</button>' +
+      '<button type="button" class="cvi-meteo-close" aria-label="' + esc(tr("meteo_close", "Chiudi")) + '">&times;</button>' +
       '<div class="cvi-meteo-head">' +
-        '<h2 id="cvi-meteo-title">🌤 Meteo gara</h2>' +
-        "<p><strong>" + esc(raceTitle(gara)) + "</strong> · Condizioni ufficiali della regata</p>" +
+        '<h2 id="cvi-meteo-title">🌤 ' + esc(tr("meteo_title", "Meteo gara")) + "</h2>" +
+        "<p><strong>" + esc(raceTitle(gara)) + "</strong> · " + esc(tr("meteo_official", "Condizioni ufficiali della regata")) + "</p>" +
       "</div>" +
-      '<div class="cvi-meteo-tabs" role="tablist" aria-label="Regate">' + tabs + "</div>" +
+      '<div class="cvi-meteo-tabs" role="tablist" aria-label="' + esc(tr("meteo_races", "Regate")) + '">' + tabs + "</div>" +
       '<div class="cvi-meteo-panels">' + panels + "</div>" +
-      '<p class="cvi-meteo-note">Condizioni meteo impostate dall\'organizzazione per la regata.</p>' +
+      '<p class="cvi-meteo-note">' + esc(tr("meteo_note", "Condizioni meteo impostate dall'organizzazione per la regata.")) + "</p>" +
       "</div>";
   }
 
   var lastFocus = null;
   var escHandler = null;
+  var lastGara = null;
 
   function close() {
     var b = document.querySelector(".cvi-meteo-backdrop");
@@ -339,6 +349,7 @@
   function open(gara) {
     var m = normalize(gara && gara.meteo);
     if (!m || !m.visibile || !m.regate.length || !m.regate.some(hasData)) return;
+    lastGara = gara;
     close();
     lastFocus = document.activeElement;
     var backdrop = document.createElement("div");
@@ -375,6 +386,15 @@
     document.addEventListener("keydown", escHandler);
     if (closeBtn) closeBtn.focus();
   }
+
+  /* cambio lingua: se il modale è aperto lo ridisegna tradotto */
+  document.addEventListener("cvi:langchange", function () {
+    if (!lastGara) return;
+    if (!document.querySelector(".cvi-meteo-backdrop")) return;
+    var g = lastGara;
+    close();
+    open(g);
+  });
 
   window.CVIMeteo = {
     has: has,
