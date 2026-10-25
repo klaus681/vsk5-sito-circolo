@@ -143,7 +143,7 @@ update public.siti_amici set
     when 'https://www.nadeo.com/' then 'El estudio detrás de Virtual Skipper'
     when 'https://discord.gg/Z4FUc79hX8' then 'El servidor oficial del club'
     else descrizione_es end
-where coalesce(nome_en, '') = '' or coalesce(nome_fr, '') = '' or coalesce(nome_es, '');
+where coalesce(nome_en, '') = '' or coalesce(nome_fr, '') = '' or coalesce(nome_es, '') = '';
 
 -- 8) Forza PostgREST a ricaricare lo schema (utile subito dopo la creazione)
 notify pgrst, 'reload schema';
