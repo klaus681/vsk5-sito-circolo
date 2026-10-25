@@ -1,6 +1,6 @@
 -- ============================================================
 -- CVI Virtual – "Siti amici & link utili"
--- Tabella usata dal pannello Admin → Siti amici e dal banner in Home.
+-- Tabella usata dal pannello Admin → Siti amici e dalla pagina siti-amici.html.
 -- Esegui tutto nel SQL Editor di Supabase.
 -- È sicuro rieseguirlo (IF NOT EXISTS / DROP POLICY IF EXISTS).
 -- ============================================================
@@ -25,7 +25,7 @@ alter table public.siti_amici add column if not exists ordine int not null defau
 alter table public.siti_amici add column if not exists attivo boolean not null default true;
 alter table public.siti_amici add column if not exists updated_at timestamptz not null default now();
 
--- Traduzioni opzionali (usate dal banner in Home quando la lingua non è IT).
+-- Traduzioni opzionali (usate dalla pagina Siti amici quando la lingua non è IT).
 -- Se restano vuote si mostra il testo italiano.
 alter table public.siti_amici add column if not exists nome_en text;
 alter table public.siti_amici add column if not exists nome_fr text;

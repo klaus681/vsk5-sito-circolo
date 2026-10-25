@@ -408,7 +408,7 @@
       <div id="panel-siti-amici" class="admin-panel">
         <div class="admin-card">
           <h3 id="sam-form-title" style="margin:0 0 0.35rem;color:#7dd3fc">Nuovo link</h3>
-          <p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.9rem">Gestisci il banner “Siti amici &amp; link utili” mostrato in Home. I link con <strong style="color:#e2e8f0">Attivo</strong> spuntato compaiono subito; l’ordine più basso appare per primo.</p>
+          <p style="color:#94a3b8;font-size:0.88rem;margin:0 0 0.9rem">Gestisci la pagina “Siti amici &amp; link utili”. I link con <strong style="color:#e2e8f0">Attivo</strong> spuntato compaiono subito nella pagina; l’ordine più basso appare per primo.</p>
           <form id="sam-form" class="form-grid">
             <input type="hidden" id="sam-id">
             <div><label class="adm-label" for="sam-nome">Nome *</label><input class="adm-input" id="sam-nome" required maxlength="80" style="width:100%" placeholder="Es. Federazione Italiana Vela"></div>
@@ -418,7 +418,7 @@
               <div><label class="adm-label" for="sam-emoji">Emoji</label><input class="adm-input" id="sam-emoji" value="⚓" style="width:100%" maxlength="8"></div>
               <div><label class="adm-label" for="sam-ordine">Ordine</label><input type="number" class="adm-input" id="sam-ordine" value="0" step="10" style="width:100%"></div>
               <div style="display:flex;align-items:flex-end;padding-bottom:0.35rem">
-                <label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="sam-attivo" checked> Attivo (visibile in Home)</label>
+                <label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="sam-attivo" checked> Attivo (visibile nella pagina)</label>
               </div>
             </div>
             <details style="grid-column:1/-1;background:rgba(15,23,42,0.5);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:0.55rem 0.8rem">
@@ -460,12 +460,12 @@
       <div id="sql-hint" class="sql-hint">Se alcune operazioni falliscono, verifica le policy RLS su Supabase.</div>
     </div>
   </main>
-  <script src="common.js?v=12"></script>
+  <script src="common.js?v=13"></script>
   <script src="2-serie-aperte-lib.js?v=2"></script>
   <script src="gare-meteo.js?v=2"></script>
   <script src="admin.js?v=22"></script>
   <script src="regolamento-admin.js?v=2"></script>
-  <script src="siti-amici-admin.js?v=4"></script>
+  <script src="siti-amici-admin.js?v=5"></script>
   <script>
   (function(){
     function wireLogout(){

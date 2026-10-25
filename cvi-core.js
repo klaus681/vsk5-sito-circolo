@@ -354,7 +354,6 @@
     'proteste.html': 'nav_proteste',
     'tornei.html': 'nav_tornei',
     'allenamenti.html': 'nav_allenamenti',
-    'siti-amici.html': 'nav_friends',
     'privacy.html': 'footer_privacy'
   };
 
@@ -476,15 +475,6 @@
     document.querySelectorAll('.footer-brand .logo-text').forEach(function (el) {
       el.innerHTML = 'CVI <span style="color: var(--accent-color)">Virtual</span>';
     });
-    /* Link "Siti amici" nel footer (prima colonna), una volta sola */
-    var col = document.querySelector('.footer-col');
-    if (col && !document.querySelector('.footer-col a[href="siti-amici.html"]')) {
-      var a = document.createElement('a');
-      a.href = 'siti-amici.html';
-      a.setAttribute('data-i18n', 'nav_friends');
-      a.textContent = window.CVI.t('nav_friends', 'Siti amici');
-      col.appendChild(a);
-    }
   };
 
   window.CVI.ensureNavAlign = function () {};

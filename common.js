@@ -1,5 +1,5 @@
 /* CVI – loader: core condiviso locale (nessuna dipendenza da CDN esterni) */
-document.write('<script src="cvi-core.js?v=4"><\/script>');
+document.write('<script src="cvi-core.js?v=5"><\/script>');
 /* Extra: nazionalità profilo */
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
