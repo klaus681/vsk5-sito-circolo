@@ -12,6 +12,14 @@
       .replace(/"/g, "&quot;");
   }
 
+  function tr(key, fallback) {
+    return window.CVI && typeof CVI.t === "function" ? CVI.t(key, fallback) : fallback;
+  }
+
+  function locale() {
+    return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
+
   function medal(pos) {
     if (pos === 1)
       return {
@@ -37,10 +45,10 @@
   function dateRange(a, b) {
     try {
       var d1 = a
-        ? new Date(a).toLocaleDateString("it-IT", { day: "numeric", month: "short" })
+        ? new Date(a).toLocaleDateString(locale(), { day: "numeric", month: "short" })
         : "";
       var d2 = b
-        ? new Date(b).toLocaleDateString("it-IT", {
+        ? new Date(b).toLocaleDateString(locale(), {
             day: "numeric",
             month: "short",
             year: "numeric"
@@ -200,9 +208,9 @@
               (r.team ? '<div class="sa-podium-team">' + esc(r.team) + "</div>" : "") +
               '<div class="sa-podium-pts">' +
               r.netti +
-              " pt \u00b7 " +
+              " " + esc(tr("banner_points_short", "pt")) + " \u00b7 " +
               r.gare +
-              " gare</div>" +
+              " " + esc(tr("banner_races", "regate")) + "</div>" +
               "</div>"
             );
           })
@@ -224,10 +232,10 @@
                 esc(r.nickname) +
                 "</strong>" +
                 (r.team ? ' <span class="sa-team">(' + esc(r.team) + ")</span>" : "") +
-                ' <span class="sa-gare">' + r.gare + " gare</span>" +
+                ' <span class="sa-gare">' + r.gare + " " + esc(tr("banner_races", "regate")) + "</span>" +
                 ' <span class="sa-pts">' +
                 r.netti +
-                " pt</span>" +
+                " " + esc(tr("banner_points_short", "pt")) + "</span>" +
                 "</li>"
               );
             })
@@ -237,9 +245,9 @@
 
       var lastHtml =
         lastRace && lastWinner
-          ? '<p class="sa-last">\ud83c\udfc1 Ultima regata: <strong>' +
+          ? '<p class="sa-last">\ud83c\udfc1 ' + esc(tr("banner_last_race", "Ultima regata:")) + ' <strong>' +
             esc(lastRace.titolo) +
-            "</strong> \u00b7 vince <strong>" +
+            "</strong> \u00b7 " + esc(tr("banner_wins", "vince")) + " <strong>" +
             esc(lastWinner) +
             "</strong></p>"
           : "";
@@ -251,13 +259,13 @@
         '<div class="sa-home-card">' +
         '<div class="sa-home-header">' +
         "<div>" +
-        '<span class="sa-badge">Serie Aperta</span>' +
+        '<span class="sa-badge">' + esc(tr("banner_open_series", "Serie Aperta")) + '</span>' +
         '<h2 class="sa-home-title">' +
         esc(serie.titolo) +
         "</h2>" +
         (dr ? '<div class="sa-home-date">\ud83d\udcc5 ' + esc(dr) + "</div>" : "") +
         "</div>" +
-        '<a href="eventi-aperti.html" class="sa-link-more">Classifica completa \u2192</a>' +
+        '<a href="eventi-aperti.html" class="sa-link-more">' + esc(tr("banner_full_standings", "Classifica completa →")) + '</a>' +
         "</div>" +
         (serie.descrizione ? '<p class="sa-home-desc">' + esc(serie.descrizione) + "</p>" : "") +
         podiumHtml +
@@ -265,12 +273,12 @@
         lastHtml +
         '<p class="sa-home-note">' +
         (sistema === "high_point" ? "High Point" : "Low Point") +
-        " \u00b7 scarti: " +
+        " \u00b7 " + esc(tr("banner_discards", "scarti")) + ": " +
         scartiN +
-        (scartiAuto ? " (automatici)" : "") +
+        (scartiAuto ? " " + esc(tr("banner_automatic", "(automatici)")) : "") +
         " \u00b7 " +
         regate.length +
-        " regate \u00b7 classifica aperta non ufficiale</p>" +
+        " " + esc(tr("banner_races", "regate")) + " \u00b7 " + esc(tr("banner_series_note", "classifica aperta non ufficiale")) + '</p>' +
         "</div>" +
         "</section>";
 
@@ -299,6 +307,13 @@
     setTimeout(run, 1800);
     setTimeout(run, 3500);
   }
+
+  /* cambio lingua: rimuove e ridisegna il box nella lingua corrente */
+  document.addEventListener("cvi:langchange", function () {
+    var el = document.getElementById("cvi-serie-aperte-home");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    run();
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);

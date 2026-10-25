@@ -421,6 +421,18 @@
                 <label style="color:#e2e8f0;font-size:0.88rem"><input type="checkbox" id="sam-attivo" checked> Attivo (visibile in Home)</label>
               </div>
             </div>
+            <details style="grid-column:1/-1;background:rgba(15,23,42,0.5);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:0.55rem 0.8rem">
+              <summary style="cursor:pointer;color:#7dd3fc;font-weight:700;font-size:0.88rem">Traduzioni (EN / FR / ES)</summary>
+              <p style="color:#94a3b8;font-size:0.8rem;margin:0.4rem 0 0.6rem">Facoltative: se lasciate vuote, nelle altre lingue si usa il testo italiano.</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0.75rem">
+                <div><label class="adm-label" for="sam-nome-en">Nome EN</label><input class="adm-input" id="sam-nome-en" maxlength="80" style="width:100%" placeholder="English name"></div>
+                <div><label class="adm-label" for="sam-nome-fr">Nome FR</label><input class="adm-input" id="sam-nome-fr" maxlength="80" style="width:100%" placeholder="Nom en français"></div>
+                <div><label class="adm-label" for="sam-nome-es">Nome ES</label><input class="adm-input" id="sam-nome-es" maxlength="80" style="width:100%" placeholder="Nombre en español"></div>
+                <div><label class="adm-label" for="sam-desc-en">Descrizione EN</label><input class="adm-input" id="sam-desc-en" maxlength="160" style="width:100%"></div>
+                <div><label class="adm-label" for="sam-desc-fr">Descrizione FR</label><input class="adm-input" id="sam-desc-fr" maxlength="160" style="width:100%"></div>
+                <div><label class="adm-label" for="sam-desc-es">Descrizione ES</label><input class="adm-input" id="sam-desc-es" maxlength="160" style="width:100%"></div>
+              </div>
+            </details>
             <div class="form-actions">
               <button type="submit" class="btn-primary" id="sam-save">Aggiungi link</button>
               <button type="button" class="btn-ghost" id="sam-cancel" style="display:none">Annulla</button>
@@ -448,12 +460,12 @@
       <div id="sql-hint" class="sql-hint">Se alcune operazioni falliscono, verifica le policy RLS su Supabase.</div>
     </div>
   </main>
-  <script src="common.js?v=8"></script>
+  <script src="common.js?v=11"></script>
   <script src="2-serie-aperte-lib.js?v=2"></script>
-  <script src="gare-meteo.js?v=1"></script>
+  <script src="gare-meteo.js?v=2"></script>
   <script src="admin.js?v=22"></script>
   <script src="regolamento-admin.js?v=2"></script>
-  <script src="siti-amici-admin.js?v=3"></script>
+  <script src="siti-amici-admin.js?v=4"></script>
   <script>
   (function(){
     function wireLogout(){

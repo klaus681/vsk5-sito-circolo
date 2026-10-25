@@ -122,6 +122,7 @@ Apri una pull request, verifica le pagine principali e poi fai merge su `main`. 
 - Tabella Supabase: `public.siti_amici` — creata/aggiornata da `siti-amici-sql.sql` (RLS inclusa: lettura pubblica dei soli link attivi, scrittura per admin/scorer).
 - Admin → tab **Link amici**: crea/modifica/elimina i link, li attiva o nasconde e ne cambia l'ordine (frecce ↑/↓). Il pannello è in `siti-amici-admin.js`.
 - Home: `siti-amici.js` mostra il banner "Siti amici & link utili" subito sotto la dashboard. Usa una cache locale, quindi il banner è immediato, e ha un elenco di fallback se Supabase non risponde.
+- Multilingua: i campi `nome_en`/`nome_fr`/`nome_es` e `descrizione_en`/`descrizione_fr`/`descrizione_es` (opzionali) si compilano dal tab **Link amici** → “Traduzioni”. Se sono vuoti, nelle altre lingue si usa il testo italiano. Le colonne vengono create dallo script `siti-amici-sql.sql`.
 
 Se il tab non mostra nulla: esegui `siti-amici-sql.sql` nel SQL Editor di Supabase e ricarica la pagina.
 

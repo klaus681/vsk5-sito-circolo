@@ -14,6 +14,11 @@
   var CACHE_KEY = "cvi_siti_amici_v1";
   var CACHE_TTL = 10 * 60 * 1000; // 10 minuti
   var SECTION_ID = "cvi-link-amici";
+  var LANGS = ["en", "fr", "es"];
+
+  var FIELDS_BASE = "nome,url,descrizione,emoji,ordine";
+  var FIELDS_I18N =
+    FIELDS_BASE + ",nome_en,nome_fr,nome_es,descrizione_en,descrizione_fr,descrizione_es";
 
   /* ultima lista valida renderizzata: serve anche a ripristinare il banner
      se un altro script dovesse rimuoverlo dal DOM */
@@ -85,8 +90,27 @@
       .replace(/'/g, "&#39;");
   }
 
+  /* Stringa tradotta dal dizionario condiviso (cvi-core.js). */
+  function tr(key, fallback) {
+    return window.CVI && typeof window.CVI.t === "function"
+      ? window.CVI.t(key, fallback)
+      : fallback;
+  }
+
   function isHttpUrl(url) {
     return /^https?:\/\/[^\s]+$/i.test(String(url || "").trim());
+  }
+
+  /* Valore tradotto del record per la lingua corrente, con fallback
+     sull'italiano (i campi extra sono opzionali: se la migrazione SQL
+     non è stata eseguita restano undefined e si usa il testo base). */
+  function localized(link, field) {
+    var lang = (window.CVI && window.CVI.currentLang) || "it";
+    if (LANGS.indexOf(lang) !== -1) {
+      var v = link[field + "_" + lang];
+      if (v != null && String(v).trim() !== "") return String(v).trim();
+    }
+    return link[field] != null ? String(link[field]).trim() : "";
   }
 
   /* Pulisce e ordina i dati che arrivano da Supabase / cache / fallback. */
@@ -99,7 +123,13 @@
         url: String(r.url).trim(),
         descrizione: r.descrizione ? String(r.descrizione).trim() : "",
         emoji: r.emoji ? String(r.emoji).trim() : "⚓",
-        ordine: Number(r.ordine) || 0
+        ordine: Number(r.ordine) || 0,
+        nome_en: r.nome_en || "",
+        nome_fr: r.nome_fr || "",
+        nome_es: r.nome_es || "",
+        descrizione_en: r.descrizione_en || "",
+        descrizione_fr: r.descrizione_fr || "",
+        descrizione_es: r.descrizione_es || ""
       });
     });
     out.sort(function (a, b) {
@@ -164,9 +194,9 @@
     section.innerHTML =
       '<div class="lb-strip-inner">' +
       '<div class="lb-head">' +
-      '<div><span class="lb-eyebrow">Community</span>' +
-      '<h2 class="lb-title" id="lb-title">Siti amici &amp; link utili</h2></div>' +
-      '<p class="lb-sub">Realtà e risorse che seguiamo</p>' +
+      '<div><span class="lb-eyebrow">' + esc(tr("friends_eyebrow", "Community")) + "</span>" +
+      '<h2 class="lb-title" id="lb-title">' + esc(tr("friends_title", "Siti amici & link utili")) + "</h2></div>" +
+      '<p class="lb-sub">' + esc(tr("friends_sub", "Realtà e risorse che seguiamo")) + "</p>" +
       "</div>" +
       '<div class="lb-body" id="lb-body" aria-live="polite">' +
       '<div class="lb-grid" aria-hidden="true">' +
@@ -182,9 +212,12 @@
   }
 
   function cardHtml(link) {
-    var label = link.descrizione
-      ? link.nome + " – " + link.descrizione + " (si apre in una nuova scheda)"
-      : link.nome + " (si apre in una nuova scheda)";
+    var newTab = tr("opens_new_tab", "si apre in una nuova scheda");
+    var nome = localized(link, "nome");
+    var descrizione = localized(link, "descrizione");
+    var label = descrizione
+      ? nome + " – " + descrizione + " (" + newTab + ")"
+      : nome + " (" + newTab + ")";
     return (
       '<a class="lb-card" href="' +
       esc(link.url) +
@@ -196,12 +229,12 @@
       "</span>" +
       '<span class="lb-txt">' +
       '<span class="lb-name">' +
-      esc(link.nome) +
+      esc(nome) +
       "</span>" +
-      (link.descrizione
-        ? '<span class="lb-desc">' + esc(link.descrizione) + "</span>"
+      (descrizione
+        ? '<span class="lb-desc">' + esc(descrizione) + "</span>"
         : "") +
-      '<span class="lb-go">Visita →</span>' +
+      '<span class="lb-go">' + esc(tr("friends_visit", "Visita")) + ' →</span>' +
       "</span></a>"
     );
   }
@@ -224,6 +257,19 @@
       '<div class="lb-grid">' + items.map(cardHtml).join("") + "</div>";
   }
 
+  /* Riallinea titolo/sottotitolo/link quando cambia la lingua. */
+  function refreshStrings() {
+    var section = document.getElementById(SECTION_ID);
+    if (!section) return;
+    var eyebrow = section.querySelector(".lb-eyebrow");
+    var title = section.querySelector(".lb-title");
+    var sub = section.querySelector(".lb-sub");
+    if (eyebrow) eyebrow.textContent = tr("friends_eyebrow", "Community");
+    if (title) title.textContent = tr("friends_title", "Siti amici & link utili");
+    if (sub) sub.textContent = tr("friends_sub", "Realtà e risorse che seguiamo");
+    if (lastItems.length) render(lastItems);
+  }
+
   var loading = false;
   var lastLoad = 0;
 
@@ -237,11 +283,21 @@
       if (!window.CVI || !window.CVI.supabase) {
         throw new Error("client Supabase non disponibile");
       }
+      /* I campi tradotti sono opzionali: se la migrazione SQL non è ancora
+         stata eseguita la query fallisce e si riprova con i soli campi base. */
       var res = await window.CVI.supabase
         .from(TABLE)
-        .select("nome,url,descrizione,emoji,ordine")
+        .select(FIELDS_I18N)
         .eq("attivo", true)
         .order("ordine", { ascending: true });
+
+      if (res.error) {
+        res = await window.CVI.supabase
+          .from(TABLE)
+          .select(FIELDS_BASE)
+          .eq("attivo", true)
+          .order("ordine", { ascending: true });
+      }
 
       if (res.error) throw res.error;
 
@@ -264,6 +320,9 @@
 
   function boot() {
     if (!ensureSection()) return;
+
+    /* cambio lingua: aggiorna testi fissi e schede */
+    document.addEventListener("cvi:langchange", refreshStrings);
 
     /* 1) mostra subito la cache, se c'è (nessun flicker) */
     var cached = readCache();

@@ -1,5 +1,5 @@
 /* CVI – loader: core condiviso locale (nessuna dipendenza da CDN esterni) */
-document.write('<script src="cvi-core.js?v=1"><\/script>');
+document.write('<script src="cvi-core.js?v=3"><\/script>');
 /* Extra: nazionalità profilo */
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
@@ -10,18 +10,18 @@ document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 /* Extra: voce Tornei nel menu Gare & Eventi */
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
 /* Extra: voce Tutor nel menu */
-document.write('<script src="tutor-nav.js?v=1"><\/script>');
+document.write('<script src="tutor-nav.js?v=2"><\/script>');
 /* Download e Risorse: voce unica nel menu (la vecchia Biblioteca è confluita in risorse.html) */
 /* Extra: traduzioni menu */
 document.write('<script src="nav-i18n.js?v=1"><\/script>');
 /* Extra: voce Messaggi nel menu + badge non letti */
 document.write('<script src="messaggi-nav.js?v=1"><\/script>');
 /* Extra: banner torneo + allenamento in riga dedicata */
-document.write('<script src="tornei-home.js?v=5"><\/script>');
-document.write('<script src="allenamenti-home.js?v=3"><\/script>');
+document.write('<script src="tornei-home.js?v=6"><\/script>');
+document.write('<script src="allenamenti-home.js?v=4"><\/script>');
 /* Extra: sfondi home personalizzati da admin */
 document.write('<script src="home-sfondi.js?v=2"><\/script>');
 /* Extra: link Privacy nel footer */
-document.write('<script src="privacy-link.js?v=1"><\/script>');
+document.write('<script src="privacy-link.js?v=2"><\/script>');
 /* Extra: banner account in attesa/sospeso */
-document.write('<script src="membership-banner.js?v=1"><\/script>');
+document.write('<script src="membership-banner.js?v=2"><\/script>');

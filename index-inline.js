@@ -11,6 +11,14 @@ function escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+/* Traduzione stringhe dinamiche (dizionario condiviso in cvi-core.js) */
+function tr(key, fallback) {
+  return (window.CVI && typeof CVI.t === 'function') ? CVI.t(key, fallback) : (fallback == null ? key : fallback);
+}
+function dataLocale() {
+  return (window.CVI && typeof CVI.locale === 'function') ? CVI.locale() : 'it-IT';
+}
+
 const extra = {
   it: {
     home_community: "Circolo Velico Italia",
@@ -59,33 +67,34 @@ function ensureIscrittiBadgeStyles() {
 
 function audienceBadge(gara) {
   var t = ((gara && gara.tipo) || 'ufficiale').toLowerCase();
-  if (t === 'aperto') return { key: 'aperto', label: 'Evento aperto' };
-  if (t === 'speciale') return { key: 'speciale', label: 'Evento speciale · soci' };
-  return { key: 'soci', label: 'Riservata ai soci' };
+  if (t === 'aperto') return { key: 'aperto', label: tr('race_open_event', 'Evento aperto') };
+  if (t === 'speciale') return { key: 'speciale', label: tr('race_special_event', 'Evento speciale · soci') };
+  return { key: 'soci', label: tr('race_members_only', 'Riservata ai soci') };
 }
 
 function statoGara(gara) {
-  if (!gara || !gara.data_gara) return { key: 'none', label: '', tipo: 'Prossima gara' };
+  if (!gara || !gara.data_gara) return { key: 'none', label: '', tipo: tr('race_next', 'Prossima gara') };
   const start = new Date(gara.data_gara).getTime();
-  if (isNaN(start)) return { key: 'none', label: '', tipo: 'Prossima gara' };
+  if (isNaN(start)) return { key: 'none', label: '', tipo: tr('race_next', 'Prossima gara') };
   const now = Date.now();
   let chiusuraOre = gara.chiusura_ore != null ? parseInt(gara.chiusura_ore, 10) : 2;
   if (isNaN(chiusuraOre) || chiusuraOre < 0) chiusuraOre = 2;
   const nr = Math.min(3, Math.max(1, parseInt(gara.num_regate, 10) || 1));
   const durataMs = Math.max(2, nr * 1.5) * 60 * 60 * 1000;
-  if (now >= start + durataMs) return { key: 'conclusa', label: 'Conclusa', tipo: 'Ultima gara' };
-  if (now >= start) return { key: 'corso', label: 'In corso', tipo: 'Gara in corso' };
+  if (now >= start + durataMs) return { key: 'conclusa', label: tr('race_done', 'Conclusa'), tipo: tr('race_last', 'Ultima gara') };
+  if (now >= start) return { key: 'corso', label: tr('race_live', 'In corso'), tipo: tr('race_running', 'Gara in corso') };
   var isAperto = ((gara.tipo || 'ufficiale').toLowerCase() === 'aperto');
   if (isAperto) {
-    if (now >= start - chiusuraOre * 60 * 60 * 1000) return { key: 'chiuse', label: 'In arrivo', tipo: 'Prossima gara' };
-    return { key: 'aperte', label: 'Senza iscrizione', tipo: 'Prossima gara' };
+    if (now >= start - chiusuraOre * 60 * 60 * 1000) return { key: 'chiuse', label: tr('race_upcoming', 'In arrivo'), tipo: tr('race_next', 'Prossima gara') };
+    return { key: 'aperte', label: tr('race_no_signup', 'Senza iscrizione'), tipo: tr('race_next', 'Prossima gara') };
   }
-  if (now >= start - chiusuraOre * 60 * 60 * 1000) return { key: 'chiuse', label: 'Iscrizioni chiuse', tipo: 'Prossima gara' };
-  return { key: 'aperte', label: 'Iscrizioni aperte', tipo: 'Prossima gara' };
+  if (now >= start - chiusuraOre * 60 * 60 * 1000) return { key: 'chiuse', label: tr('race_signup_closed', 'Iscrizioni chiuse'), tipo: tr('race_next', 'Prossima gara') };
+  return { key: 'aperte', label: tr('race_signup_open', 'Iscrizioni aperte'), tipo: tr('race_next', 'Prossima gara') };
 }
 
 var _cviCountdownTimer = null;
 var _cviCountdownGara = null;
+var _cviLastGara = null;
 
 function ensureCountdownStyles() {
   if (document.getElementById('cvi-countdown-css')) return;
@@ -111,7 +120,7 @@ function formatCountdown(ms) {
   var m = Math.floor((totalSec % 3600) / 60);
   var s = totalSec % 60;
   var parts = [];
-  if (d > 0) parts.push(d + 'g');
+  if (d > 0) parts.push(d + tr('day_short', 'g'));
   parts.push(String(h).padStart(2, '0') + 'h');
   parts.push(String(m).padStart(2, '0') + 'm');
   parts.push(String(s).padStart(2, '0') + 's');
@@ -150,18 +159,18 @@ function tickCountdown() {
 
   if (now >= end) {
     el.className = 'is-done';
-    el.innerHTML = '<span class="cd-icon">✓</span><span class="cd-time">Gara conclusa</span>';
+    el.innerHTML = '<span class="cd-icon">✓</span><span class="cd-time">' + escHtml(tr('race_finished', 'Gara conclusa')) + '</span>';
     if (_cviCountdownTimer) { clearInterval(_cviCountdownTimer); _cviCountdownTimer = null; }
     return;
   }
   if (now >= start) {
     el.className = 'is-live';
-    el.innerHTML = '<span class="cd-icon">🔴</span><span class="cd-label">Stato</span><span class="cd-time">In corso</span>';
+    el.innerHTML = '<span class="cd-icon">🔴</span><span class="cd-label">' + escHtml(tr('race_status', 'Stato')) + '</span><span class="cd-time">' + escHtml(tr('race_live', 'In corso')) + '</span>';
     return;
   }
   var left = formatCountdown(start - now);
   el.className = '';
-  el.innerHTML = '<span class="cd-icon">⏱️</span><span class="cd-label">Parte tra</span><span class="cd-time">' + left + '</span>';
+  el.innerHTML = '<span class="cd-icon">⏱️</span><span class="cd-label">' + escHtml(tr('race_starts_in', 'Parte tra')) + '</span><span class="cd-time">' + left + '</span>';
 }
 
 function startCountdown(gara) {
@@ -175,7 +184,7 @@ function startCountdown(gara) {
 async function caricaProssimaGara() {
   try {
     if (!CVI.supabase) {
-      document.getElementById('regata-titolo').textContent = 'Nessuna gara in programma';
+      document.getElementById('regata-titolo').textContent = tr('race_none', 'Nessuna gara in programma');
       return;
     }
     const now = new Date().toISOString();
@@ -202,9 +211,9 @@ async function caricaProssimaGara() {
         pastData = past2.data;
       }
       if (!pastData || !pastData.length) {
-        document.getElementById('regata-titolo').textContent = 'Nessuna gara in programma';
+        document.getElementById('regata-titolo').textContent = tr('race_none', 'Nessuna gara in programma');
         document.getElementById('regata-data').textContent = '📅 --';
-        document.getElementById('regata-descrizione').textContent = 'Controlla più tardi per nuovi eventi.';
+        document.getElementById('regata-descrizione').textContent = tr('race_check_later', 'Controlla più tardi per nuovi eventi.');
         const bs = document.getElementById('regata-badge-stato');
         const badgeLive = document.getElementById('regata-badge-live');
         const liveBtnEl = document.getElementById('regata-live-btn');
@@ -213,7 +222,7 @@ async function caricaProssimaGara() {
         if (bs) { bs.style.display = 'none'; bs.textContent = ''; }
         if (badgeLive) badgeLive.style.display = 'none';
         if (liveBtnEl) liveBtnEl.style.display = 'none';
-        if (bt) bt.textContent = 'Calendario';
+        if (bt) bt.textContent = tr('nav_gare_sub', 'Calendario');
         if (ba) ba.style.display = 'none';
         var bi=document.getElementById('regata-badge-iscritti');if(bi){bi.style.display='none';bi.textContent='';}
         var cd=document.getElementById('regata-countdown');if(cd)cd.style.display='none';
@@ -228,7 +237,7 @@ async function caricaProssimaGara() {
   } catch (err) {
     console.error(err);
     const el = document.getElementById('regata-titolo');
-    if (el) el.textContent = 'Impossibile caricare le gare';
+    if (el) el.textContent = tr('race_load_error', 'Impossibile caricare le gare');
   }
 }
 
@@ -259,7 +268,7 @@ async function caricaPasswordBanner(gara) {
     }
     var pwd = res.data && res.data.password ? String(res.data.password).trim() : '';
     if (!pwd) return;
-    el.textContent = '🔑 Password server: ';
+    el.textContent = '🔑 ' + tr('race_password', 'Password server:') + ' ';
     var code = document.createElement('code');
     code.textContent = pwd;
     el.appendChild(code);
@@ -270,11 +279,12 @@ async function caricaPasswordBanner(gara) {
 }
 
 function fillRegata(gara) {
+  _cviLastGara = gara || null;
   const titoloEl = document.getElementById('regata-titolo');
   const dataEl = document.getElementById('regata-data');
   const descEl = document.getElementById('regata-descrizione');
-  if (titoloEl) titoloEl.textContent = gara.titolo || 'Gara senza titolo';
-  const dataFmt = gara.data_gara ? new Date(gara.data_gara).toLocaleString('it-IT', { dateStyle: 'full', timeStyle: 'short' }) : 'Data da definirsi';
+  if (titoloEl) titoloEl.textContent = gara.titolo || tr('race_no_title', 'Gara senza titolo');
+  const dataFmt = gara.data_gara ? new Date(gara.data_gara).toLocaleString(dataLocale(), { dateStyle: 'full', timeStyle: 'short' }) : tr('race_date_tbd', 'Data da definirsi');
   if (dataEl) dataEl.textContent = `📅 ${dataFmt}`;
   if (descEl) descEl.textContent = gara.descrizione || '';
 
@@ -336,12 +346,12 @@ function fillRegata(gara) {
       badgeIscr.textContent = '';
       badgeIscr.title = '';
     } else if (cap != null && cnt >= cap) {
-      badgeIscr.textContent = 'Al completo';
-      badgeIscr.title = 'Iscritti ' + cnt + ' / ' + cap;
+      badgeIscr.textContent = tr('race_full', 'Al completo');
+      badgeIscr.title = tr('race_entries', 'Iscritti') + ' ' + cnt + ' / ' + cap;
       badgeIscr.className = 'badge-stato is-full';
       badgeIscr.style.display = '';
     } else {
-      badgeIscr.textContent = (cap != null) ? ('Iscritti ' + cnt + ' / ' + cap) : ('Iscritti ' + cnt);
+      badgeIscr.textContent = (cap != null) ? (tr('race_entries', 'Iscritti') + ' ' + cnt + ' / ' + cap) : (tr('race_entries', 'Iscritti') + ' ' + cnt);
       badgeIscr.title = '';
       badgeIscr.className = 'badge-stato is-iscritti';
       badgeIscr.style.display = '';
@@ -383,7 +393,7 @@ function fillRegata(gara) {
 
 async function caricaClassificaHome() {
   const list = document.getElementById('home-ranking');
-  if (!list) return;
+  if (!list || !CVI.supabase) return;
   try {
     const [classRes, profRes] = await Promise.all([
       CVI.supabase
@@ -397,13 +407,13 @@ async function caricaClassificaHome() {
 
     if (classRes.error) {
       console.warn('classifiche:', classRes.error.message);
-      list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
+      list.innerHTML = '<li><div class="rank-info"><strong>' + escHtml(tr('home_rank_empty', 'Nessun risultato ancora')) + '</strong><span>' + escHtml(tr('home_rank_empty_sub', 'Inserisci i risultati dalla pagina Classifiche')) + '</span></div></li>';
       return;
     }
 
     const rows = classRes.data || [];
     if (!rows.length) {
-      list.innerHTML = '<li><div class="rank-info"><strong>Nessun risultato ancora</strong><span>Inserisci i risultati dalla pagina Classifiche</span></div></li>';
+      list.innerHTML = '<li><div class="rank-info"><strong>' + escHtml(tr('home_rank_empty', 'Nessun risultato ancora')) + '</strong><span>' + escHtml(tr('home_rank_empty_sub', 'Inserisci i risultati dalla pagina Classifiche')) + '</span></div></li>';
       return;
     }
 
@@ -425,7 +435,7 @@ async function caricaClassificaHome() {
     }).join('');
   } catch (err) {
     console.error(err);
-    list.innerHTML = '<li><div class="rank-info"><strong>Errore caricamento</strong></div></li>';
+    list.innerHTML = '<li><div class="rank-info"><strong>' + escHtml(tr('home_rank_error', 'Errore caricamento')) + '</strong></div></li>';
   }
 }
 
@@ -552,6 +562,13 @@ function setupBachecaAdmin() {
     };
   }
 }
+
+/* Cambio lingua: ridisegna i contenuti generati via JS (scheda gara,
+   countdown, classifica) usando il dizionario aggiornato. */
+document.addEventListener('cvi:langchange', function () {
+  if (_cviLastGara) fillRegata(_cviLastGara);
+  caricaClassificaHome();
+});
 
 (async function () {
   if (window.CVI && CVI.init) CVI.init('index.html', extra);
