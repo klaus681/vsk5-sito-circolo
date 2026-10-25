@@ -97,7 +97,7 @@
       <h1 id="hero-title" data-i18n="home_title">Regate vere,<br><em>mari virtuali.</em></h1>
       <p id="hero-subtitle" data-i18n="home_subtitle">Squadre, regate settimanali e una classifica che conta. Il punto d'incontro degli skipper italiani di Virtual Skipper.</p>
       <div class="hero-actions">
-        <a href="gare.html" class="btn-primary" id="hero-cta1">Calendario Regate</a>
+        <a href="gare.html" class="btn-primary" id="hero-cta1" data-i18n="home_cta1">Calendario Regate</a>
         <a href="unisciti.html" class="btn-secondary" id="hero-cta2" data-i18n="nav_unisciti">Unisciti al Circolo</a>
       </div>
     </section>
@@ -105,25 +105,25 @@
   <main class="page-content" id="main-content">
     <div class="dashboard-grid">
       <div class="stats-box" id="home-stats">
-        <div class="stat-item"><span class="stat-number" id="stat-soci">—</span><span class="stat-label" id="stat-soci-label">Soci</span></div>
-        <div class="stat-item"><span class="stat-number" id="stat-squadre">—</span><span class="stat-label" id="stat-squadre-label">Squadre</span></div>
-        <div class="stat-item"><span class="stat-number" id="stat-regate">—</span><span class="stat-label" id="stat-regate-label">Regate 2026</span></div>
-        <div class="stat-item"><span class="stat-number" id="stat-fondazione">2003</span><span class="stat-label" id="stat-fondazione-label">Dal</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-soci">—</span><span class="stat-label" id="stat-soci-label" data-i18n="home_stat_soci_label">Soci</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-squadre">—</span><span class="stat-label" id="stat-squadre-label" data-i18n="home_stat_squadre_label">Squadre</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-regate">—</span><span class="stat-label" id="stat-regate-label" data-i18n="home_stat_regate_label">Regate 2026</span></div>
+        <div class="stat-item"><span class="stat-number" id="stat-fondazione">2003</span><span class="stat-label" id="stat-fondazione-label" data-i18n="home_stat_dal_label">Dal</span></div>
       </div>
       <div class="next-regata-wrap">
       <a href="gare.html" id="next-regata-card" class="next-regata-card">
         <div>
           <div class="regata-badges" id="regata-badges">
-            <span class="badge-tag" id="regata-badge-tipo">Prossima gara</span>
+            <span class="badge-tag" id="regata-badge-tipo" data-i18n="race_next">Prossima gara</span>
             <span class="badge-stato" id="regata-badge-stato" style="display:none"></span>
             <span class="badge-live" id="regata-badge-live" style="display:none">LIVE</span>
           </div>
-          <h2 id="regata-titolo">Caricamento da database...</h2>
+          <h2 id="regata-titolo" data-i18n="race_loading">Caricamento da database...</h2>
         </div>
         <div class="regata-meta">
           <span id="regata-data">📅 --</span>
           <span id="regata-descrizione">--</span>
-        <span class="btn-segui-live" id="regata-live-btn" style="display:none">Segui LIVE</span>
+        <span class="btn-segui-live" id="regata-live-btn" style="display:none" data-i18n="race_follow_live">Segui LIVE</span>
         </div>
         <div class="regata-password" id="regata-password" style="display:none"></div>
       </a>
@@ -133,15 +133,15 @@
     <section class="content-row">
       <div class="card-box">
         <div class="card-header-flex">
-          <h2>Classifica generale</h2>
-          <a href="classifiche.html" class="link-more">Vedi tutto →</a>
+          <h2 data-i18n="home_ranking_title">Classifica generale</h2>
+          <a href="classifiche.html" class="link-more" data-i18n="home_see_all">Vedi tutto →</a>
         </div>
         <ol class="ranking-list" id="home-ranking">
-          <li class="loading-rank"><span class="rank-pos skeleton-block">·</span><div class="rank-info"><strong class="skeleton-block">Caricamento classifica…</strong></div></li>
+          <li class="loading-rank"><span class="rank-pos skeleton-block">·</span><div class="rank-info"><strong class="skeleton-block" data-i18n="home_rank_loading">Caricamento classifica…</strong></div></li>
         </ol>
       </div>
       <div class="card-box">
-        <h2>Ultime Regate & Highlights</h2>
+        <h2 data-i18n="home_highlights">Ultime Regate &amp; Highlights</h2>
         <div class="video-container" id="home-video-box">
           <iframe id="home-youtube" src="https://www.youtube-nocookie.com/embed/GYKltIx2TLQ" title="Circolo Velico Italia GP Spot" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
@@ -167,14 +167,14 @@
     </div>
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
   </footer>
-  <script src="common.js?v=8"></script>
+  <script src="common.js?v=9"></script>
   <script src="2-serie-aperte-lib.js?v=2"></script>
   <script src="eventi-aperti-home.js?v=2"></script>
   <script src="5-serie-aperte-home.js?v=2"></script>
   <script src="tornei-vsk-home.js?v=1"></script>
-  <script src="home-hero.js?v=2"></script>
+  <script src="home-hero.js?v=3"></script>
   <script src="gare-meteo.js?v=1"></script>
-  <script src="index-inline.js?v=15"></script>
-  <script src="siti-amici.js?v=4"></script>
+  <script src="index-inline.js?v=16"></script>
+  <script src="siti-amici.js?v=5"></script>
 </body>
 </html>

@@ -85,6 +85,13 @@
       .replace(/'/g, "&#39;");
   }
 
+  /* Stringa tradotta dal dizionario condiviso (cvi-core.js). */
+  function tr(key, fallback) {
+    return window.CVI && typeof window.CVI.t === "function"
+      ? window.CVI.t(key, fallback)
+      : fallback;
+  }
+
   function isHttpUrl(url) {
     return /^https?:\/\/[^\s]+$/i.test(String(url || "").trim());
   }
@@ -164,9 +171,9 @@
     section.innerHTML =
       '<div class="lb-strip-inner">' +
       '<div class="lb-head">' +
-      '<div><span class="lb-eyebrow">Community</span>' +
-      '<h2 class="lb-title" id="lb-title">Siti amici &amp; link utili</h2></div>' +
-      '<p class="lb-sub">Realtà e risorse che seguiamo</p>' +
+      '<div><span class="lb-eyebrow">' + esc(tr("friends_eyebrow", "Community")) + "</span>" +
+      '<h2 class="lb-title" id="lb-title">' + esc(tr("friends_title", "Siti amici & link utili")) + "</h2></div>" +
+      '<p class="lb-sub">' + esc(tr("friends_sub", "Realtà e risorse che seguiamo")) + "</p>" +
       "</div>" +
       '<div class="lb-body" id="lb-body" aria-live="polite">' +
       '<div class="lb-grid" aria-hidden="true">' +
@@ -182,9 +189,10 @@
   }
 
   function cardHtml(link) {
+    var newTab = tr("opens_new_tab", "si apre in una nuova scheda");
     var label = link.descrizione
-      ? link.nome + " – " + link.descrizione + " (si apre in una nuova scheda)"
-      : link.nome + " (si apre in una nuova scheda)";
+      ? link.nome + " – " + link.descrizione + " (" + newTab + ")"
+      : link.nome + " (" + newTab + ")";
     return (
       '<a class="lb-card" href="' +
       esc(link.url) +
@@ -201,7 +209,7 @@
       (link.descrizione
         ? '<span class="lb-desc">' + esc(link.descrizione) + "</span>"
         : "") +
-      '<span class="lb-go">Visita →</span>' +
+      '<span class="lb-go">' + esc(tr("friends_visit", "Visita")) + ' →</span>' +
       "</span></a>"
     );
   }
@@ -222,6 +230,19 @@
     lastItems = items;
     body.innerHTML =
       '<div class="lb-grid">' + items.map(cardHtml).join("") + "</div>";
+  }
+
+  /* Riallinea titolo/sottotitolo/link quando cambia la lingua. */
+  function refreshStrings() {
+    var section = document.getElementById(SECTION_ID);
+    if (!section) return;
+    var eyebrow = section.querySelector(".lb-eyebrow");
+    var title = section.querySelector(".lb-title");
+    var sub = section.querySelector(".lb-sub");
+    if (eyebrow) eyebrow.textContent = tr("friends_eyebrow", "Community");
+    if (title) title.textContent = tr("friends_title", "Siti amici & link utili");
+    if (sub) sub.textContent = tr("friends_sub", "Realtà e risorse che seguiamo");
+    if (lastItems.length) render(lastItems);
   }
 
   var loading = false;
@@ -264,6 +285,9 @@
 
   function boot() {
     if (!ensureSection()) return;
+
+    /* cambio lingua: aggiorna testi fissi e schede */
+    document.addEventListener("cvi:langchange", refreshStrings);
 
     /* 1) mostra subito la cache, se c'è (nessun flicker) */
     var cached = readCache();

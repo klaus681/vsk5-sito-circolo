@@ -1,5 +1,5 @@
 /* CVI – loader: core condiviso locale (nessuna dipendenza da CDN esterni) */
-document.write('<script src="cvi-core.js?v=1"><\/script>');
+document.write('<script src="cvi-core.js?v=2"><\/script>');
 /* Extra: nazionalità profilo */
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
@@ -22,6 +22,6 @@ document.write('<script src="allenamenti-home.js?v=3"><\/script>');
 /* Extra: sfondi home personalizzati da admin */
 document.write('<script src="home-sfondi.js?v=2"><\/script>');
 /* Extra: link Privacy nel footer */
-document.write('<script src="privacy-link.js?v=1"><\/script>');
+document.write('<script src="privacy-link.js?v=2"><\/script>');
 /* Extra: banner account in attesa/sospeso */
 document.write('<script src="membership-banner.js?v=1"><\/script>');

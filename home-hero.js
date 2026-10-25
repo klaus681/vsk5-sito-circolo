@@ -45,26 +45,31 @@
     var elSub = document.getElementById('hero-subtitle');
     var cta1 = document.getElementById('hero-cta1');
     var cta2 = document.getElementById('hero-cta2');
-    if (elCom && map.home_community) elCom.textContent = map.home_community;
-    if (elTitle && map.home_title) elTitle.innerHTML = map.home_title;
-    if (elSub && map.home_subtitle) elSub.textContent = map.home_subtitle;
-    if (cta1) {
-      if (map.home_cta1_text) cta1.textContent = map.home_cta1_text;
-      if (map.home_cta1_href) cta1.setAttribute('href', map.home_cta1_href);
+
+    /* I testi in site_settings sono redatti in italiano: vanno applicati solo
+       quando la lingua è IT, altrimenti sovrascriverebbero le traduzioni. */
+    function applyTextOverrides() {
+      if (((window.CVI && CVI.currentLang) || 'it') !== 'it') return;
+      if (elCom && map.home_community) elCom.textContent = map.home_community;
+      if (elTitle && map.home_title) elTitle.innerHTML = map.home_title;
+      if (elSub && map.home_subtitle) elSub.textContent = map.home_subtitle;
+      if (cta1 && map.home_cta1_text) cta1.textContent = map.home_cta1_text;
+      if (cta2 && map.home_cta2_text) cta2.textContent = map.home_cta2_text;
+      setLabel('stat-soci-label', map.home_stat_soci_label);
+      setLabel('stat-squadre-label', map.home_stat_squadre_label);
+      setLabel('stat-regate-label', map.home_stat_regate_label);
+      setLabel('stat-fondazione-label', map.home_stat_dal_label);
     }
-    if (cta2) {
-      if (map.home_cta2_text) cta2.textContent = map.home_cta2_text;
-      if (map.home_cta2_href) cta2.setAttribute('href', map.home_cta2_href);
-    }
+
+    if (cta1 && map.home_cta1_href) cta1.setAttribute('href', map.home_cta1_href);
+    if (cta2 && map.home_cta2_href) cta2.setAttribute('href', map.home_cta2_href);
 
     function setLabel(id, val) {
       var el = document.getElementById(id);
       if (el && val) el.textContent = val;
     }
-    setLabel('stat-soci-label', map.home_stat_soci_label);
-    setLabel('stat-squadre-label', map.home_stat_squadre_label);
-    setLabel('stat-regate-label', map.home_stat_regate_label);
-    setLabel('stat-fondazione-label', map.home_stat_dal_label);
+    applyTextOverrides();
+    document.addEventListener('cvi:langchange', applyTextOverrides);
 
     function applyValueOverrides() {
       function setNum(id, val) {
