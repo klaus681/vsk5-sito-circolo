@@ -17,6 +17,7 @@
       nav_accedi: 'Accedi', nav_area_membri: 'Il mio profilo',
       nav_galleria: 'Galleria', nav_discord: 'Discord', nav_eventi_aperti: 'Eventi aperti',
       nav_risorse: 'Download e Risorse', nav_tornei: 'Tornei', nav_allenamenti: 'Allenamenti',
+      nav_community: 'Community ▾', nav_friends: 'Siti amici',
 
       /* Home */
       home_cta1: 'Calendario Regate',
@@ -97,6 +98,7 @@
       nav_accedi: 'Login', nav_area_membri: 'My profile',
       nav_galleria: 'Gallery', nav_discord: 'Discord', nav_eventi_aperti: 'Open events',
       nav_risorse: 'Downloads & Resources', nav_tornei: 'Tournaments', nav_allenamenti: 'Training',
+      nav_community: 'Community ▾', nav_friends: 'Partner sites',
 
       home_cta1: 'Race Calendar',
       home_stat_soci_label: 'Members', home_stat_squadre_label: 'Teams',
@@ -171,6 +173,7 @@
       nav_accedi: 'Connexion', nav_area_membri: 'Mon profil',
       nav_galleria: 'Galerie', nav_discord: 'Discord', nav_eventi_aperti: 'Événements ouverts',
       nav_risorse: 'Téléchargements & Ressources', nav_tornei: 'Tournois', nav_allenamenti: 'Entraînements',
+      nav_community: 'Communauté ▾', nav_friends: 'Sites amis',
 
       home_cta1: 'Calendrier des courses',
       home_stat_soci_label: 'Membres', home_stat_squadre_label: 'Équipes',
@@ -245,6 +248,7 @@
       nav_accedi: 'Acceder', nav_area_membri: 'Mi perfil',
       nav_galleria: 'Galería', nav_discord: 'Discord', nav_eventi_aperti: 'Eventos abiertos',
       nav_risorse: 'Descargas y Recursos', nav_tornei: 'Torneos', nav_allenamenti: 'Entrenamientos',
+      nav_community: 'Comunidad ▾', nav_friends: 'Sitios amigos',
 
       home_cta1: 'Calendario de Regatas',
       home_stat_soci_label: 'Socios', home_stat_squadre_label: 'Equipos',
@@ -350,6 +354,7 @@
     'proteste.html': 'nav_proteste',
     'tornei.html': 'nav_tornei',
     'allenamenti.html': 'nav_allenamenti',
+    'siti-amici.html': 'nav_friends',
     'privacy.html': 'footer_privacy'
   };
 
@@ -471,49 +476,93 @@
     document.querySelectorAll('.footer-brand .logo-text').forEach(function (el) {
       el.innerHTML = 'CVI <span style="color: var(--accent-color)">Virtual</span>';
     });
+    /* Link "Siti amici" nel footer (prima colonna), una volta sola */
+    var col = document.querySelector('.footer-col');
+    if (col && !document.querySelector('.footer-col a[href="siti-amici.html"]')) {
+      var a = document.createElement('a');
+      a.href = 'siti-amici.html';
+      a.setAttribute('data-i18n', 'nav_friends');
+      a.textContent = window.CVI.t('nav_friends', 'Siti amici');
+      col.appendChild(a);
+    }
   };
 
   window.CVI.ensureNavAlign = function () {};
 
-  /** Inserisce Galleria e Discord nel menu se mancano (desktop + mobile) */
+  /** Crea/aggiorna il menu "Community" (Galleria, Discord, Siti amici) */
   window.CVI.ensureNavLinks = function () {
     var dict = NAV_KEYS[window.CVI.currentLang] || NAV_KEYS.it;
+    var ITEMS = [
+      { href: 'galleria.html', key: 'nav_galleria', label: dict.nav_galleria || 'Galleria' },
+      { href: 'discord.html', key: 'nav_discord', label: dict.nav_discord || 'Discord' },
+      { href: 'siti-amici.html', key: 'nav_friends', label: dict.nav_friends || 'Siti amici' }
+    ];
 
     var ul = document.querySelector('nav.nav-desktop ul');
     if (ul) {
-      function insertAfterAlbo(href, label, i18nKey) {
-        if (ul.querySelector('a[href="' + href + '"]')) return;
+      /* toglie le vecchie voci piatte Galleria / Discord (anche quelle in HTML) */
+      Array.prototype.slice.call(ul.children).forEach(function (li) {
+        var a = li.querySelector('a');
+        var file = a ? (a.getAttribute('href') || '').split('#')[0].split('/').pop() : '';
+        if (/^(galleria|discord)\.html$/i.test(file)) ul.removeChild(li);
+      });
+
+      var group = ul.querySelector('li.cvi-community');
+      if (!group) {
+        group = document.createElement('li');
+        group.className = 'dropdown cvi-community';
+        var top = document.createElement('a');
+        top.href = 'siti-amici.html';
+        top.setAttribute('data-i18n', 'nav_community');
+        top.textContent = dict.nav_community || 'Community ▾';
+        var sub0 = document.createElement('ul');
+        sub0.className = 'dropdown-menu';
+        group.appendChild(top);
+        group.appendChild(sub0);
         var albo = ul.querySelector('a[href="albo-doro.html"]');
-        var li = document.createElement('li');
-        var a = document.createElement('a');
-        a.href = href;
-        a.setAttribute('data-i18n', i18nKey);
-        a.textContent = label;
-        li.appendChild(a);
         if (albo && albo.parentElement && albo.parentElement.parentElement === ul) {
-          albo.parentElement.insertAdjacentElement('afterend', li);
+          albo.parentElement.insertAdjacentElement('afterend', group);
         } else {
-          ul.appendChild(li);
+          ul.appendChild(group);
         }
       }
-      insertAfterAlbo('galleria.html', dict.nav_galleria || 'Galleria', 'nav_galleria');
-      insertAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
+
+      var sub = group.querySelector('.dropdown-menu');
+      ITEMS.forEach(function (it) {
+        if (sub.querySelector('a[href="' + it.href + '"]')) return;
+        var li = document.createElement('li');
+        var a = document.createElement('a');
+        a.href = it.href;
+        a.setAttribute('data-i18n', it.key);
+        a.textContent = it.label;
+        li.appendChild(a);
+        sub.appendChild(li);
+      });
     }
 
     var mobile = document.getElementById('navMobile');
     if (mobile) {
-      function insertMobileAfterAlbo(href, label, i18nKey) {
-        if (mobile.querySelector('a[href="' + href + '"]')) return;
-        var a = document.createElement('a');
-        a.href = href;
-        a.setAttribute('data-i18n', i18nKey);
-        a.textContent = label;
-        var albo = mobile.querySelector('a[href="albo-doro.html"]');
-        if (albo) albo.insertAdjacentElement('afterend', a);
-        else mobile.appendChild(a);
+      Array.prototype.slice.call(mobile.children).forEach(function (el) {
+        var file = el.tagName === 'A' ? (el.getAttribute('href') || '').split('#')[0].split('/').pop() : '';
+        if (/^(galleria|discord)\.html$/i.test(file)) mobile.removeChild(el);
+      });
+
+      var mgroup = mobile.querySelector('.cvi-community-mobile');
+      if (!mgroup) {
+        mgroup = document.createElement('div');
+        mgroup.className = 'mobile-dropdown cvi-community-mobile';
+        var alboM = mobile.querySelector('a[href="albo-doro.html"]');
+        if (alboM) alboM.insertAdjacentElement('afterend', mgroup);
+        else mobile.appendChild(mgroup);
       }
-      insertMobileAfterAlbo('galleria.html', dict.nav_galleria || 'Galleria', 'nav_galleria');
-      insertMobileAfterAlbo('discord.html', dict.nav_discord || 'Discord', 'nav_discord');
+      ITEMS.forEach(function (it) {
+        if (mgroup.querySelector('a[href="' + it.href + '"]')) return;
+        var a = document.createElement('a');
+        a.href = it.href;
+        a.setAttribute('data-i18n', it.key);
+        a.textContent = '\u2192 ' + it.label;
+        mgroup.appendChild(a);
+      });
     }
   };
 
