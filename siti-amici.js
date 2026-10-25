@@ -1,11 +1,11 @@
-/* CVI – Banner "Siti amici & link utili" in Home
+/* CVI – "Siti amici & link utili" (pagina siti-amici.html)
    I link sono gestiti dal pannello Admin → Siti amici (tabella public.siti_amici).
 
    Comportamento:
-   - il contenitore viene creato subito: nessun "buco" se Supabase è lento;
-   - cache locale (localStorage) per mostrare il banner istantaneamente;
+   - il componente viene mostrato solo nella pagina dedicata (#siti-amici-page);
+   - cache locale (localStorage) per un render immediato;
    - se la tabella/il DB non risponde si mostrano i link di fallback;
-   - se l'admin svuota la lista (0 link attivi) il banner sparisce.
+   - se l'admin svuota la lista (0 link attivi) la sezione non viene mostrata.
 */
 (function () {
   "use strict";
@@ -172,56 +172,28 @@
     document.head.appendChild(st);
   }
 
-  function findMain() {
-    return (
-      document.getElementById("main-content") ||
-      document.querySelector("main.page-content") ||
-      document.querySelector("main")
-    );
-  }
-
   function ensureSection() {
+    /* Solo nella pagina dedicata: in Home il blocco non esiste più. */
+    var host = document.getElementById("siti-amici-page");
+    if (!host) return null;
+
     var section = document.getElementById(SECTION_ID);
     if (section) return section;
 
-    var main = findMain();
-    if (!main) return null;
-
     ensureStyle();
-
-    /* Pagina dedicata: il titolo è già nell'hero della pagina, quindi il
-       componente mostra solo le schede. */
-    var host = document.getElementById("siti-amici-page");
 
     section = document.createElement("section");
     section.id = SECTION_ID;
-    section.className = host ? "lb-strip is-page" : "lb-strip";
-    section.setAttribute("aria-labelledby", host ? "siti-amici-page-title" : "lb-title");
+    section.className = "lb-strip is-page";
+    section.setAttribute("aria-labelledby", "siti-amici-page-title");
     section.innerHTML =
       '<div class="lb-strip-inner">' +
-      (host
-        ? ""
-        : '<div class="lb-head">' +
-          '<div><span class="lb-eyebrow">' + esc(tr("friends_eyebrow", "Community")) + "</span>" +
-          '<h2 class="lb-title" id="lb-title">' + esc(tr("friends_title", "Siti amici & link utili")) + "</h2></div>" +
-          '<p class="lb-sub">' + esc(tr("friends_sub", "Realtà e risorse che seguiamo")) + "</p>" +
-          "</div>") +
       '<div class="lb-body" id="lb-body" aria-live="polite">' +
       '<div class="lb-grid" aria-hidden="true">' +
       '<div class="lb-skel"></div><div class="lb-skel"></div><div class="lb-skel"></div>' +
       "</div></div></div>";
 
-    if (host) {
-      host.appendChild(section);
-      return section;
-    }
-
-    /* Home: subito sopra la riga "Classifica generale / Ultime regate",
-       così è visibile senza dover arrivare in fondo alla pagina. */
-    var anchor = main.querySelector(".content-row");
-    if (anchor) main.insertBefore(section, anchor);
-    else main.appendChild(section);
-
+    host.appendChild(section);
     return section;
   }
 
@@ -357,15 +329,15 @@
     });
 
     /* 4) se un altro script rimuove il contenitore, lo rimettiamo */
-    var main = findMain();
-    if (main && window.MutationObserver) {
+    var host = document.getElementById("siti-amici-page");
+    if (host && window.MutationObserver) {
       try {
         new window.MutationObserver(function () {
           if (!lastItems.length) return;
           if (document.getElementById(SECTION_ID)) return;
           var sec = ensureSection();
           if (sec) render(lastItems);
-        }).observe(main, { childList: true });
+        }).observe(host, { childList: true });
       } catch (e) {
         /* observer non disponibile: nessun problema */
       }

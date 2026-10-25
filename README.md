@@ -117,12 +117,12 @@ Apri una pull request, verifica le pagine principali e poi fai merge su `main`. 
 - Il core condiviso è self-hosted in `cvi-core.js` (caricato da `common.js`) e il calendario in `calendario.js`: non reintrodurre dipendenze da CDN GitHub/jsDelivr.
 
 
-## Link amici (banner in Home)
+## Link amici (pagina dedicata)
 
 - Tabella Supabase: `public.siti_amici` — creata/aggiornata da `siti-amici-sql.sql` (RLS inclusa: lettura pubblica dei soli link attivi, scrittura per admin/scorer).
 - Admin → tab **Link amici**: crea/modifica/elimina i link, li attiva o nasconde e ne cambia l'ordine (frecce ↑/↓). Il pannello è in `siti-amici-admin.js`.
-- Pagina dedicata: `siti-amici.html`, raggiungibile dal menu **Community ▾** (Galleria, Discord, Siti amici) e dal link nel footer. In Home il banner è mostrato sopra la riga “Classifica generale / Ultime regate”.
-- Home: `siti-amici.js` mostra il banner "Siti amici & link utili" subito sotto la dashboard. Usa una cache locale, quindi il banner è immediato, e ha un elenco di fallback se Supabase non risponde.
+- Pagina dedicata: `siti-amici.html`, raggiungibile dal menu **Community ▾** (Galleria, Discord, Siti amici). Il blocco **non** viene mostrato in Home.
+- `siti-amici.js` popola solo il contenitore `#siti-amici-page`; su tutte le altre pagine non fa nulla. Usa una cache locale e un elenco di fallback se Supabase non risponde.
 - Multilingua: i campi `nome_en`/`nome_fr`/`nome_es` e `descrizione_en`/`descrizione_fr`/`descrizione_es` (opzionali) si compilano dal tab **Link amici** → “Traduzioni”. Se sono vuoti, nelle altre lingue si usa il testo italiano. Le colonne vengono create dallo script `siti-amici-sql.sql`.
 
 Se il tab non mostra nulla: esegui `siti-amici-sql.sql` nel SQL Editor di Supabase e ricarica la pagina.

@@ -1,10 +1,10 @@
 /* CVI Admin – Gestione "Siti amici & link utili" (tabella public.siti_amici)
-   Pannello: Admin → Siti amici.  Il banner in Home legge la stessa tabella.
+   Pannello: Admin → Siti amici.  La pagina Siti amici legge la stessa tabella.
 
    Note:
    - il file è autonomo: non dipende dalle patch di admin-a.js;
    - espone window.loadSitiAmiciAdmin() (chiamata anche dal tab);
-   - dopo ogni modifica aggiorna la cache usata dal banner in Home.
+   - dopo ogni modifica aggiorna la cache usata dalla pagina Siti amici.
 */
 (function () {
   "use strict";
@@ -98,8 +98,8 @@
     return out;
   }
 
-  /* Riallinea la cache locale letta dal banner in Home (stessa chiave). */
-  function refreshHomeCache(rows) {
+  /* Riallinea la cache locale letta dalla pagina Siti amici (stessa chiave). */
+  function refreshPublicCache(rows) {
     try {
       var items = normalize(rows)
         .filter(function (r) {
@@ -147,7 +147,7 @@
       box.innerHTML =
         '<p class="empty-text">Nessun link presente. Aggiungine uno con il form qui sopra.</p>' +
         '<p style="color:#94a3b8;font-size:.85rem;text-align:center;margin:.25rem 0 0">' +
-        "I link attivi compaiono in Home nel banner “Siti amici &amp; link utili”.</p>";
+        "I link attivi compaiono nella pagina “Siti amici &amp; link utili”.</p>";
       return;
     }
 
@@ -158,9 +158,9 @@
     var html =
       '<p style="color:#94a3b8;font-size:.85rem;margin:0 0 .75rem">' +
       attivi +
-      " link visibili in Home su " +
+      " link visibili nella pagina su " +
       current.length +
-      " totali · l’ordine è quello mostrato in Home.</p>";
+      " totali · l’ordine è quello mostrato nella pagina.</p>";
 
     html += current
       .map(function (s, idx) {
@@ -183,7 +183,7 @@
           s.ordine +
           " · " +
           (s.attivo
-            ? '<span style="color:#34d399;font-weight:700;font-size:.75rem">VISIBILE IN HOME</span>'
+            ? '<span style="color:#34d399;font-weight:700;font-size:.75rem">VISIBILE</span>'
             : '<span style="color:#fbbf24;font-weight:700;font-size:.75rem">NASCOSTO</span>') +
           "</div>" +
           (s.descrizione
@@ -281,7 +281,7 @@
         if (res.error) throw res.error;
         current = normalize(res.data);
         renderList();
-        refreshHomeCache(current);
+        refreshPublicCache(current);
       } catch (err) {
         if (window.console) console.warn("[CVI siti amici admin]", err);
         box.innerHTML =
@@ -442,7 +442,7 @@
         }
         setStatus("Link aggiornato", true);
       } else {
-        setStatus("Link creato: ora è visibile in Home", true);
+        setStatus("Link creato: ora è visibile nella pagina Siti amici", true);
       }
       resetForm();
       await loadSitiAmiciAdmin(true);
@@ -506,7 +506,7 @@
       if (!res.data || !res.data.length) {
         throw new Error("Modifica non applicata: verifica i permessi (RLS).");
       }
-      setStatus(nuovo ? "Link ora visibile in Home" : "Link nascosto dalla Home", true);
+      setStatus(nuovo ? "Link ora visibile nella pagina" : "Link nascosto dalla pagina", true);
       await loadSitiAmiciAdmin(true);
     } catch (err) {
       alert((err && (err.message || err)) || "Operazione non riuscita");
