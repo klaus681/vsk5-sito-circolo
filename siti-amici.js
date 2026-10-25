@@ -60,6 +60,8 @@
 
   var STYLE =
     ".lb-strip{margin:1.5rem 0 0}" +
+    ".lb-strip.is-page{margin:0}" +
+    ".lb-strip.is-page .lb-strip-inner{padding:1.1rem 1.2rem}" +
     ".lb-strip-inner{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(56,189,248,.10) 0%,rgba(15,23,42,.55) 45%,var(--card-bg,#111827) 100%);border:1px solid rgba(56,189,248,.26);border-radius:16px;padding:1.15rem 1.35rem 1.3rem;box-shadow:0 10px 30px rgba(0,0,0,.28)}" +
     ".lb-strip-inner::before{content:\"\";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#38bdf8,#22d3ee,#38bdf8);pointer-events:none}" +
     ".lb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:.75rem 1rem;flex-wrap:wrap;margin-bottom:.95rem}" +
@@ -187,26 +189,38 @@
 
     ensureStyle();
 
+    /* Pagina dedicata: il titolo è già nell'hero della pagina, quindi il
+       componente mostra solo le schede. */
+    var host = document.getElementById("siti-amici-page");
+
     section = document.createElement("section");
     section.id = SECTION_ID;
-    section.className = "lb-strip";
-    section.setAttribute("aria-labelledby", "lb-title");
+    section.className = host ? "lb-strip is-page" : "lb-strip";
+    section.setAttribute("aria-labelledby", host ? "siti-amici-page-title" : "lb-title");
     section.innerHTML =
       '<div class="lb-strip-inner">' +
-      '<div class="lb-head">' +
-      '<div><span class="lb-eyebrow">' + esc(tr("friends_eyebrow", "Community")) + "</span>" +
-      '<h2 class="lb-title" id="lb-title">' + esc(tr("friends_title", "Siti amici & link utili")) + "</h2></div>" +
-      '<p class="lb-sub">' + esc(tr("friends_sub", "Realtà e risorse che seguiamo")) + "</p>" +
-      "</div>" +
+      (host
+        ? ""
+        : '<div class="lb-head">' +
+          '<div><span class="lb-eyebrow">' + esc(tr("friends_eyebrow", "Community")) + "</span>" +
+          '<h2 class="lb-title" id="lb-title">' + esc(tr("friends_title", "Siti amici & link utili")) + "</h2></div>" +
+          '<p class="lb-sub">' + esc(tr("friends_sub", "Realtà e risorse che seguiamo")) + "</p>" +
+          "</div>") +
       '<div class="lb-body" id="lb-body" aria-live="polite">' +
       '<div class="lb-grid" aria-hidden="true">' +
       '<div class="lb-skel"></div><div class="lb-skel"></div><div class="lb-skel"></div>' +
       "</div></div></div>";
 
-    /* Posizione fissa: in fondo al contenuto della Home, subito sopra il footer.
-       Indipendente dai blocchi dinamici (eventi, serie, tornei) che vengono
-       inseriti/rimossi da altri script. */
-    main.appendChild(section);
+    if (host) {
+      host.appendChild(section);
+      return section;
+    }
+
+    /* Home: subito sopra la riga "Classifica generale / Ultime regate",
+       così è visibile senza dover arrivare in fondo alla pagina. */
+    var anchor = main.querySelector(".content-row");
+    if (anchor) main.insertBefore(section, anchor);
+    else main.appendChild(section);
 
     return section;
   }
