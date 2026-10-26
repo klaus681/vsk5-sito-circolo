@@ -176,7 +176,7 @@
           btn.textContent = 'Aggiornamento…';
         }
         updateRequested = true;
-        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
       },
       true,
       false

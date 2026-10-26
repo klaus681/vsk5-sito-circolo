@@ -302,6 +302,12 @@
         }, onChange)
         .subscribe(function (status) {
           liveState.realtime = status === "SUBSCRIBED";
+          if (!liveState.realtime) {
+            /* lascia che il prossimo refresh riprovi la sottoscrizione */
+            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+              realtimeGaraId = null;
+            }
+          }
           if (liveState.realtime && currentGara) {
             liveState.intervalMs = intervalForGara(currentGara);
             scheduleNext();
