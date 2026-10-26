@@ -16,19 +16,19 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "icon-192.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-512.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-maskable-512.png",
+      "src": "icon-maskable-512.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -40,21 +40,21 @@
       "short_name": "Gare",
       "description": "Calendario delle prossime regate",
       "url": "/gare.html",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Classifiche",
       "short_name": "Classifiche",
       "description": "Classifica generale e risultati",
       "url": "/classifiche.html",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Live gara",
       "short_name": "Live",
       "description": "Iscritti e risultati in tempo reale",
       "url": "/live.html",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

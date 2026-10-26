@@ -7,7 +7,7 @@
    Per pubblicare una modifica agli asset cambia VERSION. */
 'use strict';
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = 'cvi-shell-' + VERSION;
 const RUNTIME_CACHE = 'cvi-runtime-' + VERSION;
 const OFFLINE_URL = 'offline.html';
@@ -30,9 +30,9 @@ const PRECACHE = [
   'logo-256.webp',
   'favicon-32.png',
   'apple-touch-180.png',
-  'icon-192.png',
-  'icon-512.png',
-  'icon-maskable-512.png',
+  'icon-192.png?v=2',
+  'icon-512.png?v=2',
+  'icon-maskable-512.png?v=2',
   'pwa.js?v=1',
   'a11y.js?v=1',
   /* core condiviso e moduli della home: la home resta leggibile offline */
