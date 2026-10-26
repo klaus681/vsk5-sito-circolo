@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "it.circolovelicoitalia.app",
+      "sha256_cert_fingerprints": [
+        "SHA256:SOSTITUISCI_CON_L_IMPRONTA_DELLA_TUA_KEYSTORE"
+      ]
+    }
+  }
+]
