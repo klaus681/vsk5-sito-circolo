@@ -19,6 +19,11 @@ fonts/ + fonts.css     font self-hosted (Plus Jakarta Sans, Playfair Display)
                        licenze OFL incluse in fonts/OFL-*.txt
 *.sql                  script SQL / policy RLS da applicare su Supabase
                        (partire da security-rls-hardening-sql.sql)
+manifest.webmanifest   configurazione PWA (icone, shortcut, installazione)
+sw.js                  service worker: cache asset, offline.html, no cache API
+pwa.js / a11y.js       prompt installazione/aggiornamento e focus trap modali
+offline.html           fallback per le pagine non ancora salvate in cache
+icon-*.png             icone PWA 192/512/maskable generate dal logo
 sitemap.xml, robots.txt
 ```
 
@@ -129,8 +134,24 @@ Se il tab non mostra nulla: esegui `siti-amici-sql.sql` nel SQL Editor di Supaba
 
 
 - Notifiche email e promemoria gara.
-- PWA + push notification.
+- Push notification (la base PWA è già attiva: manifest, service worker, offline).
 - Header di sicurezza completi (CSP, HSTS): GitHub Pages non li consente, valutare Cloudflare Pages mantenendo lo stesso repo. La meta `referrer` è già impostata su tutte le pagine.
+
+## PWA e modalità offline
+
+- `manifest.webmanifest` + `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`: il sito è installabile come app (Android/Chrome, iOS tramite “Aggiungi alla Home”). Il manifest include le shortcut verso Gare, Classifiche e Live.
+- `sw.js` precarica shell, CSS, font principali, icone e core condiviso; per le navigazioni usa **network-first** con fallback alla cache e poi a `offline.html`. Gli asset statici usano **stale-while-revalidate**. Le richieste verso Supabase/CDN esterni non vengono mai intercettate, quindi i dati restano sempre freschi; `admin.html`, `profilo.html` e `messaggi.html` non vengono messi in cache.
+- `pwa.js` mostra il prompt di installazione (solo su pagine pubbliche e con possibilità di chiuderlo per 14 giorni), l’avviso di nuova versione con pulsante **Aggiorna** e lo stato online/offline. Su iOS mostra le istruzioni per “Aggiungi alla Home”.
+- `a11y.js` gestisce focus trap, `inert` sullo sfondo e ripristino del focus per tutti i `[role="dialog"]` (calendario, meteo, messaggi, risorse) e aggiunge `role="status"`/`aria-live` ai contenitori di messaggi asincroni.
+- Dopo una modifica a un asset precaricato, incrementa `VERSION` in `sw.js` (e i `?v=` degli asset modificati): il vecchio service worker viene sostituito e l’utente vede il banner di aggiornamento.
+- Per provare offline in locale usa `http://localhost:8080` (i service worker richiedono un contesto sicuro; `file://` non funziona).
+
+## Live in tempo reale
+
+`live.js` si iscrive a **Supabase Realtime** (`postgres_changes`) per `gare`, `iscrizioni_gare` e `risultati_gara`, filtrando sulla gara corrente. All’arrivo di una modifica ricarica iscritti e classifica in circa 400 ms, senza aspettare il polling. Il polling periodico resta come fallback (60 secondi quando il realtime è attivo) e il realtime rispetta le policy RLS.
+
+Per abilitarlo esegui una volta `realtime-live-sql.sql` nel SQL Editor di Supabase: aggiunge le tre tabelle alla publication `supabase_realtime` e imposta `REPLICA IDENTITY FULL` per ricevere correttamente anche UPDATE/DELETE. Se lo script non viene eseguito il sito continua a funzionare con il solo polling.
+
 
 ## Notifiche Discord (Edge Function)
 

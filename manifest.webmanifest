@@ -1,0 +1,60 @@
+{
+  "id": "/",
+  "name": "Circolo Velico Italia – Virtual Skipper",
+  "short_name": "CVI Virtual",
+  "description": "Regate virtuali su Virtual Skipper 5: calendario, classifiche, team e community dal 2003.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "categories": ["sports", "games", "social"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Calendario gare",
+      "short_name": "Gare",
+      "description": "Calendario delle prossime regate",
+      "url": "/gare.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Classifiche",
+      "short_name": "Classifiche",
+      "description": "Classifica generale e risultati",
+      "url": "/classifiche.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Live gara",
+      "short_name": "Live",
+      "description": "Iscritti e risultati in tempo reale",
+      "url": "/live.html",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
