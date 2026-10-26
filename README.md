@@ -152,6 +152,16 @@ Se il tab non mostra nulla: esegui `siti-amici-sql.sql` nel SQL Editor di Supaba
 
 Per abilitarlo esegui una volta `realtime-live-sql.sql` nel SQL Editor di Supabase: aggiunge le tre tabelle alla publication `supabase_realtime` e imposta `REPLICA IDENTITY FULL` per ricevere correttamente anche UPDATE/DELETE. Se lo script non viene eseguito il sito continua a funzionare con il solo polling.
 
+## App Android (TWA)
+
+Il sito può essere distribuito come **app Android reale** tramite Trusted Web Activity: nessuna riscrittura, l'app apre il sito a schermo intero usando Chrome. Il progetto Android si genera con **Bubblewrap** e si compila in **Android Studio**; in questo repo restano solo i file pubblici necessari.
+
+- `.nojekyll` — disattiva Jekyll su GitHub Pages: senza questo file la cartella `.well-known` non viene pubblicata.
+- `.well-known/assetlinks.json` — Digital Asset Links: package `it.circolovelicoitalia.app` + impronta SHA-256 della chiave di firma. Modello in `.well-known/assetlinks.json.example`.
+- `scripts/twa-assetlinks.mjs` — genera `.well-known/assetlinks.json` leggendo l'impronta dalla keystore con `keytool`.
+- Procedura completa (Bubblewrap, Android Studio, targetSdk 36, Play Store, troubleshooting): **[ANDROID-TWA.md](ANDROID-TWA.md)**.
+
+
 
 ## Notifiche Discord (Edge Function)
 
