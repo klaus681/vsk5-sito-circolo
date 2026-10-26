@@ -180,6 +180,9 @@ Nell'output cerca la riga:
 SHA256: 3A:1F:...:9C
 ```
 
+> Nel file `assetlinks.json` l'impronta va scritta **senza** il prefisso `SHA256:` (es. `"1A:E3:...:7E"`): Google rifiuta il file con il prefisso. Il formato con `SHA256:` serve solo come output di `keytool` e nei comandi di verifica.
+
+
 ### Generare il file automaticamente
 
 Dalla **radice di questo repo**:
