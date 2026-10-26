@@ -4,10 +4,15 @@
 
   var REFRESH_MS = 20000;
   var currentGaraId = null;
+  var currentGara = null;
   var timer = null;
   var tickTimer = null;
   var nextAt = 0;
-  var liveState = { intervalMs: REFRESH_MS };
+  var liveState = { intervalMs: REFRESH_MS, realtime: false };
+  var realtimeChannel = null;
+  var realtimeGaraId = null;
+  var realtimeDebounce = null;
+  var refreshing = false;
 
   function esc(s) {
     if (s == null) return "";
@@ -253,7 +258,72 @@
       .join("");
   }
 
+  function stopRealtime() {
+    if (realtimeDebounce) {
+      clearTimeout(realtimeDebounce);
+      realtimeDebounce = null;
+    }
+    if (realtimeChannel && window.CVI && CVI.supabase && CVI.supabase.removeChannel) {
+      try { CVI.supabase.removeChannel(realtimeChannel); } catch (e) {}
+    }
+    realtimeChannel = null;
+    realtimeGaraId = null;
+    liveState.realtime = false;
+  }
+
+  function scheduleRealtimeRefresh() {
+    if (realtimeDebounce) clearTimeout(realtimeDebounce);
+    realtimeDebounce = setTimeout(function () {
+      realtimeDebounce = null;
+      refresh();
+    }, 400);
+  }
+
+  function startRealtime(garaId) {
+    if (!window.CVI || !CVI.supabase || typeof CVI.supabase.channel !== "function") return;
+    if (realtimeChannel && realtimeGaraId === garaId) return;
+    stopRealtime();
+    realtimeGaraId = garaId;
+    try {
+      var channel = CVI.supabase.channel("cvi-live-" + garaId);
+      var onChange = function () { scheduleRealtimeRefresh(); };
+      channel
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "risultati_gara",
+          filter: "gara_id=eq." + garaId
+        }, onChange)
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "iscrizioni_gare",
+          filter: "gara_id=eq." + garaId
+        }, onChange)
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "gare",
+          filter: "id=eq." + garaId
+        }, onChange)
+        .subscribe(function (status) {
+          liveState.realtime = status === "SUBSCRIBED";
+          if (!liveState.realtime) {
+            /* lascia che il prossimo refresh riprovi la sottoscrizione */
+            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+              realtimeGaraId = null;
+            }
+          }
+          if (liveState.realtime && currentGara) {
+            liveState.intervalMs = intervalForGara(currentGara);
+            scheduleNext();
+          }
+          updateTick();
+        });
+      realtimeChannel = channel;
+    } catch (e) {
+      liveState.realtime = false;
+      if (window.console) console.warn("[CVI live] realtime non disponibile:", e && e.message);
+    }
+  }
+
   async function refresh() {
+    if (refreshing) return;
+    refreshing = true;
     try {
       if (!window.CVI || !CVI.supabase) {
         document.getElementById("live-meta").textContent = "Database non disponibile.";
@@ -262,6 +332,8 @@
       var idParam = qs("id");
       var gara = await loadGara(idParam || currentGaraId);
       if (!gara) {
+        currentGara = null;
+        stopRealtime();
         liveState.intervalMs = 60000;
         document.getElementById("live-content").style.display = "none";
         document.getElementById("live-empty").style.display = "block";
@@ -273,6 +345,7 @@
         return;
       }
       currentGaraId = gara.id;
+      currentGara = gara;
       document.getElementById("live-empty").style.display = "none";
       document.getElementById("live-content").style.display = "block";
       liveState.intervalMs = intervalForGara(gara);
@@ -281,6 +354,7 @@
       renderIscritti(iscritti);
       var risultati = await loadRisultati(gara.id);
       renderRisultati(risultati, iscritti);
+      startRealtime(gara.id);
       document.getElementById("live-updated").textContent =
         "Ultimo aggiornamento: " +
         new Date().toLocaleTimeString("it-IT", {
@@ -292,12 +366,14 @@
       document.getElementById("live-meta").textContent =
         "Errore: " + (e.message || e);
     } finally {
+      refreshing = false;
       scheduleNext();
     }
   }
 
   function intervalForGara(gara) {
     if (!gara) return 60000;
+    if (liveState.realtime) return 60000;
     var k = statoGara(gara).key;
     if (k === "corso") return 5000;
     if (k === "chiuse" || k === "aperte") return 15000;
@@ -309,6 +385,10 @@
     if (!el) return;
     var ogni = Math.round(liveState.intervalMs / 1000);
     var secs = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
+    if (liveState.realtime) {
+      el.textContent = "Aggiornamento in tempo reale · fallback ogni " + ogni + "s";
+      return;
+    }
     el.textContent = "Aggiornamento automatico ogni " + ogni + "s · prossimo tra " + secs + "s";
   }
 
@@ -340,9 +420,16 @@
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) refresh();
     });
+    window.addEventListener("pagehide", stopRealtime);
     startTick();
     refresh();
   }
+
+  window.CVILive = {
+    refresh: refresh,
+    isRealtime: function () { return liveState.realtime; },
+    realtimeGaraId: function () { return realtimeGaraId; }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {

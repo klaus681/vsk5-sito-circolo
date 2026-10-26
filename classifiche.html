@@ -108,6 +108,13 @@
     .rank-table th.sort-desc::after { content: " \25BC"; font-size: .7em; }
     @media (max-width: 600px) { .rank-podium { grid-template-columns: 1fr; } }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CVI Virtual">
+  <script src="pwa.js?v=1" defer></script>
+  <script src="a11y.js?v=1" defer></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
@@ -199,7 +206,7 @@
     </div>
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
-  <script src="common.js?v=13"></script>
+  <script src="common.js?v=14"></script>
   <script>
     const STAGIONE = '2026';
     let cacheGare = [], cacheProfiles = {}, cacheRisultati = [], cacheIscrizioni = [], cacheClassifiche = [];

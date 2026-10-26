@@ -2,5 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /messaggi.html
 Disallow: /profilo.html
+Disallow: /admin.html
+Disallow: /offline.html
 
 Sitemap: https://circolovelicoitalia.it/sitemap.xml

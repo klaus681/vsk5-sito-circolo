@@ -72,6 +72,13 @@
     .cal-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; text-decoration: none; }
     .cal-loading { color: #94a3b8; text-align: center; padding: 2rem; }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CVI Virtual">
+  <script src="pwa.js?v=1" defer></script>
+  <script src="a11y.js?v=1" defer></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
@@ -133,7 +140,7 @@
       <div id="cal-container"><p class="cal-loading">Caricamento calendario…</p></div>
     </div>
   </main>
-  <div class="cal-modal-backdrop" id="cal-modal" role="dialog" aria-modal="true">
+  <div class="cal-modal-backdrop" id="cal-modal" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title">
     <div class="cal-modal">
       <h3 id="cal-modal-title">—</h3>
       <div class="meta" id="cal-modal-meta"></div>
@@ -154,7 +161,7 @@
       </div>
     </div>
   </footer>
-  <script src="common.js?v=13"></script>
+  <script src="common.js?v=14"></script>
   <script src="calendario-app.js?v=1"></script>
   <script src="calendario-allenamenti.js?v=3"></script>
 </body>

@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="style.css?v=2">
   <link rel="stylesheet" href="mobile.css">
   <link rel="stylesheet" href="fix-nav.css?v=3">
-  <link rel="stylesheet" href="forms.css">
+  <link rel="stylesheet" href="forms.css?v=2">
   <style>
     .auth-switch { margin-top: 1rem; text-align: center; }
     .auth-switch button {
@@ -41,6 +41,13 @@
     .auth-panel { display: none; }
     .auth-panel.active { display: block; }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CVI Virtual">
+  <script src="pwa.js?v=1" defer></script>
+  <script src="a11y.js?v=1" defer></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
@@ -186,7 +193,7 @@
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
-  <script src="common.js?v=13"></script>
+  <script src="common.js?v=14"></script>
   <script>
     const extra = {
       it: {

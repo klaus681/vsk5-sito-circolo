@@ -52,6 +52,13 @@
     .lightbox-close{position:absolute;top:1rem;right:1.25rem;background:transparent;border:none;color:#fff;font-size:1.75rem;cursor:pointer}
     .sql-hint{margin-top:.75rem;font-size:.78rem;color:#94a3b8;background:#0b0f19;padding:.65rem .8rem;border-radius:8px;font-family:ui-monospace,monospace;white-space:pre-wrap;display:none}
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CVI Virtual">
+  <script src="pwa.js?v=1" defer></script>
+  <script src="a11y.js?v=1" defer></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
@@ -136,7 +143,7 @@ create policy "gallery insert open" on gallery for insert with check (true);</di
     </div>
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual</div>
   </footer>
-  <script src="common.js?v=13"></script>
+  <script src="common.js?v=14"></script>
   <script>
     const BUCKET = 'gallery';
     const extra = {

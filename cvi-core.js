@@ -442,7 +442,7 @@
 
     if (!container.querySelector('img.logo-img')) {
       var img = document.createElement('img');
-      img.src = 'logo-cvi.png';
+      img.src = 'logo-64.png';
       img.alt = 'Logo Circolo Velico Italia';
       img.className = 'logo-img';
       img.width = 32;
@@ -579,6 +579,9 @@
 
   window.CVI.initFloatingDiscord = function () {
     if (document.getElementById('cvi-discord-fab')) return;
+    /* Su login/registrazione il pulsante flottante copre i campi del form:
+       la community resta raggiungibile dal menu. */
+    if (document.querySelector('.auth-layout')) return;
     const a = document.createElement('a');
     a.id = 'cvi-discord-fab';
     a.href = 'discord.html';

@@ -119,6 +119,13 @@
       .team-card,.members-chips li{transition:none}
     }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CVI Virtual">
+  <script src="pwa.js?v=1" defer></script>
+  <script src="a11y.js?v=1" defer></script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Vai al contenuto</a>
@@ -213,7 +220,7 @@
     </div>
   </footer>
 
-  <script src="common.js?v=13"></script>
+  <script src="common.js?v=14"></script>
   <script>
     const extra = {
       it: { team_title: "Team & Equipaggi", team_subtitle: "Le squadre ufficiali del Circolo Velico Italia e i relativi equipaggi.", team_loading: "Caricamento team in corso...", team_empty: "Nessuna squadra registrata.", captain_label: "Capitano: ", members_label: "Membri", no_members: "Nessun membro associato.", no_desc: "Nessuna descrizione disponibile." },
