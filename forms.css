@@ -18,10 +18,14 @@
   font-weight: 500;
 }
 
-.form-group input,
-.contact-form input,
+/* Controlli testuali: esclude checkbox/radio, che hanno dimensioni proprie.
+   Prima la regola `width: 100%` si applicava anche al checkbox privacy e lo
+   allargava a tutta la riga, schiacciando l'etichetta in una colonna stretta. */
+.form-group input:not([type="checkbox"]):not([type="radio"]),
+.form-group select,
+.contact-form input:not([type="checkbox"]):not([type="radio"]),
 .contact-form textarea,
-.auth-form input {
+.auth-form input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%;
   padding: 0.8rem 1rem;
   background: #0f1524;
@@ -33,13 +37,155 @@
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
+.form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: dark;
+  padding-right: 2.75rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23a8b4c7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 14px 8px;
+}
+
+.form-group select option {
+  background: #0f1524;
+  color: #fff;
+}
+
 .form-group input:focus,
+.form-group select:focus,
 .contact-form input:focus,
 .contact-form textarea:focus,
 .auth-form input:focus {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Riga a due colonne per nome/cognome */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form-row > .form-group {
+  min-width: 0;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.req {
+  color: var(--accent-color);
+  margin-left: 0.15rem;
+}
+
+.label-optional {
+  margin-left: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+/* Checkbox privacy */
+.form-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.15rem 0;
+}
+
+.form-check input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+.form-check-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.form-check-text label {
+  display: block;
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.form-check-text a {
+  display: inline-block;
+  margin-top: 0.2rem;
+  color: var(--accent-color);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.form-check-text a:hover {
+  text-decoration: underline;
+}
+
+/* Campo password con pulsante mostra/nascondi */
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap input {
+  padding-right: 5.5rem;
+}
+
+/* Nasconde il pulsante "rivela password" nativo di Edge/IE: abbiamo il nostro */
+.password-wrap input::-ms-reveal,
+.password-wrap input::-ms-clear {
+  display: none;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-color);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  background: var(--accent-soft);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+  transform: none;
+  box-shadow: none;
 }
 
 .contact-form textarea {
@@ -95,6 +241,30 @@
   max-width: 440px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* Il form di registrazione ha più campi: card un po' più ampia e padding fluido */
+.join-box {
+  position: relative;
+  overflow: hidden;
+  max-width: 480px;
+  padding: clamp(1.35rem, 4vw, 2.25rem);
+}
+
+.join-box::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-color), rgba(56, 189, 248, 0));
+}
+
+@media (max-width: 520px) {
+  .auth-box,
+  .join-box {
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+  }
 }
 
 .auth-box h1,
