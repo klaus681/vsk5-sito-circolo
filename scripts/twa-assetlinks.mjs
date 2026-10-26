@@ -59,7 +59,7 @@ for (const line of output.split(/\r?\n/)) {
   if (index === -1) continue;
   const value = line.slice(index + "SHA256:".length).trim().toUpperCase();
   if (/^[0-9A-F]{2}(:[0-9A-F]{2}){31}$/.test(value)) {
-    fingerprints.push("SHA256:" + value);
+    fingerprints.push(value);
   }
 }
 
@@ -89,7 +89,7 @@ writeFileSync(target, JSON.stringify(data, null, 2) + "\n", "utf8");
 
 console.log("Scritto " + target);
 console.log("Package: " + pkg);
-unique.forEach((fp) => console.log("Fingerprint: " + fp));
+unique.forEach((fp) => console.log("Fingerprint: SHA256:" + fp));
 console.log(
   "\nProssimo passo: verifica che https://circolovelicoitalia.it/.well-known/assetlinks.json " +
     "risponda 200 e contenga questa impronta."
