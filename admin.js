@@ -27,13 +27,13 @@
     if (st) { var s3 = document.createElement("script"); s3.textContent = st; document.head.appendChild(s3); }
     var tm = await fetch("teams-panel-admin.js?v=8").then(function(r){ return r.ok ? r.text() : ""; });
     if (tm) { var s5 = document.createElement("script"); s5.textContent = tm; document.head.appendChild(s5); }
-    var ea = await fetch("eventi-aperti-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
+    var ea = await fetch("eventi-aperti-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (ea) { var s7 = document.createElement("script"); s7.textContent = ea; document.head.appendChild(s7); }
     var saBoot = await fetch("serie-aperte-ui-boot.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (saBoot) { var sBoot = document.createElement("script"); sBoot.textContent = saBoot; document.head.appendChild(sBoot); }
     var sa = await fetch("4-serie-aperte-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (sa) { var sSa = document.createElement("script"); sSa.textContent = sa; document.head.appendChild(sSa); }
-    var eap = await fetch("eventi-admin-patch.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var eap = await fetch("eventi-admin-patch.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (eap) { var sEap = document.createElement("script"); sEap.textContent = eap; document.head.appendChild(sEap); }
     var pr = await fetch("proteste-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (pr) { var s6 = document.createElement("script"); s6.textContent = pr; document.head.appendChild(s6); }
