@@ -21,8 +21,11 @@ funziona ancora, ma **senza tempi/account e con solo Low Point + scarti fissi**.
 | --- | --- |
 | `2-serie-aperte-lib.js` | libreria condivisa: parser VSK, pulizia nickname, punteggi, classifica (usata da admin, pagina Eventi e Home) |
 | `4-serie-aperte-admin.js` | pannello admin: serie, regate, risultati, import VSK, export |
-| `eventi.js` | area pubblica unificata `eventi.html` (eventi aperti + serie) |
+| `eventi-common.js` | helper condivisi: date, giornate, bandiere, URL evento |
+| `eventi.js` | elenco pubblico unificato `eventi.html` (campionati + eventi singoli) |
+| `evento.js` | pagina dettaglio `evento.html` con tab Info / Programma / Classifica / Proteste |
 | `eventi-home.js` | widget unificato Eventi in Home |
+| `eventi-unificati-sql.sql` | migrazione opzionale: formato, flotta, posti, gironi, iscrizioni, giornate |
 | `serie-aperte-ui-boot.js` | crea tab/pannello se mancano |
 | `serie-aperte-vsk-sql.sql` | migrazione colonne VSK |
 
@@ -80,9 +83,18 @@ CSV manuale: `Stato;Posizione;Nickname;Team;Note` (FIN, DNF, DNS, DSQ, RET).
 
 ## 6. Pubblicazione
 
-- `Pubblicata` = visibile nell'area unica `eventi.html` (podio, tabella con
-  colonne R1…Rn e scarti barrati, dettaglio regate con tempi e distacchi)
+- `Pubblicata` = visibile nell'area unica `eventi.html`
+- l'elenco è raggruppato in **In corso / Prossimi / Passati**
+- ogni riga apre `evento.html?tipo=serie&id=…` (o `tipo=evento`) con le tab
+  **Info · Programma · Classifica · Proteste**
 - `Mostra in Home` = widget unificato in `index.html` con podio e link a
-  `eventi.html`
+  `eventi.html` / `evento.html`
 - una sola serie per volta può essere “in Home” (le altre vengono disattivate
   automaticamente al salvataggio)
+
+### Campi opzionali (gironi, posti, programma)
+
+Per mostrare anche gironi/pool, posti e iscrizioni esegui una volta
+`eventi-unificati-sql.sql` su Supabase. Senza quella migrazione la pagina
+funziona comunque e mostra solo i dati già disponibili (regate, giornate
+derivate dalle date, classifica, risultati).

@@ -63,6 +63,8 @@
     ".evh-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem}" +
     ".evh-badge{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#38bdf8,#7dd3fc);padding:.22rem .65rem;border-radius:999px;margin-bottom:.4rem}" +
     ".evh-title{margin:0;color:#fff;font-size:1.28rem;font-weight:700;line-height:1.25}" +
+    ".evh-title-link{color:inherit;text-decoration:none}" +
+    ".evh-title-link:hover{color:#7dd3fc}" +
     ".evh-date{color:#94a3b8;font-size:.88rem;margin-top:.3rem}" +
     ".evh-link{color:#7dd3fc;font-weight:700;font-size:.9rem;white-space:nowrap;align-self:center;text-decoration:none}" +
     ".evh-link:hover{color:#bae6fd}" +
@@ -160,6 +162,7 @@
       var scartiN = lib ? lib.calcolaNumScarti(serie.scarti || 0, !!serie.scarti_auto, regate.length) : 0;
       return {
         kind: "serie",
+        href: "evento.html?tipo=serie&id=" + encodeURIComponent(serie.id),
         badge: tr("banner_open_series", "Serie aperta"),
         title: serie.titolo,
         description: serie.descrizione,
@@ -191,6 +194,7 @@
     });
     return {
       kind: "evento",
+      href: "evento.html?tipo=evento&id=" + encodeURIComponent(evento.id),
       badge: tr("eventi_type_evento", "Evento aperto"),
       title: evento.titolo,
       description: evento.descrizione,
@@ -223,7 +227,11 @@
         '<div class="evh-header">' +
         "<div>" +
         '<span class="evh-badge">' + esc(feature.badge) + "</span>" +
-        '<h2 class="evh-title">' + esc(feature.title) + "</h2>" +
+        '<h2 class="evh-title">' +
+        (feature.href
+          ? '<a class="evh-title-link" href="' + esc(feature.href) + '">' + esc(feature.title) + "</a>"
+          : esc(feature.title)) +
+        "</h2>" +
         (feature.date ? '<div class="evh-date">📅 ' + esc(feature.date) + "</div>" : "") +
         "</div>" +
         '<a href="eventi.html" class="evh-link">' + esc(tr("eventi_see_all", "Tutti gli eventi →")) + "</a>" +

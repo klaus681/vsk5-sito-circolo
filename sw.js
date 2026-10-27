@@ -7,7 +7,7 @@
    Per pubblicare una modifica agli asset cambia VERSION. */
 'use strict';
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const SHELL_CACHE = 'cvi-shell-' + VERSION;
 const RUNTIME_CACHE = 'cvi-runtime-' + VERSION;
 const OFFLINE_URL = 'offline.html';
@@ -49,7 +49,9 @@ const PRECACHE = [
   'regolamento-dynamic.js?v=1',
   'membership-banner.js?v=2',
   '2-serie-aperte-lib.js?v=3',
-  'eventi.js?v=2',
+  'eventi-common.js?v=1',
+  'eventi.js?v=3',
+  'evento.js?v=1',
   'eventi-home.js?v=1',
   'tornei-vsk-home.js?v=2',
   'home-hero.js?v=3',

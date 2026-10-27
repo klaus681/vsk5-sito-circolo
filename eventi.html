@@ -88,15 +88,14 @@
     <a href="accedi.html" id="auth-link-mobile" data-i18n="nav_accedi">Accedi</a>
   </nav>
   <main class="page-content" id="main-content">
-    <div class="protest-layout" style="max-width:1100px;margin:0 auto">
-      <section class="page-hero">
+    <div style="max-width:1100px;margin:0 auto">
+      <section class="ev-list-hero">
         <h1>Eventi</h1>
-        <p>Eventi singoli e serie aperte, anche a skipper non soci. Classifiche separate da quelle ufficiali del circolo.</p>
+        <p>Campionati e eventi singoli, anche a skipper non soci. Classifiche separate da quelle ufficiali del circolo.</p>
       </section>
-      <div class="hint-box" style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:.85rem 1rem;color:#94a3b8;font-size:.88rem;line-height:1.5;margin-bottom:1.25rem">
-        Queste classifiche sono gestite dall’organizzazione e <strong>non influenzano</strong> punteggi, iscrizioni o classifica generale dei soci.
+      <div id="eventi-list" class="ev-list">
+        <p class="ev-loading">Caricamento eventi…</p>
       </div>
-      <div id="eventi-container"></div>
     </div>
   </main>
   <footer class="site-footer">
@@ -110,7 +109,7 @@
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italia · Virtual Skipper</div>
   </footer>
   <script src="common.js?v=15"></script>
-  <script src="2-serie-aperte-lib.js?v=3"></script>
-  <script src="eventi.js?v=2"></script>
+  <script src="eventi-common.js?v=1"></script>
+  <script src="eventi.js?v=3"></script>
 </body>
 </html>

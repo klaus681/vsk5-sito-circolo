@@ -13,9 +13,14 @@
   </style>
   <script>
     /* Eventi aperti e Serie Aperte sono confluite nell'area unica Eventi.
-       Il redirect conserva gli ancori (#serie-… / #evento-…) dei vecchi link. */
+       I vecchi ancori (#serie-… / #evento-…) vengono portati sulla pagina
+       di dettaglio del singolo evento. */
     (function () {
-      var target = "eventi.html" + (location.hash || "");
+      var hash = location.hash || "";
+      var m = hash.match(/^#(serie|evento)-(.+)$/);
+      var target = m
+        ? "evento.html?tipo=" + m[1] + "&id=" + encodeURIComponent(decodeURIComponent(m[2]))
+        : "eventi.html" + hash;
       location.replace(target);
     })();
   </script>
