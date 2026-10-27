@@ -1,14 +1,14 @@
-/* CVI Admin – Eventi aperti (con auto-unica mostra_home + CSV) */
+/* CVI Admin – Eventi aperti (con auto-unica mostra_home + CSV + locandina) */
 (function () {
   "use strict";
 
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """);
   }
 
   function fmt(iso) {
@@ -206,6 +206,18 @@
     document.getElementById("ea-titolo").value = e.titolo || "";
     document.getElementById("ea-data").value = toLocal(e.data_evento);
     document.getElementById("ea-desc").value = e.descrizione || "";
+    var posterEl = document.getElementById("ea-poster");
+    if (posterEl) posterEl.value = e.poster || "";
+    var prev = document.getElementById("ea-poster-preview");
+    if (prev) {
+      if (e.poster) {
+        prev.style.display = "block";
+        prev.querySelector("img").src = e.poster;
+      } else {
+        prev.style.display = "none";
+        prev.querySelector("img").removeAttribute("src");
+      }
+    }
     document.getElementById("ea-pub").checked = !!e.pubblicato;
     document.getElementById("ea-home").checked = !!e.mostra_home;
     document.getElementById("ea-form-title").textContent = e.id
@@ -247,7 +259,6 @@
     };
   }
 
-  /* ---- Import CSV classifica ---- */
   function parseCSVText(text) {
     text = String(text || "").replace(/^\uFEFF/, "");
     var firstLine = text.split(/\r?\n/)[0] || "";
@@ -349,11 +360,14 @@
         titolo: "",
         data_evento: null,
         descrizione: "",
+        poster: "",
         pubblicato: false,
         mostra_home: false
       },
       []
     );
+    var pf = document.getElementById("ea-poster-file");
+    if (pf) pf.value = "";
   }
 
   async function saveEvento(ev) {
@@ -363,10 +377,13 @@
     if (!titolo) return alert("Titolo obbligatorio");
     var dl = document.getElementById("ea-data").value;
     var mostraHome = document.getElementById("ea-home").checked;
+    var posterVal = (document.getElementById("ea-poster") || {}).value;
+    posterVal = posterVal ? String(posterVal).trim() : "";
     var payload = {
       titolo: titolo,
       data_evento: dl ? new Date(dl).toISOString() : null,
       descrizione: document.getElementById("ea-desc").value.trim() || null,
+      poster: posterVal || null,
       pubblicato: document.getElementById("ea-pub").checked,
       mostra_home: mostraHome,
       updated_at: new Date().toISOString()
@@ -493,7 +510,7 @@
         reader.onload = function () {
           var n = importEventoCsv(reader.result);
           if (n && hint) {
-            hint.textContent = "Importati " + n + " skipper dal file \u00ab" + f.name + "\u00bb. Controlla le righe e premi Salva evento.";
+            hint.textContent = "Importati " + n + " skipper dal file «" + f.name + "». Controlla le righe e premi Salva evento.";
             hint.style.color = "#34d399";
           }
           csvFile.value = "";
@@ -527,6 +544,49 @@
       textClear._eaWired = true;
       textClear.onclick = function () { if (textTa) textTa.value = ""; };
     }
+
+    // Locandina file → data URL
+    var posterFile = document.getElementById("ea-poster-file");
+    if (posterFile && !posterFile._eaWired) {
+      posterFile._eaWired = true;
+      posterFile.onchange = function () {
+        var f = this.files && this.files[0];
+        if (!f) return;
+        if (f.size > 900 * 1024) {
+          alert("File troppo grande (max ~900 KB). Usa un URL esterno o comprimi l'immagine.");
+          this.value = "";
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          var url = reader.result;
+          var el = document.getElementById("ea-poster");
+          if (el) el.value = url;
+          var prev = document.getElementById("ea-poster-preview");
+          if (prev) {
+            prev.style.display = "block";
+            prev.querySelector("img").src = url;
+          }
+        };
+        reader.readAsDataURL(f);
+      };
+    }
+    var posterUrl = document.getElementById("ea-poster");
+    if (posterUrl && !posterUrl._eaWired) {
+      posterUrl._eaWired = true;
+      posterUrl.addEventListener("input", function () {
+        var v = (this.value || "").trim();
+        var prev = document.getElementById("ea-poster-preview");
+        if (!prev) return;
+        if (v && (v.indexOf("http") === 0 || v.indexOf("data:") === 0)) {
+          prev.style.display = "block";
+          prev.querySelector("img").src = v;
+        } else {
+          prev.style.display = "none";
+        }
+      });
+    }
+
     var cancel = document.getElementById("ea-cancel");
     if (cancel && !cancel._eaWired) {
       cancel._eaWired = true;
