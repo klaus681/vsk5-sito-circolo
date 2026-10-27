@@ -27,6 +27,7 @@ funziona ancora, ma **senza tempi/account e con solo Low Point + scarti fissi**.
 | `eventi-home.js` | widget unificato Eventi in Home |
 | `eventi-unificati-sql.sql` | migrazione opzionale: formato, flotta, posti, gironi, iscrizioni, giornate |
 | `serie-aperte-ui-boot.js` | crea tab/pannello se mancano |
+| `eventi-admin-fields.js` | campi dettagli evento + gestione gironi, iscrizioni e giornate in admin |
 | `serie-aperte-vsk-sql.sql` | migrazione colonne VSK |
 
 Cache-busting già aggiornato in `index.html`, `eventi.html`,
@@ -34,12 +35,17 @@ Cache-busting già aggiornato in `index.html`, `eventi.html`,
 
 ## 3. Uso in admin
 
-1. Admin → tab **Serie Aperte**
-2. Crea la serie: titolo, date, **sistema punteggio** (Low/High Point),
+1. Admin → tab **Eventi · serie** (o **Eventi · singoli**)
+2. Crea la serie/evento: titolo, date, **sistema punteggio** (Low/High Point),
    **scarti** (numero oppure “automatici: 1 ogni 4 regate”), `Pubblicata`,
    `Mostra in Home`
-3. **Regate & Risultati** → apri il blocco **⚡ Importa log VSK**
-4. Trascina uno o più file `Result_YYYY_MM_DD_HH_MM_SS.csv`
+3. Compila i **Dettagli evento**: formato, flotta, procedura di partenza,
+   posti totali, finestra iscrizioni, URL proteste
+4. Nella serie selezionata usa **Gironi, iscrizioni e giornate** per:
+   creare/rinominare i gironi (POOL A, POOL B…), assegnare gli iscritti e
+   impostare `giornata` + girone di ogni regata
+5. **Regate & Risultati** → apri il blocco **⚡ Importa log VSK**
+6. Trascina uno o più file `Result_YYYY_MM_DD_HH_MM_SS.csv`
 
 Per ogni file viene creata una regata (titolo/data ricavati dal nome file) con
 tutti i risultati: posizione, tempo in ms, account VSK, nickname originale e
