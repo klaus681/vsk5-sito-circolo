@@ -33,6 +33,8 @@
     if (saBoot) { var sBoot = document.createElement("script"); sBoot.textContent = saBoot; document.head.appendChild(sBoot); }
     var sa = await fetch("4-serie-aperte-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (sa) { var sSa = document.createElement("script"); sSa.textContent = sa; document.head.appendChild(sSa); }
+    var eap = await fetch("eventi-admin-patch.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (eap) { var sEap = document.createElement("script"); sEap.textContent = eap; document.head.appendChild(sEap); }
     var pr = await fetch("proteste-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (pr) { var s6 = document.createElement("script"); s6.textContent = pr; document.head.appendChild(s6); }
     var rg = await fetch("regolamento-admin.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
