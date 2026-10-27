@@ -1,4 +1,4 @@
-/* CVI - traduzioni extra menu Gare & Eventi (Live, Tornei, Eventi aperti, ...) */
+/* CVI - traduzioni extra menu Gare & Eventi (Live, Tornei, Eventi, ...) */
 (function () {
   "use strict";
 
@@ -6,6 +6,7 @@
     it: {
       nav_live: "Live",
       nav_tornei: "Tornei",
+      nav_eventi: "Eventi",
       nav_eventi_aperti: "Eventi aperti",
       nav_cal_vista: "Vista calendario",
       nav_proteste: "Proteste",
@@ -16,6 +17,7 @@
     en: {
       nav_live: "Live",
       nav_tornei: "Tournaments",
+      nav_eventi: "Events",
       nav_eventi_aperti: "Open events",
       nav_cal_vista: "Calendar view",
       nav_proteste: "Protests",
@@ -26,6 +28,7 @@
     fr: {
       nav_live: "Direct",
       nav_tornei: "Tournois",
+      nav_eventi: "Événements",
       nav_eventi_aperti: "Événements ouverts",
       nav_cal_vista: "Vue calendrier",
       nav_proteste: "Réclamations",
@@ -36,6 +39,7 @@
     es: {
       nav_live: "En vivo",
       nav_tornei: "Torneos",
+      nav_eventi: "Eventos",
       nav_eventi_aperti: "Eventos abiertos",
       nav_cal_vista: "Vista calendario",
       nav_proteste: "Protestas",
@@ -48,7 +52,7 @@
   var LINK_KEYS = {
     "live.html": "nav_live",
     "tornei.html": "nav_tornei",
-    "eventi-aperti.html": "nav_eventi_aperti",
+    "eventi.html": "nav_eventi",
     "calendario.html": "nav_cal_vista",
     "proteste.html": "nav_proteste",
     "gare.html": "nav_gare_sub",

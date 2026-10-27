@@ -19,24 +19,33 @@ funziona ancora, ma **senza tempi/account e con solo Low Point + scarti fissi**.
 
 | File | Ruolo |
 | --- | --- |
-| `2-serie-aperte-lib.js` | libreria condivisa: parser VSK, pulizia nickname, punteggi, classifica (usata da admin, pagina pubblica e Home) |
+| `2-serie-aperte-lib.js` | libreria condivisa: parser VSK, pulizia nickname, punteggi, classifica (usata da admin, pagina Eventi e Home) |
 | `4-serie-aperte-admin.js` | pannello admin: serie, regate, risultati, import VSK, export |
-| `3-serie-aperte-page.js` | pagina pubblica `eventi-aperti.html` |
-| `5-serie-aperte-home.js` | widget classifica in Home |
+| `eventi-common.js` | helper condivisi: date, giornate, bandiere, URL evento |
+| `eventi.js` | elenco pubblico unificato `eventi.html` (campionati + eventi singoli) |
+| `evento.js` | pagina dettaglio `evento.html` con tab Info / Programma / Classifica / Proteste |
+| `eventi-home.js` | widget unificato Eventi in Home |
+| `eventi-unificati-sql.sql` | migrazione opzionale: formato, flotta, posti, gironi, iscrizioni, giornate |
 | `serie-aperte-ui-boot.js` | crea tab/pannello se mancano |
+| `eventi-admin-fields.js` | campi dettagli evento + gestione gironi, iscrizioni e giornate in admin |
 | `serie-aperte-vsk-sql.sql` | migrazione colonne VSK |
 
-Cache-busting già aggiornato in `index.html`, `eventi-aperti.html`,
+Cache-busting già aggiornato in `index.html`, `eventi.html`,
 `admin.html` e `admin.js`.
 
 ## 3. Uso in admin
 
-1. Admin → tab **Serie Aperte**
-2. Crea la serie: titolo, date, **sistema punteggio** (Low/High Point),
+1. Admin → tab **Eventi** (sezioni **Campionati e serie** / **Eventi singoli**)
+2. Crea la serie/evento: titolo, date, **sistema punteggio** (Low/High Point),
    **scarti** (numero oppure “automatici: 1 ogni 4 regate”), `Pubblicata`,
    `Mostra in Home`
-3. **Regate & Risultati** → apri il blocco **⚡ Importa log VSK**
-4. Trascina uno o più file `Result_YYYY_MM_DD_HH_MM_SS.csv`
+3. Compila i **Dettagli evento**: formato, flotta, procedura di partenza,
+   posti totali, finestra iscrizioni, URL proteste
+4. Nella serie selezionata usa **Gironi, iscrizioni e giornate** per:
+   creare/rinominare i gironi (POOL A, POOL B…), assegnare gli iscritti e
+   impostare `giornata` + girone di ogni regata
+5. **Regate & Risultati** → apri il blocco **⚡ Importa log VSK**
+6. Trascina uno o più file `Result_YYYY_MM_DD_HH_MM_SS.csv`
 
 Per ogni file viene creata una regata (titolo/data ricavati dal nome file) con
 tutti i risultati: posizione, tempo in ms, account VSK, nickname originale e
@@ -80,9 +89,18 @@ CSV manuale: `Stato;Posizione;Nickname;Team;Note` (FIN, DNF, DNS, DSQ, RET).
 
 ## 6. Pubblicazione
 
-- `Pubblicata` = visibile in `eventi-aperti.html` (podio, tabella con colonne
-  R1…Rn e scarti barrati, dettaglio regate con tempi e distacchi)
-- `Mostra in Home` = widget in `index.html` con podio, posizioni 4–10, numero
-  gare, ultima regata e link alla classifica completa
+- `Pubblicata` = visibile nell'area unica `eventi.html`
+- l'elenco è raggruppato in **In corso / Prossimi / Passati**
+- ogni riga apre `evento.html?tipo=serie&id=…` (o `tipo=evento`) con le tab
+  **Info · Programma · Classifica · Proteste**
+- `Mostra in Home` = widget unificato in `index.html` con podio e link a
+  `eventi.html` / `evento.html`
 - una sola serie per volta può essere “in Home” (le altre vengono disattivate
   automaticamente al salvataggio)
+
+### Campi opzionali (gironi, posti, programma)
+
+Per mostrare anche gironi/pool, posti e iscrizioni esegui una volta
+`eventi-unificati-sql.sql` su Supabase. Senza quella migrazione la pagina
+funziona comunque e mostra solo i dati già disponibili (regate, giornate
+derivate dalle date, classifica, risultati).

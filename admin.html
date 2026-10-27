@@ -37,12 +37,18 @@
     }
     if (html.indexOf("eventi-admin-patch.js") < 0) {
       html = html.replace(
-        /(<script src="admin\.js\?v=\d+"><\/script>)/,
+        /(<script src="admin\.js[^"]*"><\/script>)/,
         '$1\n  <script src="eventi-admin-patch.js?v=2"><\/script>'
       );
     }
+    if (html.indexOf("eventi-admin-fields.js") < 0) {
+      html = html.replace(
+        /(<script src="eventi-admin-patch\.js[^"]*"><\/script>)/,
+        '$1\n  <script src="eventi-admin-fields.js?v=1"><\/script>'
+      );
+    }
     // Force tab labels
-    html = html.replace(/>Eventi aperti</g, ">Eventi · singoli<");
+    html = html.replace(/>Eventi aperti</g, ">Eventi<");
     html = html.replace(/>Serie Aperte</g, ">Eventi · serie<");
     document.open();
     document.write(html);

@@ -1,5 +1,5 @@
 /* CVI – loader: core condiviso locale (nessuna dipendenza da CDN esterni) */
-document.write('<script src="cvi-core.js?v=6"><\/script>');
+document.write('<script src="cvi-core.js?v=7"><\/script>');
 /* Extra: nazionalità profilo */
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
@@ -13,7 +13,7 @@ document.write('<script src="tornei-nav.js?v=1"><\/script>');
 document.write('<script src="tutor-nav.js?v=2"><\/script>');
 /* Download e Risorse: voce unica nel menu (la vecchia Biblioteca è confluita in risorse.html) */
 /* Extra: traduzioni menu */
-document.write('<script src="nav-i18n.js?v=1"><\/script>');
+document.write('<script src="nav-i18n.js?v=2"><\/script>');
 /* Extra: voce Messaggi nel menu + badge non letti */
 document.write('<script src="messaggi-nav.js?v=1"><\/script>');
 /* Extra: banner torneo + allenamento in riga dedicata */

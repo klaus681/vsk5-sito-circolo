@@ -1,293 +1,252 @@
-/* CVI – Pagina unificata EVENTI
-   Unisce Eventi aperti e Serie Aperte in un’unica lista con filtri e card.
-   Non modifica i motori di classifica esistenti. */
+/* CVI – Area Eventi: elenco unificato (campionati/serie + eventi singoli) */
 (function () {
   "use strict";
 
-  function esc(s) {
-    if (s == null) return "";
-    return String(s)
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
-  }
-
-  function locale() {
-    return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
-  }
-
-  function fmtDate(d) {
-    if (!d) return "";
-    try {
-      return new Date(d).toLocaleDateString(locale(), {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-      });
-    } catch (e) {
-      return "";
-    }
-  }
-
-  function fmtRange(a, b) {
-    var d1 = fmtDate(a);
-    var d2 = fmtDate(b);
-    if (d1 && d2) return d1 + " – " + d2;
-    return d1 || d2 || "";
-  }
-
-  function deriveStatus(item) {
-    var now = Date.now();
-    var start = item.start ? new Date(item.start).getTime() : null;
-    var end = item.end ? new Date(item.end).getTime() : null;
-    if (end && end < now) return "passato";
-    if (start && start > now) return "prossimo";
-    if ((start && start <= now) || (end && end >= now) || (!start && !end)) {
-      return "in-corso";
-    }
-    return "prossimo";
-  }
+  var E = window.CVIEventi;
+  var esc = E.esc;
 
   var STYLE =
-    ".ev-filters{display:flex;gap:.5rem;flex-wrap:wrap;margin:0 0 1.5rem}" +
-    ".ev-filter{background:transparent;border:1px solid rgba(148,163,184,.25);color:#94a3b8;padding:.45rem 1rem;border-radius:999px;font-size:.875rem;cursor:pointer;transition:all .15s}" +
-    ".ev-filter:hover{border-color:#38bdf8;color:#e2e8f0}" +
-    ".ev-filter.active{background:#38bdf8;border-color:#38bdf8;color:#0b0f19;font-weight:700}" +
-    ".ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.15rem}" +
-    ".ev-card{background:var(--card-bg,#111827);border:1px solid rgba(56,189,248,.2);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;text-decoration:none;color:inherit;display:block}" +
-    ".ev-card:hover{transform:translateY(-3px);border-color:#38bdf8}" +
-    ".ev-card-poster{height:150px;background:linear-gradient(145deg,#1e3a5f,#0f172a);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}" +
-    ".ev-card-poster img{width:100%;height:100%;object-fit:cover}" +
-    ".ev-card-poster .ev-fallback{color:rgba(255,255,255,.7);font-weight:700;font-size:1.05rem;text-align:center;padding:1rem;line-height:1.3}" +
-    ".ev-badge{position:absolute;top:10px;right:10px;font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:.22rem .6rem;border-radius:6px}" +
-    ".ev-badge.in-corso{background:#22c55e;color:#052e16}" +
-    ".ev-badge.prossimo{background:#38bdf8;color:#0b0f19}" +
-    ".ev-badge.passato{background:#475569;color:#e2e8f0}" +
-    ".ev-card-body{padding:1rem 1.15rem 1.2rem}" +
-    ".ev-card-type{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#7dd3fc;margin-bottom:.3rem}" +
-    ".ev-card-title{margin:0 0 .35rem;font-size:1.1rem;font-weight:700;color:#fff;line-height:1.25}" +
-    ".ev-card-dates{color:#94a3b8;font-size:.85rem;margin-bottom:.25rem}" +
-    ".ev-card-meta{color:#64748b;font-size:.8rem}" +
-    ".ev-empty{text-align:center;padding:3rem 1rem;color:#64748b;font-size:.95rem}" +
-    ".ev-loading{text-align:center;padding:2rem;color:#94a3b8}";
+    ".ev-list-hero{margin:0 0 1.75rem}" +
+    ".ev-list-hero h1{margin:0;font-size:2.4rem;letter-spacing:.02em;font-weight:800;color:#fff;text-transform:uppercase}" +
+    ".ev-list-hero p{margin:.5rem 0 0;color:#94a3b8;max-width:720px;line-height:1.55}" +
+    ".ev-list{max-width:980px;margin:0 auto}" +
+    ".ev-group{margin:0 0 2rem}" +
+    ".ev-group-head{display:flex;align-items:center;gap:.75rem;margin:0 0 .35rem}" +
+    ".ev-group-title{margin:0;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;white-space:nowrap}" +
+    ".ev-group-line{flex:1;height:1px;background:rgba(255,255,255,.08)}" +
+    ".ev-group-empty{color:#64748b;font-size:.9rem;padding:.85rem 0 .25rem}" +
+    ".ev-row{display:grid;grid-template-columns:88px 92px minmax(0,1fr) auto;gap:1rem;align-items:center;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.06);text-decoration:none;color:inherit;transition:background .15s ease}" +
+    ".ev-row:hover{background:rgba(56,189,248,.04)}" +
+    ".ev-row-date{font-size:.72rem;line-height:1.35;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}" +
+    ".ev-row-date strong{display:block;color:#e2e8f0;font-size:.86rem;letter-spacing:.04em}" +
+    ".ev-row-date span{display:block;margin-top:.15rem;font-size:.66rem;color:#64748b}" +
+    ".ev-row-poster{width:92px;height:58px;border-radius:8px;overflow:hidden;background:linear-gradient(145deg,#1e3a5f,#0f172a);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center}" +
+    ".ev-row-poster img{width:100%;height:100%;object-fit:cover;display:block}" +
+    ".ev-row-poster span{font-size:.6rem;font-weight:800;color:rgba(255,255,255,.75);text-align:center;padding:.25rem;line-height:1.2;text-transform:uppercase;letter-spacing:.04em}" +
+    ".ev-row-main{min-width:0}" +
+    ".ev-row-title{margin:0 0 .2rem;font-size:1.05rem;font-weight:700;color:#fff;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+    ".ev-row-sub{color:#64748b;font-size:.8rem}" +
+    ".ev-row-side{display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;min-width:118px}" +
+    ".ev-row-count{font-size:.78rem;color:#64748b;white-space:nowrap}" +
+    ".ev-row-count strong{color:#e2e8f0;font-size:.9rem}" +
+    ".ev-progress{width:100%;max-width:118px;height:4px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden}" +
+    ".ev-progress span{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#7dd3fc)}" +
+    ".ev-status{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.2rem .55rem;border-radius:5px;white-space:nowrap}" +
+    ".ev-status.in-corso{background:rgba(34,197,94,.14);color:#4ade80;border:1px solid rgba(34,197,94,.35)}" +
+    ".ev-status.prossimo{background:rgba(56,189,248,.12);color:#7dd3fc;border:1px solid rgba(56,189,248,.35)}" +
+    ".ev-status.passato{background:rgba(148,163,184,.12);color:#94a3b8;border:1px solid rgba(148,163,184,.25)}" +
+    ".ev-loading{text-align:center;color:#94a3b8;padding:2rem 1rem}" +
+    ".ev-empty{text-align:center;color:#64748b;padding:2.5rem 1rem}" +
+    "@media(max-width:640px){.ev-list-hero h1{font-size:1.9rem}.ev-row{grid-template-columns:74px 74px minmax(0,1fr);gap:.75rem}.ev-row-poster{width:74px;height:50px}.ev-row-side{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;min-width:0}.ev-progress{max-width:140px}.ev-row-title{white-space:normal}}";
 
   function injectStyles() {
-    if (document.getElementById("ev-unified-styles")) return;
+    if (document.getElementById("ev-list-styles")) return;
     var st = document.createElement("style");
-    st.id = "ev-unified-styles";
+    st.id = "ev-list-styles";
     st.textContent = STYLE;
     document.head.appendChild(st);
   }
 
-  var allItems = [];
-  var currentFilter = "all";
+  function statusRank(s) {
+    return s === "in-corso" ? 0 : s === "prossimo" ? 1 : 2;
+  }
 
-  function render(filter) {
-    currentFilter = filter || "all";
-    var grid = document.getElementById("eventi-grid");
-    var empty = document.getElementById("eventi-empty");
-    if (!grid) return;
+  async function fetchData() {
+    var sb = CVI.supabase;
+    var serie = [];
+    var eventi = [];
+    var regate = [];
+    var iscrizioni = [];
+    var risEventi = [];
 
-    document.querySelectorAll(".ev-filter").forEach(function (btn) {
-      btn.classList.toggle("active", btn.getAttribute("data-filter") === currentFilter);
-    });
+    var rSerie = await sb.from("serie_aperte").select("*").eq("pubblicato", true).order("data_inizio", { ascending: false, nullsFirst: false });
+    if (!rSerie.error) serie = rSerie.data || [];
 
-    var list = allItems.slice();
-    if (currentFilter === "serie") {
-      list = list.filter(function (i) { return i.kind === "serie"; });
-    } else if (currentFilter !== "all") {
-      list = list.filter(function (i) { return i.status === currentFilter; });
+    var rEventi = await sb.from("eventi_aperti").select("*").eq("pubblicato", true).order("data_evento", { ascending: false, nullsFirst: false });
+    if (!rEventi.error) eventi = rEventi.data || [];
+
+    if (serie.length) {
+      var ids = serie.map(function (s) { return s.id; });
+      var rReg = await sb.from("serie_aperte_regate").select("id,serie_id,giornata,data_regata,ordine").in("serie_id", ids);
+      if (!rReg.error) regate = rReg.data || [];
+      var rIscr = await sb.from("serie_aperte_iscrizioni").select("serie_id,girone_id").in("serie_id", ids);
+      if (!rIscr.error) iscrizioni = rIscr.data || [];
+    }
+    if (eventi.length) {
+      var rRis = await sb.from("eventi_aperti_risultati").select("evento_id").in("evento_id", eventi.map(function (e) { return e.id; }));
+      if (!rRis.error) risEventi = rRis.data || [];
     }
 
-    var order = { "in-corso": 0, "prossimo": 1, "passato": 2 };
-    list.sort(function (a, b) {
-      var oa = order[a.status] != null ? order[a.status] : 9;
-      var ob = order[b.status] != null ? order[b.status] : 9;
-      if (oa !== ob) return oa - ob;
-      return (b.sortDate || 0) - (a.sortDate || 0);
+    return { serie: serie, eventi: eventi, regate: regate, iscrizioni: iscrizioni, risEventi: risEventi };
+  }
+
+  function buildItems(data) {
+    var regBySerie = E.groupBy(data.regate, "serie_id");
+    var iscrBySerie = E.groupBy(data.iscrizioni, "serie_id");
+    var risByEvento = E.groupBy(data.risEventi, "evento_id");
+
+    var items = data.serie.map(function (s) {
+      var regs = regBySerie[String(s.id)] || [];
+      var days = E.buildDays(regs);
+      var iscr = iscrBySerie[String(s.id)] || [];
+      var max = s.max_iscritti != null && Number(s.max_iscritti) > 0 ? Number(s.max_iscritti) : null;
+      return {
+        id: s.id,
+        kind: "serie",
+        href: E.eventHref("serie", s.id),
+        title: s.titolo || "Serie aperta",
+        poster: s.poster || "",
+        start: s.data_inizio,
+        end: s.data_fine,
+        status: E.deriveStatus(s.data_inizio, s.data_fine),
+        typeLabel: "Campionato",
+        metaParts: [
+          regs.length ? regs.length + " regate" : "",
+          days.length ? days.length + " giornate" : "",
+          s.flotta || ""
+        ].filter(Boolean),
+        participants: iscr.length ? iscr.length : null,
+        max: max
+      };
     });
 
-    grid.innerHTML = "";
-    if (!list.length) {
-      if (empty) {
-        empty.style.display = "block";
-        empty.textContent =
-          currentFilter === "prossimo"
-            ? "Nessun evento in programma. La prossima regata comparirà qui."
-            : currentFilter === "passato"
-            ? "Ancora nessun evento passato."
-            : "Nessun evento in questa sezione.";
-      }
-      return;
+    data.eventi.forEach(function (e) {
+      var ris = risByEvento[String(e.id)] || [];
+      var max = e.max_iscritti != null && Number(e.max_iscritti) > 0 ? Number(e.max_iscritti) : null;
+      items.push({
+        id: e.id,
+        kind: "evento",
+        href: E.eventHref("evento", e.id),
+        title: e.titolo || "Evento aperto",
+        poster: e.poster || "",
+        start: e.data_evento,
+        end: e.data_evento,
+        status: E.deriveStatus(e.data_evento, e.data_evento),
+        typeLabel: "Evento",
+        metaParts: [ris.length ? ris.length + " partecipanti" : "", e.flotta || ""].filter(Boolean),
+        participants: ris.length ? ris.length : null,
+        max: max
+      });
+    });
+
+    items.sort(function (a, b) {
+      var ra = statusRank(a.status);
+      var rb = statusRank(b.status);
+      if (ra !== rb) return ra - rb;
+      var ta = a.start ? new Date(a.start).getTime() : 0;
+      var tb = b.start ? new Date(b.start).getTime() : 0;
+      return a.status === "passato" ? tb - ta : ta - tb;
+    });
+    return items;
+  }
+
+
+  function rowHtml(item) {
+    var dateMain = E.fmtDateShort(item.start) || "—";
+    var dateSub = "";
+    if (item.kind === "serie" && item.end && item.end !== item.start) {
+      dateSub = "FINO AL " + E.fmtDateShort(item.end);
+    } else if (item.start) {
+      dateSub = E.fmtTime(item.start) || "";
     }
-    if (empty) empty.style.display = "none";
+    var poster = item.poster
+      ? '<img src="' + esc(item.poster) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span style="display:none">' + esc(item.title) + "</span>"
+      : "<span>" + esc(item.title) + "</span>";
 
-    list.forEach(function (item) {
-      var badgeText =
-        item.status === "in-corso"
-          ? "IN CORSO"
-          : item.status === "prossimo"
-          ? "PROSSIMO"
-          : "PASSATO";
+    var countHtml = "";
+    if (item.participants != null) {
+      countHtml = "<strong>" + item.participants + "</strong>" + (item.max ? " / " + item.max : "");
+    } else if (item.max) {
+      countHtml = "max <strong>" + item.max + "</strong>";
+    }
+    var progress = "";
+    if (item.participants != null && item.max) {
+      var pct = Math.max(0, Math.min(100, Math.round((item.participants / item.max) * 100)));
+      progress = '<div class="ev-progress" aria-hidden="true"><span style="width:' + pct + '%"></span></div>';
+    }
 
-      var typeLabel = item.kind === "serie" ? "Serie" : "Evento";
-      var href =
-        item.kind === "serie"
-          ? "eventi-aperti.html#serie-" + encodeURIComponent(item.id)
-          : "eventi-aperti.html#evento-" + encodeURIComponent(item.id);
+    return (
+      '<a class="ev-row" href="' + esc(item.href) + '">' +
+      '<div class="ev-row-date"><strong>' + esc(dateMain) + "</strong>" + (dateSub ? "<span>" + esc(dateSub) + "</span>" : "") + "</div>" +
+      '<div class="ev-row-poster">' + poster + "</div>" +
+      '<div class="ev-row-main">' +
+      '<h3 class="ev-row-title">' + esc(item.title) + "</h3>" +
+      '<div class="ev-row-sub">' + esc([item.typeLabel].concat(item.metaParts).join(" · ")) + "</div>" +
+      "</div>" +
+      '<div class="ev-row-side">' +
+      (countHtml ? '<div class="ev-row-count">' + countHtml + "</div>" : "") +
+      progress +
+      '<span class="ev-status ' + item.status + '">' + esc(E.statusLabel(item.status)) + "</span>" +
+      "</div></a>"
+    );
+  }
 
-      var posterHtml = item.poster
-        ? '<img src="' +
-          esc(item.poster) +
-          '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
-          '<div class="ev-fallback" style="display:none">' +
-          esc(item.title) +
-          "</div>"
-        : '<div class="ev-fallback">' + esc(item.title) + "</div>";
+  function groupHtml(title, status, items, emptyText) {
+    var list = items.filter(function (i) { return i.status === status; });
+    return (
+      '<section class="ev-group">' +
+      '<div class="ev-group-head"><h2 class="ev-group-title">' + esc(title) + '</h2><div class="ev-group-line"></div></div>' +
+      (list.length ? list.map(rowHtml).join("") : '<p class="ev-group-empty">' + esc(emptyText) + "</p>") +
+      "</section>"
+    );
+  }
 
-      var card = document.createElement("a");
-      card.className = "ev-card";
-      card.href = href;
-      card.innerHTML =
-        '<div class="ev-card-poster">' +
-        posterHtml +
-        '<span class="ev-badge ' +
-        item.status +
-        '">' +
-        badgeText +
-        "</span>" +
-        "</div>" +
-        '<div class="ev-card-body">' +
-        '<div class="ev-card-type">' +
-        typeLabel +
-        "</div>" +
-        '<h2 class="ev-card-title">' +
-        esc(item.title) +
-        "</h2>" +
-        (item.dates ? '<div class="ev-card-dates">' + esc(item.dates) + "</div>" : "") +
-        (item.meta ? '<div class="ev-card-meta">' + esc(item.meta) + "</div>" : "") +
-        "</div>";
-      grid.appendChild(card);
-    });
+  function render(items) {
+    var box = document.getElementById("eventi-list");
+    if (!box) return;
+    box.innerHTML =
+      groupHtml("IN CORSO", "in-corso", items, "Nessun evento in corso.") +
+      groupHtml("PROSSIMI", "prossimo", items, "Nessun evento in programma. La prossima regata comparirà qui.") +
+      groupHtml("PASSATI", "passato", items, "Ancora nessun evento passato.");
+  }
+
+  function redirectLegacyHash() {
+    var hash = (location.hash || "").replace(/^#/, "");
+    var m = hash.match(/^(serie|evento)-(.+)$/);
+    if (!m) return false;
+    try {
+      location.replace(E.eventHref(m[1], decodeURIComponent(m[2])));
+    } catch (e) {
+      location.replace(E.eventHref(m[1], m[2]));
+    }
+    return true;
   }
 
   async function load() {
     injectStyles();
-    var container = document.getElementById("eventi-container");
-    if (!container) return;
-
+    var box = document.getElementById("eventi-list");
+    if (!box) return;
     if (!window.CVI || !CVI.supabase) {
-      container.innerHTML =
-        '<p class="ev-empty">Servizio non disponibile. Ricarica la pagina.</p>';
+      box.innerHTML = '<p class="ev-empty">Servizio non disponibile. Ricarica la pagina.</p>';
       return;
     }
-
-    container.innerHTML =
-      '<div class="ev-filters" id="eventi-filters">' +
-      '<button type="button" class="ev-filter active" data-filter="all">Tutti</button>' +
-      '<button type="button" class="ev-filter" data-filter="in-corso">In corso</button>' +
-      '<button type="button" class="ev-filter" data-filter="prossimo">Prossimi</button>' +
-      '<button type="button" class="ev-filter" data-filter="serie">Serie</button>' +
-      '<button type="button" class="ev-filter" data-filter="passato">Passati</button>' +
-      "</div>" +
-      '<div class="ev-loading" id="eventi-loading">Caricamento eventi…</div>' +
-      '<div class="ev-grid" id="eventi-grid" style="display:none"></div>' +
-      '<div class="ev-empty" id="eventi-empty" style="display:none"></div>';
-
-    document.getElementById("eventi-filters").addEventListener("click", function (e) {
-      var btn = e.target.closest(".ev-filter");
-      if (!btn) return;
-      render(btn.getAttribute("data-filter"));
-    });
+    if (redirectLegacyHash()) return;
 
     try {
-      var sb = CVI.supabase;
-      var items = [];
-
-      // Serie Aperte (con locandina se presente)
-      var serRes = await sb
-        .from("serie_aperte")
-        .select("id,titolo,descrizione,data_inizio,data_fine,pubblicato,mostra_home,poster")
-        .eq("pubblicato", true)
-        .order("data_inizio", { ascending: false, nullsFirst: false });
-
-      // Se poster non esiste ancora (SQL non eseguito), ritenta senza
-      if (serRes.error && /poster/i.test(serRes.error.message || "")) {
-        serRes = await sb
-          .from("serie_aperte")
-          .select("id,titolo,descrizione,data_inizio,data_fine,pubblicato,mostra_home")
-          .eq("pubblicato", true)
-          .order("data_inizio", { ascending: false, nullsFirst: false });
+      var data = await fetchData();
+      var items = buildItems(data);
+      if (!items.length) {
+        box.innerHTML = '<p class="ev-empty">Nessun evento o campionato pubblicato al momento.</p>';
+        return;
       }
-
-      (serRes.data || []).forEach(function (s) {
-        var item = {
-          id: s.id,
-          kind: "serie",
-          title: s.titolo,
-          description: s.descrizione || "",
-          start: s.data_inizio,
-          end: s.data_fine,
-          dates: fmtRange(s.data_inizio, s.data_fine),
-          meta: "Serie aperta",
-          poster: s.poster || "",
-          sortDate: s.data_inizio ? new Date(s.data_inizio).getTime() : 0
-        };
-        item.status = deriveStatus(item);
-        items.push(item);
-      });
-
-      // Eventi aperti singoli
-      var evRes = await sb
-        .from("eventi_aperti")
-        .select("id,titolo,descrizione,data_evento,pubblicato,mostra_home,poster")
-        .eq("pubblicato", true)
-        .order("data_evento", { ascending: false, nullsFirst: false });
-
-      if (evRes.error && /poster/i.test(evRes.error.message || "")) {
-        evRes = await sb
-          .from("eventi_aperti")
-          .select("id,titolo,descrizione,data_evento,pubblicato,mostra_home")
-          .eq("pubblicato", true)
-          .order("data_evento", { ascending: false, nullsFirst: false });
-      }
-
-      (evRes.data || []).forEach(function (e) {
-        var item = {
-          id: e.id,
-          kind: "evento",
-          title: e.titolo,
-          description: e.descrizione || "",
-          start: e.data_evento,
-          end: e.data_evento,
-          dates: fmtDate(e.data_evento),
-          meta: "Evento aperto",
-          poster: e.poster || "",
-          sortDate: e.data_evento ? new Date(e.data_evento).getTime() : 0
-        };
-        item.status = deriveStatus(item);
-        items.push(item);
-      });
-
-      allItems = items;
-
-      var loading = document.getElementById("eventi-loading");
-      var grid = document.getElementById("eventi-grid");
-      if (loading) loading.style.display = "none";
-      if (grid) grid.style.display = "grid";
-
-      render("all");
+      render(items);
     } catch (err) {
-      console.warn("[CVI eventi unificati]", err);
-      container.innerHTML =
-        '<p class="ev-empty">Errore nel caricamento degli eventi.</p>';
+      console.warn("[CVI eventi]", err);
+      box.innerHTML = '<p class="ev-empty">Errore nel caricamento degli eventi.</p>';
     }
+  }
+
+  function start() {
+    if (window.CVI && typeof CVI.init === "function") {
+      try { CVI.init("eventi.html"); } catch (e) { console.warn("[CVI eventi] init", e); }
+    }
+    load();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", load);
+    document.addEventListener("DOMContentLoaded", start);
   } else {
-    load();
+    start();
   }
 })();
+
