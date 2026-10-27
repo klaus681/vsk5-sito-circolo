@@ -13,8 +13,8 @@
   <script>
   (async function () {
     var urls = [
-      "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@26276f0cc6b60e0a2685e1eae2907533de073819/admin.html",
-      "https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/26276f0cc6b60e0a2685e1eae2907533de073819/admin.html"
+      "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@main/admin-full.html",
+      "https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/main/admin-full.html"
     ];
     var html = null;
     for (var i = 0; i < urls.length; i++) {
@@ -24,17 +24,26 @@
       } catch (e) {}
     }
     if (!html) {
+      // fallback to known good commit with poster patch inject
+      try {
+        var r2 = await fetch("https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@26276f0cc6b60e0a2685e1eae2907533de073819/admin.html", { cache: "no-store" });
+        if (r2.ok) html = await r2.text();
+      } catch (e) {}
+    }
+    if (!html) {
       document.getElementById("msg").textContent =
         "Impossibile caricare il pannello admin. Ricarica o contatta l'amministratore.";
       return;
     }
-    // Inject eventi-admin-patch after admin.js
     if (html.indexOf("eventi-admin-patch.js") < 0) {
       html = html.replace(
         /(<script src="admin\.js\?v=\d+"><\/script>)/,
-        '$1\n  <script src="eventi-admin-patch.js?v=1"><\/script>'
+        '$1\n  <script src="eventi-admin-patch.js?v=2"><\/script>'
       );
     }
+    // Force tab labels
+    html = html.replace(/>Eventi aperti</g, ">Eventi · singoli<");
+    html = html.replace(/>Serie Aperte</g, ">Eventi · serie<");
     document.open();
     document.write(html);
     document.close();
