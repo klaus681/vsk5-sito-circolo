@@ -8,10 +8,10 @@
     if (window.CVIEventi && CVIEventi.esc) return CVIEventi.esc(s);
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function nowMs() {
@@ -24,6 +24,7 @@
     return isNaN(t) ? null : t;
   }
 
+  /** Stato iscrizione rispetto a date apertura/chiusura e max. */
   function registrationWindow(raw) {
     var open = parseTs(raw && raw.iscrizioni_apertura);
     var close = parseTs(raw && raw.iscrizioni_chiusura);
@@ -39,7 +40,9 @@
 
   function findMyIscrizione(list, user) {
     if (!user || !list || !list.length) return null;
-    var nick = String(user.nickname || "").trim().toLowerCase();
+    var nick = String(user.nickname || "")
+      .trim()
+      .toLowerCase();
     for (var i = 0; i < list.length; i++) {
       var row = list[i];
       if (user.id && row.user_id && String(row.user_id) === String(user.id)) return row;
@@ -56,6 +59,17 @@
     return kind === "serie" ? "serie_id" : "evento_id";
   }
 
+  /**
+   * @returns {{
+   *   canRegister: boolean,
+   *   canUnregister: boolean,
+   *   isRegistered: boolean,
+   *   message: string,
+   *   myRow: object|null,
+   *   count: number,
+   *   max: number|null
+   * }}
+   */
   function status(kind, raw, iscrizioni, user) {
     var list = iscrizioni || [];
     var myRow = findMyIscrizione(list, user);
@@ -69,7 +83,7 @@
     if (myRow) {
       return {
         canRegister: false,
-        canUnregister: true,
+        canUnregister: win.ok || win.reason === "closed" ? win.reason !== "not_open" : true,
         isRegistered: true,
         message: "Sei iscritto come " + (myRow.nickname || user.nickname || ""),
         myRow: myRow,
