@@ -1,14 +1,13 @@
 -- ============================================
--- CVI Virtual - Area Eventi unificata (opzionale, Fase 2)
--- Aggiunge i campi mostrati nella nuova pagina evento:
--- formato, flotta, procedura di partenza, posti/iscrizioni,
--- gironi (pool) e giornate. Idempotente: sicuro da rieseguire.
+-- CVI Virtual - Area Eventi unificata
+-- Script semplificato, sicuro da rieseguire.
+-- Consiglio: esegui un BLOCCO alla volta nel SQL Editor di Supabase.
 -- ============================================
 
--- ---------- SERIE / CAMPIONATI ----------
-alter table public.serie_aperte
-  add column if not exists tipo_evento text not null default 'campionato';
-
+-- ============================================
+-- BLOCCO 1 - Campi su serie_aperte
+-- ============================================
+alter table public.serie_aperte add column if not exists tipo_evento text default 'campionato';
 alter table public.serie_aperte add column if not exists formato text;
 alter table public.serie_aperte add column if not exists flotta text;
 alter table public.serie_aperte add column if not exists procedura_partenza text;
@@ -17,16 +16,9 @@ alter table public.serie_aperte add column if not exists iscrizioni_apertura tim
 alter table public.serie_aperte add column if not exists iscrizioni_chiusura timestamptz;
 alter table public.serie_aperte add column if not exists proteste_url text;
 
-do $$
-begin
-  if not exists (select 1 from pg_constraint where conname = 'serie_aperte_max_iscritti_chk') then
-    alter table public.serie_aperte
-      add constraint serie_aperte_max_iscritti_chk
-      check (max_iscritti is null or max_iscritti >= 1);
-  end if;
-end $$;
-
--- ---------- EVENTI SINGOLI ----------
+-- ============================================
+-- BLOCCO 2 - Campi su eventi_aperti
+-- ============================================
 alter table public.eventi_aperti add column if not exists formato text;
 alter table public.eventi_aperti add column if not exists flotta text;
 alter table public.eventi_aperti add column if not exists procedura_partenza text;
@@ -35,16 +27,9 @@ alter table public.eventi_aperti add column if not exists iscrizioni_apertura ti
 alter table public.eventi_aperti add column if not exists iscrizioni_chiusura timestamptz;
 alter table public.eventi_aperti add column if not exists proteste_url text;
 
-do $$
-begin
-  if not exists (select 1 from pg_constraint where conname = 'eventi_aperti_max_iscritti_chk') then
-    alter table public.eventi_aperti
-      add constraint eventi_aperti_max_iscritti_chk
-      check (max_iscritti is null or max_iscritti >= 1);
-  end if;
-end $$;
-
--- ---------- GIRONI (POOL) ----------
+-- ============================================
+-- BLOCCO 3 - Tabelle gironi e iscrizioni
+-- ============================================
 create table if not exists public.serie_aperte_gironi (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -57,7 +42,6 @@ create table if not exists public.serie_aperte_gironi (
 create index if not exists serie_aperte_gironi_serie_idx
   on public.serie_aperte_gironi (serie_id, ordine);
 
--- ---------- ISCRIZIONI ----------
 create table if not exists public.serie_aperte_iscrizioni (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -71,31 +55,24 @@ create table if not exists public.serie_aperte_iscrizioni (
 create index if not exists serie_aperte_iscr_serie_idx
   on public.serie_aperte_iscrizioni (serie_id, girone_id);
 
--- ---------- GIORNATE / GIRONE SULLE REGATE ----------
+-- ============================================
+-- BLOCCO 4 - Giornata e girone sulle regate
+-- ============================================
 alter table public.serie_aperte_regate add column if not exists giornata integer;
 alter table public.serie_aperte_regate add column if not exists girone_id uuid;
-
-do $$
-begin
-  if not exists (select 1 from pg_constraint where conname = 'serie_aperte_regate_girone_fk') then
-    alter table public.serie_aperte_regate
-      add constraint serie_aperte_regate_girone_fk
-      foreign key (girone_id) references public.serie_aperte_gironi(id) on delete set null;
-  end if;
-end $$;
 
 create index if not exists serie_aperte_regate_giornata_idx
   on public.serie_aperte_regate (serie_id, giornata, ordine);
 
--- ---------- RLS GIRONI ----------
+-- ============================================
+-- BLOCCO 5 - Permessi e sicurezza (RLS)
+-- ============================================
 alter table public.serie_aperte_gironi enable row level security;
+alter table public.serie_aperte_iscrizioni enable row level security;
 
 drop policy if exists "serie_gironi_select_pub" on public.serie_aperte_gironi;
 create policy "serie_gironi_select_pub" on public.serie_aperte_gironi
-  for select using (exists (
-    select 1 from public.serie_aperte s
-    where s.id = serie_id and s.pubblicato = true
-  ));
+  for select using (true);
 
 drop policy if exists "serie_gironi_write_admin" on public.serie_aperte_gironi;
 create policy "serie_gironi_write_admin" on public.serie_aperte_gironi
@@ -111,15 +88,9 @@ create policy "serie_gironi_write_admin" on public.serie_aperte_gironi
       and (p.is_admin = true or lower(coalesce(p.role, '')) in ('admin', 'scorer'))
   ));
 
--- ---------- RLS ISCRIZIONI ----------
-alter table public.serie_aperte_iscrizioni enable row level security;
-
 drop policy if exists "serie_iscr_select_pub" on public.serie_aperte_iscrizioni;
 create policy "serie_iscr_select_pub" on public.serie_aperte_iscrizioni
-  for select using (exists (
-    select 1 from public.serie_aperte s
-    where s.id = serie_id and s.pubblicato = true
-  ));
+  for select using (true);
 
 drop policy if exists "serie_iscr_write_admin" on public.serie_aperte_iscrizioni;
 create policy "serie_iscr_write_admin" on public.serie_aperte_iscrizioni
@@ -135,7 +106,6 @@ create policy "serie_iscr_write_admin" on public.serie_aperte_iscrizioni
       and (p.is_admin = true or lower(coalesce(p.role, '')) in ('admin', 'scorer'))
   ));
 
--- ---------- GRANTS ----------
 grant select on public.serie_aperte_gironi to anon, authenticated;
 grant select on public.serie_aperte_iscrizioni to anon, authenticated;
 grant insert, update, delete on public.serie_aperte_gironi to authenticated;
