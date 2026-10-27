@@ -8,9 +8,8 @@
 
   function renameTabs() {
     var t1 = document.querySelector('.admin-tab[data-tab="eventi-aperti"]');
-    var t2 = document.querySelector('.admin-tab[data-tab="serie-aperte"]');
-    if (t1) t1.textContent = "Eventi · singoli";
-    if (t2) t2.textContent = "Eventi · serie";
+    if (t1) t1.textContent = "Eventi";
+    /* La tab "serie" viene nascosta e assorbita in "Eventi" da eventi-admin-fields.js. */
   }
 
   function setPreview(previewId, url) {

@@ -35,7 +35,7 @@ Cache-busting già aggiornato in `index.html`, `eventi.html`,
 
 ## 3. Uso in admin
 
-1. Admin → tab **Eventi · serie** (o **Eventi · singoli**)
+1. Admin → tab **Eventi** (sezioni **Campionati e serie** / **Eventi singoli**)
 2. Crea la serie/evento: titolo, date, **sistema punteggio** (Low/High Point),
    **scarti** (numero oppure “automatici: 1 ogni 4 regate”), `Pubblicata`,
    `Mostra in Home`

@@ -463,9 +463,97 @@
   }
 
 
+  function ensureUnifiedHeading(panel, title, note, separated) {
+    if (!panel || panel.querySelector(".ev-admin-unified-head")) return;
+    var box = document.createElement("div");
+    box.className = "ev-admin-unified-head";
+    box.style.cssText =
+      "margin:0 0 1rem" +
+      (separated ? ";margin-top:1.75rem;padding-top:1.75rem;border-top:1px solid rgba(255,255,255,.08)" : "");
+    box.innerHTML =
+      '<h2 style="margin:0 0 .25rem;color:#7dd3fc;font-size:1.15rem">' + esc(title) + "</h2>" +
+      '<p style="margin:0;color:#94a3b8;font-size:.85rem;line-height:1.5">' + esc(note) + "</p>";
+    panel.insertBefore(box, panel.firstChild);
+  }
+
+  function mergeEventiTabs() {
+    var eaTab = document.querySelector('.admin-tab[data-tab="eventi-aperti"]');
+    var saTab = document.querySelector('.admin-tab[data-tab="serie-aperte"]');
+    if (!eaTab || !saTab) return;
+    if (eaTab.textContent !== "Eventi") eaTab.textContent = "Eventi";
+    saTab.style.display = "none";
+    saTab.setAttribute("aria-hidden", "true");
+
+    var eaPanel = document.getElementById("panel-eventi-aperti");
+    var saPanel = document.getElementById("panel-serie-aperte");
+    if (!eaPanel || !saPanel) return;
+
+    /* Se una delle due vecchie tab era già aperta, mostra subito entrambe le sezioni. */
+    if (saTab.classList.contains("active")) {
+      saTab.classList.remove("active");
+      eaTab.classList.add("active");
+      eaPanel.classList.add("active");
+      saPanel.classList.add("active");
+    } else if (eaTab.classList.contains("active")) {
+      eaPanel.classList.add("active");
+      saPanel.classList.add("active");
+    }
+
+    ensureUnifiedHeading(
+      saPanel,
+      "Campionati e serie",
+      "Crea la serie, gestisci regate e risultati, poi assegna gironi, iscritti e giornate.",
+      false
+    );
+    ensureUnifiedHeading(
+      eaPanel,
+      "Eventi singoli",
+      "Eventi con classifica propria, senza gironi.",
+      true
+    );
+
+    /* Le due sezioni vivono nello stesso tab: campionati prima, eventi singoli dopo. */
+    if (saPanel.nextElementSibling !== eaPanel) {
+      eaPanel.parentNode.insertBefore(saPanel, eaPanel);
+    }
+  }
+
+  function showUnifiedEventi(tab) {
+    document.querySelectorAll(".admin-tab").forEach(function (t) {
+      t.classList.remove("active");
+    });
+    document.querySelectorAll(".admin-panel").forEach(function (p) {
+      p.classList.remove("active");
+    });
+    tab.classList.add("active");
+    ["panel-serie-aperte", "panel-eventi-aperti"].forEach(function (id) {
+      var p = document.getElementById(id);
+      if (p) p.classList.add("active");
+    });
+    if (typeof window.loadSerieAperteAdmin === "function") {
+      try { window.loadSerieAperteAdmin(); } catch (e) {}
+    }
+    if (typeof window.loadEventiApertiAdmin === "function") {
+      try { window.loadEventiApertiAdmin(); } catch (e) {}
+    }
+  }
+
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var tab = t.closest('.admin-tab[data-tab="eventi-aperti"]');
+    if (!tab) return;
+    var saTab = document.querySelector('.admin-tab[data-tab="serie-aperte"]');
+    if (!saTab || saTab.style.display !== "none") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    showUnifiedEventi(tab);
+  }, true);
+
   function boot() {
     var ea = document.getElementById("ea-form");
     var sa = document.getElementById("sa-form");
+    mergeEventiTabs();
 
     if (ea) {
       injectFields(ea, "ea");
@@ -513,13 +601,13 @@
       setTimeout(boot, 500);
       setTimeout(boot, 1500);
       setTimeout(boot, 3000);
-      setInterval(syncSerie, 1500);
+      setInterval(function () { mergeEventiTabs(); syncSerie(); }, 1200);
     });
   } else {
     setTimeout(boot, 500);
     setTimeout(boot, 1500);
     setTimeout(boot, 3000);
-    setInterval(syncSerie, 1500);
+    setInterval(function () { mergeEventiTabs(); syncSerie(); }, 1200);
   }
 })();
 
