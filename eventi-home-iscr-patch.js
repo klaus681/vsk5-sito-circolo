@@ -1,13 +1,20 @@
-/* CVI – patch home: aggiunge Iscriviti al box eventi (dopo eventi-home.js) */
+/* CVI – patch home: Iscriviti sul banner eventi (robusto) */
 (function () {
   "use strict";
 
-  function waitForBox(cb, attempts) {
-    attempts = attempts || 0;
-    var box = document.querySelector("#cvi-eventi-home .evh-card");
-    if (box) return cb(box);
-    if (attempts > 40) return;
-    setTimeout(function () { waitForBox(cb, attempts + 1); }, 250);
+  function ensureStyles() {
+    if (document.getElementById("evh-iscr-style")) return;
+    var stEl = document.createElement("style");
+    stEl.id = "evh-iscr-style";
+    stEl.textContent =
+      ".evh-iscr-wrap{margin-top:.9rem;padding:.75rem .9rem;border:1px solid rgba(56,189,248,.25);border-radius:10px;background:rgba(15,23,42,.4);display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}" +
+      ".evh-btn-iscr{display:inline-flex;align-items:center;background:#38bdf8;color:#0b0f19;font-weight:800;font-size:.82rem;padding:.5rem 1rem;border-radius:8px;border:0;cursor:pointer;font-family:inherit;text-decoration:none}" +
+      ".evh-btn-iscr:hover{background:#7dd3fc}" +
+      ".evh-btn-iscr--out{background:transparent;color:#f87171;border:1px solid rgba(248,113,113,.4)}" +
+      ".evh-btn-iscr--login{background:rgba(56,189,248,.12);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}" +
+      ".evh-btn-iscr:disabled{opacity:.55;cursor:wait}" +
+      ".evh-iscr-msg{font-size:.78rem;color:#94a3b8}";
+    document.head.appendChild(stEl);
   }
 
   function esc(s) {
@@ -20,10 +27,10 @@
   }
 
   async function enhance(card) {
-    if (card.querySelector(".evh-iscr-wrap")) return;
-    var link = card.querySelector(".evh-title-link");
-    if (!link) return;
-    var href = link.getAttribute("href") || "";
+    if (!card || card.querySelector(".evh-iscr-wrap")) return;
+    ensureStyles();
+    var link = card.querySelector(".evh-title-link") || card.querySelector("a[href*='evento.html']");
+    var href = link ? (link.getAttribute("href") || "") : "eventi.html";
     var kind = null, id = null;
     if (href.indexOf("tipo=serie") >= 0) {
       kind = "serie";
@@ -32,23 +39,16 @@
       kind = "evento";
       id = decodeURIComponent((href.match(/[?&]id=([^&]+)/) || [])[1] || "");
     }
-    if (!kind || !id) {
-      var wrap0 = document.createElement("div");
-      wrap0.className = "evh-iscr-wrap";
-      wrap0.style.cssText = "margin-top:.85rem";
-      wrap0.innerHTML = '<a class="evh-btn-iscr" href="' + esc(href) + '" style="display:inline-flex;background:#38bdf8;color:#0b0f19;font-weight:800;font-size:.82rem;padding:.5rem 1rem;border-radius:8px;text-decoration:none">Iscriviti →</a>';
-      card.appendChild(wrap0);
-      return;
-    }
+
+    var wrap = document.createElement("div");
+    wrap.className = "evh-iscr-wrap";
 
     var I = window.CVIEventiIscrizione;
     var E = window.CVIEventi;
-    if (!I || !E || !window.CVI || !CVI.supabase) {
-      var w2 = document.createElement("div");
-      w2.className = "evh-iscr-wrap";
-      w2.style.cssText = "margin-top:.85rem";
-      w2.innerHTML = '<a class="evh-btn-iscr" href="' + esc(href) + '" style="display:inline-flex;background:#38bdf8;color:#0b0f19;font-weight:800;font-size:.82rem;padding:.5rem 1rem;border-radius:8px;text-decoration:none">Iscriviti →</a>';
-      card.appendChild(w2);
+    if (!kind || !id || !I || !E || !window.CVI || !CVI.supabase) {
+      wrap.innerHTML = '<a class="evh-btn-iscr" href="' + esc(href) + '">Iscriviti →</a>' +
+        '<span class="evh-iscr-msg">Apri la pagina evento per iscriverti</span>';
+      card.appendChild(wrap);
       return;
     }
 
@@ -59,65 +59,69 @@
     var user = await E.currentUser();
     var st = I.status(kind, raw, iscrizioni, user);
 
-    var wrap = document.createElement("div");
-    wrap.className = "evh-iscr-wrap";
-    wrap.style.cssText = "margin-top:.85rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center";
-    wrap.innerHTML = I.buttonHtml(st, {
-      user: user,
-      className: "evh-btn-iscr",
-      registerLabel: "Iscriviti",
-      unregisterLabel: "Annulla iscrizione",
-      loginLabel: "Accedi per iscriverti"
-    }) + '<span class="evh-iscr-msg" style="font-size:.78rem;color:#94a3b8">' + esc(st.message || "") + "</span>";
-
-    if (!document.getElementById("evh-iscr-style")) {
-      var stEl = document.createElement("style");
-      stEl.id = "evh-iscr-style";
-      stEl.textContent =
-        ".evh-btn-iscr{display:inline-flex;align-items:center;background:#38bdf8;color:#0b0f19;font-weight:800;font-size:.82rem;padding:.5rem 1rem;border-radius:8px;border:0;cursor:pointer;font-family:inherit;text-decoration:none}" +
-        ".evh-btn-iscr:hover{background:#7dd3fc}" +
-        ".evh-btn-iscr--out{background:transparent;color:#f87171;border:1px solid rgba(248,113,113,.4)}" +
-        ".evh-btn-iscr--login{background:rgba(56,189,248,.12);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}" +
-        ".evh-btn-iscr:disabled{opacity:.55;cursor:wait}";
-      document.head.appendChild(stEl);
+    function render(st2) {
+      var btn = I.buttonHtml(st2, {
+        user: user,
+        className: "evh-btn-iscr",
+        registerLabel: "Iscriviti",
+        unregisterLabel: "Annulla iscrizione",
+        loginLabel: "Accedi per iscriverti"
+      });
+      if (!btn && !user) {
+        btn = '<a class="evh-btn-iscr evh-btn-iscr--login" href="accedi.html">Accedi per iscriverti</a>';
+      }
+      if (!btn && user && !st2.isRegistered) {
+        btn = '<a class="evh-btn-iscr" href="' + esc(href) + '">Vedi evento →</a>';
+      }
+      wrap.innerHTML = btn + '<span class="evh-iscr-msg">' + esc(st2.message || "") + "</span>";
+      wrap.querySelectorAll("[data-ev-iscr]").forEach(function (b) {
+        b.addEventListener("click", async function () {
+          var action = b.getAttribute("data-ev-iscr");
+          b.disabled = true;
+          var msgEl = wrap.querySelector(".evh-iscr-msg");
+          try {
+            if (action === "in") {
+              await I.register(kind, id, user);
+              if (msgEl) msgEl.textContent = "Iscrizione confermata.";
+            } else if (action === "out") {
+              if (!confirm("Annullare la tua iscrizione?")) { b.disabled = false; return; }
+              await I.unregister(kind, id, user, st2.myRow);
+              if (msgEl) msgEl.textContent = "Iscrizione annullata.";
+            }
+            iscrizioni = await I.fetchIscrizioni(kind, id);
+            st2 = I.status(kind, raw, iscrizioni, user);
+            render(st2);
+          } catch (err) {
+            if (msgEl) msgEl.textContent = err.message || String(err);
+            b.disabled = false;
+          }
+        });
+      });
     }
 
     card.appendChild(wrap);
+    render(st);
+  }
 
-    wrap.addEventListener("click", async function (e) {
-      var btn = e.target.closest("[data-ev-iscr]");
-      if (!btn) return;
-      var action = btn.getAttribute("data-ev-iscr");
-      btn.disabled = true;
-      var msgEl = wrap.querySelector(".evh-iscr-msg");
-      try {
-        if (action === "in") {
-          await I.register(kind, id, user);
-          if (msgEl) msgEl.textContent = "Iscrizione confermata.";
-        } else if (action === "out") {
-          if (!confirm("Annullare la tua iscrizione?")) { btn.disabled = false; return; }
-          await I.unregister(kind, id, user, st.myRow);
-          if (msgEl) msgEl.textContent = "Iscrizione annullata.";
-        }
-        iscrizioni = await I.fetchIscrizioni(kind, id);
-        st = I.status(kind, raw, iscrizioni, user);
-        wrap.innerHTML = I.buttonHtml(st, {
-          user: user,
-          className: "evh-btn-iscr",
-          registerLabel: "Iscriviti",
-          unregisterLabel: "Annulla iscrizione",
-          loginLabel: "Accedi per iscriverti"
-        }) + '<span class="evh-iscr-msg" style="font-size:.78rem;color:#94a3b8">' + esc(st.message || "") + "</span>";
-      } catch (err) {
-        if (msgEl) msgEl.textContent = err.message || String(err);
-        btn.disabled = false;
-      }
-    });
+  function scan() {
+    var card = document.querySelector("#cvi-eventi-home .evh-card");
+    if (card) enhance(card);
   }
 
   function start() {
-    waitForBox(function (card) { enhance(card); });
-    setTimeout(function () { waitForBox(function (card) { enhance(card); }); }, 2000);
+    var tries = 0;
+    function tick() {
+      scan();
+      tries++;
+      if (tries < 40 && !document.querySelector(".evh-iscr-wrap")) setTimeout(tick, 400);
+    }
+    tick();
+    try {
+      var main = document.getElementById("main-content") || document.body;
+      var obs = new MutationObserver(function () { scan(); });
+      obs.observe(main, { childList: true, subtree: true });
+      setTimeout(function () { obs.disconnect(); }, 25000);
+    } catch (e) {}
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
