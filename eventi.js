@@ -37,16 +37,13 @@
     return d1 || d2 || "";
   }
 
-  /** Deriva uno stato semplice per i filtri */
   function deriveStatus(item) {
     var now = Date.now();
     var start = item.start ? new Date(item.start).getTime() : null;
     var end = item.end ? new Date(item.end).getTime() : null;
-
     if (end && end < now) return "passato";
     if (start && start > now) return "prossimo";
     if ((start && start <= now) || (end && end >= now) || (!start && !end)) {
-      // se ha risultati o è pubblicato senza date chiare → in corso
       return "in-corso";
     }
     return "prossimo";
@@ -67,7 +64,6 @@
     ".ev-badge.in-corso{background:#22c55e;color:#052e16}" +
     ".ev-badge.prossimo{background:#38bdf8;color:#0b0f19}" +
     ".ev-badge.passato{background:#475569;color:#e2e8f0}" +
-    ".ev-badge.serie{background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff}" +
     ".ev-card-body{padding:1rem 1.15rem 1.2rem}" +
     ".ev-card-type{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#7dd3fc;margin-bottom:.3rem}" +
     ".ev-card-title{margin:0 0 .35rem;font-size:1.1rem;font-weight:700;color:#fff;line-height:1.25}" +
@@ -104,15 +100,12 @@
       list = list.filter(function (i) { return i.status === currentFilter; });
     }
 
-    // ordinamento: in corso prima, poi prossimi, poi passati; per data desc
     var order = { "in-corso": 0, "prossimo": 1, "passato": 2 };
     list.sort(function (a, b) {
       var oa = order[a.status] != null ? order[a.status] : 9;
       var ob = order[b.status] != null ? order[b.status] : 9;
       if (oa !== ob) return oa - ob;
-      var da = a.sortDate || 0;
-      var db = b.sortDate || 0;
-      return db - da;
+      return (b.sortDate || 0) - (a.sortDate || 0);
     });
 
     grid.innerHTML = "";
@@ -131,7 +124,6 @@
     if (empty) empty.style.display = "none";
 
     list.forEach(function (item) {
-      var badgeClass = item.status;
       var badgeText =
         item.status === "in-corso"
           ? "IN CORSO"
@@ -146,8 +138,12 @@
           : "eventi-aperti.html#evento-" + encodeURIComponent(item.id);
 
       var posterHtml = item.poster
-        ? '<img src="' + esc(item.poster) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
-          '<div class="ev-fallback" style="display:none">' + esc(item.title) + "</div>"
+        ? '<img src="' +
+          esc(item.poster) +
+          '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+          '<div class="ev-fallback" style="display:none">' +
+          esc(item.title) +
+          "</div>"
         : '<div class="ev-fallback">' + esc(item.title) + "</div>";
 
       var card = document.createElement("a");
@@ -156,11 +152,19 @@
       card.innerHTML =
         '<div class="ev-card-poster">' +
         posterHtml +
-        '<span class="ev-badge ' + badgeClass + '">' + badgeText + "</span>" +
+        '<span class="ev-badge ' +
+        item.status +
+        '">' +
+        badgeText +
+        "</span>" +
         "</div>" +
         '<div class="ev-card-body">' +
-        '<div class="ev-card-type">' + typeLabel + "</div>" +
-        '<h2 class="ev-card-title">' + esc(item.title) + "</h2>" +
+        '<div class="ev-card-type">' +
+        typeLabel +
+        "</div>" +
+        '<h2 class="ev-card-title">' +
+        esc(item.title) +
+        "</h2>" +
         (item.dates ? '<div class="ev-card-dates">' + esc(item.dates) + "</div>" : "") +
         (item.meta ? '<div class="ev-card-meta">' + esc(item.meta) + "</div>" : "") +
         "</div>";
@@ -201,12 +205,21 @@
       var sb = CVI.supabase;
       var items = [];
 
-      // --- Serie Aperte ---
+      // Serie Aperte (con locandina se presente)
       var serRes = await sb
         .from("serie_aperte")
-        .select("id,titolo,descrizione,data_inizio,data_fine,pubblicato,mostra_home")
+        .select("id,titolo,descrizione,data_inizio,data_fine,pubblicato,mostra_home,poster")
         .eq("pubblicato", true)
         .order("data_inizio", { ascending: false, nullsFirst: false });
+
+      // Se poster non esiste ancora (SQL non eseguito), ritenta senza
+      if (serRes.error && /poster/i.test(serRes.error.message || "")) {
+        serRes = await sb
+          .from("serie_aperte")
+          .select("id,titolo,descrizione,data_inizio,data_fine,pubblicato,mostra_home")
+          .eq("pubblicato", true)
+          .order("data_inizio", { ascending: false, nullsFirst: false });
+      }
 
       (serRes.data || []).forEach(function (s) {
         var item = {
@@ -218,19 +231,27 @@
           end: s.data_fine,
           dates: fmtRange(s.data_inizio, s.data_fine),
           meta: "Serie aperta",
-          poster: "",
+          poster: s.poster || "",
           sortDate: s.data_inizio ? new Date(s.data_inizio).getTime() : 0
         };
         item.status = deriveStatus(item);
         items.push(item);
       });
 
-      // --- Eventi aperti (singoli) ---
+      // Eventi aperti singoli
       var evRes = await sb
         .from("eventi_aperti")
-        .select("id,titolo,descrizione,data_evento,pubblicato,mostra_home")
+        .select("id,titolo,descrizione,data_evento,pubblicato,mostra_home,poster")
         .eq("pubblicato", true)
         .order("data_evento", { ascending: false, nullsFirst: false });
+
+      if (evRes.error && /poster/i.test(evRes.error.message || "")) {
+        evRes = await sb
+          .from("eventi_aperti")
+          .select("id,titolo,descrizione,data_evento,pubblicato,mostra_home")
+          .eq("pubblicato", true)
+          .order("data_evento", { ascending: false, nullsFirst: false });
+      }
 
       (evRes.data || []).forEach(function (e) {
         var item = {
@@ -242,7 +263,7 @@
           end: e.data_evento,
           dates: fmtDate(e.data_evento),
           meta: "Evento aperto",
-          poster: "",
+          poster: e.poster || "",
           sortDate: e.data_evento ? new Date(e.data_evento).getTime() : 0
         };
         item.status = deriveStatus(item);
