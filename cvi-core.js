@@ -15,7 +15,7 @@
       nav_albo: "Albo d'Oro", nav_regolamento: 'Regolamento', nav_download: 'Download',
       nav_contatti: 'Contatti', nav_membri: 'Membri', nav_unisciti: 'Unisciti',
       nav_accedi: 'Accedi', nav_area_membri: 'Il mio profilo',
-      nav_galleria: 'Galleria', nav_discord: 'Discord', nav_eventi_aperti: 'Eventi aperti',
+      nav_galleria: 'Galleria', nav_discord: 'Discord', nav_eventi: 'Eventi', nav_eventi_aperti: 'Eventi aperti',
       nav_risorse: 'Download e Risorse', nav_tornei: 'Tornei', nav_allenamenti: 'Allenamenti',
       nav_community: 'Community ▾', nav_friends: 'Siti amici',
 
@@ -96,7 +96,7 @@
       nav_albo: 'Hall of Fame', nav_regolamento: 'Rules', nav_download: 'Download',
       nav_contatti: 'Contact', nav_membri: 'Members', nav_unisciti: 'Join Us',
       nav_accedi: 'Login', nav_area_membri: 'My profile',
-      nav_galleria: 'Gallery', nav_discord: 'Discord', nav_eventi_aperti: 'Open events',
+      nav_galleria: 'Gallery', nav_discord: 'Discord', nav_eventi: 'Events', nav_eventi_aperti: 'Open events',
       nav_risorse: 'Downloads & Resources', nav_tornei: 'Tournaments', nav_allenamenti: 'Training',
       nav_community: 'Community ▾', nav_friends: 'Partner sites',
 
@@ -171,7 +171,7 @@
       nav_albo: 'Temple de la Renommée', nav_regolamento: 'Règlement', nav_download: 'Téléchargements',
       nav_contatti: 'Contact', nav_membri: 'Membres', nav_unisciti: 'Rejoindre',
       nav_accedi: 'Connexion', nav_area_membri: 'Mon profil',
-      nav_galleria: 'Galerie', nav_discord: 'Discord', nav_eventi_aperti: 'Événements ouverts',
+      nav_galleria: 'Galerie', nav_discord: 'Discord', nav_eventi: 'Événements', nav_eventi_aperti: 'Événements ouverts',
       nav_risorse: 'Téléchargements & Ressources', nav_tornei: 'Tournois', nav_allenamenti: 'Entraînements',
       nav_community: 'Communauté ▾', nav_friends: 'Sites amis',
 
@@ -246,7 +246,7 @@
       nav_albo: 'Salón de la Fama', nav_regolamento: 'Reglamento', nav_download: 'Descargas',
       nav_contatti: 'Contacto', nav_membri: 'Miembros', nav_unisciti: 'Únete',
       nav_accedi: 'Acceder', nav_area_membri: 'Mi perfil',
-      nav_galleria: 'Galería', nav_discord: 'Discord', nav_eventi_aperti: 'Eventos abiertos',
+      nav_galleria: 'Galería', nav_discord: 'Discord', nav_eventi: 'Eventos', nav_eventi_aperti: 'Eventos abiertos',
       nav_risorse: 'Descargas y Recursos', nav_tornei: 'Torneos', nav_allenamenti: 'Entrenamientos',
       nav_community: 'Comunidad ▾', nav_friends: 'Sitios amigos',
 
@@ -350,7 +350,7 @@
     'risorse.html': 'nav_risorse',
     'contatti.html': 'nav_contatti',
     'unisciti.html': 'nav_unisciti',
-    'eventi-aperti.html': 'nav_eventi_aperti',
+    'eventi.html': 'nav_eventi',
     'proteste.html': 'nav_proteste',
     'tornei.html': 'nav_tornei',
     'allenamenti.html': 'nav_allenamenti',
@@ -659,34 +659,56 @@
 })();
 
 
-/* —— Extra CVI: link Proteste / Eventi aperti / Vista calendario nel menu a tendina —— */
+/* —— Extra CVI: link Eventi / Proteste / Vista calendario nel menu a tendina —— */
 (function () {
   "use strict";
   var _ens = window.CVI && window.CVI.ensureNavLinks;
   if (_ens) {
     window.CVI.ensureNavLinks = function () {
       _ens();
-      function addDrop(href, label) {
+
+      function removeLegacy() {
+        document
+          .querySelectorAll(
+            'nav.nav-desktop .dropdown-menu a[href^="eventi-aperti.html"], #navMobile .mobile-dropdown a[href^="eventi-aperti.html"]'
+          )
+          .forEach(function (a) {
+            var li = a.closest("li");
+            if (li && li.parentNode) li.parentNode.removeChild(li);
+            else if (a.parentNode) a.parentNode.removeChild(a);
+          });
+      }
+
+      function addDrop(href, label, key) {
         var drop = document.querySelector("nav.nav-desktop .dropdown-menu");
         if (drop && !drop.querySelector('a[href="' + href + '"]')) {
           var li = document.createElement("li");
           var a = document.createElement("a");
-          a.href = href; a.textContent = label;
-          li.appendChild(a); drop.appendChild(li);
+          a.href = href;
+          a.textContent = label;
+          if (key) a.setAttribute("data-i18n", key);
+          li.appendChild(a);
+          drop.appendChild(li);
         }
         var mob = document.querySelector("#navMobile .mobile-dropdown");
         if (mob && !mob.querySelector('a[href="' + href + '"]')) {
           var am = document.createElement("a");
-          am.href = href; am.textContent = "\u2192 " + label;
+          am.href = href;
+          am.textContent = "\u2192 " + label;
+          if (key) am.setAttribute("data-i18n", key);
           mob.appendChild(am);
         }
       }
+
       var lang = window.CVI.currentLang || "it";
       var pr = ({ it: "Proteste", en: "Protests", fr: "R\u00e9clamations", es: "Protestas" })[lang] || "Proteste";
       var calLabel = ({ it: "Vista calendario", en: "Calendar view", fr: "Vue calendrier", es: "Vista calendario" })[lang] || "Vista calendario";
-      addDrop("calendario.html", calLabel);
-      addDrop("proteste.html", pr);
-      addDrop("eventi-aperti.html", "Eventi aperti");
+      var evLabel = ({ it: "Eventi", en: "Events", fr: "\u00c9v\u00e9nements", es: "Eventos" })[lang] || "Eventi";
+      addDrop("calendario.html", calLabel, "nav_cal_vista");
+      addDrop("eventi.html", evLabel, "nav_eventi");
+      addDrop("proteste.html", pr, "nav_proteste");
+      removeLegacy();
     };
   }
 })();
+

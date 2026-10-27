@@ -3,7 +3,7 @@
    - Parsing log VSK (Result_YYYY_MM_DD_HH_MM_SS.csv) e CSV custom
    - Punteggi regata: Low Point / High Point
    - Classifica serie: scarti fissi o automatici (1 ogni 4 regate)
-   Usata da: admin, eventi-aperti.html, widget Home
+   Usata da: admin, area Eventi (eventi.html), widget Home
 */
 (function (w) {
   "use strict";

@@ -19,14 +19,14 @@ funziona ancora, ma **senza tempi/account e con solo Low Point + scarti fissi**.
 
 | File | Ruolo |
 | --- | --- |
-| `2-serie-aperte-lib.js` | libreria condivisa: parser VSK, pulizia nickname, punteggi, classifica (usata da admin, pagina pubblica e Home) |
+| `2-serie-aperte-lib.js` | libreria condivisa: parser VSK, pulizia nickname, punteggi, classifica (usata da admin, pagina Eventi e Home) |
 | `4-serie-aperte-admin.js` | pannello admin: serie, regate, risultati, import VSK, export |
-| `3-serie-aperte-page.js` | pagina pubblica `eventi-aperti.html` |
-| `5-serie-aperte-home.js` | widget classifica in Home |
+| `eventi.js` | area pubblica unificata `eventi.html` (eventi aperti + serie) |
+| `eventi-home.js` | widget unificato Eventi in Home |
 | `serie-aperte-ui-boot.js` | crea tab/pannello se mancano |
 | `serie-aperte-vsk-sql.sql` | migrazione colonne VSK |
 
-Cache-busting già aggiornato in `index.html`, `eventi-aperti.html`,
+Cache-busting già aggiornato in `index.html`, `eventi.html`,
 `admin.html` e `admin.js`.
 
 ## 3. Uso in admin
@@ -80,9 +80,9 @@ CSV manuale: `Stato;Posizione;Nickname;Team;Note` (FIN, DNF, DNS, DSQ, RET).
 
 ## 6. Pubblicazione
 
-- `Pubblicata` = visibile in `eventi-aperti.html` (podio, tabella con colonne
-  R1…Rn e scarti barrati, dettaglio regate con tempi e distacchi)
-- `Mostra in Home` = widget in `index.html` con podio, posizioni 4–10, numero
-  gare, ultima regata e link alla classifica completa
+- `Pubblicata` = visibile nell'area unica `eventi.html` (podio, tabella con
+  colonne R1…Rn e scarti barrati, dettaglio regate con tempi e distacchi)
+- `Mostra in Home` = widget unificato in `index.html` con podio e link a
+  `eventi.html`
 - una sola serie per volta può essere “in Home” (le altre vengono disattivate
   automaticamente al salvataggio)

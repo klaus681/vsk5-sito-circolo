@@ -134,7 +134,7 @@
       });
       aperti.forEach(function (e) {
         if (!e.data_evento) return;
-        events.push({ id: "e-" + e.id, type: "aperto", title: e.titolo || "Evento aperto", date: e.data_evento, desc: e.descrizione || "", link: "eventi-aperti.html" });
+        events.push({ id: "e-" + e.id, type: "aperto", title: e.titolo || "Evento aperto", date: e.data_evento, desc: e.descrizione || "", link: "eventi.html#evento-" + encodeURIComponent(e.id) });
       });
       state.events = events;
     } catch (err) {

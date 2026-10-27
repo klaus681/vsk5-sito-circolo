@@ -7,7 +7,7 @@
    Per pubblicare una modifica agli asset cambia VERSION. */
 'use strict';
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = 'cvi-shell-' + VERSION;
 const RUNTIME_CACHE = 'cvi-runtime-' + VERSION;
 const OFFLINE_URL = 'offline.html';
@@ -36,9 +36,9 @@ const PRECACHE = [
   'pwa.js?v=1',
   'a11y.js?v=1',
   /* core condiviso e moduli della home: la home resta leggibile offline */
-  'common.js?v=14',
-  'cvi-core.js?v=6',
-  'nav-i18n.js?v=1',
+  'common.js?v=15',
+  'cvi-core.js?v=7',
+  'nav-i18n.js?v=2',
   'privacy-link.js?v=2',
   'messaggi-nav.js?v=1',
   'tornei-nav.js?v=1',
@@ -48,9 +48,9 @@ const PRECACHE = [
   'cvi-flags-ui.js?v=3',
   'regolamento-dynamic.js?v=1',
   'membership-banner.js?v=2',
-  '2-serie-aperte-lib.js?v=2',
-  'eventi-aperti-home.js?v=3',
-  '5-serie-aperte-home.js?v=3',
+  '2-serie-aperte-lib.js?v=3',
+  'eventi.js?v=2',
+  'eventi-home.js?v=1',
   'tornei-vsk-home.js?v=2',
   'home-hero.js?v=3',
   'gare-meteo.js?v=2',
