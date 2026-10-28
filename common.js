@@ -1,5 +1,5 @@
 /* CVI – loader: core condiviso locale (nessuna dipendenza da CDN esterni) */
-document.write('<link rel="stylesheet" href="nav-dropdown-fix.css?v=1">');
+document.write('<link rel="stylesheet" href="nav-dropdown-fix.css?v=2">');
 document.write('<script src="cvi-core.js?v=7"><\/script>');
 /* Extra: nazionalità profilo */
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
