@@ -1,0 +1,9 @@
+/* Fix tendine menu: su desktop solo hover, evita menu bloccati aperti da :focus-within */
+.dropdown-menu { z-index: 200; }
+@media (hover: hover) and (pointer: fine) {
+  .nav-desktop .dropdown:hover > .dropdown-menu { display: flex !important; }
+  .nav-desktop .dropdown:not(:hover) > .dropdown-menu { display: none !important; }
+}
+@media (hover: none), (pointer: coarse) {
+  .nav-desktop .dropdown:focus-within > .dropdown-menu { display: flex !important; }
+}
