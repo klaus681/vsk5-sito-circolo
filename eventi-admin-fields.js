@@ -1,6 +1,6 @@
 /* CVI Admin – Campi estesi Eventi (loader + salvataggio dettagli)
    1) Carica la UI completa (formato, flotta, giornate…) dal CDN storico
-   2) Dopo ogni salvataggio serie/evento, aggiorna i campi dettagli su Supabase */
+   2) Al submit cattura SUBITO i valori (prima del reset form) e li salva su Supabase */
 (function () {
   "use strict";
   if (window.__CVI_EV_ADMIN_FIELDS_LOADER__) return;
@@ -43,19 +43,21 @@
     return /column|schema cache|does not exist/i.test((err && err.message) || "");
   }
 
-  async function saveDetails(table, prefix, idField, titleField) {
+  async function saveDetailsCaptured(table, payload, idField, titleField) {
     if (!window.CVI || !CVI.supabase) return false;
-    var payload = payloadFrom(prefix);
     var hasAny = Object.keys(payload).some(function (k) {
       return k !== "updated_at" && payload[k] != null && payload[k] !== "";
     });
-    if (!hasAny) return true;
+    if (!hasAny) {
+      status("Nessun dettaglio da salvare (campi vuoti)", false);
+      return true;
+    }
 
     var id = ((document.getElementById(idField) || {}).value || "").trim();
     if (!id) {
       var titolo = ((document.getElementById(titleField) || {}).value || "").trim();
       if (!titolo) return false;
-      for (var i = 0; i < 6 && !id; i++) {
+      for (var i = 0; i < 8 && !id; i++) {
         var r = await CVI.supabase
           .from(table)
           .select("id")
@@ -64,7 +66,7 @@
           .limit(1)
           .maybeSingle();
         if (r.data && r.data.id) id = r.data.id;
-        else await new Promise(function (res) { setTimeout(res, 500); });
+        else await new Promise(function (res) { setTimeout(res, 600); });
       }
     }
     if (!id) {
@@ -72,16 +74,19 @@
       return false;
     }
 
+    payload.updated_at = new Date().toISOString();
     var res = await CVI.supabase.from(table).update(payload).eq("id", id);
     if (res.error) {
       if (missingColumn(res.error)) {
         status("Esegui eventi-unificati-sql.sql su Supabase per salvare Formato/Flotta/Iscrizioni.", false);
       } else {
         status("Dettagli non salvati: " + (res.error.message || res.error), false);
+        console.warn("[CVI dettagli]", res.error);
       }
       return false;
     }
     status("Dettagli evento salvati", true);
+    console.info("[CVI dettagli] salvati su", table, id, payload);
     return true;
   }
 
@@ -96,9 +101,23 @@
       form.addEventListener(
         "submit",
         function () {
+          /* CATTURA IMMEDIATA: il form principale può resettarsi dopo il save */
+          var captured = payloadFrom(cfg.prefix);
+          var idNow = ((document.getElementById(cfg.id) || {}).value || "").trim();
+          var titleNow = ((document.getElementById(cfg.title) || {}).value || "").trim();
+          console.info("[CVI dettagli] capture", cfg.prefix, captured, "id=", idNow);
           setTimeout(function () {
-            saveDetails(cfg.table, cfg.prefix, cfg.id, cfg.title);
-          }, 1500);
+            /* se l'id era già presente usalo; altrimenti cerca per titolo catturato */
+            if (idNow) {
+              var el = document.getElementById(cfg.id);
+              if (el && !el.value) el.value = idNow;
+            }
+            if (titleNow) {
+              var tel = document.getElementById(cfg.title);
+              if (tel && !tel.value) tel.value = titleNow;
+            }
+            saveDetailsCaptured(cfg.table, captured, cfg.id, cfg.title);
+          }, 1800);
         },
         true
       );
@@ -109,7 +128,12 @@
     window.CVIEventiFields = {
       payloadFrom: payloadFrom,
       saveExtra: function (table, prefix, idField, titleField) {
-        return saveDetails(table || "serie_aperte", prefix || "sa", idField || "sa-id", titleField || "sa-titolo");
+        return saveDetailsCaptured(
+          table || "serie_aperte",
+          payloadFrom(prefix || "sa"),
+          idField || "sa-id",
+          titleField || "sa-titolo"
+        );
       },
       fillExtra: function () {},
       clearExtra: function () {}
@@ -120,7 +144,7 @@
   }
 
   var s = document.createElement("script");
-  s.src = CDN + "?v=3";
+  s.src = CDN + "?v=4";
   s.onload = afterLoad;
   s.onerror = function () {
     console.warn("[CVI] eventi-admin-fields CDN fallito – uso solo salvataggio dettagli");
