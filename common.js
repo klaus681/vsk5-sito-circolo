@@ -12,7 +12,6 @@ document.write('<script src="regolamento-dynamic.js?v=1"><\/script>');
 document.write('<script src="tornei-nav.js?v=1"><\/script>');
 /* Extra: voce Tutor nel menu */
 document.write('<script src="tutor-nav.js?v=2"><\/script>');
-/* Download e Risorse: voce unica nel menu (la vecchia Biblioteca è confluita in risorse.html) */
 /* Extra: traduzioni menu */
 document.write('<script src="nav-i18n.js?v=2"><\/script>');
 /* Extra: voce Messaggi nel menu + badge non letti */
@@ -24,5 +23,9 @@ document.write('<script src="allenamenti-home.js?v=4"><\/script>');
 document.write('<script src="home-sfondi.js?v=2"><\/script>');
 /* Extra: link Privacy nel footer */
 document.write('<script src="privacy-link.js?v=2"><\/script>');
-/* Extra: banner account in attesa/sospeso */
-document.write('<script src="membership-banner.js?v=2"><\/script>');
+/* Extra: banner account in attesa/sospeso/bannato */
+document.write('<script src="membership-banner.js?v=3"><\/script>');
+/* Extra: blocco registrazione email bannate */
+if (/unisciti\.html/i.test(location.pathname || location.href)) {
+  document.write('<script src="ban-register-guard.js?v=1"><\/script>');
+}
