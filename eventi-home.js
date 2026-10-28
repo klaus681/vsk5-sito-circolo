@@ -1,16 +1,20 @@
-/* CVI – box unificato EVENTI in Home
-   Unisce Serie Aperte ed Eventi aperti in un solo riquadro (podio + link
-   all’area Eventi). Usa 2-serie-aperte-lib.js per la classifica serie. */
+/* CVI – banner EVENTI in Home (stile card Gare / Allenamenti)
+   Serie aperte o Eventi aperti con mostra_home; sfondo da site_settings
+   (home_bg_eventi) gestibile da Admin → Sfondi. */
 (function () {
   "use strict";
+
+  var busy = false;
+  var DEFAULT_BG =
+    "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1000&q=70";
 
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """)
       .replace(/'/g, "&#39;");
   }
 
@@ -20,6 +24,17 @@
 
   function locale() {
     return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
+
+  function waitCVI() {
+    return new Promise(function (resolve) {
+      var n = 0;
+      (function tick() {
+        if (window.CVI && CVI.supabase) return resolve(true);
+        if (++n > 80) return resolve(false);
+        setTimeout(tick, 50);
+      })();
+    });
   }
 
   function fmtDate(d, withYear) {
@@ -50,6 +65,76 @@
     }
   }
 
+  function isHome() {
+    var path = (location.pathname || "").toLowerCase();
+    return (
+      path === "/" ||
+      path === "" ||
+      path.indexOf("index") !== -1 ||
+      (path.indexOf("vsk5-sito-circolo") !== -1 &&
+        (path.endsWith("/") || path.endsWith("/vsk5-sito-circolo")))
+    );
+  }
+
+  function ensureRow() {
+    var row = document.getElementById("home-extra-banners");
+    if (row) return row;
+
+    row = document.createElement("div");
+    row.id = "home-extra-banners";
+    row.style.cssText =
+      "display:flex;flex-wrap:wrap;gap:1rem;align-items:stretch;" +
+      "width:100%;max-width:960px;margin:0.85rem auto 1.25rem;" +
+      "padding:0 0.5rem;box-sizing:border-box;clear:both;";
+
+    var wrap = document.querySelector(".next-regata-wrap");
+    var race =
+      document.getElementById("next-regata-card") ||
+      document.querySelector("a.home-race-card");
+    var statsRow =
+      document.querySelector(".hero-stats") ||
+      document.querySelector(".stats-row") ||
+      document.querySelector(".home-next-race");
+
+    var anchor =
+      wrap ||
+      (race && race.closest(".hero-stats, .stats-row, .home-next-race, .content-row")) ||
+      statsRow;
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(row, anchor.nextSibling);
+    } else {
+      var main =
+        document.querySelector("main.page-content") ||
+        document.querySelector("main");
+      if (main) main.insertBefore(row, main.firstChild);
+    }
+    return row;
+  }
+
+  function applyBg(card, url) {
+    var u = (url || DEFAULT_BG).replace(/"/g, "");
+    card.style.backgroundImage =
+      "linear-gradient(135deg, rgba(11,15,25,0.55) 0%, rgba(15,40,70,0.5) 40%, rgba(11,15,25,0.78) 100%), " +
+      'url("' +
+      u +
+      '")';
+    card.style.backgroundSize = "cover";
+    card.style.backgroundPosition = "center";
+  }
+
+  async function loadBgUrl() {
+    try {
+      if (window.__CVI_BG_EVENTI) return window.__CVI_BG_EVENTI;
+      var res = await CVI.supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "home_bg_eventi")
+        .maybeSingle();
+      if (res.data && res.data.value) return String(res.data.value).trim();
+    } catch (e) {}
+    return "";
+  }
+
   function medal(pos) {
     if (pos === 1) return { bg: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#0b0f19" };
     if (pos === 2) return { bg: "linear-gradient(135deg,#94a3b8,#64748b)", color: "#0b0f19" };
@@ -57,45 +142,39 @@
     return { bg: "rgba(56,189,248,0.15)", color: "#7dd3fc" };
   }
 
-  var STYLE =
-    ".evh-section{margin:1.5rem 0 0}" +
-    ".evh-card{background:var(--card-bg,#111827);border:1px solid rgba(56,189,248,.28);border-radius:14px;padding:1.35rem 1.5rem;box-shadow:0 8px 28px rgba(0,0,0,.28),0 0 0 1px rgba(56,189,248,.06)}" +
-    ".evh-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem}" +
-    ".evh-badge{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#38bdf8,#7dd3fc);padding:.22rem .65rem;border-radius:999px;margin-bottom:.4rem}" +
-    ".evh-title{margin:0;color:#fff;font-size:1.28rem;font-weight:700;line-height:1.25}" +
-    ".evh-title-link{color:inherit;text-decoration:none}" +
-    ".evh-title-link:hover{color:#7dd3fc}" +
-    ".evh-date{color:#94a3b8;font-size:.88rem;margin-top:.3rem}" +
-    ".evh-link{color:#7dd3fc;font-weight:700;font-size:.9rem;white-space:nowrap;align-self:center;text-decoration:none}" +
-    ".evh-link:hover{color:#bae6fd}" +
-    ".evh-desc{color:#cbd5e1;font-size:.92rem;margin:0 0 1rem;line-height:1.5}" +
-    ".evh-podium{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:0 0 1rem}" +
-    ".evh-podium-item{background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:.85rem .6rem;text-align:center}" +
-    ".evh-podium-item.p1{border-color:rgba(251,191,36,.45);background:linear-gradient(180deg,rgba(251,191,36,.12),transparent)}" +
-    ".evh-medal{width:2.1rem;height:2.1rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;margin-bottom:.45rem;box-shadow:0 4px 12px rgba(0,0,0,.25)}" +
-    ".evh-name{color:#fff;font-weight:700;font-size:.95rem;line-height:1.25;word-break:break-word}" +
-    ".evh-team{color:#94a3b8;font-size:.78rem;margin-top:.2rem}" +
-    ".evh-pts{color:#7dd3fc;font-size:.82rem;font-weight:700;margin-top:.25rem}" +
-    ".evh-note{margin:.35rem 0 0;font-size:.8rem;color:#64748b}" +
-    ".evh-empty{padding:1rem 0;color:#64748b;font-size:.9rem}" +
-    "@media(max-width:600px){.evh-podium{grid-template-columns:1fr;gap:.5rem}.evh-card{padding:1.1rem}}";
-
-
   function podiumHtml(rows, ptsFn) {
     if (!rows || !rows.length) return "";
     return (
-      '<div class="evh-podium">' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.75rem 0 0.35rem">' +
       rows
         .slice(0, 3)
         .map(function (r, i) {
           var pos = r.pos || i + 1;
           var m = medal(pos);
           return (
-            '<div class="evh-podium-item' + (pos === 1 ? " p1" : "") + '">' +
-            '<div class="evh-medal" style="background:' + m.bg + ";color:" + m.color + '">' + pos + "°</div>" +
-            '<div class="evh-name">' + esc(r.nickname || "—") + "</div>" +
-            (r.team ? '<div class="evh-team">' + esc(r.team) + "</div>" : "") +
-            (ptsFn && r.pts != null ? '<div class="evh-pts">' + esc(ptsFn(r)) + "</div>" : "") +
+            '<div style="background:rgba(15,23,42,0.65);border:1px solid ' +
+            (pos === 1 ? "rgba(251,191,36,0.45)" : "rgba(255,255,255,0.08)") +
+            ';border-radius:10px;padding:0.55rem 0.4rem;text-align:center">' +
+            '<div style="width:1.7rem;height:1.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;margin-bottom:0.3rem;background:' +
+            m.bg +
+            ";color:" +
+            m.color +
+            '">' +
+            pos +
+            "°</div>" +
+            '<div style="color:#fff;font-weight:700;font-size:0.85rem;line-height:1.2;word-break:break-word">' +
+            esc(r.nickname || "—") +
+            "</div>" +
+            (r.team
+              ? '<div style="color:#94a3b8;font-size:0.72rem;margin-top:0.15rem">' +
+                esc(r.team) +
+                "</div>"
+              : "") +
+            (ptsFn && r.pts != null
+              ? '<div style="color:#7dd3fc;font-size:0.75rem;font-weight:700;margin-top:0.15rem">' +
+                esc(ptsFn(r)) +
+                "</div>"
+              : "") +
             "</div>"
           );
         })
@@ -142,7 +221,12 @@
         var risRes = await sb
           .from("serie_aperte_risultati")
           .select("*")
-          .in("regata_id", regate.map(function (r) { return r.id; }));
+          .in(
+            "regata_id",
+            regate.map(function (r) {
+              return r.id;
+            })
+          );
         var byReg = {};
         (risRes.data || []).forEach(function (r) {
           var k = String(r.regata_id);
@@ -152,14 +236,20 @@
         var sistema = serie.sistema_punteggio === "high_point" ? "high_point" : "low_point";
         classifica = lib.calcClassificaSerie(
           regate.map(function (reg) {
-            return { id: reg.id, titolo: reg.titolo, results: lib.calcPuntiRegata(byReg[String(reg.id)] || [], sistema) };
+            return {
+              id: reg.id,
+              titolo: reg.titolo,
+              results: lib.calcPuntiRegata(byReg[String(reg.id)] || [], sistema)
+            };
           }),
           serie.scarti || 0,
           { sistema: sistema, scartiAuto: !!serie.scarti_auto }
         );
       }
       var sistemaLabel = serie.sistema_punteggio === "high_point" ? "High Point" : "Low Point";
-      var scartiN = lib ? lib.calcolaNumScarti(serie.scarti || 0, !!serie.scarti_auto, regate.length) : 0;
+      var scartiN = lib
+        ? lib.calcolaNumScarti(serie.scarti || 0, !!serie.scarti_auto, regate.length)
+        : 0;
       return {
         kind: "serie",
         href: "evento.html?tipo=serie&id=" + encodeURIComponent(serie.id),
@@ -167,19 +257,28 @@
         title: serie.titolo,
         description: serie.descrizione,
         date: serie.data_inizio || serie.data_fine
-          ? fmtDate(serie.data_inizio) + (serie.data_fine ? " – " + fmtDate(serie.data_fine, true) : "")
+          ? fmtDate(serie.data_inizio) +
+            (serie.data_fine ? " – " + fmtDate(serie.data_fine, true) : "")
           : "",
         podium: podiumHtml(
           classifica.map(function (r) {
             return { nickname: r.nickname, team: r.team, pos: r.pos, pts: r.netti };
           }),
-          function (r) { return r.pts + " pt"; }
+          function (r) {
+            return r.pts + " pt";
+          }
         ),
         note:
-          sistemaLabel + " · " + tr("banner_discards", "scarti") + ": " + scartiN +
+          sistemaLabel +
+          " · " +
+          tr("banner_discards", "scarti") +
+          ": " +
+          scartiN +
           (serie.scarti_auto ? " (" + tr("banner_automatic", "automatici") + ")" : "") +
-          " · " + regate.length + " " + tr("banner_races", "regate") +
-          " · " + tr("banner_series_note", "classifica aperta non ufficiale")
+          " · " +
+          regate.length +
+          " " +
+          tr("banner_races", "regate")
       };
     }
 
@@ -200,75 +299,120 @@
       description: evento.descrizione,
       date: fmtDateTime(evento.data_evento),
       podium: podiumHtml(rows),
-      note: "Classifica dell’evento · non ufficiale"
+      note: tr("banner_event_note", "Classifica dell’evento · non ufficiale")
     };
   }
 
-  async function run() {
-    if (!window.CVI || !CVI.supabase) return;
-    if (document.getElementById("cvi-eventi-home")) return;
+  async function loadBanner() {
+    if (!isHome()) return;
+    if (busy || document.getElementById("home-eventi-banner")) return;
+    busy = true;
 
-    var path = (location.pathname || "").toLowerCase();
-    var isHome =
-      path === "/" ||
-      path === "" ||
-      path.indexOf("index") !== -1 ||
-      (path.indexOf("vsk5-sito-circolo") !== -1 &&
-        (path.endsWith("/") || path.endsWith("/vsk5-sito-circolo")));
-    if (!isHome) return;
+    var ok = await waitCVI();
+    if (!ok) {
+      busy = false;
+      return;
+    }
 
     try {
       var feature = await buildFeature(CVI.supabase);
       if (!feature) return;
+      if (document.getElementById("home-eventi-banner")) return;
 
-      var html =
-        '<section id="cvi-eventi-home" class="evh-section">' +
-        '<div class="evh-card">' +
-        '<div class="evh-header">' +
-        "<div>" +
-        '<span class="evh-badge">' + esc(feature.badge) + "</span>" +
-        '<h2 class="evh-title">' +
-        (feature.href
-          ? '<a class="evh-title-link" href="' + esc(feature.href) + '">' + esc(feature.title) + "</a>"
-          : esc(feature.title)) +
-        "</h2>" +
-        (feature.date ? '<div class="evh-date">📅 ' + esc(feature.date) + "</div>" : "") +
+      var bgUrl = await loadBgUrl();
+
+      var card = document.createElement("a");
+      card.id = "home-eventi-banner";
+      card.href = feature.href || "eventi.html";
+      card.className = "home-eventi-card";
+      card.style.cssText =
+        "display:block;text-decoration:none;flex:1 1 280px;min-width:260px;max-width:460px;" +
+        "position:relative;overflow:hidden;" +
+        "padding:1.15rem 1.3rem;border-radius:16px;" +
+        "border:1px solid rgba(56,189,248,0.35);" +
+        "color:#e2e8f0;box-shadow:0 12px 36px rgba(0,0,0,0.35);" +
+        "transition:border-color .25s ease, transform .2s ease;";
+
+      applyBg(card, bgUrl);
+      window.__CVI_BG_EVENTI = bgUrl || DEFAULT_BG;
+
+      var desc = feature.description
+        ? String(feature.description).slice(0, 120) +
+          (String(feature.description).length > 120 ? "…" : "")
+        : "";
+
+      card.innerHTML =
+        '<div style="position:relative;z-index:1">' +
+        '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.55rem">' +
+        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:linear-gradient(135deg,#38bdf8,#7dd3fc);color:#0b0f19">' +
+        esc(feature.badge) +
+        "</span>" +
+        '<span style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35)">' +
+        esc(tr("banner_open", "APERTO")) +
+        "</span>" +
         "</div>" +
-        '<a href="eventi.html" class="evh-link">' + esc(tr("eventi_see_all", "Tutti gli eventi →")) + "</a>" +
+        '<div style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:0.4rem;line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,0.45)">' +
+        esc(feature.title) +
         "</div>" +
-        (feature.description ? '<p class="evh-desc">' + esc(feature.description) + "</p>" : "") +
-        feature.podium +
-        (feature.note ? '<p class="evh-note">' + esc(feature.note) + "</p>" : "") +
-        "</div></section>";
+        (feature.date
+          ? '<div style="font-size:0.9rem;color:#e2e8f0;margin-bottom:0.35rem;opacity:0.95">📅 ' +
+            esc(feature.date) +
+            "</div>"
+          : "") +
+        (desc
+          ? '<div style="font-size:0.88rem;color:#cbd5e1;margin-bottom:0.25rem;line-height:1.45">' +
+            esc(desc) +
+            "</div>"
+          : "") +
+        (feature.podium || "") +
+        (feature.note
+          ? '<div style="margin-top:0.45rem;font-size:0.78rem;color:#94a3b8">' +
+            esc(feature.note) +
+            "</div>"
+          : "") +
+        '<div style="margin-top:0.7rem;font-size:0.88rem;font-weight:700;color:#7dd3fc">' +
+        esc(tr("eventi_see_all", "Tutti gli eventi →")) +
+        "</div>" +
+        "</div>";
 
-      var main = document.getElementById("main-content") || document.querySelector("main.page-content");
-      if (!main) return;
+      card.addEventListener("mouseenter", function () {
+        card.style.borderColor = "rgba(56,189,248,0.7)";
+        card.style.transform = "translateY(-2px)";
+      });
+      card.addEventListener("mouseleave", function () {
+        card.style.borderColor = "rgba(56,189,248,0.35)";
+        card.style.transform = "none";
+      });
 
-      if (!document.getElementById("evh-home-styles")) {
-        var st = document.createElement("style");
-        st.id = "evh-home-styles";
-        st.textContent = STYLE;
-        document.head.appendChild(st);
+      var row = ensureRow();
+      var al = document.getElementById("home-allenamento-banner");
+      var tor = document.getElementById("home-torneo-banner");
+      if (al && al.parentNode === row) {
+        if (al.nextSibling) row.insertBefore(card, al.nextSibling);
+        else row.appendChild(card);
+      } else if (tor && tor.parentNode === row) {
+        if (tor.nextSibling) row.insertBefore(card, tor.nextSibling);
+        else row.appendChild(card);
+      } else {
+        row.appendChild(card);
       }
-
-      var anchor = main.querySelector(".content-row");
-      if (anchor) anchor.insertAdjacentHTML("beforebegin", html);
-      else main.insertAdjacentHTML("beforeend", html);
-    } catch (err) {
-      console.warn("[CVI eventi home]", err);
+    } catch (e) {
+      console.warn("[CVI eventi-home]", e);
+    } finally {
+      busy = false;
     }
   }
 
   function start() {
-    setTimeout(run, 700);
-    setTimeout(run, 1800);
-    setTimeout(run, 3500);
+    setTimeout(loadBanner, 700);
+    setTimeout(loadBanner, 1800);
+    setTimeout(loadBanner, 3500);
   }
 
   document.addEventListener("cvi:langchange", function () {
-    var el = document.getElementById("cvi-eventi-home");
+    var el = document.getElementById("home-eventi-banner");
     if (el && el.parentNode) el.parentNode.removeChild(el);
-    run();
+    loadBanner();
   });
 
   if (document.readyState === "loading") {
@@ -277,4 +421,3 @@
     start();
   }
 })();
-
