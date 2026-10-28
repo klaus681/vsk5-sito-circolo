@@ -11,9 +11,9 @@
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
@@ -135,6 +135,49 @@
     return "";
   }
 
+  function getDateValue(item, keys) {
+    if (!item) return null;
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var v = item[k];
+      if (v == null || v === "") continue;
+      var t = new Date(v).getTime();
+      if (!isNaN(t)) return t;
+    }
+    return null;
+  }
+
+  function chooseClosestEvent(rows, keys) {
+    if (!rows || !rows.length) return null;
+    var items = rows
+      .map(function (r) {
+        var ts = getDateValue(r, keys);
+        return { row: r, ts: ts };
+      })
+      .filter(function (x) {
+        return x.ts != null;
+      });
+
+    if (!items.length) return null;
+
+    var now = Date.now();
+    var future = items.filter(function (x) {
+      return x.ts >= now;
+    });
+
+    if (future.length) {
+      future.sort(function (a, b) {
+        return a.ts - b.ts;
+      });
+      return future[0].row;
+    }
+
+    items.sort(function (a, b) {
+      return b.ts - a.ts;
+    });
+    return items[0].row;
+  }
+
   function medal(pos) {
     if (pos === 1) return { bg: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#0b0f19" };
     if (pos === 2) return { bg: "linear-gradient(135deg,#94a3b8,#64748b)", color: "#0b0f19" };
@@ -157,7 +200,7 @@
             ';border-radius:10px;padding:0.55rem 0.4rem;text-align:center">' +
             '<div style="width:1.7rem;height:1.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;margin-bottom:0.3rem;background:' +
             m.bg +
-            ";color:" +
+            ';color:' +
             m.color +
             '">' +
             pos +
@@ -188,24 +231,29 @@
       .from("serie_aperte")
       .select("*")
       .eq("pubblicato", true)
-      .eq("mostra_home", true)
-      .order("data_inizio", { ascending: false, nullsFirst: false })
-      .limit(1);
-    var serie = (serieRes.data || [])[0] || null;
-
+      .eq("mostra_home", true);
     var evRes = await sb
       .from("eventi_aperti")
       .select("*")
       .eq("pubblicato", true)
-      .eq("mostra_home", true)
-      .order("data_evento", { ascending: false, nullsFirst: false })
-      .limit(1);
-    var evento = (evRes.data || [])[0] || null;
+      .eq("mostra_home", true);
+
+    var serie = chooseClosestEvent((serieRes.data || []), ["data_inizio", "data_fine"]);
+    var evento = chooseClosestEvent((evRes.data || []), ["data_evento"]);
     if (!serie && !evento) return null;
 
-    var serieTs = serie && serie.data_inizio ? new Date(serie.data_inizio).getTime() : 0;
-    var eventTs = evento && evento.data_evento ? new Date(evento.data_evento).getTime() : 0;
-    var pickSerie = serie && (!evento || serieTs >= eventTs);
+    var now = Date.now();
+    var serieTs = serie && getDateValue(serie, ["data_inizio", "data_fine"]);
+    var eventTs = evento && getDateValue(evento, ["data_evento"]);
+    var futureSerie = !!(serieTs != null && serieTs >= now);
+    var futureEvento = !!(eventTs != null && eventTs >= now);
+
+    var pickSerie = !!serie && (
+      !evento ||
+      (futureSerie && !futureEvento ? true :
+       futureEvento && !futureSerie ? false :
+       (serieTs || 0) >= (eventTs || 0))
+    );
 
     if (pickSerie) {
       var lib = window.CVISerieAperte;
@@ -406,7 +454,7 @@
   function start() {
     setTimeout(loadBanner, 700);
     setTimeout(loadBanner, 1800);
-    setTimeout(loadBanner, 3500);
+    setTimeout(loadBanner, 3000);
   }
 
   document.addEventListener("cvi:langchange", function () {
