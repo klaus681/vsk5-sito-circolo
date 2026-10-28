@@ -1,9 +1,37 @@
-/* Fix tendine menu: su desktop solo hover, evita menu bloccati aperti da :focus-within */
-.dropdown-menu { z-index: 200; }
-@media (hover: hover) and (pointer: fine) {
-  .nav-desktop .dropdown:hover > .dropdown-menu { display: flex !important; }
-  .nav-desktop .dropdown:not(:hover) > .dropdown-menu { display: none !important; }
+/* Fix tendine menu desktop */
+.nav-desktop .dropdown { position: relative; }
+
+/* Collega voce e pannello: niente gap che fa perdere l'hover */
+.nav-desktop .dropdown > .dropdown-menu {
+  top: 100% !important;
+  margin-top: 0 !important;
+  z-index: 200;
+  /* area invisibile sopra il pannello che mantiene l'hover */
+  padding-top: 8px !important;
+  background-clip: padding-box;
 }
+
+/* Ponte invisibile tra link e menu */
+.nav-desktop .dropdown > .dropdown-menu::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 12px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-desktop .dropdown:hover > .dropdown-menu {
+    display: flex !important;
+  }
+  .nav-desktop .dropdown:not(:hover) > .dropdown-menu {
+    display: none !important;
+  }
+}
+
 @media (hover: none), (pointer: coarse) {
-  .nav-desktop .dropdown:focus-within > .dropdown-menu { display: flex !important; }
+  .nav-desktop .dropdown:focus-within > .dropdown-menu {
+    display: flex !important;
+  }
 }
