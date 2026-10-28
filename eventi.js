@@ -4,6 +4,8 @@
 
   var E = window.CVIEventi;
   var esc = E.esc;
+  var tr = E.tr;
+  var lastData = null;
 
   var STYLE =
     ".ev-list-hero{margin:0 0 1.75rem}" +
@@ -51,6 +53,12 @@
     return s === "in-corso" ? 0 : s === "prossimo" ? 1 : 2;
   }
 
+  function statusText(status) {
+    if (status === "in-corso") return tr("ev_status_live", "IN CORSO");
+    if (status === "prossimo") return tr("ev_status_next", "PROSSIMO");
+    return tr("ev_status_past", "PASSATO");
+  }
+
   async function fetchData() {
     var sb = CVI.supabase;
     var serie = [];
@@ -94,15 +102,15 @@
         id: s.id,
         kind: "serie",
         href: E.eventHref("serie", s.id),
-        title: s.titolo || "Serie aperta",
+        title: s.titolo || tr("ev_type_serie", "Serie aperta"),
         poster: s.poster || "",
         start: s.data_inizio,
         end: s.data_fine,
         status: E.deriveStatus(s.data_inizio, s.data_fine),
-        typeLabel: "Campionato",
+        typeLabel: tr("ev_type_championship", "Campionato"),
         metaParts: [
-          regs.length ? regs.length + " regate" : "",
-          days.length ? days.length + " giornate" : "",
+          regs.length ? regs.length + " " + tr("ev_races", "regate") : "",
+          days.length ? days.length + " " + tr("ev_days", "giornate") : "",
           s.flotta || ""
         ].filter(Boolean),
         participants: iscr.length ? iscr.length : null,
@@ -117,13 +125,13 @@
         id: e.id,
         kind: "evento",
         href: E.eventHref("evento", e.id),
-        title: e.titolo || "Evento aperto",
+        title: e.titolo || tr("ev_title_event", "Evento aperto"),
         poster: e.poster || "",
         start: e.data_evento,
         end: e.data_evento,
         status: E.deriveStatus(e.data_evento, e.data_evento),
-        typeLabel: "Evento",
-        metaParts: [ris.length ? ris.length + " partecipanti" : "", e.flotta || ""].filter(Boolean),
+        typeLabel: tr("ev_type_event", "Evento"),
+        metaParts: [ris.length ? ris.length + " " + tr("ev_participants", "partecipanti") : "", e.flotta || ""].filter(Boolean),
         participants: ris.length ? ris.length : null,
         max: max
       });
@@ -145,7 +153,7 @@
     var dateMain = E.fmtDateShort(item.start) || "—";
     var dateSub = "";
     if (item.kind === "serie" && item.end && item.end !== item.start) {
-      dateSub = "FINO AL " + E.fmtDateShort(item.end);
+      dateSub = tr("ev_until", "FINO AL") + " " + E.fmtDateShort(item.end);
     } else if (item.start) {
       dateSub = E.fmtTime(item.start) || "";
     }
@@ -157,7 +165,7 @@
     if (item.participants != null) {
       countHtml = "<strong>" + item.participants + "</strong>" + (item.max ? " / " + item.max : "");
     } else if (item.max) {
-      countHtml = "max <strong>" + item.max + "</strong>";
+      countHtml = tr("ev_max", "max") + " <strong>" + item.max + "</strong>";
     }
     var progress = "";
     if (item.participants != null && item.max) {
@@ -176,7 +184,7 @@
       '<div class="ev-row-side">' +
       (countHtml ? '<div class="ev-row-count">' + countHtml + "</div>" : "") +
       progress +
-      '<span class="ev-status ' + item.status + '">' + esc(E.statusLabel(item.status)) + "</span>" +
+      '<span class="ev-status ' + item.status + '">' + esc(statusText(item.status)) + "</span>" +
       "</div></a>"
     );
   }
@@ -194,10 +202,14 @@
   function render(items) {
     var box = document.getElementById("eventi-list");
     if (!box) return;
+    if (!items.length) {
+      box.innerHTML = '<p class="ev-empty">' + esc(tr("ev_empty_all", "Nessun evento o campionato pubblicato al momento.")) + "</p>";
+      return;
+    }
     box.innerHTML =
-      groupHtml("IN CORSO", "in-corso", items, "Nessun evento in corso.") +
-      groupHtml("PROSSIMI", "prossimo", items, "Nessun evento in programma. La prossima regata comparirà qui.") +
-      groupHtml("PASSATI", "passato", items, "Ancora nessun evento passato.");
+      groupHtml(tr("ev_group_live", "IN CORSO"), "in-corso", items, tr("ev_empty_live", "Nessun evento in corso.")) +
+      groupHtml(tr("ev_group_next", "PROSSIMI"), "prossimo", items, tr("ev_empty_next", "Nessun evento in programma. La prossima regata comparirà qui.")) +
+      groupHtml(tr("ev_group_past", "PASSATI"), "passato", items, tr("ev_empty_past", "Ancora nessun evento passato."));
   }
 
   function redirectLegacyHash() {
@@ -217,29 +229,32 @@
     var box = document.getElementById("eventi-list");
     if (!box) return;
     if (!window.CVI || !CVI.supabase) {
-      box.innerHTML = '<p class="ev-empty">Servizio non disponibile. Ricarica la pagina.</p>';
+      box.innerHTML = '<p class="ev-empty">' + esc(tr("ev_unavailable", "Servizio non disponibile. Ricarica la pagina.")) + "</p>";
       return;
     }
     if (redirectLegacyHash()) return;
 
+    box.innerHTML = '<p class="ev-loading">' + esc(tr("ev_loading", "Caricamento eventi…")) + "</p>";
     try {
-      var data = await fetchData();
-      var items = buildItems(data);
-      if (!items.length) {
-        box.innerHTML = '<p class="ev-empty">Nessun evento o campionato pubblicato al momento.</p>';
-        return;
-      }
-      render(items);
+      lastData = await fetchData();
+      render(buildItems(lastData));
     } catch (err) {
       console.warn("[CVI eventi]", err);
-      box.innerHTML = '<p class="ev-empty">Errore nel caricamento degli eventi.</p>';
+      box.innerHTML = '<p class="ev-empty">' + esc(tr("ev_error", "Errore nel caricamento degli eventi.")) + "</p>";
     }
   }
 
+  document.addEventListener("cvi:langchange", function () {
+    document.title = tr("ev_doc_title", "Eventi - CVI Virtual");
+    if (lastData) render(buildItems(lastData));
+    else load();
+  });
+
   function start() {
     if (window.CVI && typeof CVI.init === "function") {
-      try { CVI.init("eventi.html"); } catch (e) { console.warn("[CVI eventi] init", e); }
+      try { CVI.init("eventi.html", E.I18N); } catch (e) { console.warn("[CVI eventi] init", e); }
     }
+    document.title = tr("ev_doc_title", "Eventi - CVI Virtual");
     load();
   }
 

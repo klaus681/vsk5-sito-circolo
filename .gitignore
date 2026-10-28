@@ -1,0 +1,9 @@
+# Strumenti e artefatti locali (non committare)
+.tools/
+.tmp-apk/
+*.keystore
+*.jks
+*.apk
+*.aab
+*.idsig
+SIGNING-KEY-INFO.txt
