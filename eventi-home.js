@@ -147,7 +147,7 @@
     return null;
   }
 
-  function chooseClosestEvent(rows, keys) {
+  function chooseClosestByDate(rows, keys) {
     if (!rows || !rows.length) return null;
     var items = rows
       .map(function (r) {
@@ -232,39 +232,48 @@
       .select("*")
       .eq("pubblicato", true)
       .eq("mostra_home", true);
+
     var evRes = await sb
       .from("eventi_aperti")
       .select("*")
       .eq("pubblicato", true)
       .eq("mostra_home", true);
 
-    var serie = chooseClosestEvent((serieRes.data || []), ["data_inizio", "data_fine"]);
-    var evento = chooseClosestEvent((evRes.data || []), ["data_evento"]);
+    var serie = chooseClosestByDate((serieRes.data || []), ["data_inizio", "data_fine"]);
+    var evento = chooseClosestByDate((evRes.data || []), ["data_evento"]);
+
     if (!serie && !evento) return null;
 
     var now = Date.now();
-    var serieTs = serie && getDateValue(serie, ["data_inizio", "data_fine"]);
-    var eventTs = evento && getDateValue(evento, ["data_evento"]);
-    var futureSerie = !!(serieTs != null && serieTs >= now);
-    var futureEvento = !!(eventTs != null && eventTs >= now);
+    var serieTs = serie ? getDateValue(serie, ["data_inizio", "data_fine"]) : null;
+    var eventTs = evento ? getDateValue(evento, ["data_evento"]) : null;
 
-    var pickSerie = !!serie && (
-      !evento ||
-      (futureSerie && !futureEvento ? true :
-       futureEvento && !futureSerie ? false :
-       (serieTs || 0) >= (eventTs || 0))
-    );
+    var candidates = [];
+    if (serie) candidates.push({ kind: "serie", row: serie, ts: serieTs });
+    if (evento) candidates.push({ kind: "evento", row: evento, ts: eventTs });
 
-    if (pickSerie) {
+    var future = candidates.filter(function (x) {
+      return x.ts != null && x.ts >= now;
+    });
+
+    var chosen = (future.length ? future : candidates).sort(function (a, b) {
+      return a.ts - b.ts;
+    })[0];
+
+    var selected = chosen.row;
+
+    if (chosen.kind === "serie") {
       var lib = window.CVISerieAperte;
       var regRes = await sb
         .from("serie_aperte_regate")
         .select("id,titolo,ordine,data_regata")
-        .eq("serie_id", serie.id)
+        .eq("serie_id", selected.id)
         .order("ordine")
         .order("data_regata", { ascending: true, nullsFirst: false });
+
       var regate = regRes.data || [];
       var classifica = [];
+
       if (lib && regate.length) {
         var risRes = await sb
           .from("serie_aperte_risultati")
@@ -275,13 +284,15 @@
               return r.id;
             })
           );
+
         var byReg = {};
         (risRes.data || []).forEach(function (r) {
           var k = String(r.regata_id);
           if (!byReg[k]) byReg[k] = [];
           byReg[k].push(r);
         });
-        var sistema = serie.sistema_punteggio === "high_point" ? "high_point" : "low_point";
+
+        var sistema = selected.sistema_punteggio === "high_point" ? "high_point" : "low_point";
         classifica = lib.calcClassificaSerie(
           regate.map(function (reg) {
             return {
@@ -290,23 +301,25 @@
               results: lib.calcPuntiRegata(byReg[String(reg.id)] || [], sistema)
             };
           }),
-          serie.scarti || 0,
-          { sistema: sistema, scartiAuto: !!serie.scarti_auto }
+          selected.scarti || 0,
+          { sistema: sistema, scartiAuto: !!selected.scarti_auto }
         );
       }
-      var sistemaLabel = serie.sistema_punteggio === "high_point" ? "High Point" : "Low Point";
+
+      var sistemaLabel = selected.sistema_punteggio === "high_point" ? "High Point" : "Low Point";
       var scartiN = lib
-        ? lib.calcolaNumScarti(serie.scarti || 0, !!serie.scarti_auto, regate.length)
+        ? lib.calcolaNumScarti(selected.scarti || 0, !!selected.scarti_auto, regate.length)
         : 0;
+
       return {
         kind: "serie",
-        href: "evento.html?tipo=serie&id=" + encodeURIComponent(serie.id),
+        href: "evento.html?tipo=serie&id=" + encodeURIComponent(selected.id),
         badge: tr("banner_open_series", "Serie aperta"),
-        title: serie.titolo,
-        description: serie.descrizione,
-        date: serie.data_inizio || serie.data_fine
-          ? fmtDate(serie.data_inizio) +
-            (serie.data_fine ? " – " + fmtDate(serie.data_fine, true) : "")
+        title: selected.titolo,
+        description: selected.descrizione,
+        date: selected.data_inizio || selected.data_fine
+          ? fmtDate(selected.data_inizio) +
+            (selected.data_fine ? " – " + fmtDate(selected.data_fine, true) : "")
           : "",
         podium: podiumHtml(
           classifica.map(function (r) {
@@ -322,7 +335,7 @@
           tr("banner_discards", "scarti") +
           ": " +
           scartiN +
-          (serie.scarti_auto ? " (" + tr("banner_automatic", "automatici") + ")" : "") +
+          (selected.scarti_auto ? " (" + tr("banner_automatic", "automatici") + ")" : "") +
           " · " +
           regate.length +
           " " +
@@ -333,19 +346,21 @@
     var risRes2 = await sb
       .from("eventi_aperti_risultati")
       .select("posizione,nickname,team")
-      .eq("evento_id", evento.id)
+      .eq("evento_id", selected.id)
       .order("posizione")
       .limit(3);
+
     var rows = (risRes2.data || []).map(function (r) {
       return { nickname: r.nickname, team: r.team, pos: Number(r.posizione) || null };
     });
+
     return {
       kind: "evento",
-      href: "evento.html?tipo=evento&id=" + encodeURIComponent(evento.id),
+      href: "evento.html?tipo=evento&id=" + encodeURIComponent(selected.id),
       badge: tr("eventi_type_evento", "Evento aperto"),
-      title: evento.titolo,
-      description: evento.descrizione,
-      date: fmtDateTime(evento.data_evento),
+      title: selected.titolo,
+      description: selected.descrizione,
+      date: fmtDateTime(selected.data_evento),
       podium: podiumHtml(rows),
       note: tr("banner_event_note", "Classifica dell’evento · non ufficiale")
     };
@@ -454,7 +469,7 @@
   function start() {
     setTimeout(loadBanner, 700);
     setTimeout(loadBanner, 1800);
-    setTimeout(loadBanner, 3000);
+    setTimeout(loadBanner, 3500);
   }
 
   document.addEventListener("cvi:langchange", function () {
