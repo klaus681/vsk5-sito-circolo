@@ -294,13 +294,48 @@ cambiano nome, icona, colori o targetSdk (incrementando `versionCode`).
 
 | Sintomo | Causa / rimedio |
 | --- | --- |
+| **App installata ma non parte / si chiude subito** | Il caso più frequente è l'assenza di un browser con TWA/Custom Tabs (Chrome assente o disabilitato) con `FALLBACK_STRATEGY=customtabs`. Imposta `android.support.customtabs.trusted.FALLBACK_STRATEGY` a **`webview`** e dichiara `<activity android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity" android:configChanges="orientation|screenSize" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar"/>`. Il tema **opaco** è obbligatorio: su Android 8.0 un'attività translucida che imposta l'orientamento va in crash (`Only fullscreen opaque activities can request orientation`). |
+| **Splash infinito / schermata bloccata** | Manca `FILE_PROVIDER_AUTHORITY` + `<provider androidx.core.content.FileProvider>` + `res/xml/filepaths.xml` (`files-path path="twa_splash/"`): lo splash resta locale e non viene passato a Chrome. |
+| **Barra degli indirizzi visibile / verifica TWA fallita** | `asset_statements` mancante o impronta errata. Aggiungi in `<application>` `<meta-data android:name="asset_statements" android:resource="@string/asset_statements"/>` e la stringa JSON con package + SHA-256 (le virgolette del JSON vanno **escaped** con `\"`, altrimenti aapt2 le rimuove). Aggiungi anche `web_manifest_url` con l'URL del manifest web. |
+| **Crash all'avvio: `ClassNotFoundException` di un componente** | Ogni `<activity>`, `<provider>` o `<receiver>` dichiarato deve esistere nel DEX. Dopo una modifica al manifest ricompila (non patchare l'APK a mano). |
 | Barra degli indirizzi visibile | `assetlinks.json` non raggiungibile o errato: controlla 404/redirect, `.nojekyll`, package e SHA-256. Dopo la correzione **disinstalla e reinstalla** l'app (Chrome ri-verifica all'installazione). |
 | `assetlinks.json` 404 | Manca `.nojekyll` (Jekyll ignora `.well-known`) o il deploy non è finito. |
 | "App non installata" | Spazio insufficiente, APK corrotto, oppure esiste già un'app con lo stesso `package` firmata con un'altra chiave: disinstalla la vecchia versione. |
-| Schermata bianca / errore caricamento | Il sito non è raggiungibile dal telefono, oppure manca Chrome aggiornato. |
+| Schermata bianca / errore caricamento | Il sito non è raggiungibile dal telefono, oppure manca Chrome aggiornato. Con `FALLBACK_STRATEGY=webview` il sito si apre comunque nella WebView. |
 | Si apre nel browser con barra | Fallback `customtabs`: verifica Digital Asset Links oppure dispositivo senza un browser compatibile TWA (es. Huawei senza Google). |
 | Icona/splash vecchi | Disinstalla e reinstalla dopo aver rigenerato l'APK. |
 | Build fallisce per SDK | Rilancia `bubblewrap build` (installa le build-tools) o apri in Android Studio e accetta l'upgrade AGP per API 36. |
+
+### Diagnosi rapida con logcat
+
+Collega il telefono con debug USB attivo e lancia:
+
+```powershell
+adb logcat -c
+adb logcat -v time | findstr /I "AndroidRuntime chromium TWA LauncherActivity"
+```
+
+Poi apri l'icona dell'app: la riga `FATAL EXCEPTION` (se c'è) indica la causa esatta
+(classe mancante, risorsa mancante, `ActivityNotFoundException`, ecc.).
+
+---
+
+## 11-bis. Configurazione minima verificata (dalla 1.0.2)
+
+Queste voci devono essere presenti nel manifest dell'app (non solo nella guida):
+
+| Voce | Valore |
+| --- | --- |
+| `asset_statements` | JSON con `package_name` + `sha256_cert_fingerprints` (virgolette escaped) |
+| `web_manifest_url` | `https://circolovelicoitalia.it/manifest.webmanifest` |
+| `FALLBACK_STRATEGY` | `webview` |
+| `WebViewFallbackActivity` | dichiarata, `configChanges="orientation|screenSize"`, tema opaco |
+| `FILE_PROVIDER_AUTHORITY` | `it.circolovelicoitalia.app.fileprovider` |
+| `FileProvider` | `androidx.core.content.FileProvider` + `res/xml/filepaths.xml` |
+| `LauncherActivity` | `android:exported="true"` + `alwaysRetainTaskState="true"` |
+
+La release **1.0.2** (versionCode 3) contiene già tutto questo; se ricostruisci
+da zero parti dal progetto sorgente aggiornato e non rimuovere queste voci.
 
 ---
 
@@ -315,7 +350,11 @@ cambiano nome, icona, colori o targetSdk (incrementando `versionCode`).
 - [ ] (Play) `targetSdk 36` in `app/build.gradle` e build da Android Studio
 - [ ] Impronta SHA-256 con `keytool` o `node scripts/twa-assetlinks.mjs ...`
 - [ ] `.well-known/assetlinks.json` + `.nojekyll` pubblicati e verificati 200
+- [ ] `asset_statements` + `web_manifest_url` nel manifest (§11-bis)
+- [ ] `FALLBACK_STRATEGY=webview` + `WebViewFallbackActivity` (tema opaco)
+- [ ] FileProvider + `res/xml/filepaths.xml` + `FILE_PROVIDER_AUTHORITY`
 - [ ] APK installato sul telefono, nessuna barra degli indirizzi
+- [ ] **Test con Chrome disabilitato/assente**: l'app deve aprire il sito nella WebView
 - [ ] Scorciatoie, login, Live e pagina offline verificati
 
 ---
