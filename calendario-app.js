@@ -120,12 +120,15 @@
     try {
       var results = await Promise.all([
         CVI.supabase.from("gare").select("id, titolo, descrizione, data_gara, tipo").order("data_gara", { ascending: true }),
-        CVI.supabase.from("eventi_aperti").select("id, titolo, descrizione, data_evento, pubblicato").eq("pubblicato", true).order("data_evento", { ascending: true })
+        CVI.supabase.from("eventi_aperti").select("id, titolo, descrizione, data_evento, pubblicato").eq("pubblicato", true).order("data_evento", { ascending: true }),
+        CVI.supabase.from("serie_aperte").select("id, titolo, descrizione, data_inizio, data_fine, pubblicato").eq("pubblicato", true).order("data_inizio", { ascending: true })
       ]);
       var gare = results[0].data || [];
       var aperti = results[1].data || [];
+      var serie = results[2].data || [];
       if (results[0].error) console.warn("[calendario] gare:", results[0].error.message);
       if (results[1].error) console.warn("[calendario] eventi_aperti:", results[1].error.message);
+      if (results[2].error) console.warn("[calendario] serie_aperte:", results[2].error.message);
       var events = [];
       gare.forEach(function (g) {
         if (!g.data_gara) return;
@@ -136,6 +139,53 @@
         if (!e.data_evento) return;
         events.push({ id: "e-" + e.id, type: "aperto", title: e.titolo || "Evento aperto", date: e.data_evento, desc: e.descrizione || "", link: "evento.html?tipo=evento&id=" + encodeURIComponent(e.id) });
       });
+      // Campionati / serie aperte: data inizio + eventuali giornate regata
+      var serieById = {};
+      serie.forEach(function (s) {
+        serieById[String(s.id)] = s;
+        if (!s.data_inizio) return;
+        events.push({
+          id: "s-" + s.id,
+          type: "aperto",
+          title: s.titolo || "Campionato",
+          date: s.data_inizio,
+          desc: s.descrizione || "",
+          link: "evento.html?tipo=serie&id=" + encodeURIComponent(s.id),
+          kind: "campionato"
+        });
+      });
+      if (serie.length) {
+        try {
+          var regRes = await CVI.supabase
+            .from("serie_aperte_regate")
+            .select("id, serie_id, titolo, data_regata, ordine")
+            .in("serie_id", serie.map(function (s) { return s.id; }))
+            .order("ordine", { ascending: true });
+          if (!regRes.error && regRes.data) {
+            regRes.data.forEach(function (r) {
+              if (!r.data_regata) return;
+              var parent = serieById[String(r.serie_id)];
+              // evita doppio se la giornata coincide col giorno di data_inizio della serie
+              var startKey = parent && parent.data_inizio ? dayKeyFromEvent(parent.data_inizio) : "";
+              var regKey = dayKeyFromEvent(r.data_regata);
+              if (startKey && regKey && startKey === regKey) return;
+              events.push({
+                id: "sr-" + r.id,
+                type: "aperto",
+                title: (parent && parent.titolo ? parent.titolo + " · " : "") + (r.titolo || "Regata"),
+                date: r.data_regata,
+                desc: (parent && parent.descrizione) || "",
+                link: "evento.html?tipo=serie&id=" + encodeURIComponent(r.serie_id),
+                kind: "campionato"
+              });
+            });
+          } else if (regRes.error) {
+            console.warn("[calendario] serie_aperte_regate:", regRes.error.message);
+          }
+        } catch (regErr) {
+          console.warn("[calendario] serie regate:", regErr);
+        }
+      }
       state.events = events;
     } catch (err) {
       console.warn("[calendario]", err);
@@ -156,7 +206,7 @@
       if (mon.getMonth() === sun.getMonth()) {
         el.textContent = mon.getDate() + "\u2013" + sun.getDate() + " " + MONTHS[mon.getMonth()] + " " + mon.getFullYear();
       } else {
-        el.textContent = mon.getDate() + " " + MONTHS[mon.getMonth()].slice(0, 3) + " \u2013 " + sun.getDate() + " " + MONTHS[sun.getMonth()].slice(0, 3) + " " + sun.getFullYear();
+        el.textContent = mon.getDate() + " " + MONTHS[mon.getMonth()].slice(0, 3) + " \u2013" + sun.getDate() + " " + MONTHS[sun.getMonth()].slice(0, 3) + " " + sun.getFullYear();
       }
     }
   }
@@ -243,6 +293,7 @@
     if (!modal || !ev) return;
     document.getElementById("cal-modal-title").textContent = ev.title || "Evento";
     var tipo =
+      ev.kind === "campionato" ? "Campionato" :
       ev.type === "aperto" ? "Evento aperto" :
       ev.type === "speciale" ? "Evento speciale" :
       ev.type === "allenamento" ? "Allenamento" : "Gara ufficiale";
