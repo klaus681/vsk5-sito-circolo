@@ -1,4 +1,4 @@
-/* CVI - Gestione soci: team, ruolo, nickname, note interne ed espulsione (admin) */
+/* CVI - Gestione soci: team, ruolo, nickname, note interne, espulsione e ban (admin) */
 (function () {
   "use strict";
 
@@ -264,6 +264,97 @@
     if (window.CVIMembers) CVIMembers.refresh();
   }
 
+  async function banMember(uid, nick, card) {
+    if (!uid) return;
+    if (currentUserId && String(uid) === String(currentUserId)) {
+      alert("Non puoi bannare te stesso.");
+      return;
+    }
+    var label = nick || "questo socio";
+    if (!confirm("Bannare definitivamente «" + label + "»?\n\nNon potrà più registrarsi con la stessa email né usare l'area soci.")) return;
+    if (!confirm("Confermi il BAN permanente di «" + label + "»?")) return;
+
+    var email = null;
+    try {
+      var pr = await CVI.supabase.from("profiles").select("email").eq("id", uid).maybeSingle();
+      if (!pr.error && pr.data && pr.data.email) email = String(pr.data.email).trim();
+    } catch (e) {}
+    if (!email) {
+      email = prompt("Email da inserire in ban list (obbligatoria per impedire nuova registrazione):", "");
+      if (email) email = String(email).trim();
+    }
+    if (!email || email.indexOf("@") < 0) {
+      alert("Email non valida: ban non applicato alla ban list.");
+      return;
+    }
+
+    try {
+      var rSt = await CVI.supabase.from("profiles").update({
+        stato: "bannato",
+        is_admin: false,
+        team: null,
+        team_id: null
+      }).eq("id", uid);
+      if (rSt.error) {
+        rSt = await CVI.supabase.from("profiles").update({
+          stato: "bannato",
+          is_admin: false,
+          team: null
+        }).eq("id", uid);
+      }
+      if (rSt.error) {
+        alert("Errore stato bannato: " + rSt.error.message);
+        return;
+      }
+
+      var payload = {
+        email: email,
+        user_id: uid,
+        banned_by: currentUserId || null,
+        reason: "Ban admin"
+      };
+      var rBan = await CVI.supabase.from("ban_list").insert(payload);
+      if (rBan.error && !/duplicate|unique/i.test(rBan.error.message || "")) {
+        alert("Profilo bannato, ma ban_list non aggiornata: " + rBan.error.message +
+          "\nEsegui ban-list-sql.sql su Supabase se manca la tabella.");
+      }
+
+      try { await CVI.supabase.from("iscrizioni_gare").delete().eq("user_id", uid); } catch (e) {}
+      toast(t("ban_ok") || "Utente bannato.");
+      if (window.CVIMembers) {
+        if (CVIMembers.updateProfile) CVIMembers.updateProfile(uid, { stato: "bannato", is_admin: false });
+        if (CVIMembers.refresh) CVIMembers.refresh();
+      }
+    } catch (e) {
+      alert((t("ban_error") || "Errore ban: ") + (e.message || e));
+    }
+  }
+
+  async function unbanMember(uid, nick, card) {
+    if (!uid) return;
+    var label = nick || "questo socio";
+    if (!confirm("Togliere il ban a «" + label + "» e riattivare l'account?")) return;
+    try {
+      var email = null;
+      try {
+        var pr = await CVI.supabase.from("profiles").select("email").eq("id", uid).maybeSingle();
+        if (!pr.error && pr.data && pr.data.email) email = String(pr.data.email).trim();
+      } catch (e) {}
+      await CVI.supabase.from("profiles").update({ stato: "attivo" }).eq("id", uid);
+      await CVI.supabase.from("ban_list").delete().eq("user_id", uid);
+      if (email) {
+        try { await CVI.supabase.from("ban_list").delete().ilike("email", email); } catch (e) {}
+      }
+      toast(t("unban_ok") || "Ban rimosso, account attivo.");
+      if (window.CVIMembers) {
+        if (CVIMembers.updateProfile) CVIMembers.updateProfile(uid, { stato: "attivo" });
+        if (CVIMembers.refresh) CVIMembers.refresh();
+      }
+    } catch (e) {
+      alert((t("unban_error") || "Errore unban: ") + (e.message || e));
+    }
+  }
+
   function bindTeamSelect(sel, uid, card) {
     sel.addEventListener("change", async function () {
       var tid = sel.value || null;
@@ -427,7 +518,6 @@
         esc(t("message") || "Messaggio") + "</button>";
     }
 
-    // Approvazione / sospensione (solo se la colonna stato esiste già)
     if (Object.prototype.hasOwnProperty.call(p, "stato")) {
       var stato = p.stato || "attivo";
       if (stato === "pending") {
@@ -438,14 +528,21 @@
       } else if (stato === "sospeso") {
         html += '<button type="button" class="member-approve-btn" data-action="reactivate">' +
           esc(t("reactivate") || "Riattiva") + "</button>";
+      } else if (stato === "bannato") {
+        html += '<button type="button" class="member-approve-btn" data-action="unban">' +
+          esc(t("unban") || "Togli ban") + "</button>";
       } else {
         html += '<button type="button" class="member-admin-btn" data-action="suspend">' +
-          esc(t("suspend") || "Sospendi") + "</button>";
+          esc(t("suspend") || "Sospendi") + "</button>" +
+          '<button type="button" class="member-ban-btn" data-action="ban">' +
+          esc(t("ban") || "Ban") + "</button>";
       }
     }
 
-    html += '<button type="button" class="member-expel-btn">' +
-      esc(t("expel") || "Espelli") + "</button>";
+    if ((p.stato || "attivo") !== "bannato") {
+      html += '<button type="button" class="member-expel-btn">' +
+        esc(t("expel") || "Espelli") + "</button>";
+    }
 
     actions.innerHTML = html;
 
@@ -464,6 +561,19 @@
     if (expelBtn) expelBtn.addEventListener("click", function () {
       expelMember(uid, card.getAttribute("data-nick"));
     });
+
+    var banBtn = actions.querySelector('[data-action="ban"]');
+    if (banBtn) {
+      banBtn.addEventListener("click", function () {
+        banMember(uid, card.getAttribute("data-nick"), card);
+      });
+    }
+    var unbanBtn = actions.querySelector('[data-action="unban"]');
+    if (unbanBtn) {
+      unbanBtn.addEventListener("click", function () {
+        unbanMember(uid, card.getAttribute("data-nick"), card);
+      });
+    }
 
     function bindStatus(action, stato, confirmKey) {
       var btn = actions.querySelector('[data-action="' + action + '"]');
