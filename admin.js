@@ -35,7 +35,7 @@
     if (sa) { var sSa = document.createElement("script"); sSa.textContent = sa; document.head.appendChild(sSa); }
     var eap = await fetch("eventi-admin-patch.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (eap) { var sEap = document.createElement("script"); sEap.textContent = eap; document.head.appendChild(sEap); }
-    var eaf = await fetch("eventi-admin-fields.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
+    var eaf = await fetch("eventi-admin-fields.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (eaf) { var sEaf = document.createElement("script"); sEaf.textContent = eaf; document.head.appendChild(sEaf); }
     var pr = await fetch("proteste-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (pr) { var s6 = document.createElement("script"); s6.textContent = pr; document.head.appendChild(s6); }
