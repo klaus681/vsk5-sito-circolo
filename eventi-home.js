@@ -14,7 +14,7 @@
       .replace(/&/g, "&")
       .replace(/</g, "<")
       .replace(/>/g, ">")
-      .replace(/"/g, """)
+      .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
 
