@@ -6,10 +6,10 @@
   function esc(s) {
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/&/g, "&" + "amp;")
+      .replace(/</g, "&" + "lt;")
+      .replace(/>/g, "&" + "gt;")
+      .replace(/"/g, "&" + "quot;");
   }
 
   function tr(key, fallback) {
@@ -18,6 +18,49 @@
 
   function locale() {
     return window.CVI && typeof CVI.locale === "function" ? CVI.locale() : "it-IT";
+  }
+
+  function deriveStatus(startIso, endIso) {
+    var now = Date.now();
+    function parseEnd(iso) {
+      if (!iso) return null;
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return null;
+      if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
+        return d.getTime() + 24 * 60 * 60 * 1000 - 1;
+      }
+      return d.getTime();
+    }
+    function parseStart(iso) {
+      if (!iso) return null;
+      var d = new Date(iso);
+      return isNaN(d.getTime()) ? null : d.getTime();
+    }
+    var start = parseStart(startIso);
+    var end = parseEnd(endIso || startIso);
+    if (end != null && now > end) return "passato";
+    if (start != null && now < start) return "prossimo";
+    return "aperto";
+  }
+
+  function statusBadge(status) {
+    var label, bg, color, border;
+    if (status === "passato") {
+      label = tr("banner_past", "PASSATO");
+      bg = "rgba(148,163,184,0.25)"; color = "#94a3b8"; border = "rgba(148,163,184,0.4)";
+    } else if (status === "prossimo") {
+      label = tr("banner_soon", "PROSSIMO");
+      bg = "rgba(56,189,248,0.25)"; color = "#7dd3fc"; border = "rgba(56,189,248,0.4)";
+    } else {
+      label = tr("banner_open", "APERTO");
+      bg = "rgba(34,197,94,0.25)"; color = "#4ade80"; border = "rgba(34,197,94,0.4)";
+    }
+    return (
+      '<span style="display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0.18rem 0.55rem;border-radius:999px;margin-left:0.4rem;background:' +
+      bg + ";color:" + color + ";border:1px solid " + border + '">' +
+      esc(label) +
+      "</span>"
+    );
   }
 
   function medal(pos) {
@@ -37,139 +80,176 @@
     ".tv-badge{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0b0f19;background:linear-gradient(135deg,#fbbf24,#f59e0b);padding:.22rem .65rem;border-radius:999px;margin-bottom:.4rem}" +
     ".tv-home-title{margin:0;color:#fff;font-size:1.2rem;font-weight:700;line-height:1.25}" +
     ".tv-home-date{color:#94a3b8;font-size:.86rem;margin-top:.25rem}" +
-    ".tv-link-more{color:#fbbf24;font-weight:700;font-size:.9rem;white-space:nowrap;align-self:center}" +
-    ".tv-link-more:hover{color:#fde68a}" +
-    ".tv-podium{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.9rem 0 .5rem}" +
-    ".tv-podium-item{background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:.8rem .55rem;text-align:center}" +
-    ".tv-podium-item.p1{border-color:rgba(251,191,36,.45);background:linear-gradient(180deg,rgba(251,191,36,.12),transparent)}" +
-    ".tv-medal{width:2rem;height:2rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;margin-bottom:.4rem}" +
-    ".tv-name{color:#fff;font-weight:700;font-size:.94rem;line-height:1.25;word-break:break-word}" +
-    ".tv-team{color:#94a3b8;font-size:.76rem;margin-top:.15rem}" +
-    ".tv-pts{color:#fbbf24;font-size:.82rem;font-weight:700;margin-top:.25rem}" +
-    ".tv-home-note{margin:.45rem 0 0;font-size:.78rem;color:#64748b}" +
-    "@media(max-width:600px){.tv-podium{grid-template-columns:1fr}}";
+    ".tv-podium{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin:.9rem 0 .35rem}" +
+    ".tv-podium-item{background:rgba(15,23,42,.65);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.55rem .4rem;text-align:center}" +
+    ".tv-podium-item.is-first{border-color:rgba(251,191,36,.45)}" +
+    ".tv-medal{width:1.7rem;height:1.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;margin-bottom:.3rem}" +
+    ".tv-nick{font-size:.88rem;font-weight:700;color:#f1f5f9;line-height:1.2;word-break:break-word}" +
+    ".tv-pts{font-size:.8rem;color:#fbbf24;font-weight:700;margin-top:.25rem}" +
+    ".tv-meta{font-size:.78rem;color:#94a3b8;margin-top:.35rem}" +
+    ".tv-link-more{color:#7dd3fc;font-size:.85rem;font-weight:600;text-decoration:none}" +
+    ".tv-link-more:hover{text-decoration:underline}";
 
-  function isHome() {
-    var path = (location.pathname || "").toLowerCase();
+  function injectStyle() {
+    if (document.getElementById("tv-home-css")) return;
+    var s = document.createElement("style");
+    s.id = "tv-home-css";
+    s.textContent = STYLE;
+    document.head.appendChild(s);
+  }
+
+  function cleanNick(raw) {
+    if (window.CVISerieAperte && typeof CVISerieAperte.cleanNick === "function") {
+      var c = CVISerieAperte.cleanNick(raw);
+      if (c) return c;
+    }
+    if (raw == null) return "";
+    var s = String(raw);
+    s = s.replace(/\$([0-9a-fA-F]{3}|[isngzwomt$])/gi, "");
+    s = s.replace(/\$[a-zA-Z0-9]/g, "").trim();
+    s = s.replace(/\uFFFD/g, "");
+    return s.replace(/\s+/g, " ").trim() || String(raw).trim();
+  }
+
+  function podiumHtml(rows) {
+    if (!rows || !rows.length) return "";
     return (
-      path === "/" ||
-      path === "" ||
-      path.indexOf("index") !== -1 ||
-      (path.indexOf("vsk5-sito-circolo") !== -1 &&
-        (path.endsWith("/") || path.endsWith("/vsk5-sito-circolo")))
+      '<div class="tv-podium">' +
+      rows
+        .slice(0, 3)
+        .map(function (r, i) {
+          var pos = r.pos || i + 1;
+          var m = medal(pos);
+          var nick = cleanNick(r.nickname);
+          return (
+            '<div class="tv-podium-item' +
+            (pos === 1 ? " is-first" : "") +
+            '">' +
+            '<div class="tv-medal" style="background:' +
+            m.bg +
+            ";color:" +
+            m.color +
+            '">' +
+            m.label +
+            "</div>" +
+            '<div class="tv-nick">' +
+            esc(nick || "—") +
+            "</div>" +
+            '<div class="tv-pts">' +
+            esc(String(r.pts != null ? r.pts : "—")) +
+            " " +
+            esc(tr("banner_points_short", "pt")) +
+            "</div></div>"
+          );
+        })
+        .join("") +
+      "</div>"
     );
   }
 
-  async function run() {
-    if (!window.CVI || !CVI.supabase || !window.CVISerieAperte) return;
-    if (!isHome()) return;
-    if (document.getElementById("cvi-torneo-vsk-home")) return;
+  async function load() {
+    if (!window.CVI || !CVI.supabase) return;
+    injectStyle();
+    var host =
+      document.getElementById("home-extra-banners") ||
+      document.getElementById("home-eventi-banner") ||
+      document.querySelector(".dashboard-grid");
+    if (!host) return;
 
-    var SA = window.CVISerieAperte;
     try {
-      var tRes = await CVI.supabase
+      var res = await CVI.supabase
         .from("tornei")
         .select(
           "id,titolo,descrizione,data_inizio,data_fine,vsk_sistema_punteggio,vsk_scarti,vsk_scarti_auto"
         )
         .eq("pubblicato", true)
         .eq("vsk_mostra_home", true)
-        .order("created_at", { ascending: false })
+        .order("data_inizio", { ascending: false })
         .limit(1);
-      if (tRes.error || !tRes.data || !tRes.data.length) return;
-      var t = tRes.data[0];
+      if (res.error || !res.data || !res.data.length) return;
+      var t = res.data[0];
 
-      var rr = await CVI.supabase
-        .from("torneo_regate")
+      var regRes = await CVI.supabase
+        .from("tornei_regate")
         .select("id,titolo,ordine,data_regata")
         .eq("torneo_id", t.id)
-        .order("ordine")
+        .order("ordine", { ascending: true })
         .order("data_regata", { ascending: true, nullsFirst: false });
-      if (rr.error) return;
-      var regs = rr.data || [];
-      if (!regs.length) return;
+      var regate = regRes.error ? [] : regRes.data || [];
+      if (!regate.length) return;
 
-      var rs = await CVI.supabase
-        .from("torneo_risultati")
-        .select("*")
-        .in(
-          "regata_id",
-          regs.map(function (x) {
-            return x.id;
-          })
-        );
-      if (rs.error) return;
+      var ids = regate.map(function (r) {
+        return r.id;
+      });
+      var risRes = await CVI.supabase
+        .from("tornei_risultati_vsk")
+        .select("regata_id,posizione,nickname,account_vsk,punti,stato")
+        .in("regata_id", ids);
+      var risultati = risRes.error ? [] : risRes.data || [];
 
       var byReg = {};
-      (rs.data || []).forEach(function (r) {
+      risultati.forEach(function (r) {
         var k = String(r.regata_id);
         if (!byReg[k]) byReg[k] = [];
         byReg[k].push(r);
       });
 
+      var lib = window.CVISerieAperte;
       var sistema = t.vsk_sistema_punteggio === "high_point" ? "high_point" : "low_point";
-      var scartiAuto = !!t.vsk_scarti_auto;
-      var scarti = t.vsk_scarti != null ? Number(t.vsk_scarti) : 0;
-
-      var hasResults = false;
-      var forCl = regs.map(function (reg) {
-        var rows = byReg[String(reg.id)] || [];
-        if (rows.length) hasResults = true;
-        return { id: reg.id, titolo: reg.titolo, results: SA.calcPuntiRegata(rows, sistema) };
-      });
-      if (!hasResults) return;
-
-      var cl = SA.calcClassificaSerie(forCl, scarti, { sistema: sistema, scartiAuto: scartiAuto });
-      if (!cl.length) return;
-
-      var lastRace = null;
-      for (var i = forCl.length - 1; i >= 0; i--) {
-        if ((forCl[i].results || []).length) {
-          lastRace = regs[i];
-          break;
-        }
+      var classifica = [];
+      if (lib && typeof lib.calcClassificaSerie === "function") {
+        classifica = lib.calcClassificaSerie(
+          regate.map(function (reg) {
+            return {
+              id: reg.id,
+              titolo: reg.titolo,
+              results: (byReg[String(reg.id)] || []).map(function (r) {
+                return {
+                  nickname: r.nickname,
+                  team: r.account_vsk,
+                  posizione: r.posizione,
+                  punti: r.punti,
+                  stato: r.stato
+                };
+              })
+            };
+          }),
+          t.vsk_scarti || 0,
+          { sistema: sistema, scartiAuto: !!t.vsk_scarti_auto }
+        );
       }
 
-      var top = cl.slice(0, 3);
-      var podium =
-        '<div class="tv-podium">' +
-        top
-          .map(function (r, idx) {
-            var m = medal(idx + 1);
-            return (
-              '<div class="tv-podium-item' +
-              (idx === 0 ? " p1" : "") +
-              '"><div class="tv-medal" style="background:' +
-              m.bg +
-              ";color:" +
-              m.color +
-              '">' +
-              m.label +
-              '</div><div class="tv-name">' +
-              esc(r.nickname) +
-              "</div>" +
-              (r.team ? '<div class="tv-team">' + esc(r.team) + "</div>" : "") +
-              '<div class="tv-pts">' +
-              r.netti +
-              " " + esc(tr("banner_points_short", "pt")) + "</div></div>"
-            );
-          })
-          .join("") +
-        "</div>";
+      var rows = (classifica || []).slice(0, 3).map(function (r) {
+        return {
+          nickname: r.nickname,
+          pos: r.pos,
+          pts: r.netti != null ? r.netti : r.punti
+        };
+      });
+      if (!rows.length) return;
 
       var dates = [t.data_inizio, t.data_fine].filter(Boolean).map(function (d) {
         try {
           return new Date(d).toLocaleDateString(locale(), { day: "numeric", month: "short" });
         } catch (e) {
-          return String(d);
+          return "";
         }
-      });
+      }).filter(Boolean);
 
-      var html =
-        '<section id="cvi-torneo-vsk-home" class="tv-home-section">' +
+      var scartiN = lib && lib.calcolaNumScarti
+        ? lib.calcolaNumScarti(t.vsk_scarti || 0, !!t.vsk_scarti_auto, regate.length)
+        : t.vsk_scarti || 0;
+
+      var section = document.createElement("section");
+      section.className = "tv-home-section";
+      section.innerHTML =
         '<div class="tv-home-card">' +
-        '<div class="tv-home-header"><div>' +
-        '<span class="tv-badge">' + esc(tr("banner_tournament_vsk", "Torneo · classifica VSK")) + '</span>' +
+        '<div class="tv-home-header">' +
+        "<div>" +
+        '<span class="tv-badge">' +
+        esc(tr("banner_tournament_vsk", "Torneo · classifica VSK")) +
+        "</span>" +
+        statusBadge(deriveStatus(t.data_inizio, t.data_fine)) +
         '<h2 class="tv-home-title">' +
         esc(t.titolo) +
         "</h2>" +
@@ -177,60 +257,38 @@
           ? '<div class="tv-home-date">📅 ' + esc(dates.join(" → ")) + "</div>"
           : "") +
         "</div>" +
-        '<a href="tornei.html?id=' +
+        '<a href="torneo.html?id=' +
         encodeURIComponent(t.id) +
-        '" class="tv-link-more">' + esc(tr("banner_view_tournament", "Vedi il torneo →")) + '</a></div>' +
-        (t.descrizione
-          ? '<p style="color:#cbd5e1;font-size:.9rem;margin:0 0 .5rem;line-height:1.5">' +
-            esc(String(t.descrizione).slice(0, 160)) +
-            (String(t.descrizione).length > 160 ? "…" : "") +
-            "</p>"
-          : "") +
-        podium +
-        (lastRace
-          ? '<p style="margin:.3rem 0 0;font-size:.85rem;color:#cbd5e1">' + esc(tr("banner_last_race", "Ultima regata:")) + ' <strong style="color:#fbbf24">' +
-            esc(lastRace.titolo) +
-            "</strong></p>"
-          : "") +
-        '<p class="tv-home-note">' +
-        (sistema === "high_point" ? "High Point" : "Low Point") +
-        " · " + esc(tr("banner_discards", "scarti")) + ": " +
-        (cl[0].scartiUsati || 0) +
-        (scartiAuto ? " " + esc(tr("banner_automatic", "(automatici)")) : "") +
+        '" class="tv-link-more">' +
+        esc(tr("banner_view_tournament", "Vedi il torneo →")) +
+        "</a></div>" +
+        podiumHtml(rows) +
+        '<p class="tv-meta">' +
+        esc(sistema === "high_point" ? "High Point" : "Low Point") +
         " · " +
-        regs.length +
-        " " + esc(tr("banner_races_vsk", "regate VSK")) + "</p>" +
-        "</div></section>";
+        esc(tr("banner_discards", "scarti")) +
+        ": " +
+        esc(String(scartiN)) +
+        (t.vsk_scarti_auto ? " " + esc(tr("banner_automatic", "(automatici)")) : "") +
+        " · " +
+        esc(String(regate.length)) +
+        " " +
+        esc(tr("banner_races_vsk", "regate VSK")) +
+        "</p></div>";
 
-      var main = document.getElementById("main-content") || document.querySelector("main.page-content");
-      if (!main) return;
-      if (!document.getElementById("tv-home-styles")) {
-        var st = document.createElement("style");
-        st.id = "tv-home-styles";
-        st.textContent = STYLE;
-        document.head.appendChild(st);
-      }
-      var anchor = main.querySelector(".content-row");
-      if (anchor) anchor.insertAdjacentHTML("beforebegin", html);
-      else main.insertAdjacentHTML("beforeend", html);
+      var existing = document.getElementById("tv-home-banner");
+      if (existing) existing.remove();
+      section.id = "tv-home-banner";
+      host.appendChild(section);
     } catch (e) {
-      if (window.console) console.warn("[CVI torneo vsk home]", e);
+      console.warn("[CVI tornei home]", e);
     }
   }
 
-  function start() {
-    setTimeout(run, 900);
-    setTimeout(run, 2000);
-    setTimeout(run, 3800);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", load);
+  } else {
+    load();
   }
-
-  /* cambio lingua: rimuove e ridisegna il box nella lingua corrente */
-  document.addEventListener("cvi:langchange", function () {
-    var el = document.getElementById("cvi-torneo-vsk-home");
-    if (el && el.parentNode) el.parentNode.removeChild(el);
-    run();
-  });
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
-  else start();
+  setTimeout(load, 1200);
 })();
