@@ -55,8 +55,8 @@ nickname pulito dai codici colore `$`. I file già importati vengono saltati
 Alternative manuali:
 
 - **Modifica risultati**: tabella con Stato / Pos / Nickname / Team / Tempo / Note
-- **Importa CSV** dentro il modale: accetta sia `Stato;Posizione;Nickname;Team;Note`
-  sia un log VSK completo
+- **Importa CSV** dentro il modale: accetta sia `Stato;Posizione;Nickname;Team;Note;Tempo`
+  sia un log VSK completo (stesso parser condiviso di Gare, Tornei ed Eventi)
 - **Esporta classifica CSV**, **Esporta Excel (.xlsx)** (SheetJS caricato solo al volo, con fallback CSV) e **Copia HTML** per il forum
 
 ## 4. Formati CSV accettati
@@ -73,8 +73,12 @@ Rank;Time;Account;Nickname
 - tempo in millisecondi oppure `mm:ss.mmm` / `hh:mm:ss.mmm`
 - `$` codici Nadeo rimossi automaticamente (`$fff`, `$0f`, `$i`, `$n`, `$$`, ...)
 - tempo `0` o assente → `DNF`
+- i file sono letti come **UTF-8 con fallback ISO-8859-1** (`decodeBuffer` della
+  libreria condivisa): lo stesso log produce gli stessi risultati in Gare,
+  Serie Aperte, Tornei ed Eventi
 
-CSV manuale: `Stato;Posizione;Nickname;Team;Note` (FIN, DNF, DNS, DSQ, RET).
+CSV manuale: `Stato;Posizione;Nickname;Team;Note;Tempo` (FIN, DNF, DNS, DSQ, RET;
+`Tempo` facoltativo, in `mm:ss.mmm` o millisecondi).
 
 ## 5. Calcolo classifica
 

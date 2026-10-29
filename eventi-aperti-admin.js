@@ -1,6 +1,8 @@
 /* CVI Admin Eventi – import CSV allineato a VSK Race Manager (stesso criterio Tornei) */
 (function () {
   "use strict";
+  if (window.__cviEaPatchLoaded) return;
+  window.__cviEaPatchLoaded = true;
 
   function cleanVskNickname(rawNick) {
     if (!rawNick) return "";
@@ -56,6 +58,8 @@
   }
 
   function decodeCsvBuffer(buffer) {
+    var L = window.CVISerieAperte;
+    if (L && typeof L.decodeBuffer === "function") return L.decodeBuffer(buffer);
     var u8 = new Uint8Array(buffer);
     var utf8 = "";
     try {
@@ -123,59 +127,92 @@
       };
   }
 
+  function libParser() {
+    var L = window.CVISerieAperte;
+    return L && typeof L.parseVskCsv === "function" ? L : null;
+  }
+
+  /* Nota mostrata nella tabella Eventi: stato (DNF/DSQ/...) oppure tempo. */
+  function notaDaRiga(stato, tempoMs) {
+    if (stato && stato !== "FIN") return stato;
+    if (!tempoMs) return "";
+    var L = libParser();
+    if (L && typeof L.formatMs === "function") return L.formatMs(tempoMs);
+    return formatTimeMs(tempoMs);
+  }
+
   function vskImport(text) {
     var body = document.getElementById("ea-ris-body");
     if (!body) return 0;
+    var L = libParser();
 
+    /* 1) Stesso parser di Gare / Serie / Tornei: mapping delle colonne
+       dall'header, pulizia nickname, dedupe e posizioni mancanti dai tempi. */
+    if (L && typeof L.looksLikeVskCsv === "function" && L.looksLikeVskCsv(text)) {
+      var rows = L.parseVskCsv(text);
+      if (rows.length) {
+        body.innerHTML = "";
+        rows.forEach(function (p) {
+          var nick = p.nickname || p.nickname_raw || "";
+          if (!nick) return;
+          addRow(
+            p.posizione != null ? p.posizione : "",
+            nick,
+            "",
+            notaDaRiga(p.stato, p.tempo_ms)
+          );
+        });
+        return rows.length;
+      }
+    }
+
+    /* 2) Fallback: log VSK riconosciuto dal criterio storico del pannello */
     if (looksLikeVskLog(text)) {
       var entries = parseVskLikeTool(text);
-      if (!entries.length && window.CVISerieAperte && typeof CVISerieAperte.parseVskCsv === "function") {
-        var vsk = CVISerieAperte.parseVskCsv(text);
-        entries = vsk.map(function (p) {
-          return {
-            pos: p.posizione,
-            ms: p.tempo_ms || 0,
-            formattedTime: p.tempo || (p.stato && p.stato !== "FIN" ? p.stato : "DNF"),
-            username: p.account_vsk || "",
-            cleanNick: cleanVskNickname(p.nickname || p.nickname_raw || ""),
-            status: p.stato === "FIN" || (p.tempo_ms && p.tempo_ms > 0) ? "FINISHED" : "DNF"
-          };
-        });
-      }
       if (!entries.length) {
         alert("Log VSK non riconosciuto o vuoto.");
         return 0;
       }
       body.innerHTML = "";
+      var visti = {};
+      var aggiunti = 0;
       entries.forEach(function (e, i) {
         var nick = e.cleanNick || e.username || "Skipper";
-        var note = e.status === "FINISHED" ? e.formattedTime : "DNF";
-        var team = e.username && e.username !== nick ? e.username : "";
-        addRow(e.pos != null ? e.pos : i + 1, nick, team, note);
+        var k = String(nick).trim().toLowerCase();
+        if (!k || visti[k]) return; /* stesso dedupe del parser condiviso */
+        visti[k] = true;
+        addRow(
+          e.pos != null ? e.pos : i + 1,
+          nick,
+          "",
+          e.status === "FINISHED" ? e.formattedTime : "DNF"
+        );
+        aggiunti++;
       });
-      return entries.length;
+      return aggiunti;
     }
 
-    var rows = String(text || "")
+    /* 3) CSV generico: Posizione;Nickname;Team;Note */
+    var rowsTxt = String(text || "")
       .replace(/^\uFEFF/, "")
       .split(/\r?\n/)
       .filter(function (l) {
         return l.trim();
       });
-    if (!rows.length) return 0;
-    var sep = rows[0].split(";").length >= rows[0].split(",").length ? ";" : ",";
+    if (!rowsTxt.length) return 0;
+    var sep = rowsTxt[0].split(";").length >= rowsTxt[0].split(",").length ? ";" : ",";
     var start = 0;
-    if (/posiz|nick|skipper|rank/.test(rows[0].toLowerCase())) start = 1;
+    if (/posiz|nick|skipper|rank/.test(rowsTxt[0].toLowerCase())) start = 1;
     body.innerHTML = "";
     var n = 0;
-    for (var i = start; i < rows.length; i++) {
-      var cols = rows[i].split(sep);
+    for (var i = start; i < rowsTxt.length; i++) {
+      var cols = rowsTxt[i].split(sep);
       var pos = parseInt(String(cols[0] || "").replace(/[^0-9]/g, ""), 10);
       var nick = cleanVskNickname(String(cols[1] || "").replace(/^"|"$/g, "").trim());
       var team = cleanVskNickname(String(cols[2] || "").replace(/^"|"$/g, "").trim());
       var note = String(cols[3] || "").replace(/^"|"$/g, "").trim();
       if (!nick) continue;
-      addRow(isNaN(pos) ? n + 1 : pos, nick, team, note);
+      addRow(isNaN(pos) ? "" : pos, nick, team, note);
       n++;
     }
     return n;
@@ -206,55 +243,59 @@
     window.importEventoCsv = vskImport;
 
     var csvFile = document.getElementById("ea-csv-file");
-    if (csvFile && !csvFile._cviRef) {
-      csvFile._cviRef = true;
-      csvFile.addEventListener(
-        "change",
-        function (e) {
+    var textBtn = document.getElementById("ea-import-csv-text");
+
+    /* Il pannello originale (caricato da CDN) aggancia i propri handler a
+       #ea-csv-file e #ea-import-csv-text: li sostituiamo UNA sola volta,
+       impostando anche _eaWired così il suo wire() non li riaggancia.
+       Risultato: un solo import per file, sempre con lo stesso parser. */
+    if (!window.__cviEaVskWired && (csvFile || textBtn)) {
+      window.__cviEaVskWired = true;
+      if (csvFile) {
+        csvFile._eaWired = true;
+        csvFile.onchange = function () {
           var f = this.files && this.files[0];
           if (!f) return;
-          e.stopImmediatePropagation();
+          var input = this;
           var reader = new FileReader();
           reader.onload = function () {
-            var text = decodeCsvBuffer(reader.result);
-            var n = vskImport(text);
+            var n = vskImport(decodeCsvBuffer(reader.result));
             var hint = document.getElementById("ea-csv-hint");
             if (hint) {
               hint.textContent = n
-                ? "Importati " + n + " skipper (VSK Race Manager). Controlla e premi Salva evento."
+                ? "Importati " + n + " skipper (log VSK / CSV). Controlla e premi Salva evento."
                 : "Nessuno skipper trovato.";
               hint.style.color = n ? "#34d399" : "#f87171";
             }
-            csvFile.value = "";
+            input.value = "";
+          };
+          reader.onerror = function () {
+            alert("Impossibile leggere il file.");
+            input.value = "";
           };
           reader.readAsArrayBuffer(f);
-        },
-        true
-      );
-    }
-
-    var textBtn = document.getElementById("ea-import-csv-text");
-    if (textBtn && !textBtn._cviRef) {
-      textBtn._cviRef = true;
-      textBtn.addEventListener(
-        "click",
-        function (e) {
+        };
+      }
+      if (textBtn) {
+        textBtn._eaWired = true;
+        textBtn.onclick = function (e) {
+          if (e) e.preventDefault();
           var ta = document.getElementById("ea-csv-text");
           var val = ta ? ta.value : "";
-          if (!val.trim()) return;
-          e.stopImmediatePropagation();
-          e.preventDefault();
+          if (!val.trim()) {
+            alert("Incolla prima il testo CSV (es. Posizione;Nickname;Team;Note).");
+            return;
+          }
           var n = vskImport(val);
           var hint = document.getElementById("ea-csv-hint");
           if (hint) {
             hint.textContent = n
-              ? "Importati " + n + " skipper (VSK Race Manager). Controlla e premi Salva."
+              ? "Importati " + n + " skipper (log VSK / CSV). Controlla e premi Salva."
               : "Nessuno skipper trovato.";
             hint.style.color = n ? "#34d399" : "#f87171";
           }
-        },
-        true
-      );
+        };
+      }
     }
 
     var form = document.getElementById("ea-form");
@@ -272,6 +313,29 @@
       var actions = form.querySelector(".form-actions") || form;
       actions.appendChild(btn);
     }
+  }
+
+  /* Il vincolo unique (evento_id, posizione) fa fallire il salvataggio se due
+     righe hanno la stessa posizione (o nessuna: l'originale usa 1).
+     Normalizziamo le posizioni in tabella prima di salvare. */
+  function normalizeRisultatiRows() {
+    var body = document.getElementById("ea-ris-body");
+    if (!body) return;
+    var usate = {};
+    var next = 1;
+    body.querySelectorAll("tr").forEach(function (tr) {
+      var nickIn = tr.querySelector(".ea-nick");
+      if (!nickIn || !String(nickIn.value || "").trim()) return;
+      var posIn = tr.querySelector(".ea-pos");
+      var pos = posIn ? parseInt(posIn.value, 10) : NaN;
+      if (!pos || pos < 1 || usate[pos]) {
+        while (usate[next]) next++;
+        pos = next;
+        if (posIn) posIn.value = String(pos);
+      }
+      usate[pos] = true;
+      if (pos >= next) next = pos + 1;
+    });
   }
 
   function patchLoadList() {
@@ -299,12 +363,18 @@
     return out;
   }
 
-  function stripSerieOnlyFields() {
-    if (typeof window.saveEvento !== "function" || window.saveEvento._noScarti) return;
-    var orig = window.saveEvento;
-    window.saveEvento = async function (ev) {
+  /* Il salvataggio dell'evento lo fa il pannello originale (form.onsubmit).
+     Qui lo intercettiamo per: normalizzare le posizioni (vincolo unique) e
+     togliere dal payload i campi che appartengono alle serie, non agli eventi. */
+  function patchSaveEvento() {
+    var form = document.getElementById("ea-form");
+    if (!form || typeof form.onsubmit !== "function") return false;
+    if (form.onsubmit._cviWrapped) return true;
+    var orig = form.onsubmit;
+    var wrapped = async function (ev) {
+      normalizeRisultatiRows();
       var sb = window.CVI && CVI.supabase;
-      if (!sb || !sb.from) return orig.apply(this, arguments);
+      if (!sb || !sb.from) return orig.call(form, ev);
       var realFrom = sb.from.bind(sb);
       sb.from = function (table) {
         var q = realFrom(table);
@@ -324,12 +394,15 @@
         return q;
       };
       try {
-        return await orig.apply(this, arguments);
+        return await orig.call(form, ev);
       } finally {
         sb.from = realFrom;
       }
     };
-    window.saveEvento._noScarti = true;
+    wrapped._cviWrapped = true;
+    form.onsubmit = wrapped;
+    form._eaWired = true; /* il wire() originale non deve riagganciare saveEvento */
+    return true;
   }
 
   function tick() {
@@ -337,12 +410,11 @@
     patchLoadList();
     restyleAdminCards();
     scrubFormRows();
-    stripSerieOnlyFields();
+    patchSaveEvento();
   }
 
   function forceCleanSave() {
-    stripSerieOnlyFields();
-    if (typeof window.saveEvento !== "function") setTimeout(forceCleanSave, 500);
+    if (!patchSaveEvento()) setTimeout(forceCleanSave, 500);
   }
 
   function ensureOrig(cb) {
@@ -350,11 +422,23 @@
       cb();
       return;
     }
+    /* un solo caricamento del pannello originale, anche se questo file
+       viene incluso due volte (admin.html + admin.js) */
+    if (window.__cviEaOrigLoading) {
+      setTimeout(function () {
+        ensureOrig(cb);
+      }, 300);
+      return;
+    }
+    window.__cviEaOrigLoading = true;
     var s = document.createElement("script");
     s.src =
       "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js";
     s.onload = cb;
-    s.onerror = cb;
+    s.onerror = function () {
+      window.__cviEaOrigLoading = false;
+      cb();
+    };
     document.head.appendChild(s);
   }
 

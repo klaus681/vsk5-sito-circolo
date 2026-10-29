@@ -13,6 +13,17 @@
     return window.CVISerieAperte || null;
   }
 
+  /* Buffer(file) -> testo (UTF-8 con fallback ISO-8859-1), come gli altri import. */
+  function decodeFileBuffer(buf) {
+    var L = lib();
+    if (L && typeof L.decodeBuffer === "function") return L.decodeBuffer(buf);
+    try {
+      return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(buf));
+    } catch (e) {
+      return "";
+    }
+  }
+
   function esc(s) {
     if (s == null) return "";
     return String(s)
@@ -117,7 +128,7 @@
       '<button type="button" class="btn-sm" id="tnvsk-reg-import">⬆ Importa CSV</button>' +
       '<button type="button" class="btn-sm" id="tnvsk-reg-add">+ Riga</button>' +
       "</div>" +
-      '<p id="tnvsk-reg-hint" style="margin:0 0 .5rem;font-size:.78rem;color:#94a3b8">CSV manuale: <strong>Stato;Posizione;Nickname;Team;Note</strong> — oppure un log VSK</p>' +
+      '<p id="tnvsk-reg-hint" style="margin:0 0 .5rem;font-size:.78rem;color:#94a3b8">CSV manuale: <strong>Stato;Posizione;Nickname;Team;Note;Tempo</strong> — oppure un log VSK</p>' +
       '<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Stato</th><th>Pos</th><th>Nickname</th><th>Team</th><th>Tempo</th><th>Note</th><th></th></tr></thead>' +
       '<tbody id="tnvsk-reg-body"></tbody></table></div>' +
       '<div class="form-actions" style="margin-top:.8rem">' +
@@ -570,12 +581,12 @@
     return new Promise(function (resolve, reject) {
       var r = new FileReader();
       r.onload = function () {
-        resolve(String(r.result || ""));
+        resolve(decodeFileBuffer(r.result));
       };
       r.onerror = function () {
         reject(r.error || new Error("lettura fallita"));
       };
-      r.readAsText(file, "UTF-8");
+      r.readAsArrayBuffer(file);
     });
   }
 
@@ -1139,7 +1150,7 @@
         if (!f) return;
         var reader = new FileReader();
         reader.onload = function () {
-          var n = importCsvToModal(reader.result);
+          var n = importCsvToModal(decodeFileBuffer(reader.result));
           var hint = document.getElementById("tnvsk-reg-hint");
           if (n && hint) {
             hint.style.color = "#34d399";
@@ -1150,7 +1161,7 @@
           }
           impFile.value = "";
         };
-        reader.readAsText(f, "UTF-8");
+        reader.readAsArrayBuffer(f);
       };
     }
 

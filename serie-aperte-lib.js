@@ -71,6 +71,34 @@
     return STATI_VALIDI.indexOf(v) !== -1 ? v : "FIN";
   }
 
+  /* ---------- Lettura file ---------- */
+
+  /* Buffer(file) -> testo. UTF-8, con fallback ISO-8859-1 per i log VSK
+     salvati da Windows (stessa funzione di 2-serie-aperte-lib.js). */
+  function decodeBuffer(buffer) {
+    if (buffer == null) return "";
+    if (typeof buffer === "string") return buffer;
+    var u8;
+    try {
+      u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    } catch (e) {
+      return String(buffer);
+    }
+    var utf8 = "";
+    try {
+      utf8 = new TextDecoder("utf-8", { fatal: false }).decode(u8);
+    } catch (e2) {
+      utf8 = "";
+    }
+    var bad = (utf8.match(/\uFFFD/g) || []).length;
+    if (bad === 0 && utf8) return utf8;
+    try {
+      var latin = new TextDecoder("iso-8859-1").decode(u8);
+      if (!utf8 || (latin.match(/\uFFFD/g) || []).length < bad) return latin;
+    } catch (e3) {}
+    return utf8 || "";
+  }
+
   /* ---------- Parsing CSV ---------- */
 
   function detectSeparator(text) {
@@ -223,7 +251,7 @@
         posizione: isNaN(posRaw) || posRaw < 1 ? null : posRaw,
         tempo_ms: ms > 0 ? ms : null,
         tempo: ms > 0 ? formatMs(ms) : "",
-        account_vsk: acc || null,
+        account_vsk: cleanNick(acc) || acc || null,
         nickname_raw: nickRaw || acc,
         nickname: clean,
         stato: ms > 0 ? "FIN" : "DNF"
@@ -450,6 +478,7 @@
     parseTimeToMs: parseTimeToMs,
     formatMs: formatMs,
     statoValido: statoValido,
+    decodeBuffer: decodeBuffer,
     detectSeparator: detectSeparator,
     parseRows: parseRows,
     looksLikeVskCsv: looksLikeVskCsv,

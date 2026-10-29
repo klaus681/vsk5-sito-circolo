@@ -18,6 +18,16 @@
     return s.replace(/\s+/g, " ").trim();
   }
 
+  function decodeFileBuffer(buf) {
+    var L = window.CVISerieAperte;
+    if (L && typeof L.decodeBuffer === "function") return L.decodeBuffer(buf);
+    try {
+      return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(buf));
+    } catch (e) {
+      return "";
+    }
+  }
+
   function parseGareCsvText(text) {
     var L = window.CVISerieAperte;
     if (L && typeof L.looksLikeVskCsv === "function" && L.looksLikeVskCsv(text)) {
@@ -215,7 +225,7 @@
         var hint = document.getElementById("ris-csv-hint");
         var reader = new FileReader();
         reader.onload = function () {
-          var parsed = parseGareCsvText(reader.result);
+          var parsed = parseGareCsvText(decodeFileBuffer(reader.result));
           if (!parsed.length) {
             if (hint) {
               hint.textContent = "Nessuno skipper trovato nel file.";
@@ -242,7 +252,7 @@
           alert("Impossibile leggere il file.");
           csvFile.value = "";
         };
-        reader.readAsText(f, "UTF-8");
+        reader.readAsArrayBuffer(f);
       };
     }
   }

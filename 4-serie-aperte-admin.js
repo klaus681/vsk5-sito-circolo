@@ -73,6 +73,17 @@
     return window.CVISerieAperte || null;
   }
 
+  /* Buffer(file) -> testo (UTF-8 con fallback ISO-8859-1), come gli altri import. */
+  function decodeFileBuffer(buf) {
+    var L = lib();
+    if (L && typeof L.decodeBuffer === "function") return L.decodeBuffer(buf);
+    try {
+      return new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(buf));
+    } catch (e) {
+      return "";
+    }
+  }
+
   function calcPuntiRegata(rows, sistema) {
     var L = lib();
     return L ? L.calcPuntiRegata(rows, sistema) : rows || [];
@@ -1152,12 +1163,12 @@
     return new Promise(function (resolve, reject) {
       var r = new FileReader();
       r.onload = function () {
-        resolve(String(r.result || ""));
+        resolve(decodeFileBuffer(r.result));
       };
       r.onerror = function () {
         reject(r.error || new Error("lettura fallita"));
       };
-      r.readAsText(file, "UTF-8");
+      r.readAsArrayBuffer(file);
     });
   }
 
@@ -1402,15 +1413,17 @@
 
   /* ---------- CSV ---------- */
   function downloadRegataCSV(reg, rows) {
-    var lines = ["Stato;Posizione;Nickname;Team;Note"];
+    var lines = ["Stato;Posizione;Nickname;Team;Note;Tempo"];
     (rows || []).forEach(function (r) {
+      var L = lib();
       lines.push(
         [
           r.stato || "FIN",
           r.posizione != null ? r.posizione : "",
           '"' + String(r.nickname || "").replace(/"/g, '""') + '"',
           '"' + String(r.team || "").replace(/"/g, '""') + '"',
-          '"' + String(r.note || "").replace(/"/g, '""') + '"'
+          '"' + String(r.note || "").replace(/"/g, '""') + '"',
+          r.tempo_ms && L ? L.formatMs(r.tempo_ms) : ""
         ].join(";")
       );
     });
@@ -1508,7 +1521,7 @@
       alert("CSV vuoto o non leggibile.");
       return 0;
     }
-    var idx = { stato: 0, pos: 1, nick: 2, team: 3, note: 4 };
+    var idx = { stato: 0, pos: 1, nick: 2, team: 3, note: 4, tempo: -1 };
     var start = 0;
     var h = rows[0].map(function (x) {
       return String(x).trim().toLowerCase();
@@ -1527,6 +1540,7 @@
       idx.pos = find(/posiz|^pos\b|pos\.|rank|^#$/, 1);
       idx.nick = find(/nick|skipper|nome/, 2);
       idx.team = find(/team|squadra/, 3);
+      idx.tempo = find(/tempo|time|temps|ms|millisec/, -1);
       idx.note = find(/note|nota|comment/, 4);
     }
 
@@ -1544,17 +1558,20 @@
         String(r[idx.pos] == null ? "" : r[idx.pos]).replace(/[^0-9]/g, ""),
         10
       );
+      var tempoMs =
+        idx.tempo >= 0 && L ? L.parseTimeToMs(r[idx.tempo]) : 0;
       parsed.push({
         stato: statoRaw,
         pos: isNaN(pos) ? null : pos,
         nick: nick,
         team: String(r[idx.team] == null ? "" : r[idx.team]).trim(),
-        note: String(r[idx.note] == null ? "" : r[idx.note]).trim()
+        note: String(r[idx.note] == null ? "" : r[idx.note]).trim(),
+        tempo: tempoMs > 0 ? tempoMs : ""
       });
     }
     if (!parsed.length) {
       alert(
-        "Nessuno skipper trovato. Formato atteso: Stato;Posizione;Nickname;Team;Note"
+        "Nessuno skipper trovato. Formato atteso: Stato;Posizione;Nickname;Team;Note;Tempo"
       );
       return 0;
     }
@@ -1562,19 +1579,19 @@
     var body = document.getElementById("sa-ris-body");
     if (body) body.innerHTML = "";
     parsed.forEach(function (p) {
-      addRisRow(p.stato, p.pos, p.nick, p.team, p.note);
+      addRisRow(p.stato, p.pos, p.nick, p.team, p.note, p.tempo);
     });
     return parsed.length;
   }
 
   function downloadCsvTemplate() {
     var lines = [
-      "Stato;Posizione;Nickname;Team;Note",
-      "FIN;1;Skipper Uno;Team A;",
-      "FIN;2;Skipper Due;Team B;",
-      "DNF;;Skipper Tre;;",
-      "DNS;;Skipper Quattro;;",
-      "DSQ;;Skipper Cinque;;"
+      "Stato;Posizione;Nickname;Team;Note;Tempo",
+      "FIN;1;Skipper Uno;Team A;;12:34.567",
+      "FIN;2;Skipper Due;Team B;;12:41.002",
+      "DNF;;Skipper Tre;;;",
+      "DNS;;Skipper Quattro;;;",
+      "DSQ;;Skipper Cinque;;;"
     ];
     var blob = new Blob(["\uFEFF" + lines.join("\n")], {
       type: "text/csv;charset=utf-8;"
@@ -1675,7 +1692,7 @@
         if (!f) return;
         var reader = new FileReader();
         reader.onload = function () {
-          var n = importRisultatiCsv(reader.result);
+          var n = importRisultatiCsv(decodeFileBuffer(reader.result));
           var hint = document.getElementById("sa-csv-hint");
           if (n && hint) {
             hint.textContent =
@@ -1684,7 +1701,7 @@
           }
           csvFile.value = "";
         };
-        reader.readAsText(f, "UTF-8");
+        reader.readAsArrayBuffer(f);
       };
     }
     var tplBtn = document.getElementById("sa-csv-template");
