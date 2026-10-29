@@ -57,6 +57,8 @@
     if (rsa) { var sRsa = document.createElement("script"); sRsa.textContent = rsa; document.head.appendChild(sRsa); }
     var sf = await fetch("sfondi-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
     if (sf) { var s10 = document.createElement("script"); s10.textContent = sf; document.head.appendChild(s10); }
+    var grc = await fetch("gare-ris-csv.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (grc) { var sGrc = document.createElement("script"); sGrc.textContent = grc; document.head.appendChild(sGrc); }
     var dc = await fetch("discord-notify.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (dc) { var s4 = document.createElement("script"); s4.textContent = dc; document.head.appendChild(s4); }
     setTimeout(function(){
