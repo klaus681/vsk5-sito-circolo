@@ -8,7 +8,6 @@
 
   var CDN =
     "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@64f6844181e721152f0de9a85118ab69f10b9c82/eventi-admin-fields.js";
-
   function val(prefix, id) {
     var el = document.getElementById(prefix + "-" + id);
     return el && el.value != null ? String(el.value).trim() : "";
@@ -136,13 +135,29 @@
     }, 1000);
   }
 
-  var s = document.createElement("script");
-  s.src = CDN + "?v=5";
-  s.onload = afterLoad;
-  s.onerror = function () {
-    console.warn("[CVI] CDN campi estesi non caricato");
-    afterLoad();
-  };
-  document.head.appendChild(s);
+  function loadScript(src, onload, onerror) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = onload;
+    s.onerror = onerror;
+    document.head.appendChild(s);
+  }
+
+  /* base locale (niente dipendenza da un commit CDN fissato), CDN in fallback */
+  loadScript(
+    "eventi-admin-fields-base.js?v=1",
+    afterLoad,
+    function () {
+      console.warn("[CVI] base campi estesi locale non caricata, provo il CDN");
+      loadScript(
+        CDN + "?v=5",
+        afterLoad,
+        function () {
+          console.warn("[CVI] CDN campi estesi non caricato");
+          afterLoad();
+        }
+      );
+    }
+  );
   setTimeout(afterLoad, 2000);
 })();

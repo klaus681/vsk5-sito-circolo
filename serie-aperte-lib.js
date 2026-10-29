@@ -71,6 +71,23 @@
     return STATI_VALIDI.indexOf(v) !== -1 ? v : "FIN";
   }
 
+  /* Stato letto dal log VSK/CSV: sinonimi -> valori ammessi dalle tabelle.
+     DNC (non classificato) rientra in DNS perché le tabelle risultati
+     accettano solo FIN/DNF/DNS/DSQ/RET. */
+  var STATI_ALIAS = {
+    FIN: "FIN", FINISHED: "FIN", ARRIVATO: "FIN", ARRIVATA: "FIN", OK: "FIN",
+    DNF: "DNF", RET: "RET", RETIRED: "RET", WITHDRAWN: "RET", RITIRATO: "RET",
+    DNS: "DNS", DNC: "DNS", DSQ: "DSQ", DQ: "DSQ", DISQ: "DSQ",
+    DISQUALIFIED: "DSQ", SQUALIFICATO: "DSQ",
+    "NON ARRIVATO": "DNF", "NON PARTITO": "DNS"
+  };
+
+  function statoDaFile(raw, ms) {
+    var v = String(raw == null ? "" : raw).trim().toUpperCase();
+    if (v && STATI_ALIAS[v]) return STATI_ALIAS[v];
+    return ms > 0 ? "FIN" : "DNF";
+  }
+
   /* ---------- Lettura file ---------- */
 
   /* Buffer(file) -> testo. UTF-8, con fallback ISO-8859-1 per i log VSK
@@ -206,7 +223,7 @@
   function parseVskCsv(text) {
     var sep = detectSeparator(text);
     var rows = parseRows(text, sep);
-    var idx = { pos: 0, ms: 1, account: 2, nick: 3 };
+    var idx = { pos: 0, ms: 1, account: 2, nick: 3, stato: -1 };
     var start = 0;
 
     if (rows.length) {
@@ -227,6 +244,7 @@
         idx.ms = find(/time|temps|tempo|durata|ms|millisec/, 1);
         idx.nick = find(/nick|player|pilote|pseudo/, -1);
         idx.account = find(/account|username|login|user|compte|cuenta/, -1);
+        idx.stato = find(/stato|status|state|esito|risultat|result/, -1);
         if (idx.nick < 0 && idx.account < 0) {
           idx.nick = 3;
           idx.account = 2;
@@ -247,14 +265,17 @@
       var posRaw = parseInt(String(cell(r, idx.pos)).replace(/[^0-9-]/g, ""), 10);
       var ms = parseTimeToMs(cell(r, idx.ms));
       var clean = cleanNick(nickRaw) || nickRaw || acc;
+      var stato = statoDaFile(cell(r, idx.stato), ms);
+      /* le posizioni valgono solo per chi ha finito (come nell'editor manuale) */
+      var pos = stato !== "FIN" || isNaN(posRaw) || posRaw < 1 ? null : posRaw;
       out.push({
-        posizione: isNaN(posRaw) || posRaw < 1 ? null : posRaw,
+        posizione: pos,
         tempo_ms: ms > 0 ? ms : null,
         tempo: ms > 0 ? formatMs(ms) : "",
         account_vsk: cleanNick(acc) || acc || null,
         nickname_raw: nickRaw || acc,
         nickname: clean,
-        stato: ms > 0 ? "FIN" : "DNF"
+        stato: stato
       });
     }
 
@@ -265,7 +286,7 @@
     });
     var next = 1;
     out.forEach(function (e) {
-      if (e.posizione == null && e.tempo_ms) {
+      if (e.posizione == null && e.stato === "FIN" && e.tempo_ms) {
         while (used[next]) next++;
         e.posizione = next;
         used[next] = true;
@@ -478,6 +499,7 @@
     parseTimeToMs: parseTimeToMs,
     formatMs: formatMs,
     statoValido: statoValido,
+    statoDaFile: statoDaFile,
     decodeBuffer: decodeBuffer,
     detectSeparator: detectSeparator,
     parseRows: parseRows,

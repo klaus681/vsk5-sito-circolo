@@ -343,16 +343,60 @@
       };
     }
 
-    var risRes2 = await sb
-      .from("eventi_aperti_risultati")
-      .select("posizione,nickname,team")
+    var evRegRes = await sb
+      .from("eventi_aperti_regate")
+      .select("id,titolo,ordine,data_regata")
       .eq("evento_id", selected.id)
-      .order("posizione")
-      .limit(3);
+      .order("ordine");
+    var evRegate = evRegRes.data || [];
+    var libEv = window.CVISerieAperte;
+    var rows = [];
+    var evNote = tr("banner_event_note", "Classifica dell’evento · non ufficiale");
 
-    var rows = (risRes2.data || []).map(function (r) {
-      return { nickname: r.nickname, team: r.team, pos: Number(r.posizione) || null };
-    });
+    if (evRegate.length && libEv && typeof libEv.calcClassificaSerie === "function") {
+      var evRis = await sb
+        .from("eventi_aperti_risultati")
+        .select("regata_id,nickname,team,stato,posizione,tempo_ms")
+        .eq("evento_id", selected.id);
+      var byRegEv = {};
+      (evRis.data || []).forEach(function (r) {
+        var k = String(r.regata_id);
+        if (!byRegEv[k]) byRegEv[k] = [];
+        byRegEv[k].push(r);
+      });
+      var sistemaEv = selected.sistema_punteggio === "high_point" ? "high_point" : "low_point";
+      var clEv = libEv.calcClassificaSerie(
+        evRegate.map(function (reg) {
+          return {
+            id: reg.id,
+            titolo: reg.titolo,
+            results: libEv.calcPuntiRegata(byRegEv[String(reg.id)] || [], sistemaEv)
+          };
+        }),
+        selected.scarti || 0,
+        { sistema: sistemaEv, scartiAuto: !!selected.scarti_auto }
+      );
+      rows = clEv.slice(0, 3).map(function (r) {
+        return { nickname: r.nickname, team: r.team, pos: r.pos, pts: r.netti };
+      });
+      var scartiEv = libEv.calcolaNumScarti(selected.scarti || 0, !!selected.scarti_auto, evRegate.length);
+      evNote =
+        (sistemaEv === "high_point" ? "High Point" : "Low Point") +
+        " · " + tr("banner_discards", "scarti") + ": " + scartiEv +
+        (selected.scarti_auto ? " (" + tr("banner_automatic", "automatici") + ")" : "") +
+        " · " + evRegate.length + " " + tr("banner_races", "regate");
+    } else {
+      var risRes2 = await sb
+        .from("eventi_aperti_risultati")
+        .select("posizione,nickname,team")
+        .eq("evento_id", selected.id)
+        .order("posizione")
+        .limit(3);
+
+      rows = (risRes2.data || []).map(function (r) {
+        return { nickname: r.nickname, team: r.team, pos: Number(r.posizione) || null };
+      });
+    }
 
     return {
       kind: "evento",
@@ -361,8 +405,10 @@
       title: selected.titolo,
       description: selected.descrizione,
       date: fmtDateTime(selected.data_evento),
-      podium: podiumHtml(rows),
-      note: tr("banner_event_note", "Classifica dell’evento · non ufficiale")
+      podium: podiumHtml(rows, function (r) {
+        return r.pts != null ? r.pts + " pt" : "";
+      }),
+      note: evNote
     };
   }
 

@@ -352,52 +352,347 @@
     return true;
   }
 
-  function scrub(payload) {
-    if (!payload) return payload;
-    if (Array.isArray(payload)) return payload.map(scrub);
-    var out = {};
-    var ban = { scarti: 1, scarti_auto: 1, sistema_punteggio: 1 };
-    Object.keys(payload).forEach(function (k) {
-      if (!ban[k]) out[k] = payload[k];
-    });
-    return out;
+  /* ---------- Import log VSK multi-regata (eventi_aperti_regate) ---------- */
+
+  function titoloDaFile(name) {
+    var base = String(name || "").replace(/\.(csv|txt)$/i, "");
+    var m = base.match(/(\d{4})[-_](\d{2})[-_](\d{2})[-_](\d{2})[-_](\d{2})[-_](\d{2})/);
+    if (m) {
+      var d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+      if (!isNaN(d.getTime())) {
+        return {
+          titolo:
+            "Regata " +
+            d.toLocaleString("it-IT", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            }),
+          data: d.toISOString()
+        };
+      }
+    }
+    var m2 = base.match(/(\d{4})[-_](\d{2})[-_](\d{2})/);
+    if (m2) {
+      var d2 = new Date(+m2[1], +m2[2] - 1, +m2[3], 12, 0, 0);
+      return { titolo: "Regata " + d2.toLocaleDateString("it-IT"), data: d2.toISOString() };
+    }
+    return { titolo: base || "Regata VSK", data: null };
   }
 
-  /* Il salvataggio dell'evento lo fa il pannello originale (form.onsubmit).
-     Qui lo intercettiamo per: normalizzare le posizioni (vincolo unique) e
-     togliere dal payload i campi che appartengono alle serie, non agli eventi. */
+  function readFileBuffer(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () {
+        resolve(r.result);
+      };
+      r.onerror = function () {
+        reject(r.error || new Error("lettura fallita"));
+      };
+      r.readAsArrayBuffer(file);
+    });
+  }
+
+  function eventoCorrente() {
+    var el = document.getElementById("ea-id");
+    return el ? String(el.value || "").trim() : "";
+  }
+
+  function vskLog(msg, color) {
+    var el = document.getElementById("ea-vsk-log");
+    if (!el) return;
+    var p = document.createElement("div");
+    p.style.color = color || "#cbd5e1";
+    p.textContent = msg;
+    el.appendChild(p);
+  }
+
+  var scoreLoadedFor = "";
+
+  /* Carica sistema/scarti dell'evento aperto in modifica */
+  async function refreshScoreInputs() {
+    var el = document.getElementById("ea-vsk-score");
+    var id = eventoCorrente();
+    if (!el || !id || scoreLoadedFor === id) return;
+    var sb = window.CVI && CVI.supabase;
+    if (!sb) return;
+    scoreLoadedFor = id;
+    try {
+      var r = await sb
+        .from("eventi_aperti")
+        .select("sistema_punteggio,scarti,scarti_auto")
+        .eq("id", id)
+        .maybeSingle();
+      if (r.error || !r.data) return;
+      var sel = document.getElementById("ea-vsk-sistema");
+      var num = document.getElementById("ea-vsk-scarti");
+      var auto = document.getElementById("ea-vsk-scarti-auto");
+      if (sel) sel.value = r.data.sistema_punteggio === "high_point" ? "high_point" : "low_point";
+      if (num) num.value = r.data.scarti != null ? String(r.data.scarti) : "0";
+      if (auto) auto.checked = !!r.data.scarti_auto;
+    } catch (e) {}
+  }
+
+  async function saveScoreConfig(eventoId) {
+    var sel = document.getElementById("ea-vsk-sistema");
+    var num = document.getElementById("ea-vsk-scarti");
+    var auto = document.getElementById("ea-vsk-scarti-auto");
+    if (!sel && !num && !auto) return;
+    var sb = window.CVI && CVI.supabase;
+    if (!sb) return;
+    var payload = {
+      sistema_punteggio: sel && sel.value === "high_point" ? "high_point" : "low_point",
+      scarti: num ? Math.max(0, parseInt(num.value, 10) || 0) : 0,
+      scarti_auto: auto ? !!auto.checked : false
+    };
+    try {
+      await sb.from("eventi_aperti").update(payload).eq("id", eventoId);
+    } catch (e) {}
+  }
+
+
+  function ensureVskUi() {
+    var panel = document.getElementById("panel-eventi-aperti");
+    if (!panel || document.getElementById("ea-vsk-import")) return false;
+    var box = document.createElement("div");
+    box.id = "ea-vsk-import";
+    box.className = "admin-card";
+    box.style.cssText = "margin-bottom:1rem";
+    box.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap">' +
+      '<strong style="color:#7dd3fc;font-size:.9rem">⚡ Importa log VSK (un file = una regata)</strong>' +
+      '<button type="button" class="btn-ghost" id="ea-vsk-toggle">Mostra</button></div>' +
+      '<div id="ea-vsk-body" style="display:none;margin-top:.75rem">' +
+      '<p style="margin:0 0 .6rem;font-size:.8rem;color:#94a3b8">Apri <strong>Modifica</strong> su un evento salvato, poi trascina i file ' +
+      '<strong>Result_*.csv</strong>: ogni file diventa una regata con tempi, stati e classifica calcolata. ' +
+      'La classifica pubblica usa Low/High Point e gli scarti qui sotto.</p>' +
+      '<div id="ea-vsk-drop" style="border:2px dashed rgba(125,211,252,.35);border-radius:12px;padding:1rem;text-align:center;color:#94a3b8;font-size:.86rem;cursor:pointer">' +
+      'Trascina qui i file oppure clicca per sceglierli</div>' +
+      '<input type="file" id="ea-vsk-files" multiple accept=".csv,.txt,text/csv" style="display:none">' +
+      '<div id="ea-vsk-score" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;margin:.75rem 0">' +
+      '<label style="font-size:.78rem;color:#cbd5e1">Punteggio<br><select id="ea-vsk-sistema" class="adm-select">' +
+      '<option value="low_point">Low Point</option><option value="high_point">High Point</option></select></label>' +
+      '<label style="font-size:.78rem;color:#cbd5e1">Scarti<br><input type="number" min="0" id="ea-vsk-scarti" class="adm-input" value="0" style="width:5rem"></label>' +
+      '<label style="font-size:.78rem;color:#cbd5e1"><input type="checkbox" id="ea-vsk-scarti-auto"> Scarti automatici (1 ogni 4 regate)</label>' +
+      '<button type="button" class="btn-sm" id="ea-vsk-score-save">Salva punteggio</button></div>' +
+      '<label style="display:block;margin:.35rem 0;font-size:.8rem;color:#cbd5e1">' +
+      '<input type="checkbox" id="ea-vsk-clean" checked> Rimuovi i codici colore Nadeo ($) dai nickname</label>' +
+      '<div id="ea-vsk-log" style="font-size:.82rem;line-height:1.5;color:#cbd5e1"></div></div>';
+
+    var form = document.getElementById("ea-form");
+    if (form && form.parentNode) form.parentNode.insertBefore(box, form);
+    else panel.insertBefore(box, panel.firstChild);
+
+    var toggle = document.getElementById("ea-vsk-toggle");
+    var bodyWrap = document.getElementById("ea-vsk-body");
+    if (toggle && bodyWrap) {
+      toggle.onclick = function () {
+        var open = bodyWrap.style.display === "none";
+        bodyWrap.style.display = open ? "block" : "none";
+        toggle.textContent = open ? "Nascondi" : "Mostra";
+      };
+    }
+    var drop = document.getElementById("ea-vsk-drop");
+    var input = document.getElementById("ea-vsk-files");
+    if (drop && input) {
+      drop.onclick = function () {
+        input.click();
+      };
+      input.onchange = function () {
+        var files = this.files;
+        importEventiVskFiles(files);
+        this.value = "";
+      };
+      ["dragenter", "dragover"].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) {
+          e.preventDefault();
+          drop.style.borderColor = "rgba(125,211,252,.85)";
+        });
+      });
+      ["dragleave", "drop"].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) {
+          e.preventDefault();
+          drop.style.borderColor = "rgba(125,211,252,.35)";
+        });
+      });
+      drop.addEventListener("drop", function (e) {
+        if (e.dataTransfer && e.dataTransfer.files) importEventiVskFiles(e.dataTransfer.files);
+      });
+    }
+    var scoreBtn = document.getElementById("ea-vsk-score-save");
+    if (scoreBtn) {
+      scoreBtn.onclick = async function () {
+        var id = eventoCorrente();
+        if (!id) {
+          alert("Apri in modifica un evento salvato per salvare il punteggio.");
+          return;
+        }
+        await saveScoreConfig(id);
+        alert("Punteggio evento salvato.");
+      };
+    }
+    return true;
+  }
+
+
+  async function importEventiVskFiles(fileList) {
+    var sb = window.CVI && CVI.supabase;
+    if (!sb) return;
+    var eventoId = eventoCorrente();
+    if (!eventoId) {
+      alert("Apri in modifica un evento già salvato (serve l'ID evento) e riprova.");
+      return;
+    }
+    var L = libParser();
+    if (!L) {
+      alert("Libreria di calcolo non caricata (2-serie-aperte-lib.js).");
+      return;
+    }
+    var files = Array.prototype.slice.call(fileList || []).filter(function (f) {
+      return /\.(csv|txt)$/i.test(f.name);
+    });
+    if (!files.length) {
+      alert("Seleziona uno o più file .csv di Virtual Skipper.");
+      return;
+    }
+
+    var logEl = document.getElementById("ea-vsk-log");
+    if (logEl) logEl.innerHTML = "";
+    var cleanEl = document.getElementById("ea-vsk-clean");
+    var doClean = !cleanEl || cleanEl.checked;
+
+    await saveScoreConfig(eventoId);
+
+    var prev = await sb
+      .from("eventi_aperti_regate")
+      .select("ordine,sorgente_file")
+      .eq("evento_id", eventoId);
+    if (prev.error) prev = await sb.from("eventi_aperti_regate").select("ordine").eq("evento_id", eventoId);
+    var existing = {};
+    var ordine = 0;
+    (prev.data || []).forEach(function (r) {
+      if (r.sorgente_file) existing[String(r.sorgente_file)] = true;
+      if ((r.ordine || 0) > ordine) ordine = r.ordine || 0;
+    });
+
+    var ok = 0,
+      skip = 0,
+      fail = 0;
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (existing[file.name]) {
+        skip++;
+        vskLog("⏭ " + file.name + " già importata, saltata.", "#fbbf24");
+        continue;
+      }
+      try {
+        var text = decodeCsvBuffer(await readFileBuffer(file));
+        var rows = L.parseVskCsv(text);
+        if (!rows.length) {
+          fail++;
+          vskLog("⚠ " + file.name + ": nessuno skipper riconosciuto.", "#fbbf24");
+          continue;
+        }
+        var meta = titoloDaFile(file.name);
+        ordine += 1;
+        var regPayload = {
+          evento_id: eventoId,
+          titolo: meta.titolo,
+          data_regata: meta.data,
+          ordine: ordine,
+          sorgente_file: file.name
+        };
+        var regIns = await sb
+          .from("eventi_aperti_regate")
+          .insert(regPayload)
+          .select("id")
+          .single();
+        if (regIns.error && /sorgente_file|column|schema cache/i.test(String(regIns.error.message || ""))) {
+          delete regPayload.sorgente_file;
+          regIns = await sb
+            .from("eventi_aperti_regate")
+            .insert(regPayload)
+            .select("id")
+            .single();
+          if (!regIns.error)
+            vskLog("⚠ Colonna sorgente_file assente: esegui eventi-risultati-vsk-sql.sql.", "#fbbf24");
+        }
+        if (regIns.error) throw regIns.error;
+        var regId = regIns.data && regIns.data.id;
+
+        var payload = rows.map(function (r) {
+          return {
+            evento_id: eventoId,
+            regata_id: regId,
+            nickname: doClean ? L.cleanNick(r.nickname_raw) || r.nickname : r.nickname_raw,
+            nickname_raw: r.nickname_raw,
+            account_vsk: r.account_vsk,
+            stato: r.stato,
+            posizione: r.posizione,
+            tempo_ms: r.tempo_ms
+          };
+        });
+        var ins = await sb.from("eventi_aperti_risultati").insert(payload);
+        if (ins.error && /column|schema cache|nickname_raw|account_vsk|tempo_ms/i.test(String(ins.error.message || ""))) {
+          var legacy = payload.map(function (r) {
+            return {
+              evento_id: r.evento_id,
+              regata_id: r.regata_id,
+              nickname: r.nickname,
+              stato: r.stato,
+              posizione: r.posizione
+            };
+          });
+          ins = await sb.from("eventi_aperti_risultati").insert(legacy);
+          if (!ins.error)
+            vskLog("⚠ Tempi e account non salvati: esegui eventi-risultati-vsk-sql.sql.", "#fbbf24");
+        }
+        if (ins.error) throw ins.error;
+
+        ok++;
+        vskLog("✅ " + file.name + " → " + meta.titolo + " (" + rows.length + " skipper)", "#34d399");
+      } catch (e) {
+        fail++;
+        vskLog("❌ " + file.name + ": " + (e.message || e), "#f87171");
+      }
+    }
+
+    /* Con le regate la classifica è calcolata: via le righe "classifica unica"
+       rimaste da import manuali (regata_id nullo). */
+    if (ok) {
+      try {
+        await sb
+          .from("eventi_aperti_risultati")
+          .delete()
+          .eq("evento_id", eventoId)
+          .is("regata_id", null);
+      } catch (e) {}
+    }
+
+    vskLog(
+      "Import terminati: " + ok + " ok · " + skip + " saltati · " + fail + " errori.",
+      fail ? "#fbbf24" : "#7dd3fc"
+    );
+    if (ok && typeof window.loadEventiApertiAdmin === "function") {
+      try {
+        await window.loadEventiApertiAdmin();
+      } catch (e) {}
+    }
+  }
+
+
   function patchSaveEvento() {
     var form = document.getElementById("ea-form");
     if (!form || typeof form.onsubmit !== "function") return false;
     if (form.onsubmit._cviWrapped) return true;
     var orig = form.onsubmit;
     var wrapped = async function (ev) {
+      /* il vincolo unique (evento_id, posizione) non perdona duplicati/buchi */
       normalizeRisultatiRows();
-      var sb = window.CVI && CVI.supabase;
-      if (!sb || !sb.from) return orig.call(form, ev);
-      var realFrom = sb.from.bind(sb);
-      sb.from = function (table) {
-        var q = realFrom(table);
-        if (table !== "eventi_aperti") return q;
-        var realInsert = q.insert && q.insert.bind(q);
-        var realUpdate = q.update && q.update.bind(q);
-        if (realInsert) {
-          q.insert = function (payload) {
-            return realInsert(scrub(payload));
-          };
-        }
-        if (realUpdate) {
-          q.update = function (payload) {
-            return realUpdate(scrub(payload));
-          };
-        }
-        return q;
-      };
-      try {
-        return await orig.call(form, ev);
-      } finally {
-        sb.from = realFrom;
-      }
+      return orig.call(form, ev);
     };
     wrapped._cviWrapped = true;
     form.onsubmit = wrapped;
@@ -407,10 +702,12 @@
 
   function tick() {
     wireImport();
+    ensureVskUi();
     patchLoadList();
     restyleAdminCards();
     scrubFormRows();
     patchSaveEvento();
+    refreshScoreInputs();
   }
 
   function forceCleanSave() {
@@ -431,15 +728,24 @@
       return;
     }
     window.__cviEaOrigLoading = true;
-    var s = document.createElement("script");
-    s.src =
-      "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js";
-    s.onload = cb;
-    s.onerror = function () {
-      window.__cviEaOrigLoading = false;
-      cb();
-    };
-    document.head.appendChild(s);
+    function fallbackCdn() {
+      loadScript(
+        "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js",
+        function () {
+          window.__cviEaOrigLoading = false;
+          cb();
+        }
+      );
+    }
+    function loadScript(src, onerror) {
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = cb;
+      s.onerror = onerror;
+      document.head.appendChild(s);
+    }
+    /* pannello base locale (niente dipendenza da un commit CDN fissato) */
+    loadScript("eventi-aperti-admin-base.js?v=1", fallbackCdn);
   }
 
   ensureOrig(function () {

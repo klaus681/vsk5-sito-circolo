@@ -66,6 +66,7 @@
     var regate = [];
     var iscrizioni = [];
     var risEventi = [];
+    var regEventi = [];
 
     var rSerie = await sb.from("serie_aperte").select("*").eq("pubblicato", true).order("data_inizio", { ascending: false, nullsFirst: false });
     if (!rSerie.error) serie = rSerie.data || [];
@@ -81,17 +82,27 @@
       if (!rIscr.error) iscrizioni = rIscr.data || [];
     }
     if (eventi.length) {
-      var rRis = await sb.from("eventi_aperti_risultati").select("evento_id").in("evento_id", eventi.map(function (e) { return e.id; }));
+      var idsE = eventi.map(function (e) { return e.id; });
+      var rRis = await sb
+        .from("eventi_aperti_risultati")
+        .select("evento_id,nickname")
+        .in("evento_id", idsE);
       if (!rRis.error) risEventi = rRis.data || [];
+      var rRegE = await sb
+        .from("eventi_aperti_regate")
+        .select("id,evento_id")
+        .in("evento_id", idsE);
+      if (!rRegE.error) regEventi = rRegE.data || [];
     }
 
-    return { serie: serie, eventi: eventi, regate: regate, iscrizioni: iscrizioni, risEventi: risEventi };
+    return { serie: serie, eventi: eventi, regate: regate, iscrizioni: iscrizioni, risEventi: risEventi, regEventi: regEventi };
   }
 
   function buildItems(data) {
     var regBySerie = E.groupBy(data.regate, "serie_id");
     var iscrBySerie = E.groupBy(data.iscrizioni, "serie_id");
     var risByEvento = E.groupBy(data.risEventi, "evento_id");
+    var regByEvento = E.groupBy(data.regEventi || [], "evento_id");
 
     var items = data.serie.map(function (s) {
       var regs = regBySerie[String(s.id)] || [];
@@ -120,6 +131,13 @@
 
     data.eventi.forEach(function (e) {
       var ris = risByEvento[String(e.id)] || [];
+      var nReg = (regByEvento[String(e.id)] || []).length;
+      var uniq = {};
+      ris.forEach(function (r) {
+        var k = String(r.nickname || "").trim().toLowerCase();
+        if (k) uniq[k] = 1;
+      });
+      var nPart = Object.keys(uniq).length;
       var max = e.max_iscritti != null && Number(e.max_iscritti) > 0 ? Number(e.max_iscritti) : null;
       items.push({
         id: e.id,
@@ -131,8 +149,12 @@
         end: e.data_evento,
         status: E.deriveStatus(e.data_evento, e.data_evento),
         typeLabel: tr("ev_type_event", "Evento"),
-        metaParts: [ris.length ? ris.length + " " + tr("ev_participants", "partecipanti") : "", e.flotta || ""].filter(Boolean),
-        participants: ris.length ? ris.length : null,
+        metaParts: [
+          nReg ? nReg + " " + tr("ev_races", "regate") : "",
+          nPart ? nPart + " " + tr("ev_participants", "partecipanti") : "",
+          e.flotta || ""
+        ].filter(Boolean),
+        participants: nPart || null,
         max: max
       });
     });

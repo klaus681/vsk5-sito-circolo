@@ -3,7 +3,20 @@
   "use strict";
 
   function nickKey(s) {
-    return String(s == null ? "" : s).trim().toLowerCase().replace(/\s+/g, " ");
+    return String(s == null ? "" : s)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  /* chiave "larga": ignora @, spazi, punteggiatura e accenti
+     (es. "@Mario_Rossi" == "mario rossi") */
+  function alphaKey(s) {
+    return nickKey(s)
+      .replace(/^@+/, "")
+      .replace(/[^a-z0-9]+/g, "");
   }
 
   function cleanNickLocal(raw) {
@@ -142,29 +155,25 @@
     if (!form) return { matched: 0, unmatched: [] };
     var rows = form.querySelectorAll(".result-row");
     var byNick = {};
+    function addKey(key, row) {
+      if (!key) return;
+      if (!byNick[key]) byNick[key] = row;
+    }
     rows.forEach(function (row) {
       var labelCell = row.querySelector("td");
       var label = labelCell ? labelCell.textContent : "";
-      var k = nickKey(cleanNickLocal(label) || label);
-      if (k) byNick[k] = row;
-      var k2 = nickKey(label);
-      if (k2) byNick[k2] = row;
+      var clean = cleanNickLocal(label) || label;
+      /* due chiavi: testo normalizzato e solo lettere/numeri.
+         Niente match per sottostringa (evita "Marco" -> "Marcone"). */
+      addKey(nickKey(clean), row);
+      addKey(nickKey(label), row);
+      addKey(alphaKey(clean), row);
     });
     var matched = 0,
       unmatched = [],
       used = {};
     parsed.forEach(function (p) {
-      var k = nickKey(p.nick);
-      var row = byNick[k];
-      if (!row) {
-        var found = null;
-        Object.keys(byNick).forEach(function (bk) {
-          if (found) return;
-          if (bk && k && (bk.indexOf(k) >= 0 || k.indexOf(bk) >= 0) && Math.min(bk.length, k.length) >= 3)
-            found = byNick[bk];
-        });
-        row = found;
-      }
+      var row = byNick[nickKey(p.nick)] || byNick[alphaKey(p.nick)];
       if (!row) {
         unmatched.push(p.nick);
         return;

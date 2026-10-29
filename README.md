@@ -52,7 +52,7 @@ Prima di andare in produzione verifica:
 4. `site_settings` non espone segreti (webhook Discord) al client.
 5. I bucket storage hanno policy di lettura/scrittura coerenti con i ruoli.
 
-Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `membership-gating-sql.sql`, `ban-list-sql.sql`, `ban-account-fix-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
+Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `membership-gating-sql.sql`, `ban-list-sql.sql`, `ban-account-fix-sql.sql`, `eventi-aperti-sql.sql`, `eventi-risultati-vsk-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
 
 La password server delle gare (`gare-password-sql.sql`) è volutamente in una tabella separata (`gare_password`) e non in `gare`: `gare` è leggibile anche in anonimo, quindi la password è restituita solo agli utenti autenticati tramite RLS. Lo script va eseguito una volta nel SQL Editor di Supabase: finché la tabella non esiste il campo password non viene salvato e il pannello admin mostra un avviso.
 
@@ -76,6 +76,15 @@ Dopo l'esecuzione approva o rifiuta i nuovi soci da **Admin → Membri** (pulsan
 - `ban-account-fix-sql.sql` è lo **script unico e autosufficiente** da eseguire dopo le migrazioni base (`security-rls-hardening-sql.sql`, `membership-audit-sql.sql`): crea/aggiorna anche `ban_list` se manca, aggiunge `bannato` ai valori ammessi da `profiles.stato` (senza questo passaggio l'update del profilo fallisce e il Ban admin non viene salvato), blocca lato server le registrazioni e la creazione di profili con email in `ban_list` (trigger su `auth.users` e `profiles`) e aggiunge l'helper `public.is_user_banned(uuid)`. È idempotente: si può rieseguire senza rischi e non serve eseguire `ban-list-sql.sql` prima.
 
 Da **Admin → Membri** il pulsante **Ban** imposta `stato = 'bannato'`, azzera team/ruolo, elimina le iscrizioni e inserisce l'email in `ban_list`; **Togli ban** riporta lo stato ad `attivo` e rimuove l'email dalla lista. Un account bannato non può accedere (login e `membership-banner.js` chiudono la sessione), non rientra nell'elenco soci, non compare nelle classifiche pubbliche e non può registrarsi di nuovo con la stessa email.
+
+### Eventi con regate VSK
+
+Gli **Eventi** (`eventi_aperti`) possono avere una classifica unica (`Posizione;Nickname;Team;Note`) **oppure** più regate importate dai log di Virtual Skipper, con la stessa logica di Serie Aperte e Tornei:
+
+- `eventi-risultati-vsk-sql.sql` (dopo `eventi-aperti-sql.sql`) rimuove il vincolo `unique (evento_id, posizione)` — con più regate la stessa posizione si ripete —, garantisce le colonne VSK (`regata_id`, `nickname_raw`, `account_vsk`, `tempo_ms`, `stato`, `sorgente_file`) e crea l'indice `unique (evento_id, sorgente_file)` che impedisce di importare due volte lo stesso file.
+- In **Admin → Eventi** apri un evento in *Modifica* e usa **⚡ Importa log VSK**: ogni `Result_*.csv` diventa una regata (titolo/data dal nome file), i tempi e gli stati vengono salvati e i file già importati vengono saltati. Nello stesso box si impostano **Low/High Point** e gli **scarti**.
+- La pagina pubblica `evento.html` mostra la classifica a punti (con scarti) e, per ogni regata, una tabella richiudibile con **tempo e distacco** dal vincitore; il widget in Home usa la stessa classifica.
+- Tutti gli import (Gare, Serie, Tornei, Eventi) usano lo stesso parser (`2-serie-aperte-lib.js` → `parseVskCsv` + `decodeBuffer`): stesso risultato a parità di log, nickname ripuliti dai codici Nadeo, stati `FIN/DNF/DNS/DSQ/RET` riconosciuti da una colonna *Stato* quando presente.
 
 Il comparto **Download e Risorse** (`risorse.html`) unifica le vecchie pagine Download e Biblioteca. I dati sono in `public.risorse`; la migrazione da `downloads` e `biblioteca` è inclusa in `risorse-sql.sql` (idempotente, le vecchie tabelle restano intatte come fallback). Fino all'esecuzione dello script la pagina funziona in modalità compatibilità leggendo le vecchie tabelle per gli utenti loggati.
 

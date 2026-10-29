@@ -47,6 +47,11 @@
     ".evp-empty{color:#64748b;font-size:.9rem;padding:.75rem 0}";
 
   var STYLE2 =
+    ".evp-race{margin:.5rem 0;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(15,23,42,.35)}" +
+    ".evp-race>summary{cursor:pointer;padding:.6rem .8rem;font-size:.82rem;font-weight:700;color:#e2e8f0}" +
+    ".evp-race>summary:hover{color:#7dd3fc}" +
+    ".evp-race .evp-table-wrap{margin:0 .8rem .8rem}" +
+    ".evp-race-date{color:#94a3b8;font-weight:400}" +
     ".evp-pools{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.85rem;margin:.85rem 0 0}" +
     ".evp-pool{border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.85rem .95rem;background:rgba(15,23,42,.35)}" +
     ".evp-pool-name{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7dd3fc;margin-bottom:.55rem}" +
@@ -131,12 +136,19 @@
     var sb = CVI.supabase;
     var r = await sb.from("eventi_aperti").select("*").eq("id", id).eq("pubblicato", true).maybeSingle();
     if (r.error || !r.data) return null;
+    var regRes = await sb
+      .from("eventi_aperti_regate")
+      .select("*")
+      .eq("evento_id", id)
+      .order("ordine")
+      .order("data_regata", { ascending: true, nullsFirst: false });
+    var regate = regRes.error ? [] : regRes.data || [];
     var ris = await sb
       .from("eventi_aperti_risultati")
       .select("*")
       .eq("evento_id", id)
       .order("posizione");
-    return { evento: r.data, risultati: ris.data || [] };
+    return { evento: r.data, regate: regate, risultati: ris.data || [] };
   }
 
   function computeStandings(serie, regate, risultati) {
@@ -160,14 +172,41 @@
     };
   }
 
+  function computeEventStandings(evento, regate, risultati) {
+    var lib = window.CVISerieAperte;
+    if (!lib || typeof lib.calcClassificaSerie !== "function" || !regate.length) return null;
+    var byReg = E.groupBy(risultati, "regata_id");
+    var sistema = evento.sistema_punteggio === "high_point" ? "high_point" : "low_point";
+    var scartiAuto = !!evento.scarti_auto;
+    var forCl = regate.map(function (reg) {
+      return {
+        id: reg.id,
+        titolo: reg.titolo,
+        results: lib.calcPuntiRegata(byReg[String(reg.id)] || [], sistema)
+      };
+    });
+    return {
+      rows: lib.calcClassificaSerie(forCl, evento.scarti || 0, { sistema: sistema, scartiAuto: scartiAuto }),
+      sistema: sistema,
+      scartiAuto: scartiAuto,
+      scarti: lib.calcolaNumScarti(evento.scarti || 0, scartiAuto, regate.length)
+    };
+  }
+
   function buildModel(detail, kind, flags, user) {
     var raw = kind === "serie" ? detail.serie : detail.evento;
     var isSerie = kind === "serie";
+    var regate = detail.regate || [];
+    var hasRaces = regate.length > 0;
     var status = isSerie
       ? E.deriveStatus(raw.data_inizio, raw.data_fine)
       : E.deriveStatus(raw.data_evento, raw.data_evento);
-    var days = isSerie ? E.buildDays(detail.regate) : [];
-    var standings = isSerie ? computeStandings(raw, detail.regate, detail.risultati) : null;
+    var days = isSerie || hasRaces ? E.buildDays(regate) : [];
+    var standings = isSerie
+      ? computeStandings(raw, regate, detail.risultati)
+      : hasRaces
+        ? computeEventStandings(raw, regate, detail.risultati)
+        : null;
     var iscrizioni = isSerie ? detail.iscrizioni || [] : [];
     var gironi = isSerie ? detail.gironi || [] : [];
     var poolByNick = {};
@@ -180,15 +219,17 @@
 
     var participants = isSerie
       ? (iscrizioni.length ? iscrizioni.length : (standings && standings.rows ? standings.rows.length : 0))
-      : detail.risultati.length;
+      : standings
+        ? standings.rows.length
+        : detail.risultati.length;
 
     var typeLabel = isSerie
       ? (raw.tipo_evento === "evento" ? "EVENTO" : "CAMPIONATO")
       : "EVENTO";
 
     var metaParts = [];
-    if (isSerie) {
-      if (detail.regate.length) metaParts.push(detail.regate.length + " regate");
+    if (isSerie || hasRaces) {
+      if (regate.length) metaParts.push(regate.length + " regate");
       if (days.length) metaParts.push(days.length + " giornate");
     }
     if (raw.flotta) metaParts.push(raw.flotta);
@@ -209,7 +250,7 @@
       end: isSerie ? raw.data_fine : raw.data_evento,
       dates: isSerie ? E.fmtRange(raw.data_inizio, raw.data_fine) : E.fmtDateTime(raw.data_evento),
       metaParts: metaParts,
-      regate: isSerie ? detail.regate : [],
+      regate: regate,
       days: days,
       standings: standings,
       risultati: detail.risultati,
@@ -226,11 +267,16 @@
 
   function nextTarget(m) {
     var now = Date.now();
-    if (m.kind === "serie") {
+    if (m.regate && m.regate.length) {
       var future = m.regate
         .filter(function (r) { return r.data_regata && new Date(r.data_regata).getTime() > now; })
         .sort(function (a, b) { return new Date(a.data_regata).getTime() - new Date(b.data_regata).getTime(); });
-      if (future.length) return { ts: new Date(future[0].data_regata).getTime(), label: "PROSSIMA GIORNATA TRA" };
+      if (future.length) {
+        return {
+          ts: new Date(future[0].data_regata).getTime(),
+          label: m.kind === "serie" ? "PROSSIMA GIORNATA TRA" : "PROSSIMA REGATA TRA"
+        };
+      }
       if (m.status === "prossimo" && m.start) {
         return { ts: new Date(m.start).getTime(), label: "INIZIO TRA" };
       }
@@ -293,7 +339,7 @@
       if (value == null || value === "" || value === "—") return;
       facts.push({ label: label, value: String(value) });
     }
-    var derivedFormat = m.kind === "serie" && m.regate.length ? m.regate.length + " regate" : "";
+    var derivedFormat = m.regate.length ? m.regate.length + " regate" : "";
     add("Formato", raw.formato || derivedFormat);
     add("Flotta", raw.flotta);
     add("Procedura di partenza", raw.procedura_partenza);
@@ -302,13 +348,11 @@
     }
     var max = raw.max_iscritti != null && Number(raw.max_iscritti) > 0 ? Number(raw.max_iscritti) : null;
     add("Posti", m.participants || max ? m.participants + (max ? " / " + max : "") : "");
-    if (m.kind === "serie") {
-      add("Giornate", m.days.length || "");
-      if (m.standings) {
-        add("Sistema", (m.standings.sistema === "high_point" ? "High Point" : "Low Point") +
-          " · " + E.tr("banner_discards", "scarti") + ": " + m.standings.scarti +
-          (m.standings.scartiAuto ? " (" + E.tr("banner_automatic", "automatici") + ")" : ""));
-      }
+    if (m.days.length) add("Giornate", m.days.length);
+    if (m.standings) {
+      add("Sistema", (m.standings.sistema === "high_point" ? "High Point" : "Low Point") +
+        " · " + E.tr("banner_discards", "scarti") + ": " + m.standings.scarti +
+        (m.standings.scartiAuto ? " (" + E.tr("banner_automatic", "automatici") + ")" : ""));
     } else {
       add("Partecipanti", m.risultati.length || "");
     }
@@ -392,7 +436,7 @@
   }
 
   function scheduleHtml(m) {
-    if (m.kind === "serie") {
+    if (m.regate.length) {
       if (!m.days.length) return '<p class="evp-empty">Nessuna giornata programmata.</p>';
       var doneByReg = {};
       m.risultati.forEach(function (r) { doneByReg[String(r.regata_id)] = true; });
@@ -450,7 +494,9 @@
     }
     var showPool = m.gironi.length > 0;
     var legend =
-      '<p class="evp-legend">Punteggio minimo per regata' +
+      '<p class="evp-legend">Punteggio ' +
+      (m.standings.sistema === "high_point" ? "massimo" : "minimo") +
+      " per regata" +
       (showPool ? " all’interno del girone" : "") +
       ". I punteggi scartati sono barrati. Tra i gironi, per punti netti.</p>";
 
@@ -488,27 +534,87 @@
 
   function classificaEventoHtml(m) {
     if (!m.risultati.length) return '<p class="evp-empty">Classifica non ancora inserita.</p>';
+    var lib = window.CVISerieAperte;
+    var hasTempo = m.risultati.some(function (r) { return r.tempo_ms != null; });
     var rows = m.risultati.slice().sort(function (a, b) {
       return (Number(a.posizione) || 999) - (Number(b.posizione) || 999);
     });
     var body = rows.map(function (r) {
       var pos = Number(r.posizione) || 0;
+      var last = hasTempo
+        ? r.tempo_ms && lib
+          ? lib.formatMs(r.tempo_ms)
+          : r.stato && r.stato !== "FIN"
+            ? r.stato
+            : "—"
+        : r.note || "—";
       return (
         '<tr class="' + E.medalClass(pos) + '">' +
         '<td class="num"><span class="evp-rank">' + esc(r.posizione || "—") + "</span></td>" +
         '<td><span class="evp-nick">' + E.flagHtml(r.nickname, m.flags) + esc(r.nickname) + "</span></td>" +
         "<td>" + esc(r.team || "—") + "</td>" +
-        "<td>" + esc(r.note || "—") + "</td></tr>"
+        "<td>" + esc(last) + "</td></tr>"
       );
     }).join("");
     return (
-      '<div class="evp-table-wrap"><table class="evp-table"><thead><tr><th class="num">#</th><th>Velista</th><th>Team</th><th>Note</th></tr></thead><tbody>' +
+      '<div class="evp-table-wrap"><table class="evp-table"><thead><tr><th class="num">#</th><th>Velista</th><th>Team</th><th>' +
+      (hasTempo ? "Tempo" : "Note") +
+      "</th></tr></thead><tbody>" +
       body + "</tbody></table></div>"
     );
   }
 
+  /* Tempi e distacchi regata per regata (eventi importati da log VSK) */
+  function tempiHtml(m) {
+    if (!m.regate.length) return "";
+    var lib = window.CVISerieAperte;
+    var byReg = E.groupBy(m.risultati, "regata_id");
+    var parts = m.regate
+      .map(function (reg) {
+        var rows = (byReg[String(reg.id)] || []).slice().sort(function (a, b) {
+          return (Number(a.posizione) || 999) - (Number(b.posizione) || 999);
+        });
+        if (!rows.length) return "";
+        var winner = null;
+        rows.forEach(function (r) {
+          if (!winner && r.stato === "FIN" && r.tempo_ms) winner = r;
+        });
+        var body = rows
+          .map(function (r) {
+            var tempo = r.tempo_ms && lib ? lib.formatMs(r.tempo_ms) : "";
+            var stato = r.stato && r.stato !== "FIN" ? r.stato : "";
+            var distacco = "";
+            if (stato) distacco = stato;
+            else if (winner && r !== winner && r.tempo_ms && winner.tempo_ms) distacco = "+" + lib.formatMs(r.tempo_ms - winner.tempo_ms);
+            else if (winner === r) distacco = "—";
+            return (
+              "<tr>" +
+              '<td class="num"><span class="evp-rank">' + esc(r.posizione != null ? r.posizione : "—") + "</span></td>" +
+              '<td><span class="evp-nick">' + E.flagHtml(r.nickname, m.flags) + esc(r.nickname) + "</span></td>" +
+              '<td class="num">' + esc(tempo || stato || "—") + "</td>" +
+              '<td class="num">' + esc(distacco) + "</td></tr>"
+            );
+          })
+          .join("");
+        return (
+          '<details class="evp-race"><summary>' + esc(reg.titolo || "Regata") +
+          (reg.data_regata ? ' · <span class="evp-race-date">' + esc(E.fmtDateTime(reg.data_regata)) + "</span>" : "") +
+          '</summary><div class="evp-table-wrap"><table class="evp-table"><thead><tr>' +
+          '<th class="num">#</th><th>Velista</th><th class="num">Tempo</th><th class="num">Distacco</th>' +
+          "</tr></thead><tbody>" + body + "</tbody></table></div></details>"
+        );
+      })
+      .filter(Boolean)
+      .join("");
+    if (!parts) return "";
+    return '<h2 class="evp-section-title">Tempi per regata</h2>' + parts;
+  }
+
   function classificaHtml(m) {
-    return m.kind === "serie" ? classificaSerieHtml(m) : classificaEventoHtml(m);
+    if (m.standings) {
+      return classificaSerieHtml(m) + (m.kind === "evento" ? tempiHtml(m) : "");
+    }
+    return classificaEventoHtml(m);
   }
 
   function protesteHtml(m) {
