@@ -27,9 +27,9 @@
     if (st) { var s3 = document.createElement("script"); s3.textContent = st; document.head.appendChild(s3); }
     var tm = await fetch("teams-panel-admin.js?v=8").then(function(r){ return r.ok ? r.text() : ""; });
     if (tm) { var s5 = document.createElement("script"); s5.textContent = tm; document.head.appendChild(s5); }
-    var saLib = await fetch("2-serie-aperte-lib.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
+    var saLib = await fetch("2-serie-aperte-lib.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
     if (saLib) { var sLib = document.createElement("script"); sLib.textContent = saLib; document.head.appendChild(sLib); }
-    var ea = await fetch("eventi-aperti-admin.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
+    var ea = await fetch("eventi-aperti-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (ea) { var s7 = document.createElement("script"); s7.textContent = ea; document.head.appendChild(s7); }
     var saBoot = await fetch("serie-aperte-ui-boot.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (saBoot) { var sBoot = document.createElement("script"); sBoot.textContent = saBoot; document.head.appendChild(sBoot); }
