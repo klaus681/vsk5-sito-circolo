@@ -288,11 +288,61 @@
     return true;
   }
 
+  function scrub(payload) {
+    if (!payload) return payload;
+    if (Array.isArray(payload)) return payload.map(scrub);
+    var out = {};
+    var ban = { scarti: 1, scarti_auto: 1, sistema_punteggio: 1 };
+    Object.keys(payload).forEach(function (k) {
+      if (!ban[k]) out[k] = payload[k];
+    });
+    return out;
+  }
+
+  function stripSerieOnlyFields() {
+    if (typeof window.saveEvento !== "function" || window.saveEvento._noScarti) return;
+    var orig = window.saveEvento;
+    window.saveEvento = async function (ev) {
+      var sb = window.CVI && CVI.supabase;
+      if (!sb || !sb.from) return orig.apply(this, arguments);
+      var realFrom = sb.from.bind(sb);
+      sb.from = function (table) {
+        var q = realFrom(table);
+        if (table !== "eventi_aperti") return q;
+        var realInsert = q.insert && q.insert.bind(q);
+        var realUpdate = q.update && q.update.bind(q);
+        if (realInsert) {
+          q.insert = function (payload) {
+            return realInsert(scrub(payload));
+          };
+        }
+        if (realUpdate) {
+          q.update = function (payload) {
+            return realUpdate(scrub(payload));
+          };
+        }
+        return q;
+      };
+      try {
+        return await orig.apply(this, arguments);
+      } finally {
+        sb.from = realFrom;
+      }
+    };
+    window.saveEvento._noScarti = true;
+  }
+
   function tick() {
     wireImport();
     patchLoadList();
     restyleAdminCards();
     scrubFormRows();
+    stripSerieOnlyFields();
+  }
+
+  function forceCleanSave() {
+    stripSerieOnlyFields();
+    if (typeof window.saveEvento !== "function") setTimeout(forceCleanSave, 500);
   }
 
   function ensureOrig(cb) {
@@ -310,8 +360,10 @@
 
   ensureOrig(function () {
     tick();
+    forceCleanSave();
     setTimeout(tick, 800);
     setTimeout(tick, 2000);
     setTimeout(tick, 4000);
+    setTimeout(forceCleanSave, 1500);
   });
 })();
