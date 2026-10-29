@@ -175,7 +175,7 @@
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
-  <script src="common.js?v=15"></script>
+  <script src="common.js?v=16"></script>
   <script>
     const extra = {
       it: {
@@ -198,7 +198,8 @@
         msg_register_ok: "Registrazione completata! Controlla la email se è richiesta la conferma, poi accedi.",
         msg_register_pending: "Il tuo account è in attesa di approvazione: potrai accedere alle aree riservate dopo l'ok di un amministratore.",
         msg_profile_warn: "Nota: se la conferma email è attiva, il profilo verrà completato al primo accesso.",
-        msg_error_prefix: "Errore: "
+        msg_error_prefix: "Errore: ",
+        msg_ban_blocked: "Questa email non può registrarsi: account bannato. Contatta un amministratore se ritieni ci sia un errore."
       },
       en: {
         join_title: "Join the Club", join_subtitle: "Fill the form to register and join the community.",
@@ -220,7 +221,8 @@
         msg_register_ok: "Registration complete! Check your email if confirmation is required, then log in.",
         msg_register_pending: "Your account is awaiting approval: you will get access to the members area once an admin approves it.",
         msg_profile_warn: "Note: if email confirmation is enabled, your profile will be completed at first login.",
-        msg_error_prefix: "Error: "
+        msg_error_prefix: "Error: ",
+        msg_ban_blocked: "This email cannot register: the account is banned. Contact an administrator if you think this is a mistake."
       },
       fr: {
         join_title: "Rejoindre le Club", join_subtitle: "Remplissez le formulaire pour vous inscrire.",
@@ -242,7 +244,8 @@
         msg_register_ok: "Inscription terminée ! Vérifiez votre email si une confirmation est requise, puis connectez-vous.",
         msg_register_pending: "Votre compte est en attente d'approbation : l'accès à l'espace membres sera activé par un administrateur.",
         msg_profile_warn: "Remarque : si la confirmation par email est activée, le profil sera complété à la première connexion.",
-        msg_error_prefix: "Erreur : "
+        msg_error_prefix: "Erreur : ",
+        msg_ban_blocked: "Cet email ne peut pas s'inscrire : le compte est banni. Contactez un administrateur si vous pensez qu'il s'agit d'une erreur."
       },
       es: {
         join_title: "Únete al Club", join_subtitle: "Completa el formulario para registrarte.",
@@ -264,7 +267,8 @@
         msg_register_ok: "¡Registro completado! Revisa tu correo si se requiere confirmación y luego inicia sesión.",
         msg_register_pending: "Tu cuenta está pendiente de aprobación: podrás acceder al área de socios cuando un administrador la apruebe.",
         msg_profile_warn: "Nota: si la confirmación por correo está activada, el perfil se completará al primer inicio de sesión.",
-        msg_error_prefix: "Error: "
+        msg_error_prefix: "Error: ",
+        msg_ban_blocked: "Este email no puede registrarse: la cuenta está baneada. Contacta con un administrador si crees que es un error."
       }
     };
 
@@ -382,6 +386,23 @@
       btn.disabled = true;
       btn.setAttribute('aria-busy', 'true');
       btn.textContent = t.msg_registering;
+
+      // Blocco registrazione email bannate: controllo su ban_list PRIMA della signUp.
+      // (Il blocco definitivo resta lato server, vedi ban-account-fix-sql.sql)
+      try {
+        const banRes = await CVI.supabase.rpc('is_email_banned', { p_email: email });
+        if (banRes && banRes.data === true) {
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+          btn.textContent = t.btn_register;
+          msg.textContent = t.msg_ban_blocked;
+          msg.style.display = 'block';
+          msg.style.background = 'rgba(248,113,113,0.12)';
+          msg.style.color = '#f87171';
+          msg.focus();
+          return;
+        }
+      } catch (banErr) { /* funzione non ancora installata: nessun blocco lato client */ }
 
       let data = null;
       let error = null;

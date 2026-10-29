@@ -60,6 +60,11 @@ grant execute on function public.is_email_banned(text) to anon, authenticated;
 
 -- 3) is_club_member resta basato su stato = 'attivo'
 --    (bannato / sospeso / pending sono già esclusi)
+--
+-- IMPORTANTE: dopo questo script esegui anche `ban-account-fix-sql.sql`,
+-- che aggiunge 'bannato' ai valori ammessi da profiles.stato e blocca
+-- lato server le registrazioni con email in ban_list. Senza quel fix
+-- il pulsante Ban di Admin → Membri non riesce a salvare lo stato.
 
 comment on table public.ban_list is 'Email bannate: blocco registrazione e login CVI';
 comment on function public.is_email_banned(text) is 'True se l''email è in ban_list';

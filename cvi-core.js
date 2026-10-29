@@ -70,6 +70,8 @@
       /* Banner account in attesa / sospeso */
       membership_pending: '⏳ Account in attesa di approvazione.',
       membership_suspended: '⛔ Account sospeso.',
+      membership_banned: '🚫 Account bannato.',
+      membership_banned_help: 'Non puoi usare le aree riservate del circolo.',
       membership_public_only: 'Puoi consultare solo i contenuti pubblici.',
       membership_details: 'Dettagli',
 
@@ -146,6 +148,8 @@
 
       membership_pending: '⏳ Account pending approval.',
       membership_suspended: '⛔ Account suspended.',
+      membership_banned: '🚫 Account banned.',
+      membership_banned_help: 'You cannot use the club members area.',
       membership_public_only: 'You can only view public content.',
       membership_details: 'Details',
 
@@ -221,6 +225,8 @@
 
       membership_pending: '⏳ Compte en attente de validation.',
       membership_suspended: '⛔ Compte suspendu.',
+      membership_banned: '🚫 Compte banni.',
+      membership_banned_help: "Vous ne pouvez pas utiliser l'espace membres du club.",
       membership_public_only: 'Vous ne pouvez consulter que le contenu public.',
       membership_details: 'Détails',
 
@@ -296,6 +302,8 @@
 
       membership_pending: '⏳ Cuenta pendiente de aprobación.',
       membership_suspended: '⛔ Cuenta suspendida.',
+      membership_banned: '🚫 Cuenta baneada.',
+      membership_banned_help: 'No puedes usar el área de socios del club.',
       membership_public_only: 'Solo puedes consultar el contenido público.',
       membership_details: 'Detalles',
 

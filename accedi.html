@@ -195,7 +195,7 @@
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
 
-  <script src="common.js?v=15"></script>
+  <script src="common.js?v=16"></script>
   <script>
     const extra = {
       it: {
@@ -244,6 +244,12 @@
     function showMsg(el, text, ok) {
       el.textContent = text;
       el.className = 'auth-msg ' + (ok ? 'ok' : 'err');
+    }
+
+    // Sessione chiusa da membership-banner.js per account bannato
+    if (/[?&]banned=1/.test(location.search || '')) {
+      const loginMsg = document.getElementById('login-msg');
+      if (loginMsg) showMsg(loginMsg, 'Account bannato: accesso non consentito.', false);
     }
 
     document.getElementById('show-forgot').addEventListener('click', () => showPanel('panel-forgot'));

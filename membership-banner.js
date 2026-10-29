@@ -41,9 +41,23 @@
     if (lastStato && document.getElementById(ID)) show(lastStato);
   });
 
+  function pageName() {
+    return (location.pathname || "").split("/").pop() || "index.html";
+  }
+
+  /* Un account bannato non deve restare collegato: chiudiamo la sessione
+     (signOut globale) e riportiamo al login. Su profilo.html lasciamo
+     l'accesso per mostrare il motivo del ban nel box di stato. */
+  async function signOutBanned() {
+    try { await CVI.supabase.auth.signOut(); } catch (e) {}
+    if (pageName() !== "accedi.html") {
+      window.location.replace("accedi.html?banned=1");
+    }
+  }
+
   async function check() {
     if (!window.CVI || !CVI.supabase) return;
-    var path = (location.pathname || "").split("/").pop();
+    var path = pageName();
     if (path === "profilo.html") return;
     try {
       var res = await CVI.supabase.auth.getSession();
@@ -52,6 +66,7 @@
       var pr = await CVI.supabase.from("profiles").select("stato").eq("id", session.user.id).maybeSingle();
       if (pr.error || !pr.data || !pr.data.stato || pr.data.stato === "attivo") return;
       show(pr.data.stato);
+      if (pr.data.stato === "bannato") await signOutBanned();
     } catch (e) {}
   }
 

@@ -1,6 +1,6 @@
 /* CVI – loader: core condiviso locale (nessuna dipendenza da CDN esterni) */
 document.write('<link rel="stylesheet" href="nav-dropdown-fix.css?v=2">');
-document.write('<script src="cvi-core.js?v=7"><\/script>');
+document.write('<script src="cvi-core.js?v=8"><\/script>');
 /* Extra: nazionalità profilo */
 document.write('<script src="profilo-nazionalita.js?v=2"><\/script>');
 /* Extra: bandiere in classifica / membri / iscritti */
@@ -24,8 +24,4 @@ document.write('<script src="home-sfondi.js?v=2"><\/script>');
 /* Extra: link Privacy nel footer */
 document.write('<script src="privacy-link.js?v=2"><\/script>');
 /* Extra: banner account in attesa/sospeso/bannato */
-document.write('<script src="membership-banner.js?v=3"><\/script>');
-/* Extra: blocco registrazione email bannate */
-if (/unisciti\.html/i.test(location.pathname || location.href)) {
-  document.write('<script src="ban-register-guard.js?v=1"><\/script>');
-}
+document.write('<script src="membership-banner.js?v=4"><\/script>');

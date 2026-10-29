@@ -249,16 +249,18 @@
       var soft = await CVI.supabase.from("profiles").update({
         team: null, team_id: null,
         nickname: nick ? nick + " (espulso)" : "espulso",
+        stato: "sospeso",
         is_admin: false
       }).eq("id", uid);
       if (soft.error) {
         await CVI.supabase.from("profiles").update({
           team: null,
           nickname: nick ? nick + " (espulso)" : "espulso",
+          stato: "sospeso",
           is_admin: false
         }).eq("id", uid);
       }
-      alert("Profilo non eliminato (policy RLS). Marcato come espulso.");
+      alert("Profilo non eliminato (policy RLS). Marcato come espulso e account sospeso.");
     }
 
     if (window.CVIMembers) CVIMembers.refresh();
@@ -303,7 +305,10 @@
         }).eq("id", uid);
       }
       if (rSt.error) {
-        alert("Errore stato bannato: " + rSt.error.message);
+        alert("Errore stato bannato: " + rSt.error.message +
+          (/profiles_stato_check|check constraint/i.test(rSt.error.message || "")
+            ? "\n\nEsegui ban-account-fix-sql.sql su Supabase: abilita lo stato 'bannato' sul profilo."
+            : ""));
         return;
       }
 
@@ -314,12 +319,20 @@
         reason: "Ban admin"
       };
       var rBan = await CVI.supabase.from("ban_list").insert(payload);
+      if (rBan.error && /duplicate|unique/i.test(rBan.error.message || "")) {
+        // Email già presente in ban list: riallinea user_id e motivo.
+        rBan = await CVI.supabase.from("ban_list")
+          .update({ user_id: uid, banned_by: currentUserId || null, reason: "Ban admin" })
+          .eq("email_norm", email.trim().toLowerCase());
+      }
       if (rBan.error && !/duplicate|unique/i.test(rBan.error.message || "")) {
         alert("Profilo bannato, ma ban_list non aggiornata: " + rBan.error.message +
           "\nEsegui ban-list-sql.sql su Supabase se manca la tabella.");
       }
 
       try { await CVI.supabase.from("iscrizioni_gare").delete().eq("user_id", uid); } catch (e) {}
+      try { await CVI.supabase.from("torneo_iscrizioni").delete().eq("user_id", uid); } catch (e) {}
+      try { await CVI.supabase.from("allenamento_iscrizioni").delete().eq("user_id", uid); } catch (e) {}
       toast(t("ban_ok") || "Utente bannato.");
       if (window.CVIMembers) {
         if (CVIMembers.updateProfile) CVIMembers.updateProfile(uid, { stato: "bannato", is_admin: false });
@@ -340,10 +353,18 @@
         var pr = await CVI.supabase.from("profiles").select("email").eq("id", uid).maybeSingle();
         if (!pr.error && pr.data && pr.data.email) email = String(pr.data.email).trim();
       } catch (e) {}
-      await CVI.supabase.from("profiles").update({ stato: "attivo" }).eq("id", uid);
+      var rUp = await CVI.supabase.from("profiles").update({ stato: "attivo" }).eq("id", uid);
+      if (rUp.error) {
+        alert((t("unban_error") || "Errore unban: ") + rUp.error.message);
+        return;
+      }
       await CVI.supabase.from("ban_list").delete().eq("user_id", uid);
       if (email) {
-        try { await CVI.supabase.from("ban_list").delete().ilike("email", email); } catch (e) {}
+        var normEmail = email.trim().toLowerCase();
+        var rDel = await CVI.supabase.from("ban_list").delete().eq("email_norm", normEmail);
+        if (rDel.error) {
+          try { await CVI.supabase.from("ban_list").delete().ilike("email", email); } catch (e) {}
+        }
       }
       toast(t("unban_ok") || "Ban rimosso, account attivo.");
       if (window.CVIMembers) {

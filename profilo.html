@@ -51,6 +51,7 @@
     .section-box{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:1.25rem 1.35rem;margin-bottom:1.25rem}
     .profile-status{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);color:#fbbf24;border-radius:10px;padding:.75rem 1rem;font-size:.9rem;line-height:1.45;margin:0 0 1.1rem}
     .profile-status.is-sospeso{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.4);color:#f87171}
+    .profile-status.is-bannato{background:rgba(127,29,29,.35);border-color:rgba(248,113,113,.6);color:#fecaca}
     .section-box h2{margin:0 0 1rem;font-size:1.05rem;color:#38bdf8;font-weight:700}
     .edit-form{display:grid;gap:.75rem;max-width:420px}
     .edit-form label{font-size:.75rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:.25rem}
@@ -190,7 +191,7 @@
     </div></div>
     <div class="footer-bottom">© 2003–2026 Circolo Velico Italiano Virtual · Virtual Skipper</div>
   </footer>
-  <script src="common.js?v=15"></script>
+  <script src="common.js?v=16"></script>
   <script>
   (function(){
     function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -320,9 +321,12 @@
         if(isOwn&&prof.stato&&prof.stato!=='attivo'){
           statusEl.style.display='block';
           statusEl.classList.toggle('is-sospeso',prof.stato==='sospeso');
+          statusEl.classList.toggle('is-bannato',prof.stato==='bannato');
           statusEl.textContent=(prof.stato==='pending')
             ? 'Il tuo account è in attesa di approvazione da parte di un amministratore. Fino all\'approvazione non puoi leggere le password server di gare e tornei.'
-            : 'Il tuo account è sospeso. Contatta un amministratore per maggiori informazioni.';
+            : prof.stato==='bannato'
+              ? 'Il tuo account è stato bannato: non puoi più accedere alle aree riservate del circolo. Contatta un amministratore se ritieni ci sia un errore.'
+              : 'Il tuo account è sospeso. Contatta un amministratore per maggiori informazioni.';
         }else{statusEl.style.display='none';}
       }
       var iscrTitle=document.querySelector('#iscrizioni-section h2');

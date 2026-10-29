@@ -204,6 +204,7 @@
 
     .member-role.member-pending { background: rgba(251,191,36,.15); color: #fbbf24; border-color: rgba(251,191,36,.35); }
     .member-role.member-suspended { background: rgba(248,113,113,.15); color: #f87171; border-color: rgba(248,113,113,.35); }
+    .member-role.member-banned { background: rgba(127,29,29,.55); color: #fecaca; border-color: rgba(248,113,113,.6); }
     .member-approve-btn { background: rgba(52,211,153,.14); color: #34d399; border: 1px solid rgba(52,211,153,.4); }
     .member-reject-btn { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.35); }
     .member-approve-btn,
@@ -231,6 +232,13 @@
     }
     .member-expel-btn { color: #f87171; border-color: rgba(248, 113, 113, .45); }
     .member-expel-btn:hover { background: rgba(248, 113, 113, .12); }
+    .member-ban-btn {
+      background: rgba(248, 113, 113, .12); color: #fca5a5; border: 1px solid rgba(248, 113, 113, .5);
+      padding: .35rem .65rem; border-radius: 6px; font-size: .78rem; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: background var(--transition), color var(--transition);
+    }
+    .member-ban-btn:hover { background: rgba(248, 113, 113, .28); color: #fff; }
+    .member-ban-btn:disabled { opacity: .45; cursor: not-allowed; }
     .member-admin-btn:hover { background: rgba(56, 189, 248, .1); border-color: var(--border-hover); color: #fff; }
     .member-admin-btn.has-note { color: #fbbf24; border-color: rgba(251, 191, 36, .45); }
     .member-admin-btn:disabled { opacity: .45; cursor: not-allowed; }
@@ -411,7 +419,7 @@
     </div>
   </footer>
 
-  <script src="common.js?v=15"></script>
+  <script src="common.js?v=16"></script>
   <script>
     const extra = {
       it: {
@@ -425,8 +433,14 @@
         members_error: "Impossibile caricare l'elenco soci.", members_retry: "Riprova",
         alert_auth_required: "Devi effettuare l'accesso per visualizzare l'elenco dei soci.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Capo squadra", role_socio: "Socio", you: "Sei tu",
-        status_pending: "In attesa", status_suspended: "Sospeso",
+        status_pending: "In attesa", status_suspended: "Sospeso", status_banned: "Bannato",
         approve: "Approva", reject: "Rifiuta", suspend: "Sospendi", reactivate: "Riattiva",
+        ban: "Ban", unban: "Togli ban",
+        ban_ok: "Utente bannato.", unban_ok: "Ban rimosso, account attivo.",
+        ban_error: "Errore ban: ", unban_error: "Errore unban: ",
+        account_pending_msg: "Il tuo account è in attesa di approvazione: l’elenco soci sarà disponibile dopo l’ok di un amministratore.",
+        account_suspended_msg: "Il tuo account è sospeso: contatta un amministratore.",
+        account_banned_msg: "Il tuo account è bannato: non puoi più usare l’area soci. Contatta un amministratore se ritieni ci sia un errore.",
         status_updated: "Stato socio aggiornato.", status_error: "Errore stato: ",
         status_approve_confirm: "Approvare {name} come socio?", status_reject_confirm: "Rifiutare la richiesta di {name}?",
         status_suspend_confirm: "Sospendere {name}?", status_reactivate_confirm: "Riattivare {name}?",
@@ -462,8 +476,14 @@
         members_error: "Unable to load the member list.", members_retry: "Retry",
         alert_auth_required: "You must log in to view members.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Team captain", role_socio: "Member", you: "You",
-        status_pending: "Pending", status_suspended: "Suspended",
+        status_pending: "Pending", status_suspended: "Suspended", status_banned: "Banned",
         approve: "Approve", reject: "Reject", suspend: "Suspend", reactivate: "Reactivate",
+        ban: "Ban", unban: "Remove ban",
+        ban_ok: "User banned.", unban_ok: "Ban removed, account active.",
+        ban_error: "Ban error: ", unban_error: "Unban error: ",
+        account_pending_msg: "Your account is awaiting approval: the member list will be available once an admin approves it.",
+        account_suspended_msg: "Your account is suspended: contact an administrator.",
+        account_banned_msg: "Your account is banned: you can no longer use the members area. Contact an administrator if you think this is a mistake.",
         status_updated: "Member status updated.", status_error: "Status error: ",
         status_approve_confirm: "Approve {name} as a member?", status_reject_confirm: "Reject {name}'s request?",
         status_suspend_confirm: "Suspend {name}?", status_reactivate_confirm: "Reactivate {name}?",
@@ -499,8 +519,14 @@
         members_error: "Impossible de charger la liste des membres.", members_retry: "Réessayer",
         alert_auth_required: "Connexion requise pour voir les membres.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Chef d'équipe", role_socio: "Membre", you: "Vous",
-        status_pending: "En attente", status_suspended: "Suspendu",
+        status_pending: "En attente", status_suspended: "Suspendu", status_banned: "Banni",
         approve: "Approuver", reject: "Refuser", suspend: "Suspendre", reactivate: "Réactiver",
+        ban: "Bannir", unban: "Retirer le ban",
+        ban_ok: "Utilisateur banni.", unban_ok: "Ban retiré, compte actif.",
+        ban_error: "Erreur ban : ", unban_error: "Erreur suppression du ban : ",
+        account_pending_msg: "Votre compte est en attente d'approbation : la liste des membres sera disponible après validation par un administrateur.",
+        account_suspended_msg: "Votre compte est suspendu : contactez un administrateur.",
+        account_banned_msg: "Votre compte est banni : vous ne pouvez plus utiliser l'espace membres. Contactez un administrateur si vous pensez qu'il s'agit d'une erreur.",
         status_updated: "Statut du membre mis à jour.", status_error: "Erreur statut : ",
         status_approve_confirm: "Approuver {name} comme membre ?", status_reject_confirm: "Refuser la demande de {name} ?",
         status_suspend_confirm: "Suspendre {name} ?", status_reactivate_confirm: "Réactiver {name} ?",
@@ -536,8 +562,14 @@
         members_error: "No se pudo cargar la lista de miembros.", members_retry: "Reintentar",
         alert_auth_required: "Debes iniciar sesión para ver los miembros.",
         role_admin: "Admin", role_scorer: "Scorer", role_capo: "Jefe de equipo", role_socio: "Miembro", you: "Tú",
-        status_pending: "Pendiente", status_suspended: "Suspendido",
+        status_pending: "Pendiente", status_suspended: "Suspendido", status_banned: "Baneado",
         approve: "Aprobar", reject: "Rechazar", suspend: "Suspender", reactivate: "Reactivar",
+        ban: "Banear", unban: "Quitar ban",
+        ban_ok: "Usuario baneado.", unban_ok: "Ban eliminado, cuenta activa.",
+        ban_error: "Error de ban: ", unban_error: "Error al quitar el ban: ",
+        account_pending_msg: "Tu cuenta está pendiente de aprobación: la lista de socios estará disponible cuando un administrador la apruebe.",
+        account_suspended_msg: "Tu cuenta está suspendida: contacta con un administrador.",
+        account_banned_msg: "Tu cuenta está baneada: ya no puedes usar el área de socios. Contacta con un administrador si crees que es un error.",
         status_updated: "Estado del socio actualizado.", status_error: "Error de estado: ",
         status_approve_confirm: "¿Aprobar a {name} como socio?", status_reject_confirm: "¿Rechazar la solicitud de {name}?",
         status_suspend_confirm: "¿Suspender a {name}?", status_reactivate_confirm: "¿Reactivar a {name}?",
@@ -695,9 +727,13 @@
       const realName = nick && fullName(p) ? fullName(p) : '';
       const roleHtml = role !== 'socio' ? '<span class="member-role">' + esc(roleLabel(role)) + '</span>' : '';
       const stato = (p.stato || 'attivo');
+      const statoLabel = stato === 'pending' ? t('status_pending')
+        : stato === 'bannato' ? t('status_banned')
+        : t('status_suspended');
       const statoHtml = (isAdminView && stato !== 'attivo')
-        ? '<span class="member-role ' + (stato === 'pending' ? 'member-pending' : 'member-suspended') + '">' +
-            esc(stato === 'pending' ? t('status_pending') : t('status_suspended')) + '</span>'
+        ? '<span class="member-role ' +
+            (stato === 'pending' ? 'member-pending' : stato === 'bannato' ? 'member-banned' : 'member-suspended') +
+            '">' + esc(statoLabel) + '</span>'
         : '';
       const teamHtml = team
         ? '<span class="team-badge">' + esc(team) + '</span>'
@@ -916,10 +952,13 @@
       var myStato = meProfile && meProfile.stato;
       if (myStato && myStato !== 'attivo') {
         container.setAttribute('aria-busy', 'false');
+        var myStatoMsg = myStato === 'pending'
+          ? t('account_pending_msg')
+          : myStato === 'bannato'
+            ? t('account_banned_msg')
+            : t('account_suspended_msg');
         container.innerHTML = '<div class="members-error"><p>' +
-          (myStato === 'pending'
-            ? 'Il tuo account è in attesa di approvazione: l’elenco soci sarà disponibile dopo l’ok di un amministratore.'
-            : 'Il tuo account è sospeso: contatta un amministratore.') +
+          esc(myStatoMsg) +
           ' <a href="profilo.html">Vai al profilo</a></p></div>';
         if (toolbar) toolbar.hidden = true;
         return;
@@ -968,6 +1007,6 @@
 
     CVI.init('membri.html');
   </script>
-  <script src="membri-admin.js?v=2"></script>
+  <script src="membri-admin.js?v=3"></script>
 </body>
 </html>

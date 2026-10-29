@@ -52,7 +52,7 @@ Prima di andare in produzione verifica:
 4. `site_settings` non espone segreti (webhook Discord) al client.
 5. I bucket storage hanno policy di lettura/scrittura coerenti con i ruoli.
 
-Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `membership-gating-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
+Gli script di riferimento sono nella root: `profiles-rls-audit-sql.sql`, `security-rls-hardening-sql.sql`, `membership-audit-sql.sql`, `membership-gating-sql.sql`, `ban-list-sql.sql`, `ban-account-fix-sql.sql`, `gare-password-sql.sql`, `allenamenti-sql.sql`, `proteste-sql.sql`, `tornei-sql.sql`, `tornei-password-sql.sql`, `downloads-sql.sql`, `member-messages-sql.sql`, `biblioteca-sql.sql`, `tutor-sql.sql`. Eseguili in un progetto di test prima della produzione e conserva l'ordine di applicazione.
 
 La password server delle gare (`gare-password-sql.sql`) è volutamente in una tabella separata (`gare_password`) e non in `gare`: `gare` è leggibile anche in anonimo, quindi la password è restituita solo agli utenti autenticati tramite RLS. Lo script va eseguito una volta nel SQL Editor di Supabase: finché la tabella non esiste il campo password non viene salvato e il pannello admin mostra un avviso.
 
@@ -69,6 +69,13 @@ Lo stesso criterio vale per i tornei (`tornei-password-sql.sql`, tabella `torneo
 Dopo l'esecuzione approva o rifiuta i nuovi soci da **Admin → Membri** (pulsanti sulle card).
 
 `membership-gating-sql.sql` estende il blocco ai contenuti riservati: un account `pending`/`sospeso` vede solo le risorse pubbliche (non quelle `visibilita='soci'`), non scarica i file del bucket `risorse` riservati, non accede a download/biblioteca/tutor e non può iscriversi a gare, tornei e allenamenti né inviare proteste. Anche l'elenco soci è nascosto finché non viene approvato.
+
+### Ban permanente degli account
+
+- `ban-list-sql.sql` crea `public.ban_list` (email bannate) e la funzione `public.is_email_banned(text)`, usata da login e registrazione.
+- `ban-account-fix-sql.sql` **va eseguito dopo** e completa il ban: aggiunge `bannato` ai valori ammessi da `profiles.stato` (senza questo passaggio l'update del profilo fallisce), blocca lato server le registrazioni e la creazione di profili con email in `ban_list` (trigger su `auth.users` e `profiles`) e aggiunge l'helper `public.is_user_banned(uuid)`.
+
+Da **Admin → Membri** il pulsante **Ban** imposta `stato = 'bannato'`, azzera team/ruolo, elimina le iscrizioni e inserisce l'email in `ban_list`; **Togli ban** riporta lo stato ad `attivo` e rimuove l'email dalla lista. Un account bannato non può accedere (login e `membership-banner.js` chiudono la sessione), non rientra nell'elenco soci, non compare nelle classifiche pubbliche e non può registrarsi di nuovo con la stessa email.
 
 Il comparto **Download e Risorse** (`risorse.html`) unifica le vecchie pagine Download e Biblioteca. I dati sono in `public.risorse`; la migrazione da `downloads` e `biblioteca` è inclusa in `risorse-sql.sql` (idempotente, le vecchie tabelle restano intatte come fallback). Fino all'esecuzione dello script la pagina funziona in modalità compatibilità leggendo le vecchie tabelle per gli utenti loggati.
 
