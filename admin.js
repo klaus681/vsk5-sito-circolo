@@ -29,6 +29,8 @@
     if (tm) { var s5 = document.createElement("script"); s5.textContent = tm; document.head.appendChild(s5); }
     var saLib = await fetch("2-serie-aperte-lib.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
     if (saLib) { var sLib = document.createElement("script"); sLib.textContent = saLib; document.head.appendChild(sLib); }
+    var vskC = await fetch("vsk-clean-patch.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    if (vskC) { var sVskC = document.createElement("script"); sVskC.textContent = vskC; document.head.appendChild(sVskC); }
     var ea = await fetch("eventi-aperti-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
     if (ea) { var s7 = document.createElement("script"); s7.textContent = ea; document.head.appendChild(s7); }
     var saBoot = await fetch("serie-aperte-ui-boot.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
