@@ -73,7 +73,7 @@ Dopo l'esecuzione approva o rifiuta i nuovi soci da **Admin → Membri** (pulsan
 ### Ban permanente degli account
 
 - `ban-list-sql.sql` crea `public.ban_list` (email bannate) e la funzione `public.is_email_banned(text)`, usata da login e registrazione.
-- `ban-account-fix-sql.sql` **va eseguito dopo** e completa il ban: aggiunge `bannato` ai valori ammessi da `profiles.stato` (senza questo passaggio l'update del profilo fallisce), blocca lato server le registrazioni e la creazione di profili con email in `ban_list` (trigger su `auth.users` e `profiles`) e aggiunge l'helper `public.is_user_banned(uuid)`.
+- `ban-account-fix-sql.sql` è lo **script unico e autosufficiente** da eseguire dopo le migrazioni base (`security-rls-hardening-sql.sql`, `membership-audit-sql.sql`): crea/aggiorna anche `ban_list` se manca, aggiunge `bannato` ai valori ammessi da `profiles.stato` (senza questo passaggio l'update del profilo fallisce e il Ban admin non viene salvato), blocca lato server le registrazioni e la creazione di profili con email in `ban_list` (trigger su `auth.users` e `profiles`) e aggiunge l'helper `public.is_user_banned(uuid)`. È idempotente: si può rieseguire senza rischi e non serve eseguire `ban-list-sql.sql` prima.
 
 Da **Admin → Membri** il pulsante **Ban** imposta `stato = 'bannato'`, azzera team/ruolo, elimina le iscrizioni e inserisce l'email in `ban_list`; **Togli ban** riporta lo stato ad `attivo` e rimuove l'email dalla lista. Un account bannato non può accedere (login e `membership-banner.js` chiudono la sessione), non rientra nell'elenco soci, non compare nelle classifiche pubbliche e non può registrarsi di nuovo con la stessa email.
 

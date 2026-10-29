@@ -1,54 +1,134 @@
 -- ============================================================
--- CVI Virtual – FIX ban account (lato soci)
--- Esegui UNA VOLTA nel SQL Editor di Supabase, DOPO ban-list-sql.sql
--- e dopo membership-audit-sql.sql. Idempotente.
+-- CVI Virtual – BAN ACCOUNT (script unico, idempotente)
+-- Esegui nel SQL Editor di Supabase DOPO:
+--   security-rls-hardening-sql.sql
+--   membership-audit-sql.sql
+-- Crea/aggiorna da solo ban_list: non serve eseguire altro.
 -- ============================================================
--- Perché serve:
---   membership-audit-sql.sql crea il vincolo profiles_stato_check con i soli
---   valori ('pending','attivo','sospeso'): senza questo fix l'update a
---   stato = 'bannato' fatto da Admin → Membri fallisce e il ban non viene
---   applicato al profilo.
---
 -- Cosa fa:
---   1. profiles.stato accetta anche 'bannato'
---   2. blocco server-side delle registrazioni con email in ban_list
---      (il controllo lato browser non basta: basta chiamare l'API auth)
---   3. blocco server-side della creazione di profili con email in ban_list
---   4. helper public.is_user_banned(uid) per controlli lato DB
+--   1. tabella public.ban_list (email bannate) + RLS solo admin
+--   2. funzione public.is_email_banned(text) (login/registrazione)
+--   3. profiles.stato accetta anche 'bannato'
+--      (senza questo punto il pulsante Ban di Admin → Membri fallisce)
+--   4. blocco server-side di registrazioni e profili con email bannata
+--   5. helper public.is_user_banned(uid)
 -- ============================================================
 
 begin;
 
--- Prerequisito: ban_list deve esistere (creata da ban-list-sql.sql)
+-- ------------------------------------------------------------
+-- 0) Prerequisiti
+-- ------------------------------------------------------------
 do $$
 begin
-  if to_regclass('public.ban_list') is null then
-    raise exception 'Tabella public.ban_list mancante: esegui prima ban-list-sql.sql';
-  end if;
   if to_regclass('public.profiles') is null then
     raise exception 'Tabella public.profiles mancante: esegui prima security-rls-hardening-sql.sql';
   end if;
 end $$;
 
 -- ------------------------------------------------------------
--- 1) Stato profilo: aggiungi 'bannato'
+-- 1) Tabella email bannate (blocca anche nuove registrazioni)
+-- ------------------------------------------------------------
+create table if not exists public.ban_list (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  email_norm text generated always as (lower(trim(email))) stored,
+  user_id uuid null,
+  reason text null,
+  banned_by uuid null references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- installazioni con una ban_list creata a mano senza colonna normalizzata
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'ban_list' AND column_name = 'email_norm'
+  ) THEN
+    ALTER TABLE public.ban_list
+      ADD COLUMN email_norm text GENERATED ALWAYS AS (lower(trim(email))) STORED;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'ban_list_email_norm_unique'
+      AND conrelid = 'public.ban_list'::regclass
+  ) THEN
+    BEGIN
+      ALTER TABLE public.ban_list
+        ADD CONSTRAINT ban_list_email_norm_unique UNIQUE (email_norm);
+    EXCEPTION WHEN others THEN
+      RAISE WARNING 'ban_list: vincolo unique su email_norm non aggiunto (%). Rimuovi i duplicati e riesegui.', sqlerrm;
+    END;
+  END IF;
+END $$;
+
+create index if not exists ban_list_user_id_idx on public.ban_list (user_id);
+
+alter table public.ban_list enable row level security;
+
+drop policy if exists "ban_list_admin_all" on public.ban_list;
+create policy "ban_list_admin_all" on public.ban_list
+  for all to authenticated
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and (p.is_admin = true or lower(coalesce(p.role, '')) = 'admin')
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and (p.is_admin = true or lower(coalesce(p.role, '')) = 'admin')
+    )
+  );
+
+-- ------------------------------------------------------------
+-- 2) Controllo email bannata (chiamabile da anon in registrazione)
+-- ------------------------------------------------------------
+create or replace function public.is_email_banned(p_email text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.ban_list b
+    where b.email_norm = lower(trim(coalesce(p_email, '')))
+      and length(trim(coalesce(p_email, ''))) > 0
+  );
+$$;
+
+revoke all on function public.is_email_banned(text) from public;
+grant execute on function public.is_email_banned(text) to anon, authenticated;
+
+-- ------------------------------------------------------------
+-- 3) Stato profilo: aggiungi 'bannato'
 -- ------------------------------------------------------------
 -- Rimuove il vecchio vincolo (anche se rinominato) che limita i valori di stato
-do $$
-declare
+DO $$
+DECLARE
   c record;
-begin
-  for c in
-    select conname
-    from pg_constraint
-    where conrelid = 'public.profiles'::regclass
-      and contype = 'c'
-      and pg_get_constraintdef(oid) ilike '%stato%'
-      and pg_get_constraintdef(oid) ilike '%pending%'
-  loop
-    execute format('alter table public.profiles drop constraint %I', c.conname);
-  end loop;
-end $$;
+BEGIN
+  FOR c IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'public.profiles'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%stato%'
+      AND pg_get_constraintdef(oid) ILIKE '%pending%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.profiles DROP CONSTRAINT %I', c.conname);
+  END LOOP;
+END $$;
 
 alter table public.profiles
   add constraint profiles_stato_check
@@ -58,8 +138,7 @@ comment on column public.profiles.stato is
   'Stato del socio: pending = in attesa di approvazione, attivo = approvato, sospeso = sospeso/congelato, bannato = ban permanente (bloccato anche l''accesso).';
 
 -- ------------------------------------------------------------
--- 2) Registrazione: nessun nuovo utente con email bannata
---    (trigger BEFORE INSERT su auth.users: annulla la signUp)
+-- 4a) Nessuna registrazione con email bannata (trigger su auth.users)
 -- ------------------------------------------------------------
 create or replace function public.block_banned_signup()
 returns trigger
@@ -89,7 +168,7 @@ create trigger trg_block_banned_signup
 revoke all on function public.block_banned_signup() from public;
 
 -- ------------------------------------------------------------
--- 3) Profili: nessun profilo creato con email bannata
+-- 4b) Nessun profilo creato con email bannata
 -- ------------------------------------------------------------
 create or replace function public.block_banned_profile()
 returns trigger
@@ -119,7 +198,7 @@ create trigger trg_block_banned_profile
 revoke all on function public.block_banned_profile() from public;
 
 -- ------------------------------------------------------------
--- 4) Helper: l'utente indicato è bannato?
+-- 5) Helper: l'utente indicato è bannato?
 --    (stato profilo 'bannato' oppure email presente in ban_list)
 -- ------------------------------------------------------------
 create or replace function public.is_user_banned(p_uid uuid)
@@ -153,21 +232,18 @@ notify pgrst, 'reload schema';
 commit;
 
 -- ============================================================
--- Verifica
+-- Verifica (facoltativa, sola lettura)
 -- ============================================================
--- 1) Il vincolo deve includere 'bannato'
 select conname, pg_get_constraintdef(oid) as definizione
 from pg_constraint
 where conname = 'profiles_stato_check'
   and conrelid = 'public.profiles'::regclass;
 
--- 2) I trigger di blocco devono esistere
 select tgname, tgrelid::regclass as tabella, tgenabled
 from pg_trigger
 where not tgisinternal
   and tgname in ('trg_block_banned_signup', 'trg_block_banned_profile');
 
--- 3) Elenco email bannate
 select email, user_id, reason, created_at
 from public.ban_list
 order by created_at desc;
