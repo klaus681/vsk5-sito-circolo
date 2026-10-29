@@ -1,5 +1,5 @@
 /* CVI – Iscrizione self-service eventi (serie + singoli)
-   Regole: login + nickname profilo, date iscrizione, max posti.
+   Regole: login + nickname profilo, date iscrizione, max posti, evento non passato.
    Dipende da eventi-common.js (CVIEventi) e CVI.supabase. */
 (function () {
   "use strict";
@@ -8,10 +8,10 @@
     if (window.CVIEventi && CVIEventi.esc) return CVIEventi.esc(s);
     if (s == null) return "";
     return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/&/g, "&" + "amp;")
+      .replace(/</g, "&" + "lt;")
+      .replace(/>/g, "&" + "gt;")
+      .replace(/"/g, "&" + "quot;");
   }
 
   function nowMs() {
@@ -24,11 +24,25 @@
     return isNaN(t) ? null : t;
   }
 
-  /** Stato iscrizione rispetto a date apertura/chiusura e max. */
+  /** Stato iscrizione rispetto a date apertura/chiusura e se l'evento e' passato. */
   function registrationWindow(raw) {
+    var n = nowMs();
+    /* Evento/serie gia' terminato: niente iscrizioni */
+    var endIso = (raw && (raw.data_fine || raw.data_evento)) || null;
+    var end = parseTs(endIso);
+    if (end) {
+      var endDate = new Date(end);
+      var onlyDate =
+        endDate.getUTCHours() === 0 &&
+        endDate.getUTCMinutes() === 0 &&
+        endDate.getUTCSeconds() === 0;
+      var endLimit = onlyDate ? end + 24 * 60 * 60 * 1000 - 1 : end;
+      if (n > endLimit) {
+        return { ok: false, reason: "past", message: "Evento terminato: iscrizioni chiuse." };
+      }
+    }
     var open = parseTs(raw && raw.iscrizioni_apertura);
     var close = parseTs(raw && raw.iscrizioni_chiusura);
-    var n = nowMs();
     if (open && n < open) {
       return { ok: false, reason: "not_open", message: "Iscrizioni non ancora aperte." };
     }
@@ -59,17 +73,6 @@
     return kind === "serie" ? "serie_id" : "evento_id";
   }
 
-  /**
-   * @returns {{
-   *   canRegister: boolean,
-   *   canUnregister: boolean,
-   *   isRegistered: boolean,
-   *   message: string,
-   *   myRow: object|null,
-   *   count: number,
-   *   max: number|null
-   * }}
-   */
   function status(kind, raw, iscrizioni, user) {
     var list = iscrizioni || [];
     var myRow = findMyIscrizione(list, user);
@@ -83,9 +86,12 @@
     if (myRow) {
       return {
         canRegister: false,
-        canUnregister: win.ok || win.reason === "closed" ? win.reason !== "not_open" : true,
+        canUnregister: win.reason === "past" ? false : (win.ok || win.reason === "closed"),
         isRegistered: true,
-        message: "Sei iscritto come " + (myRow.nickname || user.nickname || ""),
+        message:
+          win.reason === "past"
+            ? "Evento terminato. Eri iscritto come " + (myRow.nickname || user.nickname || "")
+            : "Sei iscritto come " + (myRow.nickname || user.nickname || ""),
         myRow: myRow,
         count: count,
         max: max
@@ -97,7 +103,7 @@
         canRegister: false,
         canUnregister: false,
         isRegistered: false,
-        message: "Accedi per iscriverti.",
+        message: win.reason === "past" ? "Evento terminato: iscrizioni chiuse." : "Accedi per iscriverti.",
         myRow: null,
         count: count,
         max: max
@@ -144,7 +150,7 @@
       canRegister: true,
       canUnregister: false,
       isRegistered: false,
-      message: max != null ? count + " / " + max + " iscritti" : count + " iscritti",
+      message: max != null ? count + "/" + max + " iscritti" : count + " iscritti",
       myRow: null,
       count: count,
       max: max
@@ -153,17 +159,15 @@
 
   async function register(kind, eventId, user) {
     if (!window.CVI || !CVI.supabase) throw new Error("Servizio non disponibile");
-    if (!user || !user.id) throw new Error("Devi accedere per iscriverti");
-    var nick = String(user.nickname || "").trim();
-    if (!nick) throw new Error("Imposta un nickname nel profilo");
-
+    if (!user || !user.id) throw new Error("Devi accedere");
+    if (!user.nickname || !String(user.nickname).trim()) {
+      throw new Error("Imposta un nickname nel profilo");
+    }
     var payload = {
       user_id: user.id,
-      nickname: nick,
-      stato: "ISC"
+      nickname: String(user.nickname).trim()
     };
     payload[idField(kind)] = eventId;
-
     var res = await CVI.supabase.from(tableFor(kind)).insert(payload).select("*").maybeSingle();
     if (res.error) {
       if (/duplicate|unique/i.test(res.error.message || "")) {
@@ -209,7 +213,7 @@
   function buttonHtml(st, opts) {
     opts = opts || {};
     var cls = opts.className || "evp-btn-iscr";
-    if (st.isRegistered) {
+    if (st.isRegistered && st.canUnregister) {
       return (
         '<button type="button" class="' +
         cls +
@@ -227,6 +231,17 @@
         '" data-ev-iscr="in">' +
         (opts.registerLabel || "Iscriviti") +
         "</button>"
+      );
+    }
+    if (st.message && /terminat|chiuse|non ancora/i.test(st.message)) {
+      return (
+        '<span class="' +
+        cls +
+        " " +
+        cls +
+        '--disabled" style="opacity:.65;cursor:default;pointer-events:none">' +
+        (st.message.indexOf("terminat") >= 0 ? "Evento terminato" : "Iscrizioni chiuse") +
+        "</span>"
       );
     }
     if (!opts.user) {
