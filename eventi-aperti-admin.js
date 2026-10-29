@@ -1,52 +1,19 @@
-/* CVI Admin – Eventi aperti (con auto-unica mostra_home + CSV + locandina) */
+/* CVI Admin – Eventi aperti – bootstrap restore */
 (function () {
   "use strict";
-
-  function esc(s) {
-    if (s == null) return "";
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function fmt(iso) {
-    if (!iso) return "—";
-    try {
-      return new Date(iso).toLocaleString("it-IT", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } catch (e) {
-      return String(iso);
+  var URLS = [
+    "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js",
+    "https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js"
+  ];
+  function load(i) {
+    if (i >= URLS.length) {
+      console.error("[CVI] impossibile ripristinare eventi-aperti-admin.js");
+      return;
     }
+    var s = document.createElement("script");
+    s.src = URLS[i];
+    s.onerror = function () { load(i + 1); };
+    document.head.appendChild(s);
   }
-
-  function toLocal(iso) {
-    if (!iso) return "";
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return "";
-    function p(n) {
-      return String(n).padStart(2, "0");
-    }
-    return (
-      d.getFullYear() +
-      "-" +
-      p(d.getMonth() + 1) +
-      "-" +
-      p(d.getDate()) +
-      "T" +
-      p(d.getHours()) +
-      ":" +
-      p(d.getMinutes())
-    );
-  }
-
-  // RESTORED - see FIXED-eventi-aperti-admin.js for the full VSK import fix
-  console.warn("[CVI] eventi-aperti-admin.js temporarily restored; apply FIXED version for VSK CSV import");
+  load(0);
 })();
