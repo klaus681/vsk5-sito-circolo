@@ -1,13 +1,14 @@
-/* CVI Admin – Eventi aperti – bootstrap restore */
+/* CVI Admin – Eventi aperti – carica parser VSK */
 (function () {
   "use strict";
   var URLS = [
-    "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js",
-    "https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/747ca063242f040098b27ce00f7a5d0815fa8231/eventi-aperti-admin.js"
+    "eventi-aperti-admin-vsk.js?v=3",
+    "https://cdn.jsdelivr.net/gh/klaus681/vsk5-sito-circolo@main/eventi-aperti-admin-vsk.js",
+    "https://raw.githubusercontent.com/klaus681/vsk5-sito-circolo/main/eventi-aperti-admin-vsk.js"
   ];
   function load(i) {
     if (i >= URLS.length) {
-      console.error("[CVI] impossibile ripristinare eventi-aperti-admin.js");
+      console.error("[CVI] eventi-aperti-admin-vsk.js non caricato");
       return;
     }
     var s = document.createElement("script");
