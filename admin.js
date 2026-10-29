@@ -30,7 +30,7 @@
     if (saLib) { var sLib = document.createElement("script"); sLib.textContent = saLib; document.head.appendChild(sLib); }
     var vskC = await fetch("vsk-clean-patch.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (vskC) { var sVskC = document.createElement("script"); sVskC.textContent = vskC; document.head.appendChild(sVskC); }
-    var ea = await fetch("eventi-aperti-admin.js?v=7").then(function(r){ return r.ok ? r.text() : ""; });
+    var ea = await fetch("eventi-aperti-admin.js?v=8").then(function(r){ return r.ok ? r.text() : ""; });
     if (ea) { var s7 = document.createElement("script"); s7.textContent = ea; document.head.appendChild(s7); }
     var saBoot = await fetch("serie-aperte-ui-boot.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (saBoot) { var sBoot = document.createElement("script"); sBoot.textContent = saBoot; document.head.appendChild(sBoot); }
