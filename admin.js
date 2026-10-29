@@ -27,11 +27,13 @@
     if (st) { var s3 = document.createElement("script"); s3.textContent = st; document.head.appendChild(s3); }
     var tm = await fetch("teams-panel-admin.js?v=8").then(function(r){ return r.ok ? r.text() : ""; });
     if (tm) { var s5 = document.createElement("script"); s5.textContent = tm; document.head.appendChild(s5); }
-    var ea = await fetch("eventi-aperti-admin.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
+    var saLib = await fetch("2-serie-aperte-lib.js?v=4").then(function(r){ return r.ok ? r.text() : ""; });
+    if (saLib) { var sLib = document.createElement("script"); sLib.textContent = saLib; document.head.appendChild(sLib); }
+    var ea = await fetch("eventi-aperti-admin.js?v=5").then(function(r){ return r.ok ? r.text() : ""; });
     if (ea) { var s7 = document.createElement("script"); s7.textContent = ea; document.head.appendChild(s7); }
     var saBoot = await fetch("serie-aperte-ui-boot.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (saBoot) { var sBoot = document.createElement("script"); sBoot.textContent = saBoot; document.head.appendChild(sBoot); }
-    var sa = await fetch("4-serie-aperte-admin.js?v=6").then(function(r){ return r.ok ? r.text() : ""; });
+    var sa = await fetch("4-serie-aperte-admin.js?v=7").then(function(r){ return r.ok ? r.text() : ""; });
     if (sa) { var sSa = document.createElement("script"); sSa.textContent = sa; document.head.appendChild(sSa); }
     var eap = await fetch("eventi-admin-patch.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (eap) { var sEap = document.createElement("script"); sEap.textContent = eap; document.head.appendChild(sEap); }
@@ -43,7 +45,7 @@
     if (rg) { var sRg = document.createElement("script"); sRg.textContent = rg; document.head.appendChild(sRg); }
     var tn = await fetch("tornei-admin.js?v=9").then(function(r){ return r.ok ? r.text() : ""; });
     if (tn) { var s9 = document.createElement("script"); s9.textContent = tn; document.head.appendChild(s9); }
-    var tvsk = await fetch("tornei-vsk-admin.js?v=1").then(function(r){ return r.ok ? r.text() : ""; });
+    var tvsk = await fetch("tornei-vsk-admin.js?v=2").then(function(r){ return r.ok ? r.text() : ""; });
     if (tvsk) { var sTvsk = document.createElement("script"); sTvsk.textContent = tvsk; document.head.appendChild(sTvsk); }
     var al = await fetch("allenamenti-admin.js?v=3").then(function(r){ return r.ok ? r.text() : ""; });
     if (al) { var sAl = document.createElement("script"); sAl.textContent = al; document.head.appendChild(sAl); }
