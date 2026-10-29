@@ -1,30 +1,58 @@
-/* CVI Admin Eventi – import VSK = stesso criterio Tornei + nick puliti */
+/* CVI Admin Eventi – import CSV allineato a VSK Race Manager (stesso criterio Tornei) */
 (function () {
   "use strict";
 
-  function cleanNick(raw) {
-    if (window.CVISerieAperte && typeof CVISerieAperte.cleanNick === "function") {
-      var c = CVISerieAperte.cleanNick(raw);
-      if (c) return c;
-    }
-    if (raw == null) return "";
-    var s = String(raw);
-    try {
-      if (s.normalize) s = s.normalize("NFKC");
-    } catch (e) {}
-    s = s.replace(/\u00a0/g, " ");
-    s = s.replace(/\$[0-9a-fA-F]{3}/gi, "");
-    s = s.replace(/\$[isngzwomtlh$]/gi, "");
-    s = s.replace(/\$[0-9a-fA-F]/gi, "");
-    s = s.replace(/\$./g, "");
-    s = s.replace(/\uFFFD/g, "");
-    s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
-    s = s.replace(/[\u0300-\u036F]/g, "");
-    return s.replace(/\s+/g, " ").trim();
+  function cleanVskNickname(rawNick) {
+    if (!rawNick) return "";
+    var clean = String(rawNick).replace(/\$([0-9a-fA-F]{3}|[isngzwomt$])/gi, "");
+    clean = clean.replace(/\$[a-zA-Z0-9]/g, "").trim();
+    clean = clean.replace(/\uFFFD/g, "");
+    clean = clean.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
+    clean = clean.replace(/\s+/g, " ").trim();
+    return clean || String(rawNick).trim();
   }
 
-  function isNumericId(v) {
-    return /^\d{4,}$/.test(String(v == null ? "" : v).trim());
+  function formatTimeMs(ms) {
+    if (ms === null || ms === undefined || isNaN(ms) || ms <= 0) return "DNF";
+    var totalSeconds = ms / 1000;
+    var minutes = Math.floor(totalSeconds / 60);
+    var seconds = (totalSeconds % 60).toFixed(3);
+    var formattedMin = minutes < 10 ? "0" + minutes : String(minutes);
+    var formattedSec = parseFloat(seconds) < 10 ? "0" + seconds : String(seconds);
+    return formattedMin + ":" + formattedSec;
+  }
+
+  function parseVskLikeTool(text) {
+    var lines = String(text || "")
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/)
+      .filter(function (line) {
+        return line.trim() !== "";
+      });
+    var entries = [];
+    lines.forEach(function (line) {
+      var delimiter = line.indexOf(";") >= 0 ? ";" : ",";
+      var parts = line.split(delimiter).map(function (p) {
+        return p.trim().replace(/^"|"$/g, "");
+      });
+      if (parts.length < 3) return;
+      var rawPos = parseInt(parts[0], 10);
+      if (isNaN(rawPos)) return;
+      var rawMs = parseInt(parts[1], 10);
+      if (isNaN(rawMs)) rawMs = 0;
+      var username = parts[2] || "Player";
+      var rawNick = parts[3] || username;
+      entries.push({
+        pos: rawPos,
+        ms: rawMs,
+        formattedTime: formatTimeMs(rawMs),
+        username: username,
+        rawNick: rawNick,
+        cleanNick: cleanVskNickname(rawNick),
+        status: rawMs > 0 ? "FINISHED" : "DNF"
+      });
+    });
+    return entries;
   }
 
   function decodeCsvBuffer(buffer) {
@@ -39,66 +67,25 @@
     if (bad === 0 && utf8) return utf8;
     try {
       var latin = new TextDecoder("iso-8859-1").decode(u8);
-      var badL = (latin.match(/\uFFFD/g) || []).length;
-      if (badL < bad || !utf8) return latin;
+      if ((latin.match(/\uFFFD/g) || []).length < bad || !utf8) return latin;
     } catch (e2) {}
     return utf8 || "";
   }
 
-  function vskImport(text) {
-    var L = window.CVISerieAperte;
-    if (!L || typeof L.parseVskCsv !== "function") {
-      alert("Libreria VSK non caricata. Ricarica admin con Ctrl+F5.");
-      return 0;
+  function looksLikeVskLog(text) {
+    var lines = String(text || "").split(/\r?\n/).filter(function (l) {
+      return l.trim();
+    });
+    if (lines.length < 1) return false;
+    var sample = lines[0];
+    var delim = sample.indexOf(";") >= 0 ? ";" : ",";
+    var parts = sample.split(delim);
+    if (parts.length >= 3 && /^\d+$/.test(parts[0].trim()) && /^\d+$/.test(parts[1].trim())) return true;
+    if (/\$[0-9a-fA-F]{2,3}/.test(text)) return true;
+    if (window.CVISerieAperte && typeof CVISerieAperte.looksLikeVskCsv === "function") {
+      return CVISerieAperte.looksLikeVskCsv(text);
     }
-    var body = document.getElementById("ea-ris-body");
-    if (!body) return 0;
-
-    var useVsk =
-      (typeof L.looksLikeVskCsv === "function" && L.looksLikeVskCsv(text)) ||
-      /\$[0-9a-fA-F]{2,3}/.test(text) ||
-      (text.split(/\r?\n/).length > 2 && /\d{5,}/.test(text));
-
-    if (useVsk) {
-      var vsk = L.parseVskCsv(text);
-      if (!vsk.length) {
-        alert("Log VSK non riconosciuto o vuoto.");
-        return 0;
-      }
-      body.innerHTML = "";
-      vsk.forEach(function (p, i) {
-        var nick = cleanNick(p.nickname || p.nickname_raw || "");
-        var note = "";
-        if (p.stato && p.stato !== "FIN") note = p.stato;
-        else if (p.tempo) note = p.tempo;
-        addRow(p.posizione != null ? p.posizione : i + 1, nick, "", note);
-      });
-      return vsk.length;
-    }
-
-    var rows = String(text || "")
-      .replace(/^\uFEFF/, "")
-      .split(/\r?\n/)
-      .filter(function (l) {
-        return l.trim();
-      });
-    if (!rows.length) return 0;
-    var sep = rows[0].split(";").length >= rows[0].split(",").length ? ";" : ",";
-    var start = 0;
-    if (/posiz|nick|skipper|rank/.test(rows[0].toLowerCase())) start = 1;
-    body.innerHTML = "";
-    var n = 0;
-    for (var i = start; i < rows.length; i++) {
-      var cols = rows[i].split(sep);
-      var pos = parseInt(String(cols[0] || "").replace(/[^0-9]/g, ""), 10);
-      var nick = cleanNick(String(cols[1] || "").replace(/^"|"$/g, "").trim());
-      var team = cleanNick(String(cols[2] || "").replace(/^"|"$/g, "").trim());
-      var note = String(cols[3] || "").replace(/^"|"$/g, "").trim();
-      if (!nick) continue;
-      addRow(isNaN(pos) ? n + 1 : pos, nick, team, note);
-      n++;
-    }
-    return n;
+    return false;
   }
 
   function addRow(pos, nick, team, note) {
@@ -136,15 +123,70 @@
       };
   }
 
+  function vskImport(text) {
+    var body = document.getElementById("ea-ris-body");
+    if (!body) return 0;
+
+    if (looksLikeVskLog(text)) {
+      var entries = parseVskLikeTool(text);
+      if (!entries.length && window.CVISerieAperte && typeof CVISerieAperte.parseVskCsv === "function") {
+        var vsk = CVISerieAperte.parseVskCsv(text);
+        entries = vsk.map(function (p) {
+          return {
+            pos: p.posizione,
+            ms: p.tempo_ms || 0,
+            formattedTime: p.tempo || (p.stato && p.stato !== "FIN" ? p.stato : "DNF"),
+            username: p.account_vsk || "",
+            cleanNick: cleanVskNickname(p.nickname || p.nickname_raw || ""),
+            status: p.stato === "FIN" || (p.tempo_ms && p.tempo_ms > 0) ? "FINISHED" : "DNF"
+          };
+        });
+      }
+      if (!entries.length) {
+        alert("Log VSK non riconosciuto o vuoto.");
+        return 0;
+      }
+      body.innerHTML = "";
+      entries.forEach(function (e, i) {
+        var nick = e.cleanNick || e.username || "Skipper";
+        var note = e.status === "FINISHED" ? e.formattedTime : "DNF";
+        var team = e.username && e.username !== nick ? e.username : "";
+        addRow(e.pos != null ? e.pos : i + 1, nick, team, note);
+      });
+      return entries.length;
+    }
+
+    var rows = String(text || "")
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/)
+      .filter(function (l) {
+        return l.trim();
+      });
+    if (!rows.length) return 0;
+    var sep = rows[0].split(";").length >= rows[0].split(",").length ? ";" : ",";
+    var start = 0;
+    if (/posiz|nick|skipper|rank/.test(rows[0].toLowerCase())) start = 1;
+    body.innerHTML = "";
+    var n = 0;
+    for (var i = start; i < rows.length; i++) {
+      var cols = rows[i].split(sep);
+      var pos = parseInt(String(cols[0] || "").replace(/[^0-9]/g, ""), 10);
+      var nick = cleanVskNickname(String(cols[1] || "").replace(/^"|"$/g, "").trim());
+      var team = cleanVskNickname(String(cols[2] || "").replace(/^"|"$/g, "").trim());
+      var note = String(cols[3] || "").replace(/^"|"$/g, "").trim();
+      if (!nick) continue;
+      addRow(isNaN(pos) ? n + 1 : pos, nick, team, note);
+      n++;
+    }
+    return n;
+  }
+
   function scrubFormRows() {
     document.querySelectorAll("#ea-ris-body tr").forEach(function (tr) {
       var nickIn = tr.querySelector(".ea-nick");
       var teamIn = tr.querySelector(".ea-team");
-      var noteIn = tr.querySelector(".ea-note");
-      if (!nickIn) return;
-      nickIn.value = cleanNick(nickIn.value);
-      if (teamIn) teamIn.value = cleanNick(teamIn.value);
-      if (noteIn && /\$|\uFFFD/.test(noteIn.value)) noteIn.value = cleanNick(noteIn.value);
+      if (nickIn) nickIn.value = cleanVskNickname(nickIn.value);
+      if (teamIn) teamIn.value = cleanVskNickname(teamIn.value);
     });
   }
 
@@ -153,11 +195,9 @@
       card.querySelectorAll("table tbody tr").forEach(function (tr) {
         var tds = tr.querySelectorAll("td");
         if (tds.length < 2) return;
-        var nickTd = tds[1];
-        var strong = nickTd.querySelector("strong") || nickTd;
-        strong.textContent = cleanNick(strong.textContent);
-        if (tds[2]) tds[2].textContent = cleanNick(tds[2].textContent) || "—";
-        if (tds[3] && /\$|\uFFFD/.test(tds[3].textContent)) tds[3].textContent = cleanNick(tds[3].textContent) || "—";
+        var strong = tds[1].querySelector("strong") || tds[1];
+        strong.textContent = cleanVskNickname(strong.textContent);
+        if (tds[2]) tds[2].textContent = cleanVskNickname(tds[2].textContent) || "—";
       });
     });
   }
@@ -166,8 +206,8 @@
     window.importEventoCsv = vskImport;
 
     var csvFile = document.getElementById("ea-csv-file");
-    if (csvFile && !csvFile._cviVsk2) {
-      csvFile._cviVsk2 = true;
+    if (csvFile && !csvFile._cviRef) {
+      csvFile._cviRef = true;
       csvFile.addEventListener(
         "change",
         function (e) {
@@ -181,7 +221,7 @@
             var hint = document.getElementById("ea-csv-hint");
             if (hint) {
               hint.textContent = n
-                ? "Importati " + n + " skipper (parser VSK come Tornei). Controlla e premi Salva evento."
+                ? "Importati " + n + " skipper (VSK Race Manager). Controlla e premi Salva evento."
                 : "Nessuno skipper trovato.";
               hint.style.color = n ? "#34d399" : "#f87171";
             }
@@ -194,8 +234,8 @@
     }
 
     var textBtn = document.getElementById("ea-import-csv-text");
-    if (textBtn && !textBtn._cviVsk2) {
-      textBtn._cviVsk2 = true;
+    if (textBtn && !textBtn._cviRef) {
+      textBtn._cviRef = true;
       textBtn.addEventListener(
         "click",
         function (e) {
@@ -208,7 +248,7 @@
           var hint = document.getElementById("ea-csv-hint");
           if (hint) {
             hint.textContent = n
-              ? "Importati " + n + " skipper (parser VSK). Controlla e premi Salva."
+              ? "Importati " + n + " skipper (VSK Race Manager). Controlla e premi Salva."
               : "Nessuno skipper trovato.";
             hint.style.color = n ? "#34d399" : "#f87171";
           }
@@ -236,7 +276,7 @@
 
   function patchLoadList() {
     if (typeof window.loadEventiApertiAdmin !== "function") return false;
-    if (window.loadEventiApertiAdmin._cviScrub2) return true;
+    if (window.loadEventiApertiAdmin._cviRef) return true;
     var orig = window.loadEventiApertiAdmin;
     window.loadEventiApertiAdmin = async function () {
       var r = await orig.apply(this, arguments);
@@ -244,7 +284,7 @@
       setTimeout(restyleAdminCards, 400);
       return r;
     };
-    window.loadEventiApertiAdmin._cviScrub2 = true;
+    window.loadEventiApertiAdmin._cviRef = true;
     return true;
   }
 
