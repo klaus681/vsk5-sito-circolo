@@ -1,0 +1,750 @@
+From dbc66d8772c3b6758a79809cfc03818441df6023 Mon Sep 17 00:00:00 2001
+From: cline <cline@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 21:08:01 +0000
+Subject: [PATCH] feat(aree): due aree riservate - Area Membri (approvati) e
+ Area YUMA (solo ruolo yuma)
+
+- nuova sezione #area-yuma visibile solo a role='yuma' (+admin), con card Download equipaggio e strumenti in placeholder
+- Area Membri ora include il blocco Download (placeholder per la futura area download)
+- 4 link di navigazione .nav-area-yuma (desktop, barra auth, menu mobile x2)
+- isYuma in loadUserProfile/updateAuthUI/logout; ADMIN_EMAIL centralizzato
+- clearArea(): le aree vengono svuotate al logout, non solo nascoste
+- chiavi i18n nuove in IT/EN/ES/FR + ri-render area YUMA al cambio lingua
+- supabase/100-aree-riservate.sql: is_yuma() + template RLS per la futura area download
+- tests/aree-riservate.test.js: 29 controlli jsdom (ospite/socio/yuma/pending/admin/logout)
+---
+ .gitignore                      |   3 +
+ app.js                          | 123 ++++++++++++++++++++++++---
+ i18n.js                         |  72 ++++++++++++++++
+ index.html                      |  24 +++++-
+ supabase/100-aree-riservate.sql | 105 +++++++++++++++++++++++
+ supabase/README.md              |  55 ++++++++++--
+ tests/aree-riservate.test.js    | 143 ++++++++++++++++++++++++++++++++
+ 7 files changed, 503 insertions(+), 22 deletions(-)
+ create mode 100644 .gitignore
+ create mode 100644 supabase/100-aree-riservate.sql
+ create mode 100644 tests/aree-riservate.test.js
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..aafcb34
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++node_modules/
++.DS_Store
++*.log
+diff --git a/app.js b/app.js
+index a629ad9..4a01b62 100644
+--- a/app.js
++++ b/app.js
+@@ -1,6 +1,7 @@
+ const SUPABASE_URL = 'https://eefszkqpfwwxoljauobs.supabase.co';
+ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlZnN6a3FwZnd3eG9samF1b2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjI4MTMsImV4cCI6MjEwODkzODgxM30.xak6904GHCnq4LSJsfNdNGGZeNa7ObRsV6NhfyFE2Zs';
+-let supabaseClient = null, currentUser = null, isAdmin = false, userProfile = null, membersCache = [];
++const ADMIN_EMAIL = 'klaus68@hotmail.it';
++let supabaseClient = null, currentUser = null, isAdmin = false, isYuma = false, userProfile = null, membersCache = [];
+ try {
+   if (window.supabase && window.supabase.createClient)
+     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+@@ -9,6 +10,12 @@ try {
+ function escapeHtml(s) {
+   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+ }
++// Svuota il contenuto di un'area riservata: quando l'utente perde i permessi
++// (logout o cambio ruolo) i dati non devono restare nel DOM, nemmeno nascosti.
++function clearArea(id) {
++  var el = document.getElementById(id);
++  if (el) el.innerHTML = '';
++}
+ function openLoginModal() {
+   var m = document.getElementById('loginModal'); if (!m) return;
+   m.classList.remove('hidden'); m.classList.add('flex');
+@@ -67,26 +74,29 @@ async function initAuth() {
+   } catch (e) { console.error(e); }
+ }
+ async function loadUserProfile() {
+-  userProfile = null; isAdmin = false;
++  userProfile = null; isAdmin = false; isYuma = false;
+   if (!currentUser || !supabaseClient) return;
++  var adminByEmail = (currentUser.email || '').toLowerCase() === ADMIN_EMAIL;
+   try {
+     var res = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+     if (!res.error && res.data) {
+       userProfile = res.data;
+-      isAdmin = userProfile.role === 'admin' && (userProfile.status === 'approved' || !userProfile.status);
+-      if ((currentUser.email || '').toLowerCase() === 'klaus68@hotmail.it') isAdmin = true;
+-    } else if ((currentUser.email || '').toLowerCase() === 'klaus68@hotmail.it') {
+-      isAdmin = true;
++      var approved = userProfile.status === 'approved' || !userProfile.status;
++      isAdmin = userProfile.role === 'admin' && approved;
++      isYuma = isAdmin || (userProfile.role === 'yuma' && approved);
++      if (adminByEmail) { isAdmin = true; isYuma = true; }
++    } else if (adminByEmail) {
++      isAdmin = true; isYuma = true;
+     }
+   } catch (e) {
+-    if ((currentUser.email || '').toLowerCase() === 'klaus68@hotmail.it') isAdmin = true;
++    if (adminByEmail) { isAdmin = true; isYuma = true; }
+   }
+ }
+ function updateAuthUI() {
+   var loggedOut = document.getElementById('authLoggedOut'), loggedIn = document.getElementById('authLoggedIn');
+   var mobOut = document.getElementById('mobileAuthOut'), mobIn = document.getElementById('mobileAuthIn');
+   if (!loggedOut || !loggedIn) return;
+-  var isApprovedMember = !!(currentUser && userProfile && (userProfile.status === 'approved' || userProfile.role === 'admin' || isAdmin));
++  var isApprovedMember = !!(currentUser && (isAdmin || isYuma || (userProfile && (userProfile.status === 'approved' || userProfile.role === 'admin'))));
+   if (currentUser) {
+     loggedOut.classList.add('hidden'); loggedOut.classList.remove('flex');
+     loggedIn.classList.remove('hidden'); loggedIn.classList.add('flex');
+@@ -97,7 +107,7 @@ function updateAuthUI() {
+     document.querySelectorAll('[onclick*="openAdminPanel"]').forEach(function(b) {
+       b.style.display = isAdmin ? '' : 'none';
+     });
+-    // Area Membri links
++    // Area Membri links (utenti approvati)
+     document.querySelectorAll('.nav-area-membri').forEach(function(el) {
+       el.classList.toggle('hidden', !isApprovedMember);
+     });
+@@ -108,6 +118,21 @@ function updateAuthUI() {
+         renderAreaMembri();
+       } else {
+         areaSection.classList.add('hidden');
++        clearArea('areaMembriContent');
++      }
++    }
++    // Area YUMA links (solo ruolo yuma o admin)
++    document.querySelectorAll('.nav-area-yuma').forEach(function(el) {
++      el.classList.toggle('hidden', !isYuma);
++    });
++    var yumaSection = document.getElementById('area-yuma');
++    if (yumaSection) {
++      if (isYuma) {
++        yumaSection.classList.remove('hidden');
++        renderAreaYuma();
++      } else {
++        yumaSection.classList.add('hidden');
++        clearArea('areaYumaContent');
+       }
+     }
+   } else {
+@@ -119,6 +144,13 @@ function updateAuthUI() {
+     });
+     var areaSection = document.getElementById('area-membri');
+     if (areaSection) areaSection.classList.add('hidden');
++    clearArea('areaMembriContent');
++    document.querySelectorAll('.nav-area-yuma').forEach(function(el) {
++      el.classList.add('hidden');
++    });
++    var yumaSection = document.getElementById('area-yuma');
++    if (yumaSection) yumaSection.classList.add('hidden');
++    clearArea('areaYumaContent');
+   }
+ }
+ async function handleLogin(e) {
+@@ -208,7 +240,7 @@ async function handleRegister(e) {
+ }
+ async function logout() {
+   if (supabaseClient) await supabaseClient.auth.signOut();
+-  currentUser = null; isAdmin = false; userProfile = null;
++  currentUser = null; isAdmin = false; isYuma = false; userProfile = null;
+   updateAuthUI();
+   closeAdminPanel();
+ }
+@@ -581,6 +613,13 @@ function renderAreaMembri() {
+       '</ul>' +
+     '</div>' +
+   '</div>' +
++  '<div class="glass-card p-5 rounded-2xl border border-emerald-500/20 mb-8">' +
++    '<div class="flex items-start justify-between gap-2">' +
++      '<div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">' + escapeHtml(_t('area_download')) + '</div>' +
++      '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">' + escapeHtml(_t('area_soon')) + '</span>' +
++    '</div>' +
++    '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t('area_download_desc')) + '</p>' +
++  '</div>' +
+   '<div id="areaMembriList" class="glass-card p-5 rounded-2xl">' +
+     '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('area_members')) + '</h4>' +
+     '<p class="text-slate-500 text-xs">Caricamento...</p>' +
+@@ -607,6 +646,70 @@ function renderAreaMembri() {
+ }
+ 
+ 
++/* ---------------------------------------------------------------
++   AREA YUMA – visibile solo al ruolo 'yuma' (e agli admin).
++   Nota: qui la visibilità è solo lato UI. La protezione reale dei
++   contenuti riservati va fatta con le policy RLS, vedi
++   supabase/100-aree-riservate.sql.
++   --------------------------------------------------------------- */
++function renderAreaYuma() {
++  var box = document.getElementById('areaYumaContent');
++  if (!box) return;
++  if (!isYuma) { box.innerHTML = ''; return; }
++  var _t = typeof t === 'function' ? t : function(k, v) {
++    var s = k;
++    if (v && v.name) s = 'Benvenuto in equipaggio, ' + v.name + '!';
++    return s;
++  };
++  var name = (userProfile && userProfile.display_name) || (currentUser && currentUser.email) || 'Membro YUMA';
++
++  function card(titleKey, descKey) {
++    return '<div class="glass-card p-5 rounded-2xl border border-amber-500/20">' +
++      '<div class="flex items-start justify-between gap-2">' +
++        '<div class="text-amber-400 text-xs font-semibold uppercase tracking-wider">' + escapeHtml(_t(titleKey)) + '</div>' +
++        '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border border-amber-500/40 text-amber-300 bg-amber-500/10">' + escapeHtml(_t('area_soon')) + '</span>' +
++      '</div>' +
++      '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t(descKey)) + '</p>' +
++    '</div>';
++  }
++
++  box.innerHTML = '<div class="text-center mb-8">' +
++      '<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 text-sm font-semibold mb-4">' +
++        '<span class="w-2 h-2 rounded-full bg-current"></span> YUMA' +
++      '</div>' +
++      '<h3 class="text-2xl md:text-3xl font-black font-orbitron text-white">' + escapeHtml(_t('yuma_welcome', {name: name})) + '</h3>' +
++      '<p class="text-slate-400 mt-2 text-sm md:text-base">' + escapeHtml(_t('yuma_welcome_sub')) + '</p>' +
++    '</div>' +
++    '<div class="grid sm:grid-cols-2 gap-4 mb-8">' +
++      card('yuma_card_download', 'yuma_card_download_desc') +
++      card('yuma_card_tools', 'yuma_card_tools_desc') +
++    '</div>' +
++    '<div id="areaYumaList" class="glass-card p-5 rounded-2xl">' +
++      '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('yuma_roster')) + '</h4>' +
++      '<p class="text-slate-500 text-xs">' + escapeHtml(_t('roster_loading')) + '</p>' +
++    '</div>';
++
++  loadApprovedMembers().then(function(list) {
++    var listBox = document.getElementById('areaYumaList');
++    if (!listBox || !isYuma) return;
++    var crew = (list || []).filter(function(p) { return p.role === 'yuma' || p.role === 'admin'; });
++    var head = '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' +
++      escapeHtml(_t('yuma_roster')) + (crew.length ? ' (' + crew.length + ')' : '') + '</h4>';
++    if (!crew.length) {
++      listBox.innerHTML = head + '<p class="text-slate-500 text-xs">' + escapeHtml(_t('yuma_roster_none')) + '</p>';
++      return;
++    }
++    listBox.innerHTML = head +
++      '<div class="flex flex-wrap gap-2">' +
++      crew.map(function(p) {
++        return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs bg-slate-900/60 border-amber-500/30 text-amber-300">' +
++          escapeHtml(p.display_name || p.email || '?') +
++          '<span class="opacity-60 text-[10px]">' + (p.role === 'admin' ? 'Admin' : 'YUMA') + '</span></span>';
++      }).join('') +
++      '</div>';
++  });
++}
++
+ document.addEventListener('DOMContentLoaded', async function() {
+   // i18n init
+   if (typeof setLanguage === 'function') {
+diff --git a/i18n.js b/i18n.js
+index a00a2c2..2ee9ec9 100644
+--- a/i18n.js
++++ b/i18n.js
+@@ -71,6 +71,23 @@ var I18N = {
+     area_role_yuma: "Membro del team YUMA – regate, tattica e cameratismo.",
+     area_role_socio: "Socio della community – supporto e passione per la vela virtuale.",
+     area_role_admin: "Amministratore del sito.",
++    area_download: "Area Download",
++    area_download_desc: "Documenti, foto e materiali del team. Disponibile a breve.",
++    nav_area_yuma: "Area YUMA",
++    yuma_label: "Solo equipaggio YUMA",
++    yuma_title: "Area YUMA",
++    yuma_desc: "Spazio riservato ai membri del team YUMA.",
++    yuma_welcome: "Benvenuto in equipaggio, {name}!",
++    yuma_welcome_sub: "Contenuti riservati all'equipaggio YUMA.",
++    yuma_card_download: "Download equipaggio",
++    yuma_card_download_desc: "Regolamenti, skin e materiali interni. In arrivo.",
++    yuma_card_tools: "Strumenti del team",
++    yuma_card_tools_desc: "Collegamenti rapidi a regate, classifiche e Discord.",
++    yuma_card_discord: "Canale Discord",
++    yuma_card_discord_desc: "Coordinamento equipaggio e briefing pre-regata.",
++    yuma_roster: "Equipaggio YUMA attivo",
++    yuma_roster_none: "Nessun altro membro YUMA approvato.",
++    area_soon: "In arrivo",
+     login_title: "Accedi",
+     login_email: "Email",
+     login_pass: "Password",
+@@ -165,6 +182,23 @@ var I18N = {
+     area_role_yuma: "YUMA team member – racing, tactics and camaraderie.",
+     area_role_socio: "Community member – support and passion for virtual sailing.",
+     area_role_admin: "Site administrator.",
++    area_download: "Download Area",
++    area_download_desc: "Team documents, photos and assets. Coming soon.",
++    nav_area_yuma: "YUMA Area",
++    yuma_label: "YUMA crew only",
++    yuma_title: "YUMA Area",
++    yuma_desc: "Reserved space for YUMA team members.",
++    yuma_welcome: "Welcome to the crew, {name}!",
++    yuma_welcome_sub: "Content reserved for the YUMA crew.",
++    yuma_card_download: "Crew downloads",
++    yuma_card_download_desc: "Rules, skins and internal assets. Coming soon.",
++    yuma_card_tools: "Team tools",
++    yuma_card_tools_desc: "Quick links to races, standings and Discord.",
++    yuma_card_discord: "Discord channel",
++    yuma_card_discord_desc: "Crew coordination and pre-race briefings.",
++    yuma_roster: "Active YUMA crew",
++    yuma_roster_none: "No other approved YUMA members yet.",
++    area_soon: "Coming soon",
+     login_title: "Log in",
+     login_email: "Email",
+     login_pass: "Password",
+@@ -259,6 +293,23 @@ var I18N = {
+     area_role_yuma: "Miembro del equipo YUMA – regatas, táctica y compañerismo.",
+     area_role_socio: "Socio de la comunidad – apoyo y pasión por la vela virtual.",
+     area_role_admin: "Administrador del sitio.",
++    area_download: "Área de Descargas",
++    area_download_desc: "Documentos, fotos y materiales del equipo. Disponible pronto.",
++    nav_area_yuma: "Área YUMA",
++    yuma_label: "Solo tripulación YUMA",
++    yuma_title: "Área YUMA",
++    yuma_desc: "Espacio reservado a los miembros del equipo YUMA.",
++    yuma_welcome: "¡Bienvenido a la tripulación, {name}!",
++    yuma_welcome_sub: "Contenidos reservados a la tripulación YUMA.",
++    yuma_card_download: "Descargas de tripulación",
++    yuma_card_download_desc: "Reglamentos, skins y materiales internos. Próximamente.",
++    yuma_card_tools: "Herramientas del equipo",
++    yuma_card_tools_desc: "Accesos rápidos a regatas, clasificaciones y Discord.",
++    yuma_card_discord: "Canal de Discord",
++    yuma_card_discord_desc: "Coordinación de la tripulación y briefings previos.",
++    yuma_roster: "Tripulación YUMA activa",
++    yuma_roster_none: "Aún no hay otros miembros YUMA aprobados.",
++    area_soon: "Próximamente",
+     login_title: "Entrar",
+     login_email: "Email",
+     login_pass: "Contraseña",
+@@ -353,6 +404,23 @@ var I18N = {
+     area_role_yuma: "Membre de l'équipe YUMA – régates, tactique et camaraderie.",
+     area_role_socio: "Membre de la communauté – soutien et passion pour la voile virtuelle.",
+     area_role_admin: "Administrateur du site.",
++    area_download: "Espace Téléchargements",
++    area_download_desc: "Documents, photos et ressources de l'équipe. Bientôt disponible.",
++    nav_area_yuma: "Espace YUMA",
++    yuma_label: "Équipage YUMA uniquement",
++    yuma_title: "Espace YUMA",
++    yuma_desc: "Espace réservé aux membres de l'équipe YUMA.",
++    yuma_welcome: "Bienvenue dans l'équipage, {name} !",
++    yuma_welcome_sub: "Contenus réservés à l'équipage YUMA.",
++    yuma_card_download: "Téléchargements équipage",
++    yuma_card_download_desc: "Règlements, skins et ressources internes. Bientôt disponible.",
++    yuma_card_tools: "Outils de l'équipe",
++    yuma_card_tools_desc: "Accès rapides aux régates, classements et Discord.",
++    yuma_card_discord: "Canal Discord",
++    yuma_card_discord_desc: "Coordination de l'équipage et briefings d'avant-course.",
++    yuma_roster: "Équipage YUMA actif",
++    yuma_roster_none: "Aucun autre membre YUMA approuvé pour l'instant.",
++    area_soon: "Bientôt",
+     login_title: "Connexion",
+     login_email: "Email",
+     login_pass: "Mot de passe",
+@@ -428,6 +496,10 @@ function applyTranslations() {
+     var area = document.getElementById('area-membri');
+     if (area && !area.classList.contains('hidden')) renderAreaMembri();
+   }
++  if (typeof renderAreaYuma === 'function' && currentUser && userProfile) {
++    var areaYuma = document.getElementById('area-yuma');
++    if (areaYuma && !areaYuma.classList.contains('hidden')) renderAreaYuma();
++  }
+ }
+ 
+ 
+diff --git a/index.html b/index.html
+index ca60dca..55baefe 100644
+--- a/index.html
++++ b/index.html
+@@ -61,7 +61,8 @@
+       <a href="#trofei" class="hover:text-sky-400 transition" data-i18n="nav_trofei">Trofei</a>
+       <a href="#roster" class="hover:text-sky-400 transition" data-i18n="nav_roster">Equipaggio</a>
+       <a href="#unisciti" class="hover:text-amber-400 transition" data-i18n="nav_unisciti">Unisciti</a>
+-      <a href="#area-membri" class="nav-area-membri hidden hover:text-emerald-400 transition text-emerald-400/90">Area Membri</a>
++      <a href="#area-membri" class="nav-area-membri hidden hover:text-emerald-400 transition text-emerald-400/90" data-i18n="nav_area">Area Membri</a>
++      <a href="#area-yuma" class="nav-area-yuma hidden hover:text-amber-400 transition text-amber-400/90" data-i18n="nav_area_yuma">Area YUMA</a>
+     </div>
+     <div class="flex items-center gap-2.5">
+             <div id="authLoggedOut" class="flex items-center gap-2">
+@@ -73,7 +74,8 @@
+           <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+           <span id="userEmailLabel">Utente</span>
+         </span>
+-        <a href="#area-membri" class="nav-area-membri hidden text-xs px-3 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15 font-semibold transition">Area Membri</a>
++        <a href="#area-membri" class="nav-area-membri hidden text-xs px-3 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15 font-semibold transition" data-i18n="nav_area">Area Membri</a>
++        <a href="#area-yuma" class="nav-area-yuma hidden text-xs px-3 py-1.5 rounded-lg border border-amber-500/40 text-amber-300 hover:bg-amber-500/15 font-semibold transition" data-i18n="nav_area_yuma">Area YUMA</a>
+         <button type="button" onclick="openAdminPanel()" class="bg-amber-500/90 hover:bg-amber-400 text-slate-950 font-black px-3 py-1.5 rounded-lg transition text-[11px] font-orbitron cursor-pointer shadow-lg shadow-amber-500/15" title="Pannello Admin">⚙️ Admin</button>
+         <button type="button" onclick="logout()" class="text-slate-400 hover:text-red-400 text-xs font-semibold px-2 py-1.5 transition" title="Esci">Esci</button>
+       </div>
+@@ -90,14 +92,16 @@
+       <a href="#trofei" onclick="toggleMenu()" class="px-3 py-2 rounded-lg hover:bg-slate-800/60 hover:text-sky-400">Trofei</a>
+       <a href="#roster" onclick="toggleMenu()" class="px-3 py-2 rounded-lg hover:bg-slate-800/60 hover:text-sky-400">Equipaggio</a>
+       <a href="#unisciti" onclick="toggleMenu()" class="px-3 py-2 rounded-lg hover:bg-slate-800/60 hover:text-amber-400">Unisciti a Noi</a>
+-      <a href="#area-membri" onclick="toggleMenu()" class="nav-area-membri hidden px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400">Area Membri</a>
++      <a href="#area-membri" onclick="toggleMenu()" class="nav-area-membri hidden px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400" data-i18n="nav_area">Area Membri</a>
++      <a href="#area-yuma" onclick="toggleMenu()" class="nav-area-yuma hidden px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_area_yuma">Area YUMA</a>
+       <div class="border-t border-slate-800 my-2"></div>
+       <div id="mobileAuthOut">
+         <button type="button" onclick="toggleMenu(); openLoginModal()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-sky-400" data-i18n="nav_login">Accedi</button>
+         <button type="button" onclick="toggleMenu(); openRegisterModal()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_register">Registrati</button>
+       </div>
+       <div id="mobileAuthIn" class="hidden">
+-        <a href="#area-membri" onclick="toggleMenu()" class="nav-area-membri hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400">Area Membri</a>
++        <a href="#area-membri" onclick="toggleMenu()" class="nav-area-membri hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400" data-i18n="nav_area">Area Membri</a>
++        <a href="#area-yuma" onclick="toggleMenu()" class="nav-area-yuma hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_area_yuma">Area YUMA</a>
+         <button type="button" onclick="toggleMenu(); openAdminPanel()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400">⚙️ Pannello Admin</button>
+         <button type="button" onclick="toggleMenu(); logout()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-red-400" data-i18n="nav_logout">Esci</button>
+       </div>
+@@ -290,6 +294,18 @@
+   </div>
+ </section>
+ 
++<section id="area-yuma" class="hidden py-20 md:py-28 px-5 max-w-4xl mx-auto">
++  <div class="section-divider mb-16 md:mb-20"></div>
++  <div class="text-center mb-10">
++    <span class="text-amber-400 font-orbitron uppercase tracking-[0.2em] text-xs font-semibold" data-i18n="yuma_label">Solo equipaggio YUMA</span>
++    <h2 class="text-3xl md:text-5xl font-black mt-2 font-orbitron tracking-tight" data-i18n="yuma_title">Area YUMA</h2>
++    <p class="text-slate-400 mt-2 text-sm md:text-base"><span data-i18n="yuma_desc">Spazio riservato ai membri del team YUMA.</span></p>
++  </div>
++  <div id="areaYumaContent" class="glass-card p-6 md:p-10 rounded-3xl border border-amber-500/25">
++    <p class="text-slate-500 text-center text-sm">Caricamento...</p>
++  </div>
++</section>
++
+ <footer class="border-t border-slate-800/80 py-10 px-5 text-center">
+   <div class="text-sky-400 font-orbitron font-bold tracking-widest text-lg mb-1">YUMA</div>
+   <p class="text-slate-500 text-sm">TEAM VSK · <span class="text-amber-400/90">1999/2001 – 2026</span></p>
+diff --git a/supabase/100-aree-riservate.sql b/supabase/100-aree-riservate.sql
+new file mode 100644
+index 0000000..3f1ac1d
+--- /dev/null
++++ b/supabase/100-aree-riservate.sql
+@@ -0,0 +1,105 @@
++-- ============================================================
++-- YUMA – aree riservate: Area Membri / Area YUMA
++-- Predispone l'autorizzazione backend delle due aree e della
++-- futura Area Download. Idempotente.
++-- Esegui DOPO 99-fix-policies.sql
++-- ============================================================
++
++-- ------------------------------------------------------------
++-- 1) Helper: l'utente corrente e' un membro approvato?
++--    (se hai gia' eseguito 99-fix-policies.sql esiste gia')
++-- ------------------------------------------------------------
++create or replace function public.is_approved_member()
++returns boolean
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select exists (
++    select 1 from public.profiles p
++    where p.id = auth.uid()
++      and p.status = 'approved'
++  );
++$$;
++
++revoke all on function public.is_approved_member() from public;
++grant execute on function public.is_approved_member() to authenticated;
++
++-- ------------------------------------------------------------
++-- 2) Helper: l'utente corrente e' dell'equipaggio YUMA?
++--    Usato dalle policy dell'Area YUMA e, in futuro, dai file
++--    riservati al solo equipaggio.
++-- ------------------------------------------------------------
++create or replace function public.is_yuma()
++returns boolean
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select exists (
++    select 1 from public.profiles p
++    where p.id = auth.uid()
++      and p.status = 'approved'
++      and p.role in ('yuma', 'admin')
++  );
++$$;
++
++revoke all on function public.is_yuma() from public;
++grant execute on function public.is_yuma() to authenticated;
++
++-- ------------------------------------------------------------
++-- 3) AREA DOWNLOAD – schema pronto per il prossimo passo.
++--    Al momento e' TUTTO COMMENTATO: scommenta e lancia quando
++--    vorrai attivare l'area download.
++-- ------------------------------------------------------------
++-- create table if not exists public.downloads (
++--   id          bigint generated always as identity primary key,
++--   titolo      text not null,
++--   descrizione text,
++--   file_path   text not null,          -- percorso nel bucket Storage
++--   area        text not null default 'membri'
++--               check (area in ('membri', 'yuma')),
++--   sort_order  int not null default 0,
++--   created_at  timestamptz not null default now(),
++--   created_by  uuid references auth.users(id)
++-- );
++--
++-- alter table public.downloads enable row level security;
++--
++-- -- Area Membri: leggono i file area='membri'; Area YUMA: legge tutto.
++-- create policy "read downloads by area"
++--   on public.downloads for select
++--   to authenticated
++--   using (
++--     (area = 'membri' and public.is_approved_member())
++--     or public.is_yuma()
++--   );
++--
++-- create policy "admin insert downloads"
++--   on public.downloads for insert
++--   to authenticated
++--   with check (public.is_admin());
++--
++-- create policy "admin update downloads"
++--   on public.downloads for update
++--   to authenticated
++--   using (public.is_admin())
++--   with check (public.is_admin());
++--
++-- create policy "admin delete downloads"
++--   on public.downloads for delete
++--   to authenticated
++--   using (public.is_admin());
++--
++-- -- Bucket Storage: gli stessi confini delle due aree.
++-- -- create policy "members read member files"
++-- --   on storage.objects for select
++-- --   to authenticated
++-- --   using (bucket_id = 'downloads' and public.is_approved_member());
++-- --
++-- -- create policy "yuma read crew files"
++-- --   on storage.objects for select
++-- --   to authenticated
++-- --   using (bucket_id = 'downloads-yuma' and public.is_yuma());
+diff --git a/supabase/README.md b/supabase/README.md
+index 4395b56..3fe5a69 100644
+--- a/supabase/README.md
++++ b/supabase/README.md
+@@ -1,10 +1,23 @@
+ # Supabase – YUMA Team
+ 
+-## 1. Esegui lo schema
+-1. Apri Supabase Dashboard → il tuo progetto
+-2. SQL Editor → New query
+-3. Incolla tutto il contenuto di `schema.sql`
+-4. Run
++## 1. Esegui lo schema (in QUEST'ordine)
++
++Apri Supabase Dashboard → il tuo progetto → **SQL Editor → New query**, incolla il
++contenuto di ciascun file e premi **Run**, uno dopo l'altro:
++
++| # | File | Cosa fa |
++|---|---|---|
++| 1 | `schema.sql` | tabelle `site_content`, `candidature`, `profiles` + trigger |
++| 2 | `members.sql` | tabella `members` (equipaggio con foto) |
++| 3 | `registration.sql` | registrazione con approvazione admin + ruoli `socio` / `yuma` |
++| 4 | `fix_rls.sql` | corregge la ricorsione infinita delle policy su `profiles` |
++| 5 | `99-fix-policies.sql` | **necessario**: DELETE candidature, elenco membri per gli approvati, blocco escalation su `profiles`, limiti anti-spam |
++| 6 | `100-aree-riservate.sql` | helper `is_approved_member()` / `is_yuma()` + template (commentato) per la futura Area Download |
++
++Tutti i file sono idempotenti: si possono rieseguire.
++
++> ⚠️ `schema.sql`, `registration.sql` e `fix_rls.sql` ridefiniscono `is_admin()` con
++> semantiche diverse (l'ultimo eseguito vince). Rispetta l'ordine della tabella.
+ 
+ ## 2. Crea l'utente admin
+ 1. Authentication → Users → Add user
+@@ -13,16 +26,42 @@
+ 4. Abilita Auto Confirm User
+ 5. Create user
+ 
+-Il trigger assegna automaticamente role = admin a questa email.
++Il trigger assegna automaticamente `role = admin` a questa email.
+ 
+ ## 3. Config client
+-URL e anon key sono già in `index.html` e in `config.js`.
++URL e anon key sono in `app.js` (righe 1-2). `config.js` non è usato da nessuna pagina.
+ 
+ **Non** mettere mai la service_role key nel frontend.
+ 
++## Le due aree riservate
++
++| Area | Sezione | Chi la vede | Contenuto |
++|---|---|---|---|
++| **Area Membri** | `#area-membri` | utenti loggati con `status = 'approved'` → ruoli `socio`, `yuma`, `admin` | ruolo personale, prossimi passi, blocco Download (placeholder), elenco membri approvati |
++| **Area YUMA** | `#area-yuma` | **solo** `role = 'yuma'` (+ `admin`), sempre con `status = 'approved'` | card Download equipaggio (placeholder), strumenti del team, equipaggio YUMA attivo |
++
++La distinzione è implementata in `app.js`:
++
++- `loadUserProfile()` imposta `isAdmin` e `isYuma`;
++- `updateAuthUI()` mostra/nasconde `.nav-area-membri` e `.nav-area-yuma` e le due sezioni;
++- `renderAreaMembri()` / `renderAreaYuma()` generano il contenuto;
++- al logout o quando i permessi decadono le due aree vengono **svuotate**, non solo nascoste (`clearArea()`).
++
++> 🔒 Questa è solo la UI. Per i contenuti della futura Area Download la protezione
++> reale devono essere le policy RLS (vedi il blocco commentato in
++> `100-aree-riservate.sql`), basate su `is_approved_member()` e `is_yuma()`.
++
+ ## Tabelle
+ | Tabella | Uso |
+ |---------|-----|
+ | site_content | Testi del sito (hero, equipaggio) |
+ | candidature | Form Unisciti a noi |
+-| profiles | Ruolo utente (admin / member) |
++| profiles | Ruolo utente (`admin` / `yuma` / `socio` / `pending`) e stato (`pending` / `approved` / `rejected`) |
++| members | Schede equipaggio mostrate in home |
++
++## Test
++```bash
++npm i --no-save jsdom
++node tests/aree-riservate.test.js
++```
++Verifica la visibilità delle due aree per ospite, socio, yuma, pending e admin.
+diff --git a/tests/aree-riservate.test.js b/tests/aree-riservate.test.js
+new file mode 100644
+index 0000000..4ac4568
+--- /dev/null
++++ b/tests/aree-riservate.test.js
+@@ -0,0 +1,143 @@
++/**
++ * Test di comportamento delle due aree riservate (Area Membri / Area YUMA).
++ * Uso: npm i --no-save jsdom && node tests/aree-riservate.test.js [repo]
++ */
++const fs = require('fs');
++const path = require('path');
++const { JSDOM } = require('jsdom');
++
++const REPO = process.argv[2] || path.join(__dirname, '..');
++const html = fs.readFileSync(path.join(REPO, 'index.html'), 'utf8');
++const i18n = fs.readFileSync(path.join(REPO, 'i18n.js'), 'utf8');
++const app = fs.readFileSync(path.join(REPO, 'app.js'), 'utf8');
++
++// app.js usa const/let a livello di script: aggiungiamo hook dentro lo stesso
++// eval per poter pilotare lo stato (isYuma/isAdmin/userProfile/currentUser).
++const appWithHooks = app + `
++window.__api = {
++  setUser: function (user, profile, adminFlag) {
++    currentUser = user || null;
++    userProfile = profile || null;
++    var approved = !!(userProfile && (userProfile.status === 'approved' || !userProfile.status));
++    isAdmin = !!adminFlag || !!(userProfile && userProfile.role === 'admin' && approved);
++    isYuma = isAdmin || !!(userProfile && userProfile.role === 'yuma' && approved);
++    updateAuthUI();
++  }
++};
++`;
++
++function boot() {
++  const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://yuma.test/' });
++  const w = dom.window;
++  // Come nel browser: i due file condividono lo stesso scope globale
++  // (i18n.js legge currentUser/userProfile definiti in app.js).
++  w.eval(i18n + '\n;\n' + appWithHooks);
++  w.eval("setLanguage('it');");
++  return w;
++}
++
++const shown = el => !!el && !el.classList.contains('hidden');
++const anyShown = (w, sel) => [...w.document.querySelectorAll(sel)].some(shown);
++const allHidden = (w, sel) => [...w.document.querySelectorAll(sel)].every(el => el.classList.contains('hidden'));
++
++let failures = 0;
++function check(name, cond, extra) {
++  if (cond) { console.log('  ok   ' + name); return; }
++  failures++;
++  console.log('  FAIL ' + name + (extra ? ' -> ' + extra : ''));
++}
++
++function describe(w) {
++  const areaMembri = w.document.getElementById('area-membri');
++  const areaYuma = w.document.getElementById('area-yuma');
++  return {
++    membri: shown(areaMembri),
++    yuma: shown(areaYuma),
++    navMembri: anyShown(w, '.nav-area-membri'),
++    navYuma: anyShown(w, '.nav-area-yuma'),
++    yumaHtml: (w.document.getElementById('areaYumaContent') || {}).innerHTML || '',
++    membriHtml: (w.document.getElementById('areaMembriContent') || {}).innerHTML || ''
++  };
++}
++
++// 1) Ospite (non loggato)
++console.log('1) Ospite');
++let w = boot();
++w.__api.setUser(null, null, false);
++let s = describe(w);
++check('Area Membri nascosta', !s.membri);
++check('Area YUMA nascosta', !s.yuma);
++check('link .nav-area-membri tutti nascosti', allHidden(w, '.nav-area-membri'));
++check('link .nav-area-yuma tutti nascosti', allHidden(w, '.nav-area-yuma'));
++
++// 2) Socio approvato: Area Membri si', Area YUMA no
++console.log('2) Socio approvato');
++w = boot();
++w.__api.setUser({ email: 'socio@test.it' }, { display_name: 'Mario', role: 'socio', status: 'approved' }, false);
++s = describe(w);
++check('Area Membri visibile', s.membri);
++check('Area YUMA nascosta', !s.yuma);
++check('nav Area Membri visibile', s.navMembri);
++check('nav Area YUMA nascosta', !s.navYuma);
++check('contenuto Area YUMA vuoto', s.yumaHtml.trim() === '');
++check('Area Membri saluta Mario', s.membriHtml.indexOf('Mario') >= 0);
++check('Area Membri ha blocco Download', s.membriHtml.indexOf('Area Download') >= 0);
++
++// 3) Membro YUMA approvato: entrambe
++console.log('3) Membro YUMA approvato');
++w = boot();
++w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
++s = describe(w);
++check('Area Membri visibile', s.membri);
++check('Area YUMA visibile', s.yuma);
++check('nav Area Membri visibile', s.navMembri);
++check('nav Area YUMA visibile', s.navYuma);
++check('Area YUMA saluta Klaus', s.yumaHtml.indexOf('Klaus') >= 0);
++check('Area YUMA ha card "Download equipaggio"', s.yumaHtml.indexOf('Download equipaggio') >= 0);
++check('Area YUMA ha card "Strumenti del team"', s.yumaHtml.indexOf('Strumenti del team') >= 0);
++
++// 4) YUMA non ancora approvato (pending): nessuna area
++console.log('4) Membro YUMA pending');
++w = boot();
++w.__api.setUser({ email: 'crew2@test.it' }, { display_name: 'Nuovo', role: 'yuma', status: 'pending' }, false);
++s = describe(w);
++check('Area Membri nascosta', !s.membri);
++check('Area YUMA nascosta', !s.yuma);
++
++// 5) Socio pending: nessuna area
++console.log('5) Socio pending');
++w = boot();
++w.__api.setUser({ email: 'p@test.it' }, { display_name: 'P', role: 'pending', status: 'pending' }, false);
++s = describe(w);
++check('Area Membri nascosta', !s.membri);
++check('Area YUMA nascosta', !s.yuma);
++
++// 6) Admin: vede entrambe
++console.log('6) Admin');
++w = boot();
++w.__api.setUser({ email: 'admin@test.it' }, { display_name: 'Admin', role: 'admin', status: 'approved' }, true);
++s = describe(w);
++check('Area Membri visibile', s.membri);
++check('Area YUMA visibile', s.yuma);
++
++// 7) Logout: tutto si nasconde
++console.log('7) Logout');
++w = boot();
++w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
++w.eval('logout()');
++s = describe(w);
++check('Area Membri nascosta dopo logout', !s.membri);
++check('Area YUMA nascosta dopo logout', !s.yuma);
++check('nav .nav-area-yuma nascosti dopo logout', allHidden(w, '.nav-area-yuma'));
++
++// 8) i18n: le etichette statiche delle due aree sono tradotte
++console.log('8) Traduzioni area');
++w = boot();
++w.eval("setLanguage('en');");
++const yumaTitle = [...w.document.querySelectorAll('[data-i18n="yuma_title"]')].map(e => e.textContent);
++check('yuma_title in inglese', yumaTitle.join('|') === 'YUMA Area', yumaTitle.join('|'));
++const navYumaLabels = [...w.document.querySelectorAll('.nav-area-yuma')].map(e => e.textContent);
++check('link Area YUMA tradotti', navYumaLabels.every(t => t === 'YUMA Area'), navYumaLabels.join('|'));
++
++console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
++process.exit(failures ? 1 : 0);
