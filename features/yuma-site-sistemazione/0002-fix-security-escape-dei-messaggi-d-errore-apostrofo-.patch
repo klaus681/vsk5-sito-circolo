@@ -1,0 +1,65 @@
+From 9cc09703bec1c98559696eb89f20d05d860f20f8 Mon Sep 17 00:00:00 2001
+From: cline <cline@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 21:09:21 +0000
+Subject: [PATCH 2/4] fix(security): escape dei messaggi d'errore, apostrofo in
+ escapeHtml, via l'upsert morto al signup
+
+- escapeHtml ora copre anche l'apostrofo (&#39;), cosi' e' sicuro in qualunque contesto di attributo
+- i due sink innerHTML con res.error.message ora passano da escapeHtml (app.js:252, 523)
+- rimosso l'upsert su profiles dopo signUp: veniva sempre negato dalla RLS (UPDATE solo admin) e l'errore era ignorato; display_name lo inserisce gia' il trigger handle_new_user()
+- isYuma azzerato anche dopo la registrazione
+---
+ app.js | 18 +++++++-----------
+ 1 file changed, 7 insertions(+), 11 deletions(-)
+
+diff --git a/app.js b/app.js
+index 4a01b62..93f123a 100644
+--- a/app.js
++++ b/app.js
+@@ -8,7 +8,7 @@ try {
+ } catch (e) { console.error(e); }
+ 
+ function escapeHtml(s) {
+-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
++  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+ }
+ // Svuota il contenuto di un'area riservata: quando l'utente perde i permessi
+ // (logout o cambio ruolo) i dati non devono restare nel DOM, nemmeno nascosti.
+@@ -217,15 +217,11 @@ async function handleRegister(e) {
+       return;
+     }
+     if (res.data && res.data.user) {
+-      await supabaseClient.from('profiles').upsert({
+-        id: res.data.user.id,
+-        email: email,
+-        display_name: name,
+-        role: 'pending',
+-        status: 'pending'
+-      });
++      // La riga in `profiles` viene creata dal trigger handle_new_user() lato DB,
++      // che legge display_name da options.data. Un upsert dal client verrebbe
++      // comunque negato dalla RLS (UPDATE consentito solo all'admin).
+       await supabaseClient.auth.signOut();
+-      currentUser = null; userProfile = null; isAdmin = false;
++      currentUser = null; userProfile = null; isAdmin = false; isYuma = false;
+       updateAuthUI();
+     }
+     if (okBox) {
+@@ -253,7 +249,7 @@ async function loadUsersAdmin() {
+   if (activeBox) activeBox.innerHTML = '<p class="text-slate-500 text-xs">Caricamento...</p>';
+   var res = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+   if (res.error) {
+-    if (pendingBox) pendingBox.innerHTML = '<p class="text-red-400 text-xs">' + res.error.message + '</p>';
++    if (pendingBox) pendingBox.innerHTML = '<p class="text-red-400 text-xs">' + escapeHtml(res.error.message) + '</p>';
+     return;
+   }
+   var all = res.data || [];
+@@ -524,7 +520,7 @@ async function loadCandidatureList() {
+   if (!box || !isAdmin || !supabaseClient) return;
+   box.innerHTML = '<p class="text-slate-500 text-xs">Caricamento...</p>';
+   var res = await supabaseClient.from('candidature').select('*').order('created_at', { ascending: false }).limit(50);
+-  if (res.error) { box.innerHTML = '<p class="text-red-400 text-xs">' + res.error.message + '</p>'; return; }
++  if (res.error) { box.innerHTML = '<p class="text-red-400 text-xs">' + escapeHtml(res.error.message) + '</p>'; return; }
+   if (!res.data || !res.data.length) { box.innerHTML = '<p class="text-slate-500 text-xs">Nessuna candidatura.</p>'; return; }
+   box.innerHTML = res.data.map(function(c) {
+     var actions = '';

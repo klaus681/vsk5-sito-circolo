@@ -2,6 +2,12 @@
 
 **Data:** 31/10/2026 · **Commit analizzato:** `6b4b248` (main) · **Metodo:** lettura statica di `index.html`, `app.js`, `i18n.js`, `supabase/*.sql` + verifiche automatiche su chiavi i18n e ID del DOM.
 
+> ✅ **Stato:** P1.1, P1.2, P2.3, P2.6, P2.7, P2.8, P3.9, P3.10, P3.11, P3.13, P3.14 sono
+> stati risolti nella serie di patch `features/yuma-site-sistemazione/`
+> (vedi il suo `README.md`). Restano aperti, per scelta: P2.4 (le migrazioni storiche
+> convivono, ma `99-fix-policies.sql` è ora canonico), P2.5 (email admin ancora
+> hardcoded lato SQL), P3.12 (Tailwind CDN).
+
 ---
 
 ## 1. Cos'è
