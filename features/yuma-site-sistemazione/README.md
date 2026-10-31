@@ -73,20 +73,21 @@ logout invece di lasciarle nascoste nel DOM, `ADMIN_EMAIL` centralizzato (erano 
 - il pulsante **"Candidati"** si nasconde quando sei loggato
 - nuovi controlli nei test (dedupe link, nomi, pulsante) → **35 controlli**
 
-**0006 — feat(admin): i contenuti delle aree si gestiscono dal pannello**
+**0006 — feat(admin): tutto quello che sta dentro le due aree è gestito dal pannello**
 - pannello admin → nuovo tab **Aree**, visibile solo all'admin (come tutto il pannello),
-  con due liste: **Area Soci** e **YUMA Only**
-- per ogni voce: titolo, descrizione, URL modificabili inline + **Salva** / **Elimina**;
-  sotto ogni lista il form **"+ Aggiungi in Area Soci"** / **"+ Aggiungi in YUMA Only"**
-- nuova tabella `downloads` (`supabase/101-downloads.sql`): `area` ('soci' | 'yuma'),
-  `titolo`, `descrizione`, `url`, `file_path`, `sort_order`
-- le due aree non hanno più un placeholder statico: leggono dal DB filtrando per `area`,
-  con link esterni `target="_blank" rel="noopener noreferrer"`, e si aggiornano da sole
-  dopo ogni modifica fatta dall'admin
-- **RLS**: i soci approvati leggono `area='soci'`, l'equipaggio YUMA legge tutto,
-  **scrittura solo `is_admin()`**
-- i18n: `area_download_empty`, `area_download_open` in IT/EN/ES/FR
-- test → **45 controlli**
+  con due liste separate: **Area Soci** e **YUMA Only**
+- ogni voce è una **scheda**: titolo, testo (anche multi-riga), link facoltativo, ordine e
+  flag **visibile**, tutti modificabili inline, con **Salva** / **Elimina**; sotto ogni
+  lista il form **"+ Aggiungi in Area Soci"** / **"+ Aggiungi in YUMA Only"**
+- nuova tabella `area_items` (`supabase/101-aree-contenuti.sql`): niente più schede scritte
+  nel codice — le due aree leggono dal DB filtrando per `area` e ordinando per `sort_order`
+- restano automatiche solo le parti personali: la card del ruolo e l'elenco dei soci in
+  Area Soci, l'elenco dell'equipaggio in YUMA Only
+- 4 schede di partenza (seed) per non avere aree spoglie; **RLS**: i soci leggono
+  `area='soci'`, l'equipaggio YUMA legge tutto, scrittura **solo `is_admin()`**,
+  le schede non pubblicate non escono dal database
+- i18n: rimosse 15 chiavi delle vecchie card statiche, aggiunte `area_empty` / `area_open`
+- test → **43 controlli**
 
 Barra risultante da loggato come YUMA/admin:
 `Home · La Storia · Trofei · Equipaggio · Unisciti | 🇮🇹🇬🇧🇪🇸🇫🇷 👤 klaus68 · Area Soci · YUMA Only · ⚙️ Admin · Esci`
@@ -97,7 +98,7 @@ Progetto `eefszkqpfwwxoljauobs` → SQL Editor, in ordine:
 
 1. `supabase/99-fix-policies.sql` ← **fonte di verità** delle policy e di `is_admin()`
 2. `supabase/100-aree-riservate.sql` ← helper `is_approved_member()` / `is_yuma()`
-3. `supabase/101-downloads.sql` ← tabella `downloads` + policy per le due aree
+3. `supabase/101-aree-contenuti.sql` ← tabella `area_items` (le schede dentro le due aree) + policy + 4 schede di partenza
 
 I primi due sbloccano due funzioni che oggi sono rotte: **eliminare una candidatura**
 (mancava la policy `FOR DELETE`) e **l'elenco soci dell'Area Soci** (la RLS restituiva
@@ -110,7 +111,7 @@ solo la propria riga ai non-admin). Il terzo abilita il tab **Aree** del pannell
 3. Logout → spariscono e il contenuto viene svuotato dal DOM
 4. Cambio lingua (bandierine) → le due aree si ri-renderizzano nella lingua scelta
 5. Pannello Admin → tab Utenti → selettore ruolo per promuovere a `YUMA` / `Socio`
-6. Pannello Admin → tab **Aree** → aggiungi un contenuto in Area Soci (lo vedono i soci) e uno in YUMA Only (lo vede solo l equipaggio)
+6. Pannello Admin → tab **Aree** → aggiungi una scheda in Area Soci (la vedono i soci) e una in YUMA Only (la vede solo l'equipaggio); modificane una esistente e togli la spunta "visibile" per nasconderla
 
 ## Contenuto della cartella
 
@@ -118,7 +119,7 @@ solo la propria riga ai non-admin). Il terzo abilita il tab **Aree** del pannell
 |---|---|
 | `serie-completa.patch` | i 6 commit in un unico mbox → `git am` |
 | `0001…0006` | i singoli commit |
-| `99-fix-policies.sql`, `100-aree-riservate.sql`, `101-downloads.sql` | copie pronte da incollare nel SQL Editor |
+| `99-fix-policies.sql`, `100-aree-riservate.sql`, `101-aree-contenuti.sql` | copie pronte da incollare nel SQL Editor |
 | `aree-riservate.test.js` | copia del test (va in `tests/`) |
 
 ## Ancora aperto (consapevole)

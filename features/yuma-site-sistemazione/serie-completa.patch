@@ -12953,60 +12953,63 @@ index 4ac4568..68dfce4 100644
  
  console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
  process.exit(failures ? 1 : 0);
-From 830aab3db7449454cd5e1e518b7663b3d4c1ed57 Mon Sep 17 00:00:00 2001
+From 35e131dd2ebb82aab81c28888585c5e2b5623508 Mon Sep 17 00:00:00 2001
 From: cline <cline@users.noreply.github.com>
 Date: Sat, 31 Oct 2026 21:28:10 +0000
-Subject: [PATCH 6/6] feat(admin): contenuti delle due aree gestiti dal
- pannello admin (tab "Aree")
+Subject: [PATCH 6/6] feat(admin): tutto quello che sta dentro le due aree e'
+ gestito dal pannello admin
 
-- nuova tabella `downloads` (supabase/101-downloads.sql): titolo, descrizione, url,
-  file_path, area ('soci' | 'yuma'), sort_order; RLS: i soci approvati leggono
-  area='soci', l'equipaggio YUMA legge tutto, scrittura solo is_admin()
-- pannello admin: nuovo tab **Aree** con due liste (Area Soci / YUMA Only),
-  campi modificabili inline, Salva/Elimina e form "Nuovo contenuto" per area
-- le due aree non mostrano piu' un placeholder statico: leggono i contenuti dal DB,
-  filtrati per area, con link esterni (target=_blank rel=noopener noreferrer)
-- refresh automatico delle aree dopo ogni modifica fatta dall'admin
-- i18n: area_download_empty / area_download_open in IT/EN/ES/FR
-- test: 45 controlli (aggiunti contenuti per area, stato vuoto, tab Aree)
+- nuova tabella `area_items` (supabase/101-aree-contenuti.sql): ogni riga e' una SCHEDA
+  con titolo, testo (anche multi-riga), link facoltativo, ordine e flag `pubblicato`
+- pannello admin -> tab **Aree**: due liste (Area Soci / YUMA Only) con campi modificabili
+  inline (titolo, testo, link, ordine, visibile), Salva/Elimina e form "Nuova scheda"
+- le due aree non hanno piu' nessuna scheda hardcoded: titolo, testo e link arrivano
+  dal DB filtrati per area e ordinati; Area Soci mostra in piu' solo la card del ruolo
+  e l'elenco dei soci, YUMA Only l'elenco dell'equipaggio
+- seed iniziali (solo se la tabella e' vuota) per non avere aree spoglie
+- RLS: i soci approvati leggono le schede 'soci', l'equipaggio YUMA legge tutto,
+  scrittura solo is_admin(); le schede non pubblicate non escono dal DB
+- i18n: rimosse 15 chiavi delle vecchie card statiche, aggiunte area_empty / area_open
+- test: 43 controlli jsdom
 ---
- README.md                       |   7 +-
- app.js                          | 182 ++++++++++++++++++++++++++++++--
- i18n.js                         |   8 ++
- index.html                      |  32 ++++++
- supabase/100-aree-riservate.sql |  57 +---------
- supabase/101-downloads.sql      |  57 ++++++++++
+ README.md                       |   8 +-
+ app.js                          | 213 ++++++++++++++++++++++++++------
+ i18n.js                         |  60 ++-------
+ index.html                      |  32 +++++
+ supabase/100-aree-riservate.sql |  57 +--------
+ supabase/101-aree-contenuti.sql |  76 ++++++++++++
  supabase/README.md              |  17 ++-
- tests/aree-riservate.test.js    |  25 +++++
- 8 files changed, 315 insertions(+), 70 deletions(-)
- create mode 100644 supabase/101-downloads.sql
+ tests/aree-riservate.test.js    |  29 ++++-
+ 8 files changed, 336 insertions(+), 156 deletions(-)
+ create mode 100644 supabase/101-aree-contenuti.sql
 
 diff --git a/README.md b/README.md
-index db9b362..618fce5 100644
+index db9b362..d0136f9 100644
 --- a/README.md
 +++ b/README.md
-@@ -30,8 +30,8 @@ Online: **https://klaus681.github.io/yuma-site/**
+@@ -30,8 +30,9 @@ Online: **https://klaus681.github.io/yuma-site/**
  | **Area Soci** | `#area-soci` | utenti approvati: `socio`, `yuma`, `admin` |
  | **Area YUMA** | `#area-yuma` | **solo** `role = 'yuma'` (+ `admin`), con `status = 'approved'` |
  
 -Entrambe hanno lo slot per la futura **Area Download** (vedi il template commentato in
 -`supabase/100-aree-riservate.sql`).
-+Entrambe mostrano i contenuti pubblicati dall'admin (pannello → tab **Aree**), letti dalla
-+tabella `downloads`: solo Area Soci o solo YUMA Only a seconda della riga.
++Tutto quello che sta **dentro** le due aree (schede con titolo, testo e link) lo crea e
++modifica solo l'admin, dal pannello → tab **Aree**; le schede sono salvate in `area_items`
++con `area = 'soci'` oppure `area = 'yuma'`.
  
  > ⚠️ La visibilità è lato client: **non è una protezione**. I contenuti riservati
  > (a partire dai file dell'area download) vanno protetti con le policy RLS.
-@@ -66,6 +66,7 @@ Push su `main` → GitHub Pages ricostruisce da root. Non c'è build: `index.htm
+@@ -66,6 +67,7 @@ Push su `main` → GitHub Pages ricostruisce da root. Non c'è build: `index.htm
  
  ## Da fare (idee)
  
 -- **Area Download**: tabella `downloads` + bucket Storage (template in `100-aree-riservate.sql`)
-+- **Upload file** nell'area download (oggi si pubblicano link a Drive/Discord/PDF; il campo
-+  `file_path` è già pronto per Supabase Storage + bucket con le stesse policy RLS)
++- **Upload file** dirette (oggi le schede contengono link a Drive/Discord/PDF; si può
++  aggiungere Supabase Storage con bucket e policy RLS per area)
  - `og-image.png` 1200×630 per le anteprime social (esportala dal PSD originale)
  - Tailwind precompilato al posto del Play CDN (performance / niente FOUC)
 diff --git a/app.js b/app.js
-index 828e8de..48c4647 100644
+index 828e8de..600b3ac 100644
 --- a/app.js
 +++ b/app.js
 @@ -1,7 +1,7 @@
@@ -13014,7 +13017,7 @@ index 828e8de..48c4647 100644
  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlZnN6a3FwZnd3eG9samF1b2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjI4MTMsImV4cCI6MjEwODkzODgxM30.xak6904GHCnq4LSJsfNdNGGZeNa7ObRsV6NhfyFE2Zs';
  const ADMIN_EMAIL = 'klaus68@hotmail.it';
 -let supabaseClient = null, currentUser = null, isAdmin = false, isYuma = false, userProfile = null, membersCache = [];
-+let supabaseClient = null, currentUser = null, isAdmin = false, isYuma = false, userProfile = null, membersCache = [], downloadsCache = [], downloadsLoaded = false;
++let supabaseClient = null, currentUser = null, isAdmin = false, isYuma = false, userProfile = null, membersCache = [], areaItemsCache = [], areaItemsLoaded = false;
  try {
    if (window.supabase && window.supabase.createClient)
      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -13031,7 +13034,7 @@ index 828e8de..48c4647 100644
    });
    if (name === 'roster') renderAdminMembers();
    if (name === 'users') loadUsersAdmin();
-+  if (name === 'aree') loadDownloads().then(renderAdminDownloads);
++  if (name === 'aree') loadAreaItems().then(renderAdminAreaItems);
    if (name === 'system') loadCandidatureList();
  }
  
@@ -13040,8 +13043,8 @@ index 828e8de..48c4647 100644
      var candidati = document.getElementById('navCandidati');
      if (candidati) candidati.style.display = 'none';
 +    // Contenuti delle due aree: una sola lettura per sessione, poi si ri-renderizza
-+    if (!downloadsLoaded && isApprovedMember) {
-+      loadDownloads().then(function() { updateAuthUI(); });
++    if (!areaItemsLoaded && isApprovedMember) {
++      loadAreaItems().then(function() { updateAuthUI(); });
 +    }
      var label = document.getElementById('userEmailLabel');
      var name = displayName() || 'Utente';
@@ -13050,11 +13053,11 @@ index 828e8de..48c4647 100644
  async function logout() {
    if (supabaseClient) await supabaseClient.auth.signOut();
    currentUser = null; isAdmin = false; isYuma = false; userProfile = null;
-+  downloadsCache = []; downloadsLoaded = false;
++  areaItemsCache = []; areaItemsLoaded = false;
    updateAuthUI();
    closeAdminPanel();
  }
-@@ -584,6 +590,74 @@ async function loadApprovedMembers() {
+@@ -584,6 +590,63 @@ async function loadApprovedMembers() {
    } catch (e) { return []; }
  }
  
@@ -13070,68 +13073,84 @@ index 828e8de..48c4647 100644
 +}
 +const SOCI_ACCENT = { title: 'text-emerald-400', badge: 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10', border: 'border-emerald-500/20' };
 +const YUMA_ACCENT = { title: 'text-amber-400', badge: 'border-amber-500/40 text-amber-300 bg-amber-500/10', border: 'border-amber-500/20' };
-+function areaDownloads(area) {
-+  return (downloadsCache || [])
++function areaItems(area) {
++  return (areaItemsCache || [])
 +    .filter(function(d) { return d.area === area; })
 +    .sort(function(a, b) {
 +      return ((a.sort_order || 0) - (b.sort_order || 0)) || ((a.id || 0) - (b.id || 0));
 +    });
 +}
-+async function loadDownloads() {
-+  if (!supabaseClient) { downloadsCache = []; downloadsLoaded = true; return downloadsCache; }
++async function loadAreaItems() {
++  if (!supabaseClient) { areaItemsCache = []; areaItemsLoaded = true; return areaItemsCache; }
 +  try {
-+    var res = await supabaseClient.from('downloads').select('*')
++    var res = await supabaseClient.from('area_items').select('*')
 +      .order('sort_order', { ascending: true }).order('id', { ascending: true });
-+    downloadsCache = (!res.error && res.data) ? res.data : [];
++    areaItemsCache = (!res.error && res.data) ? res.data : [];
 +  } catch (e) {
-+    downloadsCache = [];
++    areaItemsCache = [];
 +  }
-+  downloadsLoaded = true;
-+  return downloadsCache;
++  areaItemsLoaded = true;
++  return areaItemsCache;
 +}
-+// Card "Area Download" di una delle due aree.
-+function downloadsPanelHtml(area, titleKey, accent) {
++// Schede che l'admin pubblica dentro un'area. Ogni voce = una scheda:
++// titolo, testo (anche multi-riga) e link facoltativo.
++function areaItemsHtml(area, accent) {
 +  var _t = typeof t === 'function' ? t : function(k) { return k; };
-+  var items = areaDownloads(area);
-+  var title = escapeHtml(_t(titleKey));
-+  var head = '<div class="flex items-start justify-between gap-2">' +
-+      '<div class="text-xs font-semibold uppercase tracking-wider ' + accent.title + '">' + title + '</div>' +
-+      '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ' + accent.badge + '">' +
-+        (items.length ? String(items.length) : escapeHtml(_t('area_soon'))) +
-+      '</span>' +
-+    '</div>';
++  var items = areaItems(area);
 +
 +  if (!items.length) {
-+    return '<div class="glass-card p-5 rounded-2xl ' + accent.border + '">' + head +
-+      '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t('area_download_desc')) + '</p>' +
-+      '<p class="text-slate-500 text-xs mt-1">' + escapeHtml(_t('area_download_empty')) + '</p>' +
++    return '<div class="glass-card p-5 rounded-2xl ' + accent.border + '">' +
++      '<p class="text-slate-500 text-xs">' + escapeHtml(_t('area_empty')) + '</p>' +
 +    '</div>';
 +  }
 +
-+  var rows = items.map(function(d) {
++  return '<div class="grid gap-4 sm:grid-cols-2">' + items.map(function(d) {
 +    var href = safeUrl(d.url);
-+    var desc = d.descrizione ? '<p class="text-slate-400 text-xs mt-0.5">' + escapeHtml(d.descrizione) + '</p>' : '';
-+    var open = href ? '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ' + accent.badge + '">' + escapeHtml(_t('area_download_open')) + '</span>' : '';
-+    var inner = '<div class="flex items-start justify-between gap-3">' +
-+        '<div class="min-w-0"><div class="text-sm font-semibold text-white break-words">' + escapeHtml(d.titolo || '') + '</div>' + desc + '</div>' + open +
++    var body = d.testo ? '<p class="text-slate-300 text-sm mt-2 whitespace-pre-line break-words">' + escapeHtml(d.testo) + '</p>' : '';
++    var open = href ? '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ' + accent.badge + '">' + escapeHtml(_t('area_open')) + '</span>' : '';
++    var head = '<div class="flex items-start justify-between gap-2">' +
++        '<div class="text-xs font-semibold uppercase tracking-wider ' + accent.title + ' break-words">' + escapeHtml(d.titolo || '') + '</div>' + open +
 +      '</div>';
-+    var cls = 'block border rounded-xl p-3 transition ' + accent.border;
-+    return '<li>' + (href
-+      ? '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer" class="' + cls + ' hover:bg-slate-800/40">' + inner + '</a>'
-+      : '<div class="' + cls + '">' + inner + '</div>') + '</li>';
-+  }).join('');
-+
-+  return '<div class="glass-card p-5 rounded-2xl ' + accent.border + '">' + head +
-+    '<ul class="space-y-2 mt-3">' + rows + '</ul>' +
-+  '</div>';
++    var cls = 'glass-card p-5 rounded-2xl border ' + accent.border + ' block transition';
++    return href
++      ? '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer" class="' + cls + ' hover:bg-slate-800/40">' + head + body + '</a>'
++      : '<div class="' + cls + '">' + head + body + '</div>';
++  }).join('') + '</div>';
 +}
 +
  function renderAreaSoci() {
    var _t = typeof t === 'function' ? t : function(k, v) {
      var s = k;
-@@ -625,12 +699,8 @@ function renderAreaSoci() {
-       '</ul>' +
-     '</div>' +
+@@ -606,31 +669,17 @@ function renderAreaSoci() {
+     '<h3 class="text-2xl md:text-3xl font-black font-orbitron text-white">' + escapeHtml(_t('area_welcome', {name: name})) + '</h3>' +
+     '<p class="text-slate-400 mt-2 text-sm md:text-base">' + escapeHtml(_t('area_welcome_sub')) + '</p>' +
+   '</div>' +
+-  '<div class="grid sm:grid-cols-2 gap-4 mb-8">' +
+-    '<div class="glass-card p-5 rounded-2xl border border-sky-500/20">' +
+-      '<div class="text-sky-400 text-xs font-semibold uppercase tracking-wider mb-1">' + escapeHtml(_t('area_role')) + '</div>' +
+-      '<div class="text-xl font-bold font-orbitron text-white">' + escapeHtml(roleLabel) + '</div>' +
+-      '<p class="text-slate-400 text-xs mt-2">' +
+-        (role === 'yuma' ? _t('area_role_yuma') :
+-         role === 'socio' ? _t('area_role_socio') :
+-         _t('area_role_admin')) +
+-      '</p>' +
+-    '</div>' +
+-    '<div class="glass-card p-5 rounded-2xl border border-amber-500/20">' +
+-      '<div class="text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1">' + escapeHtml(_t('area_next')) + '</div>' +
+-      '<ul class="text-slate-300 text-sm space-y-1.5 mt-2">' +
+-        '<li>' + escapeHtml(_t('area_next1')) + '</li>' +
+-        '<li>' + escapeHtml(_t('area_next2')) + '</li>' +
+-        '<li>' + escapeHtml(_t('area_next3')) + '</li>' +
+-      '</ul>' +
+-    '</div>' +
++  '<div class="glass-card p-5 rounded-2xl border border-sky-500/20 mb-8">' +
++    '<div class="text-sky-400 text-xs font-semibold uppercase tracking-wider mb-1">' + escapeHtml(_t('area_role')) + '</div>' +
++    '<div class="text-xl font-bold font-orbitron text-white">' + escapeHtml(roleLabel) + '</div>' +
++    '<p class="text-slate-400 text-xs mt-2">' +
++      (role === 'yuma' ? _t('area_role_yuma') :
++       role === 'socio' ? _t('area_role_socio') :
++       _t('area_role_admin')) +
++    '</p>' +
    '</div>' +
 -  '<div class="glass-card p-5 rounded-2xl border border-emerald-500/20 mb-8">' +
 -    '<div class="flex items-start justify-between gap-2">' +
@@ -13139,41 +13158,61 @@ index 828e8de..48c4647 100644
 -      '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">' + escapeHtml(_t('area_soon')) + '</span>' +
 -    '</div>' +
 -    '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t('area_download_desc')) + '</p>' +
-+  '<div id="areaSociDownloads" class="mb-8">' +
-+    downloadsPanelHtml('soci', 'area_download', SOCI_ACCENT) +
++  '<div id="areaSociItems" class="mb-8">' +
++    areaItemsHtml('soci', SOCI_ACCENT) +
    '</div>' +
    '<div id="areaSociList" class="glass-card p-5 rounded-2xl">' +
      '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('area_members')) + '</h4>' +
-@@ -655,6 +725,12 @@ function renderAreaSoci() {
+@@ -655,6 +704,12 @@ function renderAreaSoci() {
        }).join('') +
        '</div>';
    });
 +
 +  // Contenuti dell'area: se non ancora caricati, arriva qui il refresh
-+  if (!downloadsLoaded) loadDownloads().then(function() {
-+    var dlBox = document.getElementById('areaSociDownloads');
-+    if (dlBox) dlBox.innerHTML = downloadsPanelHtml('soci', 'area_download', SOCI_ACCENT);
++  if (!areaItemsLoaded) loadAreaItems().then(function() {
++    var dlBox = document.getElementById('areaSociItems');
++    if (dlBox) dlBox.innerHTML = areaItemsHtml('soci', SOCI_ACCENT);
 +  });
  }
  
  
-@@ -693,7 +769,7 @@ function renderAreaYuma() {
+@@ -675,16 +730,6 @@ function renderAreaYuma() {
+   };
+   var name = displayName() || 'Membro YUMA';
+ 
+-  function card(titleKey, descKey) {
+-    return '<div class="glass-card p-5 rounded-2xl border border-amber-500/20">' +
+-      '<div class="flex items-start justify-between gap-2">' +
+-        '<div class="text-amber-400 text-xs font-semibold uppercase tracking-wider">' + escapeHtml(_t(titleKey)) + '</div>' +
+-        '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border border-amber-500/40 text-amber-300 bg-amber-500/10">' + escapeHtml(_t('area_soon')) + '</span>' +
+-      '</div>' +
+-      '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t(descKey)) + '</p>' +
+-    '</div>';
+-  }
+-
+   box.innerHTML = '<div class="text-center mb-8">' +
+       '<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 text-sm font-semibold mb-4">' +
+         '<span class="w-2 h-2 rounded-full bg-current"></span> YUMA' +
+@@ -692,10 +737,7 @@ function renderAreaYuma() {
+       '<h3 class="text-2xl md:text-3xl font-black font-orbitron text-white">' + escapeHtml(_t('yuma_welcome', {name: name})) + '</h3>' +
        '<p class="text-slate-400 mt-2 text-sm md:text-base">' + escapeHtml(_t('yuma_welcome_sub')) + '</p>' +
      '</div>' +
-     '<div class="grid sm:grid-cols-2 gap-4 mb-8">' +
+-    '<div class="grid sm:grid-cols-2 gap-4 mb-8">' +
 -      card('yuma_card_download', 'yuma_card_download_desc') +
-+      '<div id="areaYumaDownloads">' + downloadsPanelHtml('yuma', 'yuma_card_download', YUMA_ACCENT) + '</div>' +
-       card('yuma_card_tools', 'yuma_card_tools_desc') +
-     '</div>' +
+-      card('yuma_card_tools', 'yuma_card_tools_desc') +
+-    '</div>' +
++    '<div id="areaYumaItems" class="mb-8">' + areaItemsHtml('yuma', YUMA_ACCENT) + '</div>' +
      '<div id="areaYumaList" class="glass-card p-5 rounded-2xl">' +
-@@ -720,6 +796,94 @@ function renderAreaYuma() {
+       '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('yuma_roster')) + '</h4>' +
+       '<p class="text-slate-500 text-xs">' + escapeHtml(_t('roster_loading')) + '</p>' +
+@@ -720,6 +762,97 @@ function renderAreaYuma() {
        }).join('') +
        '</div>';
    });
 +
-+  if (!downloadsLoaded) loadDownloads().then(function() {
-+    var dlBox = document.getElementById('areaYumaDownloads');
-+    if (dlBox) dlBox.innerHTML = downloadsPanelHtml('yuma', 'yuma_card_download', YUMA_ACCENT);
++  if (!areaItemsLoaded) loadAreaItems().then(function() {
++    var dlBox = document.getElementById('areaYumaItems');
++    if (dlBox) dlBox.innerHTML = areaItemsHtml('yuma', YUMA_ACCENT);
 +  });
 +}
 +
@@ -13181,128 +13220,255 @@ index 828e8de..48c4647 100644
 +   ADMIN – gestione dei contenuti delle due aree (tab "Aree")
 +   Le scritture sono consentite solo all'admin anche dalle policy RLS.
 +   ------------------------------------------------------------------- */
-+function renderAdminDownloads() {
++function renderAdminAreaItems() {
 +  ['soci', 'yuma'].forEach(function(area) {
-+    var box = document.getElementById(area === 'soci' ? 'adminDownloadsSoci' : 'adminDownloadsYuma');
++    var box = document.getElementById(area === 'soci' ? 'adminAreaSoci' : 'adminAreaYuma');
 +    if (!box) return;
-+    var items = areaDownloads(area);
++    var items = areaItems(area);
 +    if (!items.length) {
 +      box.innerHTML = '<p class="text-slate-500 text-xs">Nessun contenuto. Aggiungine uno qui sotto.</p>';
 +      return;
 +    }
 +    box.innerHTML = items.map(function(d) {
-+      return '<div class="border border-slate-700 rounded-xl p-3 space-y-2" data-dl="' + d.id + '">' +
-+        '<input type="text" value="' + escapeHtml(d.titolo || '') + '" data-field="titolo" class="auth-input text-xs" placeholder="Titolo">' +
-+        '<input type="text" value="' + escapeHtml(d.descrizione || '') + '" data-field="descrizione" class="auth-input text-xs" placeholder="Descrizione (facoltativa)">' +
-+        '<input type="url" value="' + escapeHtml(d.url || '') + '" data-field="url" class="auth-input text-xs" placeholder="https://...">' +
++      return '<div class="border border-slate-700 rounded-xl p-3 space-y-2" data-item="' + d.id + '">' +
++        '<input type="text" value="' + escapeHtml(d.titolo || '') + '" data-field="titolo" class="auth-input text-xs" placeholder="Titolo della scheda">' +
++        '<textarea rows="3" data-field="testo" class="auth-input text-xs" placeholder="Testo della scheda (una riga per punto)">' + escapeHtml(d.testo || '') + '</textarea>' +
++        '<input type="url" value="' + escapeHtml(d.url || '') + '" data-field="url" class="auth-input text-xs" placeholder="Link (facoltativo) https://...">' +
 +        '<div class="flex items-center gap-2">' +
 +          '<input type="number" value="' + (d.sort_order || 0) + '" data-field="sort_order" class="auth-input text-xs" title="Ordine" style="max-width:84px">' +
-+          '<button type="button" onclick="saveDownload(' + d.id + ')" class="btn-secondary text-[11px] px-3 py-1.5 flex-1">Salva</button>' +
-+          '<button type="button" onclick="deleteDownload(' + d.id + ')" class="text-red-400 text-[11px] px-3 py-1.5 border border-red-500/30 rounded-lg">Elimina</button>' +
++          '<label class="flex items-center gap-1.5 text-[11px] text-slate-400"><input type="checkbox" data-field="pubblicato" ' + (d.pubblicato === false ? '' : 'checked') + '> visibile</label>' +
++          '<button type="button" onclick="saveAreaItem(' + d.id + ')" class="btn-secondary text-[11px] px-3 py-1.5 flex-1">Salva</button>' +
++          '<button type="button" onclick="deleteAreaItem(' + d.id + ')" class="text-red-400 text-[11px] px-3 py-1.5 border border-red-500/30 rounded-lg">Elimina</button>' +
 +        '</div>' +
 +      '</div>';
 +    }).join('');
 +  });
 +}
 +// Ricarica dal DB e riallinea admin + aree visibili
-+async function refreshDownloads() {
-+  downloadsLoaded = false;
-+  await loadDownloads();
-+  renderAdminDownloads();
++async function refreshAreaItems() {
++  areaItemsLoaded = false;
++  await loadAreaItems();
++  renderAdminAreaItems();
 +  var sociSection = document.getElementById('area-soci');
 +  if (sociSection && !sociSection.classList.contains('hidden')) renderAreaSoci();
 +  var yumaSection = document.getElementById('area-yuma');
 +  if (yumaSection && !yumaSection.classList.contains('hidden')) renderAreaYuma();
 +}
-+async function addDownload(area) {
++async function addAreaItem(area) {
 +  if (!isAdmin || !supabaseClient) return;
-+  var p = area === 'soci' ? 'new-dl-soci-' : 'new-dl-yuma-';
++  var p = area === 'soci' ? 'new-item-soci-' : 'new-item-yuma-';
 +  var titoloEl = document.getElementById(p + 'titolo');
-+  var descEl = document.getElementById(p + 'desc');
++  var testoEl = document.getElementById(p + 'testo');
 +  var urlEl = document.getElementById(p + 'url');
 +  var titolo = ((titoloEl && titoloEl.value) || '').trim();
 +  if (!titolo) { alert('Inserisci un titolo.'); return; }
-+  var maxOrder = areaDownloads(area).reduce(function(mx, d) { return Math.max(mx, d.sort_order || 0); }, 0);
-+  var res = await supabaseClient.from('downloads').insert({
++  var maxOrder = areaItems(area).reduce(function(mx, d) { return Math.max(mx, d.sort_order || 0); }, 0);
++  var res = await supabaseClient.from('area_items').insert({
 +    area: area,
 +    titolo: titolo,
-+    descrizione: ((descEl && descEl.value) || '').trim() || null,
++    testo: ((testoEl && testoEl.value) || '').trim() || null,
 +    url: ((urlEl && urlEl.value) || '').trim() || null,
 +    sort_order: maxOrder + 1,
++    pubblicato: true,
 +    created_by: currentUser ? currentUser.id : null
 +  });
 +  if (res.error) { alert('Errore: ' + res.error.message); return; }
 +  if (titoloEl) titoloEl.value = '';
-+  if (descEl) descEl.value = '';
++  if (testoEl) testoEl.value = '';
 +  if (urlEl) urlEl.value = '';
-+  await refreshDownloads();
++  await refreshAreaItems();
 +}
-+async function saveDownload(id) {
++async function saveAreaItem(id) {
 +  if (!isAdmin || !supabaseClient) return;
-+  var card = document.querySelector('[data-dl="' + id + '"]');
++  var card = document.querySelector('[data-item="' + id + '"]');
 +  if (!card) return;
 +  var payload = {};
 +  card.querySelectorAll('[data-field]').forEach(function(inp) {
-+    var f = inp.getAttribute('data-field'), v = inp.value;
-+    if (f === 'sort_order') payload[f] = parseInt(v, 10) || 0;
-+    else payload[f] = v.trim() || null;
++    var f = inp.getAttribute('data-field');
++    if (f === 'sort_order') { payload[f] = parseInt(inp.value, 10) || 0; return; }
++    if (f === 'pubblicato') { payload[f] = !!inp.checked; return; }
++    payload[f] = (inp.value || '').trim() || null;
 +  });
 +  if (!payload.titolo) { alert('Titolo obbligatorio.'); return; }
-+  var res = await supabaseClient.from('downloads').update(payload).eq('id', id);
++  var res = await supabaseClient.from('area_items').update(payload).eq('id', id);
 +  if (res.error) { alert('Errore: ' + res.error.message); return; }
-+  await refreshDownloads();
++  await refreshAreaItems();
 +}
-+async function deleteDownload(id) {
++async function deleteAreaItem(id) {
 +  if (!isAdmin || !supabaseClient) return;
-+  if (!confirm('Eliminare questo contenuto?')) return;
-+  var res = await supabaseClient.from('downloads').delete().eq('id', id);
++  if (!confirm('Eliminare questa scheda dall\'area?')) return;
++  var res = await supabaseClient.from('area_items').delete().eq('id', id);
 +  if (res.error) { alert('Errore: ' + res.error.message); return; }
-+  await refreshDownloads();
++  await refreshAreaItems();
  }
  
  document.addEventListener('DOMContentLoaded', async function() {
 diff --git a/i18n.js b/i18n.js
-index a5b632d..3a610b8 100644
+index a5b632d..dc83637 100644
 --- a/i18n.js
 +++ b/i18n.js
-@@ -73,6 +73,8 @@ var I18N = {
+@@ -57,37 +57,26 @@ var I18N = {
+     form_placeholder_contatto: "tuo-nome#1234 o email",
+     form_placeholder_msg: "Raccontaci qualcosa di te...",
+     area_label: "Riservata ai soci",
++    area_empty: "Nessun contenuto pubblicato per ora.",
++    area_open: "Apri",
+     area_title: "Area Soci",
+     area_desc: "Il tuo spazio a bordo della community YUMA.",
+     area_welcome: "Benvenuto a bordo, {name}!",
+     area_welcome_sub: "Sei ufficialmente parte della community YUMA.",
+     area_role: "Il tuo ruolo",
+-    area_next: "Prossimi passi",
+-    area_next1: "• Unisciti al canale Discord del team",
+-    area_next2: "• Partecipa alle regate e agli allenamenti",
+-    area_next3: "• Contatta un admin per qualsiasi dubbio",
+     area_members: "Soci approvati",
+     area_members_none: "Nessun altro socio ancora.",
+     area_role_yuma: "Membro del team YUMA – regate, tattica e cameratismo.",
+     area_role_socio: "Socio della community – supporto e passione per la vela virtuale.",
      area_role_admin: "Amministratore del sito.",
-     area_download: "Area Download",
-     area_download_desc: "Documenti, foto e materiali del team. Disponibile a breve.",
-+    area_download_empty: "Nessun contenuto pubblicato per ora.",
-+    area_download_open: "Apri",
+-    area_download: "Area Download",
+-    area_download_desc: "Documenti, foto e materiali del team. Disponibile a breve.",
      nav_area_yuma: "YUMA Only",
      yuma_label: "Riservato all'equipaggio",
      yuma_title: "YUMA Only",
-@@ -184,6 +186,8 @@ var I18N = {
+     yuma_desc: "Spazio riservato ai membri del team YUMA.",
+     yuma_welcome: "Benvenuto in equipaggio, {name}!",
+     yuma_welcome_sub: "Contenuti riservati all'equipaggio YUMA.",
+-    yuma_card_download: "Download equipaggio",
+-    yuma_card_download_desc: "Regolamenti, skin e materiali interni. In arrivo.",
+-    yuma_card_tools: "Strumenti del team",
+-    yuma_card_tools_desc: "Collegamenti rapidi a regate, classifiche e Discord.",
+-    yuma_card_discord: "Canale Discord",
+-    yuma_card_discord_desc: "Coordinamento equipaggio e briefing pre-regata.",
+     yuma_roster: "Equipaggio YUMA attivo",
+     yuma_roster_none: "Nessun altro membro YUMA approvato.",
+-    area_soon: "In arrivo",
+     login_title: "Accedi",
+     login_email: "Email",
+     login_pass: "Password",
+@@ -168,37 +157,26 @@ var I18N = {
+     form_placeholder_contatto: "your-name#1234 or email",
+     form_placeholder_msg: "Tell us something about yourself...",
+     area_label: "Members only",
++    area_empty: "Nothing published yet.",
++    area_open: "Open",
+     area_title: "Members Area",
+     area_desc: "Your space on board the YUMA community.",
+     area_welcome: "Welcome aboard, {name}!",
+     area_welcome_sub: "You are officially part of the YUMA community.",
+     area_role: "Your role",
+-    area_next: "Next steps",
+-    area_next1: "• Join the team Discord channel",
+-    area_next2: "• Take part in races and training",
+-    area_next3: "• Contact an admin if you have any questions",
+     area_members: "Approved members",
+     area_members_none: "No other members yet.",
+     area_role_yuma: "YUMA team member – racing, tactics and camaraderie.",
+     area_role_socio: "Community member – support and passion for virtual sailing.",
      area_role_admin: "Site administrator.",
-     area_download: "Download Area",
-     area_download_desc: "Team documents, photos and assets. Coming soon.",
-+    area_download_empty: "Nothing published yet.",
-+    area_download_open: "Open",
+-    area_download: "Download Area",
+-    area_download_desc: "Team documents, photos and assets. Coming soon.",
      nav_area_yuma: "YUMA Only",
      yuma_label: "Crew only",
      yuma_title: "YUMA Only",
-@@ -295,6 +299,8 @@ var I18N = {
+     yuma_desc: "Reserved space for YUMA team members.",
+     yuma_welcome: "Welcome to the crew, {name}!",
+     yuma_welcome_sub: "Content reserved for the YUMA crew.",
+-    yuma_card_download: "Crew downloads",
+-    yuma_card_download_desc: "Rules, skins and internal assets. Coming soon.",
+-    yuma_card_tools: "Team tools",
+-    yuma_card_tools_desc: "Quick links to races, standings and Discord.",
+-    yuma_card_discord: "Discord channel",
+-    yuma_card_discord_desc: "Crew coordination and pre-race briefings.",
+     yuma_roster: "Active YUMA crew",
+     yuma_roster_none: "No other approved YUMA members yet.",
+-    area_soon: "Coming soon",
+     login_title: "Log in",
+     login_email: "Email",
+     login_pass: "Password",
+@@ -279,37 +257,26 @@ var I18N = {
+     form_placeholder_contatto: "tu-nombre#1234 o email",
+     form_placeholder_msg: "Cuéntanos algo sobre ti...",
+     area_label: "Solo socios",
++    area_empty: "Todavía no hay contenido.",
++    area_open: "Abrir",
+     area_title: "Área de Socios",
+     area_desc: "Tu espacio a bordo de la comunidad YUMA.",
+     area_welcome: "¡Bienvenido a bordo, {name}!",
+     area_welcome_sub: "Formas parte oficialmente de la comunidad YUMA.",
+     area_role: "Tu rol",
+-    area_next: "Próximos pasos",
+-    area_next1: "• Únete al canal Discord del equipo",
+-    area_next2: "• Participa en regatas y entrenamientos",
+-    area_next3: "• Contacta a un admin si tienes dudas",
+     area_members: "Socios aprobados",
+     area_members_none: "Aún no hay más miembros.",
+     area_role_yuma: "Miembro del equipo YUMA – regatas, táctica y compañerismo.",
+     area_role_socio: "Socio de la comunidad – apoyo y pasión por la vela virtual.",
      area_role_admin: "Administrador del sitio.",
-     area_download: "Área de Descargas",
-     area_download_desc: "Documentos, fotos y materiales del equipo. Disponible pronto.",
-+    area_download_empty: "Todavía no hay contenido.",
-+    area_download_open: "Abrir",
+-    area_download: "Área de Descargas",
+-    area_download_desc: "Documentos, fotos y materiales del equipo. Disponible pronto.",
      nav_area_yuma: "YUMA Only",
      yuma_label: "Solo tripulación",
      yuma_title: "YUMA Only",
-@@ -406,6 +412,8 @@ var I18N = {
+     yuma_desc: "Espacio reservado a los miembros del equipo YUMA.",
+     yuma_welcome: "¡Bienvenido a la tripulación, {name}!",
+     yuma_welcome_sub: "Contenidos reservados a la tripulación YUMA.",
+-    yuma_card_download: "Descargas de tripulación",
+-    yuma_card_download_desc: "Reglamentos, skins y materiales internos. Próximamente.",
+-    yuma_card_tools: "Herramientas del equipo",
+-    yuma_card_tools_desc: "Accesos rápidos a regatas, clasificaciones y Discord.",
+-    yuma_card_discord: "Canal de Discord",
+-    yuma_card_discord_desc: "Coordinación de la tripulación y briefings previos.",
+     yuma_roster: "Tripulación YUMA activa",
+     yuma_roster_none: "Aún no hay otros miembros YUMA aprobados.",
+-    area_soon: "Próximamente",
+     login_title: "Entrar",
+     login_email: "Email",
+     login_pass: "Contraseña",
+@@ -390,37 +357,26 @@ var I18N = {
+     form_placeholder_contatto: "ton-nom#1234 ou email",
+     form_placeholder_msg: "Parlez-nous un peu de vous...",
+     area_label: "Réservé aux membres",
++    area_empty: "Rien de publié pour l'instant.",
++    area_open: "Ouvrir",
+     area_title: "Espace Membres",
+     area_desc: "Votre espace à bord de la communauté YUMA.",
+     area_welcome: "Bienvenue à bord, {name} !",
+     area_welcome_sub: "Vous faites officiellement partie de la communauté YUMA.",
+     area_role: "Votre rôle",
+-    area_next: "Prochaines étapes",
+-    area_next1: "• Rejoignez le canal Discord de l'équipe",
+-    area_next2: "• Participez aux régates et entraînements",
+-    area_next3: "• Contactez un admin pour toute question",
+     area_members: "Membres approuvés",
+     area_members_none: "Pas encore d'autres membres.",
+     area_role_yuma: "Membre de l'équipe YUMA – régates, tactique et camaraderie.",
+     area_role_socio: "Membre de la communauté – soutien et passion pour la voile virtuelle.",
      area_role_admin: "Administrateur du site.",
-     area_download: "Espace Téléchargements",
-     area_download_desc: "Documents, photos et ressources de l'équipe. Bientôt disponible.",
-+    area_download_empty: "Rien de publié pour l'instant.",
-+    area_download_open: "Ouvrir",
+-    area_download: "Espace Téléchargements",
+-    area_download_desc: "Documents, photos et ressources de l'équipe. Bientôt disponible.",
      nav_area_yuma: "YUMA Only",
      yuma_label: "Équipage uniquement",
      yuma_title: "YUMA Only",
+     yuma_desc: "Espace réservé aux membres de l'équipe YUMA.",
+     yuma_welcome: "Bienvenue dans l'équipage, {name} !",
+     yuma_welcome_sub: "Contenus réservés à l'équipage YUMA.",
+-    yuma_card_download: "Téléchargements équipage",
+-    yuma_card_download_desc: "Règlements, skins et ressources internes. Bientôt disponible.",
+-    yuma_card_tools: "Outils de l'équipe",
+-    yuma_card_tools_desc: "Accès rapides aux régates, classements et Discord.",
+-    yuma_card_discord: "Canal Discord",
+-    yuma_card_discord_desc: "Coordination de l'équipage et briefings d'avant-course.",
+     yuma_roster: "Équipage YUMA actif",
+     yuma_roster_none: "Aucun autre membre YUMA approuvé pour l'instant.",
+-    area_soon: "Bientôt",
+     login_title: "Connexion",
+     login_email: "Email",
+     login_pass: "Mot de passe",
 diff --git a/index.html b/index.html
-index 03b6a8e..fa6461e 100644
+index 03b6a8e..7c89d87 100644
 --- a/index.html
 +++ b/index.html
 @@ -244,6 +244,7 @@
@@ -13319,32 +13485,32 @@ index 03b6a8e..fa6461e 100644
      </div>
 +    <div id="adminTab-aree" class="space-y-5 text-left hidden">
 +      <div class="bg-emerald-500/10 border border-emerald-500/25 p-3 rounded-lg text-emerald-300 text-xs">
-+        Contenuti delle due aree riservate: <strong>Area Soci</strong> la vedono tutti gli approvati,
-+        <strong>YUMA Only</strong> solo l'equipaggio. Qui puoi aggiungere, modificare ed eliminare le voci
-+        (link a PDF, Drive, Discord...). Solo l'admin può scrivere.
++        Qui gestisci <strong>tutto quello che c'è dentro le due aree</strong>: ogni voce è una
++        scheda con titolo, testo e link facoltativo. Le schede di <strong>Area Soci</strong> le
++        vedono tutti gli approvati, quelle di <strong>YUMA Only</strong> solo l'equipaggio.
 +      </div>
 +
 +      <div>
 +        <h4 class="text-emerald-400 font-bold text-[11px] uppercase tracking-wider mb-2">Area Soci</h4>
-+        <div id="adminDownloadsSoci" class="space-y-3 max-h-56 overflow-y-auto"></div>
++        <div id="adminAreaSoci" class="space-y-3 max-h-56 overflow-y-auto"></div>
 +        <div class="border border-emerald-500/30 rounded-xl p-3 space-y-2 bg-emerald-500/5 mt-2">
-+          <h5 class="text-emerald-300 font-bold text-[10px] uppercase tracking-wider">Nuovo contenuto</h5>
-+          <input type="text" id="new-dl-soci-titolo" placeholder="Titolo (es. Regolamento 2026)" class="auth-input text-xs">
-+          <input type="text" id="new-dl-soci-desc" placeholder="Descrizione (facoltativa)" class="auth-input text-xs">
-+          <input type="url" id="new-dl-soci-url" placeholder="https://..." class="auth-input text-xs">
-+          <button type="button" onclick="addDownload('soci')" class="btn-secondary text-xs w-full py-2">+ Aggiungi in Area Soci</button>
++          <h5 class="text-emerald-300 font-bold text-[10px] uppercase tracking-wider">Nuova scheda</h5>
++          <input type="text" id="new-item-soci-titolo" placeholder="Titolo (es. Regolamento 2026)" class="auth-input text-xs">
++          <textarea rows="3" id="new-item-soci-testo" placeholder="Testo (una riga per punto)" class="auth-input text-xs"></textarea>
++          <input type="url" id="new-item-soci-url" placeholder="Link facoltativo https://..." class="auth-input text-xs">
++          <button type="button" onclick="addAreaItem('soci')" class="btn-secondary text-xs w-full py-2">+ Aggiungi in Area Soci</button>
 +        </div>
 +      </div>
 +
 +      <div>
 +        <h4 class="text-amber-400 font-bold text-[11px] uppercase tracking-wider mb-2">YUMA Only</h4>
-+        <div id="adminDownloadsYuma" class="space-y-3 max-h-56 overflow-y-auto"></div>
++        <div id="adminAreaYuma" class="space-y-3 max-h-56 overflow-y-auto"></div>
 +        <div class="border border-amber-500/30 rounded-xl p-3 space-y-2 bg-amber-500/5 mt-2">
-+          <h5 class="text-amber-300 font-bold text-[10px] uppercase tracking-wider">Nuovo contenuto</h5>
-+          <input type="text" id="new-dl-yuma-titolo" placeholder="Titolo (es. Briefing regata)" class="auth-input text-xs">
-+          <input type="text" id="new-dl-yuma-desc" placeholder="Descrizione (facoltativa)" class="auth-input text-xs">
-+          <input type="url" id="new-dl-yuma-url" placeholder="https://..." class="auth-input text-xs">
-+          <button type="button" onclick="addDownload('yuma')" class="btn-secondary text-xs w-full py-2">+ Aggiungi in YUMA Only</button>
++          <h5 class="text-amber-300 font-bold text-[10px] uppercase tracking-wider">Nuova scheda</h5>
++          <input type="text" id="new-item-yuma-titolo" placeholder="Titolo (es. Briefing regata)" class="auth-input text-xs">
++          <textarea rows="3" id="new-item-yuma-testo" placeholder="Testo (una riga per punto)" class="auth-input text-xs"></textarea>
++          <input type="url" id="new-item-yuma-url" placeholder="Link facoltativo https://..." class="auth-input text-xs">
++          <button type="button" onclick="addAreaItem('yuma')" class="btn-secondary text-xs w-full py-2">+ Aggiungi in YUMA Only</button>
 +        </div>
 +      </div>
 +    </div>
@@ -13416,71 +13582,90 @@ index 3f1ac1d..08e3ccf 100644
 +--    La tabella e le policy sono in supabase/101-downloads.sql
 +--    (va eseguito dopo questo file). I contenuti delle due aree
 +--    si gestiscono dal pannello admin -> tab "Aree".
-diff --git a/supabase/101-downloads.sql b/supabase/101-downloads.sql
+diff --git a/supabase/101-aree-contenuti.sql b/supabase/101-aree-contenuti.sql
 new file mode 100644
-index 0000000..75ffb29
+index 0000000..932f90a
 --- /dev/null
-+++ b/supabase/101-downloads.sql
-@@ -0,0 +1,57 @@
++++ b/supabase/101-aree-contenuti.sql
+@@ -0,0 +1,76 @@
 +-- ============================================================
 +-- YUMA – contenuti delle due aree, gestiti dal pannello admin
-+-- Tabella `downloads`: voci/link/file pubblicati dall'admin in
-+-- Area Soci (area='soci') e in YUMA Only (area='yuma').
++-- Tabella `area_items`: ogni riga è una SCHEDA pubblicata dentro
++-- Area Soci (area='soci') o YUMA Only (area='yuma') dal tab "Aree".
 +-- Idempotente. Esegui DOPO 99-fix-policies.sql e 100-aree-riservate.sql
 +-- ============================================================
 +
-+create table if not exists public.downloads (
++create table if not exists public.area_items (
 +  id          bigint generated always as identity primary key,
++  area        text not null check (area in ('soci', 'yuma')),
 +  titolo      text not null,
-+  descrizione text,
-+  url         text,                        -- link diretto (Drive, Discord, PDF, ...)
-+  file_path   text,                        -- percorso nel bucket Storage (futuro upload)
-+  area        text not null default 'soci'
-+              check (area in ('soci', 'yuma')),
++  testo       text,                        -- corpo della scheda, anche multi-riga
++  url         text,                        -- link facoltativo: se c'e', la scheda diventa cliccabile
 +  sort_order  int not null default 0,
++  pubblicato  boolean not null default true,
 +  created_at  timestamptz not null default now(),
 +  created_by  uuid references auth.users(id)
 +);
 +
-+alter table public.downloads enable row level security;
++alter table public.area_items enable row level security;
 +
 +-- Lettura: Area Soci -> membri approvati; YUMA Only -> is_yuma() (yuma + admin)
-+drop policy if exists "read downloads by area" on public.downloads;
-+create policy "read downloads by area"
-+  on public.downloads for select
++drop policy if exists "read area items by area" on public.area_items;
++create policy "read area items by area"
++  on public.area_items for select
 +  to authenticated
 +  using (
-+    (area = 'soci' and public.is_approved_member())
-+    or public.is_yuma()
++    pubblicato
++    and (
++      (area = 'soci' and public.is_approved_member())
++      or public.is_yuma()
++    )
 +  );
 +
 +-- Scrittura: solo admin
-+drop policy if exists "admin insert downloads" on public.downloads;
-+create policy "admin insert downloads"
-+  on public.downloads for insert
++drop policy if exists "admin insert area items" on public.area_items;
++create policy "admin insert area items"
++  on public.area_items for insert
 +  to authenticated
 +  with check (public.is_admin());
 +
-+drop policy if exists "admin update downloads" on public.downloads;
-+create policy "admin update downloads"
-+  on public.downloads for update
++drop policy if exists "admin update area items" on public.area_items;
++create policy "admin update area items"
++  on public.area_items for update
 +  to authenticated
 +  using (public.is_admin())
 +  with check (public.is_admin());
 +
-+drop policy if exists "admin delete downloads" on public.downloads;
-+create policy "admin delete downloads"
-+  on public.downloads for delete
++drop policy if exists "admin delete area items" on public.area_items;
++create policy "admin delete area items"
++  on public.area_items for delete
 +  to authenticated
 +  using (public.is_admin());
 +
-+create index if not exists downloads_area_sort_idx
-+  on public.downloads (area, sort_order, id);
++create index if not exists area_items_area_sort_idx
++  on public.area_items (area, sort_order, id);
++
++-- ------------------------------------------------------------
++-- Contenuti iniziali (solo se la tabella è vuota): così le due aree
++-- non nascono spoglie. Da qui in poi si modificano dal tab "Aree".
++-- ------------------------------------------------------------
++insert into public.area_items (area, titolo, testo, sort_order)
++select * from (values
++  ('soci', 'Prossimi passi',
++   E'• Unisciti al canale Discord del team\n• Partecipa alle regate e agli allenamenti\n• Contatta un admin per qualsiasi dubbio', 1),
++  ('soci', 'Area Download',
++   'Documenti, foto e materiali del team: qui pubblicheremo i file da scaricare.', 2),
++  ('yuma', 'Strumenti del team',
++   'Collegamenti rapidi a regate, classifiche e Discord dell''equipaggio.', 1),
++  ('yuma', 'Download equipaggio',
++   'Regolamenti, skin e materiali interni riservati al team.', 2)
++) as v(area, titolo, testo, sort_order)
++where not exists (select 1 from public.area_items limit 1);
 +
 +-- Verifica (opzionale)
-+-- select id, area, titolo, url, sort_order from public.downloads order by area, sort_order, id;
++-- select id, area, titolo, sort_order, pubblicato from public.area_items order by area, sort_order, id;
 diff --git a/supabase/README.md b/supabase/README.md
-index 0b58968..9e8b599 100644
+index 0b58968..1da9388 100644
 --- a/supabase/README.md
 +++ b/supabase/README.md
 @@ -12,7 +12,8 @@ contenuto di ciascun file e premi **Run**, uno dopo l'altro:
@@ -13489,7 +13674,7 @@ index 0b58968..9e8b599 100644
  | 5 | `99-fix-policies.sql` | **fonte di verità**: `is_admin()` canonico, DELETE candidature, elenco membri per gli approvati, blocco escalation su `profiles`, limiti anti-spam. Va eseguito **per ultimo** |
 -| 6 | `100-aree-riservate.sql` | helper `is_approved_member()` / `is_yuma()` + template (commentato) per la futura Area Download |
 +| 6 | `100-aree-riservate.sql` | helper `is_approved_member()` / `is_yuma()` per le due aree |
-+| 7 | `101-downloads.sql` | tabella `downloads` (contenuti delle due aree) + policy: leggono i soci/equipaggio, scrive solo l'admin |
++| 7 | `101-aree-contenuti.sql` | tabella `area_items` (schede dentro le due aree) + policy: leggono i soci/equipaggio, scrive solo l.admin |
  
  Tutti i file sono idempotenti: si possono rieseguire.
  
@@ -13513,7 +13698,7 @@ index 0b58968..9e8b599 100644
 -> 🔒 Questa è solo la UI. Per i contenuti della futura Area Download la protezione
 -> reale devono essere le policy RLS (vedi il blocco commentato in
 -> `100-aree-riservate.sql`), basate su `is_approved_member()` e `is_yuma()`.
-+> 🔒 La UI non è una protezione: le policy RLS di `101-downloads.sql` fanno sì che i soci
++> 🔒 La UI non è una protezione: le policy RLS di `101-aree-contenuti.sql` fanno sì che i soci
 +> approvati leggano solo `area='soci'`, l'equipaggio YUMA tutto, e che **solo `is_admin()`
 +> possa inserire, modificare o eliminare**.
  
@@ -13528,51 +13713,62 @@ index 0b58968..9e8b599 100644
  ## Test
  ```bash
 diff --git a/tests/aree-riservate.test.js b/tests/aree-riservate.test.js
-index 68dfce4..d5c560a 100644
+index 68dfce4..e51d381 100644
 --- a/tests/aree-riservate.test.js
 +++ b/tests/aree-riservate.test.js
 @@ -15,6 +15,10 @@ const app = fs.readFileSync(path.join(REPO, 'app.js'), 'utf8');
  // eval per poter pilotare lo stato (isYuma/isAdmin/userProfile/currentUser).
  const appWithHooks = app + `
  window.__api = {
-+  setDownloads: function (list) {
-+    downloadsCache = list || [];
-+    downloadsLoaded = true;
++  setAreaItems: function (list) {
++    areaItemsCache = list || [];
++    areaItemsLoaded = true;
 +  },
    setUser: function (user, profile, adminFlag) {
      currentUser = user || null;
      userProfile = profile || null;
-@@ -84,6 +88,7 @@ check('nav Area YUMA nascosta', !s.navYuma);
+@@ -83,7 +87,7 @@ check('nav Area Soci visibile', s.navSoci);
+ check('nav Area YUMA nascosta', !s.navYuma);
  check('contenuto Area YUMA vuoto', s.yumaHtml.trim() === '');
  check('Area Soci saluta Mario', s.sociHtml.indexOf('Mario') >= 0);
- check('Area Soci ha blocco Download', s.sociHtml.indexOf('Area Download') >= 0);
+-check('Area Soci ha blocco Download', s.sociHtml.indexOf('Area Download') >= 0);
 +check('Area Soci mostra lo stato vuoto dei contenuti', s.sociHtml.indexOf('Nessun contenuto pubblicato per ora') >= 0);
  
  // 3) Membro YUMA approvato: entrambe
  console.log('3) Membro YUMA approvato');
-@@ -156,5 +161,25 @@ check('saluto con nome breve', s.sociHtml.indexOf('klaus68') >= 0);
+@@ -95,8 +99,7 @@ check('Area YUMA visibile', s.yuma);
+ check('nav Area Soci visibile', s.navSoci);
+ check('nav Area YUMA visibile', s.navYuma);
+ check('Area YUMA saluta Klaus', s.yumaHtml.indexOf('Klaus') >= 0);
+-check('Area YUMA ha card "Download equipaggio"', s.yumaHtml.indexOf('Download equipaggio') >= 0);
+-check('Area YUMA ha card "Strumenti del team"', s.yumaHtml.indexOf('Strumenti del team') >= 0);
++check('YUMA Only mostra lo stato vuoto (nessuna scheda)', s.yumaHtml.indexOf('Nessun contenuto pubblicato per ora') >= 0);
+ const nSoci = w.document.querySelectorAll('.nav-area-soci').length;
+ const nYuma = w.document.querySelectorAll('.nav-area-yuma').length;
+ check('un solo link per area: desktop + mobile, nessun doppione', nSoci === 2 && nYuma === 2, nSoci + '/' + nYuma);
+@@ -156,5 +159,25 @@ check('saluto con nome breve', s.sociHtml.indexOf('klaus68') >= 0);
  const chip = (w.document.getElementById('userEmailLabel') || {}).textContent;
  check('chip utente = klaus68', chip === 'klaus68', chip);
  
 +// 10) Contenuti delle due aree, pubblicati dall'admin
-+console.log('10) Contenuti delle aree (gestiti dal pannello admin)');
++console.log('10) Schede delle aree (gestite dal pannello admin)');
 +w = boot();
-+w.__api.setDownloads([
-+  { id: 1, area: 'soci', titolo: 'Regolamento 2026', descrizione: 'PDF ufficiale', url: 'https://example.com/regolamento.pdf', sort_order: 1 },
-+  { id: 2, area: 'yuma', titolo: 'Briefing regata', descrizione: 'Solo equipaggio', url: 'https://example.com/briefing', sort_order: 1 },
-+  { id: 3, area: 'soci', titolo: 'Foto raduno', descrizione: null, url: null, sort_order: 2 }
++w.__api.setAreaItems([
++  { id: 1, area: 'soci', titolo: 'Regolamento 2026', testo: 'PDF ufficiale', url: 'https://example.com/regolamento.pdf', sort_order: 1 },
++  { id: 2, area: 'yuma', titolo: 'Briefing regata', testo: 'Solo equipaggio', url: 'https://example.com/briefing', sort_order: 1 },
++  { id: 3, area: 'soci', titolo: 'Foto raduno', testo: null, url: null, sort_order: 2 }
 +]);
 +w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
 +s = describe(w);
-+check('Area Soci mostra i contenuti soci', s.sociHtml.indexOf('Regolamento 2026') >= 0);
++check('Area Soci mostra le schede soci', s.sociHtml.indexOf('Regolamento 2026') >= 0);
 +check('Area Soci mostra anche la voce senza URL', s.sociHtml.indexOf('Foto raduno') >= 0);
 +check('Area Soci NON mostra i contenuti YUMA Only', s.sociHtml.indexOf('Briefing regata') < 0);
-+check('YUMA Only mostra i contenuti suoi', s.yumaHtml.indexOf('Briefing regata') >= 0);
++check('YUMA Only mostra le sue schede', s.yumaHtml.indexOf('Briefing regata') >= 0);
 +check('YUMA Only NON mostra i contenuti soci', s.yumaHtml.indexOf('Regolamento 2026') < 0);
 +check('i link esterni sono noreferrer', s.sociHtml.indexOf('rel="noopener noreferrer"') >= 0 && s.yumaHtml.indexOf('rel="noopener noreferrer"') >= 0);
 +check('lo stato vuoto sparisce quando ci sono contenuti', s.sociHtml.indexOf('Nessun contenuto pubblicato per ora') < 0);
 +check('pannello admin: tab "Aree" presente', !!w.document.getElementById('tab-aree') && !!w.document.getElementById('adminTab-aree'));
-+check('pannello admin: due liste (Area Soci / YUMA Only)', !!w.document.getElementById('adminDownloadsSoci') && !!w.document.getElementById('adminDownloadsYuma'));
++check('pannello admin: due liste (Area Soci / YUMA Only)', !!w.document.getElementById('adminAreaSoci') && !!w.document.getElementById('adminAreaYuma'));
 +
  console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
  process.exit(failures ? 1 : 0);
