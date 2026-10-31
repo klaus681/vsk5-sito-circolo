@@ -1,7 +1,7 @@
 From 708b7119391857c08fa2cec399be18bc92d707fc Mon Sep 17 00:00:00 2001
 From: cline <cline@users.noreply.github.com>
 Date: Sat, 31 Oct 2026 21:23:39 +0000
-Subject: [PATCH 5/5] style(aree): "Area Soci" e "YUMA Only", una sola voce per
+Subject: [PATCH 5/6] style(aree): "Area Soci" e "YUMA Only", una sola voce per
  area, nome senza email
 
 - rinominata l'Area Membri in **Area Soci**: link, titolo, label ("Riservata ai soci"),

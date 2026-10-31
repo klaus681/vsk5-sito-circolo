@@ -1,7 +1,7 @@
 From b01c48e967f88f758ff5ceedb42101aa14c3075e Mon Sep 17 00:00:00 2001
 From: cline <cline@users.noreply.github.com>
 Date: Sat, 31 Oct 2026 21:09:54 +0000
-Subject: [PATCH 4/5] chore: pulizia repo, favicon e meta social
+Subject: [PATCH 4/6] chore: pulizia repo, favicon e meta social
 
 - rimosso 'yuma logo 25 logo png': 1 MB, in realta' un PSD (magic 8BPS), non referenziato da nessuna pagina
 - rimosso supabase/config.js: codice morto, duplicava URL e anon key gia' in app.js

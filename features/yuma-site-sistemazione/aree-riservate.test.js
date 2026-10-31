@@ -15,6 +15,10 @@ const app = fs.readFileSync(path.join(REPO, 'app.js'), 'utf8');
 // eval per poter pilotare lo stato (isYuma/isAdmin/userProfile/currentUser).
 const appWithHooks = app + `
 window.__api = {
+  setDownloads: function (list) {
+    downloadsCache = list || [];
+    downloadsLoaded = true;
+  },
   setUser: function (user, profile, adminFlag) {
     currentUser = user || null;
     userProfile = profile || null;
@@ -84,6 +88,7 @@ check('nav Area YUMA nascosta', !s.navYuma);
 check('contenuto Area YUMA vuoto', s.yumaHtml.trim() === '');
 check('Area Soci saluta Mario', s.sociHtml.indexOf('Mario') >= 0);
 check('Area Soci ha blocco Download', s.sociHtml.indexOf('Area Download') >= 0);
+check('Area Soci mostra lo stato vuoto dei contenuti', s.sociHtml.indexOf('Nessun contenuto pubblicato per ora') >= 0);
 
 // 3) Membro YUMA approvato: entrambe
 console.log('3) Membro YUMA approvato');
@@ -155,6 +160,26 @@ check('saluto senza dominio email', s.sociHtml.indexOf('klaus68@hotmail.it') < 0
 check('saluto con nome breve', s.sociHtml.indexOf('klaus68') >= 0);
 const chip = (w.document.getElementById('userEmailLabel') || {}).textContent;
 check('chip utente = klaus68', chip === 'klaus68', chip);
+
+// 10) Contenuti delle due aree, pubblicati dall'admin
+console.log('10) Contenuti delle aree (gestiti dal pannello admin)');
+w = boot();
+w.__api.setDownloads([
+  { id: 1, area: 'soci', titolo: 'Regolamento 2026', descrizione: 'PDF ufficiale', url: 'https://example.com/regolamento.pdf', sort_order: 1 },
+  { id: 2, area: 'yuma', titolo: 'Briefing regata', descrizione: 'Solo equipaggio', url: 'https://example.com/briefing', sort_order: 1 },
+  { id: 3, area: 'soci', titolo: 'Foto raduno', descrizione: null, url: null, sort_order: 2 }
+]);
+w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
+s = describe(w);
+check('Area Soci mostra i contenuti soci', s.sociHtml.indexOf('Regolamento 2026') >= 0);
+check('Area Soci mostra anche la voce senza URL', s.sociHtml.indexOf('Foto raduno') >= 0);
+check('Area Soci NON mostra i contenuti YUMA Only', s.sociHtml.indexOf('Briefing regata') < 0);
+check('YUMA Only mostra i contenuti suoi', s.yumaHtml.indexOf('Briefing regata') >= 0);
+check('YUMA Only NON mostra i contenuti soci', s.yumaHtml.indexOf('Regolamento 2026') < 0);
+check('i link esterni sono noreferrer', s.sociHtml.indexOf('rel="noopener noreferrer"') >= 0 && s.yumaHtml.indexOf('rel="noopener noreferrer"') >= 0);
+check('lo stato vuoto sparisce quando ci sono contenuti', s.sociHtml.indexOf('Nessun contenuto pubblicato per ora') < 0);
+check('pannello admin: tab "Aree" presente', !!w.document.getElementById('tab-aree') && !!w.document.getElementById('adminTab-aree'));
+check('pannello admin: due liste (Area Soci / YUMA Only)', !!w.document.getElementById('adminDownloadsSoci') && !!w.document.getElementById('adminDownloadsYuma'));
 
 console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
 process.exit(failures ? 1 : 0);

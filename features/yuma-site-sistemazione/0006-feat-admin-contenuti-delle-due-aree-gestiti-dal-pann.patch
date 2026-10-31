@@ -1,0 +1,623 @@
+From 830aab3db7449454cd5e1e518b7663b3d4c1ed57 Mon Sep 17 00:00:00 2001
+From: cline <cline@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 21:28:10 +0000
+Subject: [PATCH 6/6] feat(admin): contenuti delle due aree gestiti dal
+ pannello admin (tab "Aree")
+
+- nuova tabella `downloads` (supabase/101-downloads.sql): titolo, descrizione, url,
+  file_path, area ('soci' | 'yuma'), sort_order; RLS: i soci approvati leggono
+  area='soci', l'equipaggio YUMA legge tutto, scrittura solo is_admin()
+- pannello admin: nuovo tab **Aree** con due liste (Area Soci / YUMA Only),
+  campi modificabili inline, Salva/Elimina e form "Nuovo contenuto" per area
+- le due aree non mostrano piu' un placeholder statico: leggono i contenuti dal DB,
+  filtrati per area, con link esterni (target=_blank rel=noopener noreferrer)
+- refresh automatico delle aree dopo ogni modifica fatta dall'admin
+- i18n: area_download_empty / area_download_open in IT/EN/ES/FR
+- test: 45 controlli (aggiunti contenuti per area, stato vuoto, tab Aree)
+---
+ README.md                       |   7 +-
+ app.js                          | 182 ++++++++++++++++++++++++++++++--
+ i18n.js                         |   8 ++
+ index.html                      |  32 ++++++
+ supabase/100-aree-riservate.sql |  57 +---------
+ supabase/101-downloads.sql      |  57 ++++++++++
+ supabase/README.md              |  17 ++-
+ tests/aree-riservate.test.js    |  25 +++++
+ 8 files changed, 315 insertions(+), 70 deletions(-)
+ create mode 100644 supabase/101-downloads.sql
+
+diff --git a/README.md b/README.md
+index db9b362..618fce5 100644
+--- a/README.md
++++ b/README.md
+@@ -30,8 +30,8 @@ Online: **https://klaus681.github.io/yuma-site/**
+ | **Area Soci** | `#area-soci` | utenti approvati: `socio`, `yuma`, `admin` |
+ | **Area YUMA** | `#area-yuma` | **solo** `role = 'yuma'` (+ `admin`), con `status = 'approved'` |
+ 
+-Entrambe hanno lo slot per la futura **Area Download** (vedi il template commentato in
+-`supabase/100-aree-riservate.sql`).
++Entrambe mostrano i contenuti pubblicati dall'admin (pannello → tab **Aree**), letti dalla
++tabella `downloads`: solo Area Soci o solo YUMA Only a seconda della riga.
+ 
+ > ⚠️ La visibilità è lato client: **non è una protezione**. I contenuti riservati
+ > (a partire dai file dell'area download) vanno protetti con le policy RLS.
+@@ -66,6 +66,7 @@ Push su `main` → GitHub Pages ricostruisce da root. Non c'è build: `index.htm
+ 
+ ## Da fare (idee)
+ 
+-- **Area Download**: tabella `downloads` + bucket Storage (template in `100-aree-riservate.sql`)
++- **Upload file** nell'area download (oggi si pubblicano link a Drive/Discord/PDF; il campo
++  `file_path` è già pronto per Supabase Storage + bucket con le stesse policy RLS)
+ - `og-image.png` 1200×630 per le anteprime social (esportala dal PSD originale)
+ - Tailwind precompilato al posto del Play CDN (performance / niente FOUC)
+diff --git a/app.js b/app.js
+index 828e8de..48c4647 100644
+--- a/app.js
++++ b/app.js
+@@ -1,7 +1,7 @@
+ const SUPABASE_URL = 'https://eefszkqpfwwxoljauobs.supabase.co';
+ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlZnN6a3FwZnd3eG9samF1b2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjI4MTMsImV4cCI6MjEwODkzODgxM30.xak6904GHCnq4LSJsfNdNGGZeNa7ObRsV6NhfyFE2Zs';
+ const ADMIN_EMAIL = 'klaus68@hotmail.it';
+-let supabaseClient = null, currentUser = null, isAdmin = false, isYuma = false, userProfile = null, membersCache = [];
++let supabaseClient = null, currentUser = null, isAdmin = false, isYuma = false, userProfile = null, membersCache = [], downloadsCache = [], downloadsLoaded = false;
+ try {
+   if (window.supabase && window.supabase.createClient)
+     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+@@ -58,7 +58,7 @@ function closeAdminPanel() {
+ }
+ function toggleMenu() { var menu = document.getElementById('mobileMenu'); if (menu) menu.classList.toggle('open'); }
+ function showAdminTab(name) {
+-  ['content','roster','users','system'].forEach(function(t) {
++  ['content','roster','users','system','aree'].forEach(function(t) {
+     var tab = document.getElementById('adminTab-' + t), btn = document.getElementById('tab-' + t);
+     if (tab) tab.classList.toggle('hidden', t !== name);
+     if (btn) btn.className = t === name
+@@ -67,6 +67,7 @@ function showAdminTab(name) {
+   });
+   if (name === 'roster') renderAdminMembers();
+   if (name === 'users') loadUsersAdmin();
++  if (name === 'aree') loadDownloads().then(renderAdminDownloads);
+   if (name === 'system') loadCandidatureList();
+ }
+ 
+@@ -115,6 +116,10 @@ function updateAuthUI() {
+     // Da loggati il pulsante "Candidati" non serve
+     var candidati = document.getElementById('navCandidati');
+     if (candidati) candidati.style.display = 'none';
++    // Contenuti delle due aree: una sola lettura per sessione, poi si ri-renderizza
++    if (!downloadsLoaded && isApprovedMember) {
++      loadDownloads().then(function() { updateAuthUI(); });
++    }
+     var label = document.getElementById('userEmailLabel');
+     var name = displayName() || 'Utente';
+     if (label) label.textContent = name;
+@@ -253,6 +258,7 @@ async function handleRegister(e) {
+ async function logout() {
+   if (supabaseClient) await supabaseClient.auth.signOut();
+   currentUser = null; isAdmin = false; isYuma = false; userProfile = null;
++  downloadsCache = []; downloadsLoaded = false;
+   updateAuthUI();
+   closeAdminPanel();
+ }
+@@ -584,6 +590,74 @@ async function loadApprovedMembers() {
+   } catch (e) { return []; }
+ }
+ 
++/* -------------------------------------------------------------------
++   CONTENUTI DELLE AREE (tabella `downloads`)
++   Li pubblica solo l'admin dal pannello (tab "Aree"); le due aree li
++   leggono filtrando per `area` ('soci' | 'yuma'). La RLS fa il resto:
++   vedi supabase/101-downloads.sql.
++   ------------------------------------------------------------------- */
++function safeUrl(u) {
++  var s = String(u || '').trim();
++  return /^https?:\/\//i.test(s) ? s : '';
++}
++const SOCI_ACCENT = { title: 'text-emerald-400', badge: 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10', border: 'border-emerald-500/20' };
++const YUMA_ACCENT = { title: 'text-amber-400', badge: 'border-amber-500/40 text-amber-300 bg-amber-500/10', border: 'border-amber-500/20' };
++function areaDownloads(area) {
++  return (downloadsCache || [])
++    .filter(function(d) { return d.area === area; })
++    .sort(function(a, b) {
++      return ((a.sort_order || 0) - (b.sort_order || 0)) || ((a.id || 0) - (b.id || 0));
++    });
++}
++async function loadDownloads() {
++  if (!supabaseClient) { downloadsCache = []; downloadsLoaded = true; return downloadsCache; }
++  try {
++    var res = await supabaseClient.from('downloads').select('*')
++      .order('sort_order', { ascending: true }).order('id', { ascending: true });
++    downloadsCache = (!res.error && res.data) ? res.data : [];
++  } catch (e) {
++    downloadsCache = [];
++  }
++  downloadsLoaded = true;
++  return downloadsCache;
++}
++// Card "Area Download" di una delle due aree.
++function downloadsPanelHtml(area, titleKey, accent) {
++  var _t = typeof t === 'function' ? t : function(k) { return k; };
++  var items = areaDownloads(area);
++  var title = escapeHtml(_t(titleKey));
++  var head = '<div class="flex items-start justify-between gap-2">' +
++      '<div class="text-xs font-semibold uppercase tracking-wider ' + accent.title + '">' + title + '</div>' +
++      '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ' + accent.badge + '">' +
++        (items.length ? String(items.length) : escapeHtml(_t('area_soon'))) +
++      '</span>' +
++    '</div>';
++
++  if (!items.length) {
++    return '<div class="glass-card p-5 rounded-2xl ' + accent.border + '">' + head +
++      '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t('area_download_desc')) + '</p>' +
++      '<p class="text-slate-500 text-xs mt-1">' + escapeHtml(_t('area_download_empty')) + '</p>' +
++    '</div>';
++  }
++
++  var rows = items.map(function(d) {
++    var href = safeUrl(d.url);
++    var desc = d.descrizione ? '<p class="text-slate-400 text-xs mt-0.5">' + escapeHtml(d.descrizione) + '</p>' : '';
++    var open = href ? '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ' + accent.badge + '">' + escapeHtml(_t('area_download_open')) + '</span>' : '';
++    var inner = '<div class="flex items-start justify-between gap-3">' +
++        '<div class="min-w-0"><div class="text-sm font-semibold text-white break-words">' + escapeHtml(d.titolo || '') + '</div>' + desc + '</div>' + open +
++      '</div>';
++    var cls = 'block border rounded-xl p-3 transition ' + accent.border;
++    return '<li>' + (href
++      ? '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer" class="' + cls + ' hover:bg-slate-800/40">' + inner + '</a>'
++      : '<div class="' + cls + '">' + inner + '</div>') + '</li>';
++  }).join('');
++
++  return '<div class="glass-card p-5 rounded-2xl ' + accent.border + '">' + head +
++    '<ul class="space-y-2 mt-3">' + rows + '</ul>' +
++  '</div>';
++}
++
+ function renderAreaSoci() {
+   var _t = typeof t === 'function' ? t : function(k, v) {
+     var s = k;
+@@ -625,12 +699,8 @@ function renderAreaSoci() {
+       '</ul>' +
+     '</div>' +
+   '</div>' +
+-  '<div class="glass-card p-5 rounded-2xl border border-emerald-500/20 mb-8">' +
+-    '<div class="flex items-start justify-between gap-2">' +
+-      '<div class="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">' + escapeHtml(_t('area_download')) + '</div>' +
+-      '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">' + escapeHtml(_t('area_soon')) + '</span>' +
+-    '</div>' +
+-    '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t('area_download_desc')) + '</p>' +
++  '<div id="areaSociDownloads" class="mb-8">' +
++    downloadsPanelHtml('soci', 'area_download', SOCI_ACCENT) +
+   '</div>' +
+   '<div id="areaSociList" class="glass-card p-5 rounded-2xl">' +
+     '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('area_members')) + '</h4>' +
+@@ -655,6 +725,12 @@ function renderAreaSoci() {
+       }).join('') +
+       '</div>';
+   });
++
++  // Contenuti dell'area: se non ancora caricati, arriva qui il refresh
++  if (!downloadsLoaded) loadDownloads().then(function() {
++    var dlBox = document.getElementById('areaSociDownloads');
++    if (dlBox) dlBox.innerHTML = downloadsPanelHtml('soci', 'area_download', SOCI_ACCENT);
++  });
+ }
+ 
+ 
+@@ -693,7 +769,7 @@ function renderAreaYuma() {
+       '<p class="text-slate-400 mt-2 text-sm md:text-base">' + escapeHtml(_t('yuma_welcome_sub')) + '</p>' +
+     '</div>' +
+     '<div class="grid sm:grid-cols-2 gap-4 mb-8">' +
+-      card('yuma_card_download', 'yuma_card_download_desc') +
++      '<div id="areaYumaDownloads">' + downloadsPanelHtml('yuma', 'yuma_card_download', YUMA_ACCENT) + '</div>' +
+       card('yuma_card_tools', 'yuma_card_tools_desc') +
+     '</div>' +
+     '<div id="areaYumaList" class="glass-card p-5 rounded-2xl">' +
+@@ -720,6 +796,94 @@ function renderAreaYuma() {
+       }).join('') +
+       '</div>';
+   });
++
++  if (!downloadsLoaded) loadDownloads().then(function() {
++    var dlBox = document.getElementById('areaYumaDownloads');
++    if (dlBox) dlBox.innerHTML = downloadsPanelHtml('yuma', 'yuma_card_download', YUMA_ACCENT);
++  });
++}
++
++/* -------------------------------------------------------------------
++   ADMIN – gestione dei contenuti delle due aree (tab "Aree")
++   Le scritture sono consentite solo all'admin anche dalle policy RLS.
++   ------------------------------------------------------------------- */
++function renderAdminDownloads() {
++  ['soci', 'yuma'].forEach(function(area) {
++    var box = document.getElementById(area === 'soci' ? 'adminDownloadsSoci' : 'adminDownloadsYuma');
++    if (!box) return;
++    var items = areaDownloads(area);
++    if (!items.length) {
++      box.innerHTML = '<p class="text-slate-500 text-xs">Nessun contenuto. Aggiungine uno qui sotto.</p>';
++      return;
++    }
++    box.innerHTML = items.map(function(d) {
++      return '<div class="border border-slate-700 rounded-xl p-3 space-y-2" data-dl="' + d.id + '">' +
++        '<input type="text" value="' + escapeHtml(d.titolo || '') + '" data-field="titolo" class="auth-input text-xs" placeholder="Titolo">' +
++        '<input type="text" value="' + escapeHtml(d.descrizione || '') + '" data-field="descrizione" class="auth-input text-xs" placeholder="Descrizione (facoltativa)">' +
++        '<input type="url" value="' + escapeHtml(d.url || '') + '" data-field="url" class="auth-input text-xs" placeholder="https://...">' +
++        '<div class="flex items-center gap-2">' +
++          '<input type="number" value="' + (d.sort_order || 0) + '" data-field="sort_order" class="auth-input text-xs" title="Ordine" style="max-width:84px">' +
++          '<button type="button" onclick="saveDownload(' + d.id + ')" class="btn-secondary text-[11px] px-3 py-1.5 flex-1">Salva</button>' +
++          '<button type="button" onclick="deleteDownload(' + d.id + ')" class="text-red-400 text-[11px] px-3 py-1.5 border border-red-500/30 rounded-lg">Elimina</button>' +
++        '</div>' +
++      '</div>';
++    }).join('');
++  });
++}
++// Ricarica dal DB e riallinea admin + aree visibili
++async function refreshDownloads() {
++  downloadsLoaded = false;
++  await loadDownloads();
++  renderAdminDownloads();
++  var sociSection = document.getElementById('area-soci');
++  if (sociSection && !sociSection.classList.contains('hidden')) renderAreaSoci();
++  var yumaSection = document.getElementById('area-yuma');
++  if (yumaSection && !yumaSection.classList.contains('hidden')) renderAreaYuma();
++}
++async function addDownload(area) {
++  if (!isAdmin || !supabaseClient) return;
++  var p = area === 'soci' ? 'new-dl-soci-' : 'new-dl-yuma-';
++  var titoloEl = document.getElementById(p + 'titolo');
++  var descEl = document.getElementById(p + 'desc');
++  var urlEl = document.getElementById(p + 'url');
++  var titolo = ((titoloEl && titoloEl.value) || '').trim();
++  if (!titolo) { alert('Inserisci un titolo.'); return; }
++  var maxOrder = areaDownloads(area).reduce(function(mx, d) { return Math.max(mx, d.sort_order || 0); }, 0);
++  var res = await supabaseClient.from('downloads').insert({
++    area: area,
++    titolo: titolo,
++    descrizione: ((descEl && descEl.value) || '').trim() || null,
++    url: ((urlEl && urlEl.value) || '').trim() || null,
++    sort_order: maxOrder + 1,
++    created_by: currentUser ? currentUser.id : null
++  });
++  if (res.error) { alert('Errore: ' + res.error.message); return; }
++  if (titoloEl) titoloEl.value = '';
++  if (descEl) descEl.value = '';
++  if (urlEl) urlEl.value = '';
++  await refreshDownloads();
++}
++async function saveDownload(id) {
++  if (!isAdmin || !supabaseClient) return;
++  var card = document.querySelector('[data-dl="' + id + '"]');
++  if (!card) return;
++  var payload = {};
++  card.querySelectorAll('[data-field]').forEach(function(inp) {
++    var f = inp.getAttribute('data-field'), v = inp.value;
++    if (f === 'sort_order') payload[f] = parseInt(v, 10) || 0;
++    else payload[f] = v.trim() || null;
++  });
++  if (!payload.titolo) { alert('Titolo obbligatorio.'); return; }
++  var res = await supabaseClient.from('downloads').update(payload).eq('id', id);
++  if (res.error) { alert('Errore: ' + res.error.message); return; }
++  await refreshDownloads();
++}
++async function deleteDownload(id) {
++  if (!isAdmin || !supabaseClient) return;
++  if (!confirm('Eliminare questo contenuto?')) return;
++  var res = await supabaseClient.from('downloads').delete().eq('id', id);
++  if (res.error) { alert('Errore: ' + res.error.message); return; }
++  await refreshDownloads();
+ }
+ 
+ document.addEventListener('DOMContentLoaded', async function() {
+diff --git a/i18n.js b/i18n.js
+index a5b632d..3a610b8 100644
+--- a/i18n.js
++++ b/i18n.js
+@@ -73,6 +73,8 @@ var I18N = {
+     area_role_admin: "Amministratore del sito.",
+     area_download: "Area Download",
+     area_download_desc: "Documenti, foto e materiali del team. Disponibile a breve.",
++    area_download_empty: "Nessun contenuto pubblicato per ora.",
++    area_download_open: "Apri",
+     nav_area_yuma: "YUMA Only",
+     yuma_label: "Riservato all'equipaggio",
+     yuma_title: "YUMA Only",
+@@ -184,6 +186,8 @@ var I18N = {
+     area_role_admin: "Site administrator.",
+     area_download: "Download Area",
+     area_download_desc: "Team documents, photos and assets. Coming soon.",
++    area_download_empty: "Nothing published yet.",
++    area_download_open: "Open",
+     nav_area_yuma: "YUMA Only",
+     yuma_label: "Crew only",
+     yuma_title: "YUMA Only",
+@@ -295,6 +299,8 @@ var I18N = {
+     area_role_admin: "Administrador del sitio.",
+     area_download: "Área de Descargas",
+     area_download_desc: "Documentos, fotos y materiales del equipo. Disponible pronto.",
++    area_download_empty: "Todavía no hay contenido.",
++    area_download_open: "Abrir",
+     nav_area_yuma: "YUMA Only",
+     yuma_label: "Solo tripulación",
+     yuma_title: "YUMA Only",
+@@ -406,6 +412,8 @@ var I18N = {
+     area_role_admin: "Administrateur du site.",
+     area_download: "Espace Téléchargements",
+     area_download_desc: "Documents, photos et ressources de l'équipe. Bientôt disponible.",
++    area_download_empty: "Rien de publié pour l'instant.",
++    area_download_open: "Ouvrir",
+     nav_area_yuma: "YUMA Only",
+     yuma_label: "Équipage uniquement",
+     yuma_title: "YUMA Only",
+diff --git a/index.html b/index.html
+index 03b6a8e..fa6461e 100644
+--- a/index.html
++++ b/index.html
+@@ -244,6 +244,7 @@
+       <button type="button" onclick="showAdminTab('content')" id="tab-content" class="admin-tab px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">Contenuti</button>
+       <button type="button" onclick="showAdminTab('roster')" id="tab-roster" class="admin-tab px-3 py-1.5 rounded-lg bg-slate-800/60 text-slate-400 border border-slate-700">Equipaggio</button>
+       <button type="button" onclick="showAdminTab('users')" id="tab-users" class="admin-tab px-3 py-1.5 rounded-lg bg-slate-800/60 text-slate-400 border border-slate-700">Utenti</button>
++      <button type="button" onclick="showAdminTab('aree')" id="tab-aree" class="admin-tab px-3 py-1.5 rounded-lg bg-slate-800/60 text-slate-400 border border-slate-700">Aree</button>
+       <button type="button" onclick="showAdminTab('system')" id="tab-system" class="admin-tab px-3 py-1.5 rounded-lg bg-slate-800/60 text-slate-400 border border-slate-700">Sistema</button>
+     </div>
+     <div id="adminTab-content" class="space-y-4 text-left">
+@@ -276,6 +277,37 @@
+         <div id="activeUsersList" class="space-y-2 max-h-40 overflow-y-auto"></div>
+       </div>
+     </div>
++    <div id="adminTab-aree" class="space-y-5 text-left hidden">
++      <div class="bg-emerald-500/10 border border-emerald-500/25 p-3 rounded-lg text-emerald-300 text-xs">
++        Contenuti delle due aree riservate: <strong>Area Soci</strong> la vedono tutti gli approvati,
++        <strong>YUMA Only</strong> solo l'equipaggio. Qui puoi aggiungere, modificare ed eliminare le voci
++        (link a PDF, Drive, Discord...). Solo l'admin può scrivere.
++      </div>
++
++      <div>
++        <h4 class="text-emerald-400 font-bold text-[11px] uppercase tracking-wider mb-2">Area Soci</h4>
++        <div id="adminDownloadsSoci" class="space-y-3 max-h-56 overflow-y-auto"></div>
++        <div class="border border-emerald-500/30 rounded-xl p-3 space-y-2 bg-emerald-500/5 mt-2">
++          <h5 class="text-emerald-300 font-bold text-[10px] uppercase tracking-wider">Nuovo contenuto</h5>
++          <input type="text" id="new-dl-soci-titolo" placeholder="Titolo (es. Regolamento 2026)" class="auth-input text-xs">
++          <input type="text" id="new-dl-soci-desc" placeholder="Descrizione (facoltativa)" class="auth-input text-xs">
++          <input type="url" id="new-dl-soci-url" placeholder="https://..." class="auth-input text-xs">
++          <button type="button" onclick="addDownload('soci')" class="btn-secondary text-xs w-full py-2">+ Aggiungi in Area Soci</button>
++        </div>
++      </div>
++
++      <div>
++        <h4 class="text-amber-400 font-bold text-[11px] uppercase tracking-wider mb-2">YUMA Only</h4>
++        <div id="adminDownloadsYuma" class="space-y-3 max-h-56 overflow-y-auto"></div>
++        <div class="border border-amber-500/30 rounded-xl p-3 space-y-2 bg-amber-500/5 mt-2">
++          <h5 class="text-amber-300 font-bold text-[10px] uppercase tracking-wider">Nuovo contenuto</h5>
++          <input type="text" id="new-dl-yuma-titolo" placeholder="Titolo (es. Briefing regata)" class="auth-input text-xs">
++          <input type="text" id="new-dl-yuma-desc" placeholder="Descrizione (facoltativa)" class="auth-input text-xs">
++          <input type="url" id="new-dl-yuma-url" placeholder="https://..." class="auth-input text-xs">
++          <button type="button" onclick="addDownload('yuma')" class="btn-secondary text-xs w-full py-2">+ Aggiungi in YUMA Only</button>
++        </div>
++      </div>
++    </div>
+     <div id="adminTab-system" class="space-y-4 text-left hidden">
+       <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-sm text-slate-300 space-y-2">
+         <p><span class="text-slate-500">Stato:</span> <span class="text-emerald-400 font-semibold">Connesso a Supabase</span></p>
+diff --git a/supabase/100-aree-riservate.sql b/supabase/100-aree-riservate.sql
+index 3f1ac1d..08e3ccf 100644
+--- a/supabase/100-aree-riservate.sql
++++ b/supabase/100-aree-riservate.sql
+@@ -50,56 +50,7 @@ revoke all on function public.is_yuma() from public;
+ grant execute on function public.is_yuma() to authenticated;
+ 
+ -- ------------------------------------------------------------
+--- 3) AREA DOWNLOAD – schema pronto per il prossimo passo.
+---    Al momento e' TUTTO COMMENTATO: scommenta e lancia quando
+---    vorrai attivare l'area download.
+--- ------------------------------------------------------------
+--- create table if not exists public.downloads (
+---   id          bigint generated always as identity primary key,
+---   titolo      text not null,
+---   descrizione text,
+---   file_path   text not null,          -- percorso nel bucket Storage
+---   area        text not null default 'membri'
+---               check (area in ('membri', 'yuma')),
+---   sort_order  int not null default 0,
+---   created_at  timestamptz not null default now(),
+---   created_by  uuid references auth.users(id)
+--- );
+---
+--- alter table public.downloads enable row level security;
+---
+--- -- Area Membri: leggono i file area='membri'; Area YUMA: legge tutto.
+--- create policy "read downloads by area"
+---   on public.downloads for select
+---   to authenticated
+---   using (
+---     (area = 'membri' and public.is_approved_member())
+---     or public.is_yuma()
+---   );
+---
+--- create policy "admin insert downloads"
+---   on public.downloads for insert
+---   to authenticated
+---   with check (public.is_admin());
+---
+--- create policy "admin update downloads"
+---   on public.downloads for update
+---   to authenticated
+---   using (public.is_admin())
+---   with check (public.is_admin());
+---
+--- create policy "admin delete downloads"
+---   on public.downloads for delete
+---   to authenticated
+---   using (public.is_admin());
+---
+--- -- Bucket Storage: gli stessi confini delle due aree.
+--- -- create policy "members read member files"
+--- --   on storage.objects for select
+--- --   to authenticated
+--- --   using (bucket_id = 'downloads' and public.is_approved_member());
+--- --
+--- -- create policy "yuma read crew files"
+--- --   on storage.objects for select
+--- --   to authenticated
+--- --   using (bucket_id = 'downloads-yuma' and public.is_yuma());
++-- 3) AREA DOWNLOAD
++--    La tabella e le policy sono in supabase/101-downloads.sql
++--    (va eseguito dopo questo file). I contenuti delle due aree
++--    si gestiscono dal pannello admin -> tab "Aree".
+diff --git a/supabase/101-downloads.sql b/supabase/101-downloads.sql
+new file mode 100644
+index 0000000..75ffb29
+--- /dev/null
++++ b/supabase/101-downloads.sql
+@@ -0,0 +1,57 @@
++-- ============================================================
++-- YUMA – contenuti delle due aree, gestiti dal pannello admin
++-- Tabella `downloads`: voci/link/file pubblicati dall'admin in
++-- Area Soci (area='soci') e in YUMA Only (area='yuma').
++-- Idempotente. Esegui DOPO 99-fix-policies.sql e 100-aree-riservate.sql
++-- ============================================================
++
++create table if not exists public.downloads (
++  id          bigint generated always as identity primary key,
++  titolo      text not null,
++  descrizione text,
++  url         text,                        -- link diretto (Drive, Discord, PDF, ...)
++  file_path   text,                        -- percorso nel bucket Storage (futuro upload)
++  area        text not null default 'soci'
++              check (area in ('soci', 'yuma')),
++  sort_order  int not null default 0,
++  created_at  timestamptz not null default now(),
++  created_by  uuid references auth.users(id)
++);
++
++alter table public.downloads enable row level security;
++
++-- Lettura: Area Soci -> membri approvati; YUMA Only -> is_yuma() (yuma + admin)
++drop policy if exists "read downloads by area" on public.downloads;
++create policy "read downloads by area"
++  on public.downloads for select
++  to authenticated
++  using (
++    (area = 'soci' and public.is_approved_member())
++    or public.is_yuma()
++  );
++
++-- Scrittura: solo admin
++drop policy if exists "admin insert downloads" on public.downloads;
++create policy "admin insert downloads"
++  on public.downloads for insert
++  to authenticated
++  with check (public.is_admin());
++
++drop policy if exists "admin update downloads" on public.downloads;
++create policy "admin update downloads"
++  on public.downloads for update
++  to authenticated
++  using (public.is_admin())
++  with check (public.is_admin());
++
++drop policy if exists "admin delete downloads" on public.downloads;
++create policy "admin delete downloads"
++  on public.downloads for delete
++  to authenticated
++  using (public.is_admin());
++
++create index if not exists downloads_area_sort_idx
++  on public.downloads (area, sort_order, id);
++
++-- Verifica (opzionale)
++-- select id, area, titolo, url, sort_order from public.downloads order by area, sort_order, id;
+diff --git a/supabase/README.md b/supabase/README.md
+index 0b58968..9e8b599 100644
+--- a/supabase/README.md
++++ b/supabase/README.md
+@@ -12,7 +12,8 @@ contenuto di ciascun file e premi **Run**, uno dopo l'altro:
+ | 3 | `registration.sql` | registrazione con approvazione admin + ruoli `socio` / `yuma` |
+ | 4 | `fix_rls.sql` | corregge la ricorsione infinita delle policy su `profiles` |
+ | 5 | `99-fix-policies.sql` | **fonte di verità**: `is_admin()` canonico, DELETE candidature, elenco membri per gli approvati, blocco escalation su `profiles`, limiti anti-spam. Va eseguito **per ultimo** |
+-| 6 | `100-aree-riservate.sql` | helper `is_approved_member()` / `is_yuma()` + template (commentato) per la futura Area Download |
++| 6 | `100-aree-riservate.sql` | helper `is_approved_member()` / `is_yuma()` per le due aree |
++| 7 | `101-downloads.sql` | tabella `downloads` (contenuti delle due aree) + policy: leggono i soci/equipaggio, scrive solo l'admin |
+ 
+ Tutti i file sono idempotenti: si possono rieseguire.
+ 
+@@ -40,16 +41,21 @@ URL e anon key sono in `app.js` (righe 1-2).
+ | **Area Soci** | `#area-soci` | utenti loggati con `status = 'approved'` → ruoli `socio`, `yuma`, `admin` | ruolo personale, prossimi passi, blocco Download (placeholder), elenco membri approvati |
+ | **Area YUMA** | `#area-yuma` | **solo** `role = 'yuma'` (+ `admin`), sempre con `status = 'approved'` | card Download equipaggio (placeholder), strumenti del team, equipaggio YUMA attivo |
+ 
++I contenuti elencati dentro le due aree **li pubblica solo l'admin**, dal pannello admin →
++tab **Aree**: voci con titolo, descrizione e link (PDF, Drive, Discord...), salvate nella
++tabella `downloads` con `area = 'soci'` oppure `area = 'yuma'`.
++
+ La distinzione è implementata in `app.js`:
+ 
+ - `loadUserProfile()` imposta `isAdmin` e `isYuma`;
+ - `updateAuthUI()` mostra/nasconde `.nav-area-soci` e `.nav-area-yuma` e le due sezioni;
+ - `renderAreaSoci()` / `renderAreaYuma()` generano il contenuto;
+-- al logout o quando i permessi decadono le due aree vengono **svuotate**, non solo nascoste (`clearArea()`).
++- al logout o quando i permessi decadono le due aree vengono **svuotate**, non solo nascoste (`clearArea()`);
++- `renderAdminDownloads()` / `addDownload()` / `saveDownload()` / `deleteDownload()` gestiscono i contenuti dal pannello admin.
+ 
+-> 🔒 Questa è solo la UI. Per i contenuti della futura Area Download la protezione
+-> reale devono essere le policy RLS (vedi il blocco commentato in
+-> `100-aree-riservate.sql`), basate su `is_approved_member()` e `is_yuma()`.
++> 🔒 La UI non è una protezione: le policy RLS di `101-downloads.sql` fanno sì che i soci
++> approvati leggano solo `area='soci'`, l'equipaggio YUMA tutto, e che **solo `is_admin()`
++> possa inserire, modificare o eliminare**.
+ 
+ ## Tabelle
+ | Tabella | Uso |
+@@ -58,6 +64,7 @@ La distinzione è implementata in `app.js`:
+ | candidature | Form Unisciti a noi |
+ | profiles | Ruolo utente (`admin` / `yuma` / `socio` / `pending`) e stato (`pending` / `approved` / `rejected`) |
+ | members | Schede equipaggio mostrate in home |
++| downloads | Contenuti delle due aree (`area='soci'` / `area='yuma'`), gestiti dal tab "Aree" del pannello admin |
+ 
+ ## Test
+ ```bash
+diff --git a/tests/aree-riservate.test.js b/tests/aree-riservate.test.js
+index 68dfce4..d5c560a 100644
+--- a/tests/aree-riservate.test.js
++++ b/tests/aree-riservate.test.js
+@@ -15,6 +15,10 @@ const app = fs.readFileSync(path.join(REPO, 'app.js'), 'utf8');
+ // eval per poter pilotare lo stato (isYuma/isAdmin/userProfile/currentUser).
+ const appWithHooks = app + `
+ window.__api = {
++  setDownloads: function (list) {
++    downloadsCache = list || [];
++    downloadsLoaded = true;
++  },
+   setUser: function (user, profile, adminFlag) {
+     currentUser = user || null;
+     userProfile = profile || null;
+@@ -84,6 +88,7 @@ check('nav Area YUMA nascosta', !s.navYuma);
+ check('contenuto Area YUMA vuoto', s.yumaHtml.trim() === '');
+ check('Area Soci saluta Mario', s.sociHtml.indexOf('Mario') >= 0);
+ check('Area Soci ha blocco Download', s.sociHtml.indexOf('Area Download') >= 0);
++check('Area Soci mostra lo stato vuoto dei contenuti', s.sociHtml.indexOf('Nessun contenuto pubblicato per ora') >= 0);
+ 
+ // 3) Membro YUMA approvato: entrambe
+ console.log('3) Membro YUMA approvato');
+@@ -156,5 +161,25 @@ check('saluto con nome breve', s.sociHtml.indexOf('klaus68') >= 0);
+ const chip = (w.document.getElementById('userEmailLabel') || {}).textContent;
+ check('chip utente = klaus68', chip === 'klaus68', chip);
+ 
++// 10) Contenuti delle due aree, pubblicati dall'admin
++console.log('10) Contenuti delle aree (gestiti dal pannello admin)');
++w = boot();
++w.__api.setDownloads([
++  { id: 1, area: 'soci', titolo: 'Regolamento 2026', descrizione: 'PDF ufficiale', url: 'https://example.com/regolamento.pdf', sort_order: 1 },
++  { id: 2, area: 'yuma', titolo: 'Briefing regata', descrizione: 'Solo equipaggio', url: 'https://example.com/briefing', sort_order: 1 },
++  { id: 3, area: 'soci', titolo: 'Foto raduno', descrizione: null, url: null, sort_order: 2 }
++]);
++w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
++s = describe(w);
++check('Area Soci mostra i contenuti soci', s.sociHtml.indexOf('Regolamento 2026') >= 0);
++check('Area Soci mostra anche la voce senza URL', s.sociHtml.indexOf('Foto raduno') >= 0);
++check('Area Soci NON mostra i contenuti YUMA Only', s.sociHtml.indexOf('Briefing regata') < 0);
++check('YUMA Only mostra i contenuti suoi', s.yumaHtml.indexOf('Briefing regata') >= 0);
++check('YUMA Only NON mostra i contenuti soci', s.yumaHtml.indexOf('Regolamento 2026') < 0);
++check('i link esterni sono noreferrer', s.sociHtml.indexOf('rel="noopener noreferrer"') >= 0 && s.yumaHtml.indexOf('rel="noopener noreferrer"') >= 0);
++check('lo stato vuoto sparisce quando ci sono contenuti', s.sociHtml.indexOf('Nessun contenuto pubblicato per ora') < 0);
++check('pannello admin: tab "Aree" presente', !!w.document.getElementById('tab-aree') && !!w.document.getElementById('adminTab-aree'));
++check('pannello admin: due liste (Area Soci / YUMA Only)', !!w.document.getElementById('adminDownloadsSoci') && !!w.document.getElementById('adminDownloadsYuma'));
++
+ console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
+ process.exit(failures ? 1 : 0);

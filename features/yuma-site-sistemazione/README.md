@@ -1,6 +1,6 @@
 # yuma-site — sistemazione completa + due aree riservate
 
-Serie di **5 commit** pronta da applicare a [klaus681/yuma-site](https://github.com/klaus681/yuma-site),
+Serie di **6 commit** pronta da applicare a [klaus681/yuma-site](https://github.com/klaus681/yuma-site),
 verificata su un clone pulito di `main` (`6b4b248`).
 
 > Il bot non ha permessi di push sul repo `yuma-site` (403): la consegna è una serie di
@@ -16,17 +16,17 @@ git checkout -b feat/aree-riservate-socio-yuma
 # opzione A — un solo file
 git am /percorso/serie-completa.patch
 
-# opzione B — i 5 commit singoli, in ordine
+# opzione B — i 6 commit singoli, in ordine
 git am /percorso/0001-*.patch /percorso/0002-*.patch \
        /percorso/0003-*.patch /percorso/0004-*.patch \
-       /percorso/0005-*.patch
+       /percorso/0005-*.patch /percorso/0006-*.patch
 
 npm i --no-save jsdom && node tests/aree-riservate.test.js
 ```
 
 Esito atteso: `TUTTI I CONTROLLI PASSATI`. Poi `git push -u origin feat/aree-riservate-socio-yuma`.
 
-## I 5 commit
+## I 6 commit
 
 **0001 — feat: le due aree riservate**
 | Area | Sezione | Chi la vede | Contenuto |
@@ -73,6 +73,21 @@ logout invece di lasciarle nascoste nel DOM, `ADMIN_EMAIL` centralizzato (erano 
 - il pulsante **"Candidati"** si nasconde quando sei loggato
 - nuovi controlli nei test (dedupe link, nomi, pulsante) → **35 controlli**
 
+**0006 — feat(admin): i contenuti delle aree si gestiscono dal pannello**
+- pannello admin → nuovo tab **Aree**, visibile solo all'admin (come tutto il pannello),
+  con due liste: **Area Soci** e **YUMA Only**
+- per ogni voce: titolo, descrizione, URL modificabili inline + **Salva** / **Elimina**;
+  sotto ogni lista il form **"+ Aggiungi in Area Soci"** / **"+ Aggiungi in YUMA Only"**
+- nuova tabella `downloads` (`supabase/101-downloads.sql`): `area` ('soci' | 'yuma'),
+  `titolo`, `descrizione`, `url`, `file_path`, `sort_order`
+- le due aree non hanno più un placeholder statico: leggono dal DB filtrando per `area`,
+  con link esterni `target="_blank" rel="noopener noreferrer"`, e si aggiornano da sole
+  dopo ogni modifica fatta dall'admin
+- **RLS**: i soci approvati leggono `area='soci'`, l'equipaggio YUMA legge tutto,
+  **scrittura solo `is_admin()`**
+- i18n: `area_download_empty`, `area_download_open` in IT/EN/ES/FR
+- test → **45 controlli**
+
 Barra risultante da loggato come YUMA/admin:
 `Home · La Storia · Trofei · Equipaggio · Unisciti | 🇮🇹🇬🇧🇪🇸🇫🇷 👤 klaus68 · Area Soci · YUMA Only · ⚙️ Admin · Esci`
 
@@ -82,11 +97,11 @@ Progetto `eefszkqpfwwxoljauobs` → SQL Editor, in ordine:
 
 1. `supabase/99-fix-policies.sql` ← **fonte di verità** delle policy e di `is_admin()`
 2. `supabase/100-aree-riservate.sql` ← helper `is_approved_member()` / `is_yuma()`
+3. `supabase/101-downloads.sql` ← tabella `downloads` + policy per le due aree
 
-Sbloccano due funzioni che oggi sono rotte: **eliminare una candidatura** (mancava la
-policy `FOR DELETE`) e **l'elenco soci dell'Area Soci** (la RLS restituiva solo la
-propria riga ai non-admin). Il template della futura area download è dentro `100-...`,
-commentato: va scommentato quando costruiremo i download.
+I primi due sbloccano due funzioni che oggi sono rotte: **eliminare una candidatura**
+(mancava la policy `FOR DELETE`) e **l'elenco soci dell'Area Soci** (la RLS restituiva
+solo la propria riga ai non-admin). Il terzo abilita il tab **Aree** del pannello admin.
 
 ## Prova manuale
 
@@ -95,14 +110,15 @@ commentato: va scommentato quando costruiremo i download.
 3. Logout → spariscono e il contenuto viene svuotato dal DOM
 4. Cambio lingua (bandierine) → le due aree si ri-renderizzano nella lingua scelta
 5. Pannello Admin → tab Utenti → selettore ruolo per promuovere a `YUMA` / `Socio`
+6. Pannello Admin → tab **Aree** → aggiungi un contenuto in Area Soci (lo vedono i soci) e uno in YUMA Only (lo vede solo l equipaggio)
 
 ## Contenuto della cartella
 
 | File | Cosa |
 |---|---|
-| `serie-completa.patch` | i 5 commit in un unico mbox → `git am` |
-| `0001…0005` | i singoli commit |
-| `99-fix-policies.sql`, `100-aree-riservate.sql` | copie pronte da incollare nel SQL Editor |
+| `serie-completa.patch` | i 6 commit in un unico mbox → `git am` |
+| `0001…0006` | i singoli commit |
+| `99-fix-policies.sql`, `100-aree-riservate.sql`, `101-downloads.sql` | copie pronte da incollare nel SQL Editor |
 | `aree-riservate.test.js` | copia del test (va in `tests/`) |
 
 ## Ancora aperto (consapevole)

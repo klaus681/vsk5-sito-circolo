@@ -1,7 +1,7 @@
 From 9cc09703bec1c98559696eb89f20d05d860f20f8 Mon Sep 17 00:00:00 2001
 From: cline <cline@users.noreply.github.com>
 Date: Sat, 31 Oct 2026 21:09:21 +0000
-Subject: [PATCH 2/5] fix(security): escape dei messaggi d'errore, apostrofo in
+Subject: [PATCH 2/6] fix(security): escape dei messaggi d'errore, apostrofo in
  escapeHtml, via l'upsert morto al signup
 
 - escapeHtml ora copre anche l'apostrofo (&#39;), cosi' e' sicuro in qualunque contesto di attributo
