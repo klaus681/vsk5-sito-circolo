@@ -1,0 +1,556 @@
+From 708b7119391857c08fa2cec399be18bc92d707fc Mon Sep 17 00:00:00 2001
+From: cline <cline@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 21:23:39 +0000
+Subject: [PATCH 5/5] style(aree): "Area Soci" e "YUMA Only", una sola voce per
+ area, nome senza email
+
+- rinominata l'Area Membri in **Area Soci**: link, titolo, label ("Riservata ai soci"),
+  chiavi i18n in IT/EN/ES/FR e identificatori interni coerenti
+  (#area-soci, #areaSociContent, .nav-area-soci, renderAreaSoci, areaSociList)
+- "Area YUMA" diventa **"YUMA Only"** (link, titolo e fallback HTML), label "Riservato all'equipaggio"
+- rimossi i doppioni: "Area Membri" compariva due volte (nei link di navigazione e nella
+  barra utente). Ora ogni area ha un solo ingresso: barra utente su desktop, menu mobile su smartphone
+- prettyName(): se il display_name e' un'email si mostra solo la parte prima della @
+- il pulsante "Candidati" si nasconde quando sei loggato
+- test: 35 controlli jsdom
+---
+ README.md                    |  6 ++--
+ app.js                       | 50 ++++++++++++++++++++-----------
+ i18n.js                      | 48 +++++++++++++++---------------
+ index.html                   | 24 +++++++--------
+ supabase/README.md           |  6 ++--
+ tests/aree-riservate.test.js | 57 +++++++++++++++++++++++-------------
+ 6 files changed, 110 insertions(+), 81 deletions(-)
+
+diff --git a/README.md b/README.md
+index b9ce048..db9b362 100644
+--- a/README.md
++++ b/README.md
+@@ -1,7 +1,7 @@
+ # YUMA Team – sito ufficiale
+ 
+ Sito vetrina del team **YUMA** (Virtual Skipper, 25° anniversario), con area riservata
+-ai membri e area riservata all'equipaggio.
++ai soci e area riservata all'equipaggio.
+ Online: **https://klaus681.github.io/yuma-site/**
+ 
+ ## Stack
+@@ -16,7 +16,7 @@ Online: **https://klaus681.github.io/yuma-site/**
+ 
+ | File | Ruolo |
+ |---|---|
+-| `index.html` | pagina unica: nav, hero, storia, trofei, roster, "Unisciti", Area Membri, Area YUMA, modale admin |
++| `index.html` | pagina unica: nav, hero, storia, trofei, roster, "Unisciti", Area Soci, YUMA Only, modale admin |
+ | `app.js` | client Supabase: auth, ruoli/approvazioni, CRUD contenuti/membri/candidature, rendering delle aree |
+ | `i18n.js` | dizionari IT/EN/ES/FR + switcher lingua |
+ | `favicon.svg` | icona del sito |
+@@ -27,7 +27,7 @@ Online: **https://klaus681.github.io/yuma-site/**
+ 
+ | Area | Sezione | Chi la vede |
+ |---|---|---|
+-| **Area Membri** | `#area-membri` | utenti approvati: `socio`, `yuma`, `admin` |
++| **Area Soci** | `#area-soci` | utenti approvati: `socio`, `yuma`, `admin` |
+ | **Area YUMA** | `#area-yuma` | **solo** `role = 'yuma'` (+ `admin`), con `status = 'approved'` |
+ 
+ Entrambe hanno lo slot per la futura **Area Download** (vedi il template commentato in
+diff --git a/app.js b/app.js
+index 93f123a..828e8de 100644
+--- a/app.js
++++ b/app.js
+@@ -16,6 +16,17 @@ function clearArea(id) {
+   var el = document.getElementById(id);
+   if (el) el.innerHTML = '';
+ }
++// Se il nome è in realtà un'email (capita ai profili creati a mano dal pannello
++// Supabase) mostriamo solo la parte prima della @, per non avere
++// "klaus68@hotmail.it" in evidenza nell'interfaccia.
++function prettyName(raw) {
++  var s = String(raw == null ? '' : raw).trim();
++  var at = s.indexOf('@');
++  return at > 0 ? s.slice(0, at) : s;
++}
++function displayName() {
++  return prettyName((userProfile && userProfile.display_name) || (currentUser && currentUser.email));
++}
+ function openLoginModal() {
+   var m = document.getElementById('loginModal'); if (!m) return;
+   m.classList.remove('hidden'); m.classList.add('flex');
+@@ -101,24 +112,27 @@ function updateAuthUI() {
+     loggedOut.classList.add('hidden'); loggedOut.classList.remove('flex');
+     loggedIn.classList.remove('hidden'); loggedIn.classList.add('flex');
+     if (mobOut) mobOut.classList.add('hidden'); if (mobIn) mobIn.classList.remove('hidden');
++    // Da loggati il pulsante "Candidati" non serve
++    var candidati = document.getElementById('navCandidati');
++    if (candidati) candidati.style.display = 'none';
+     var label = document.getElementById('userEmailLabel');
+-    var name = (userProfile && userProfile.display_name) || currentUser.email || 'Utente';
++    var name = displayName() || 'Utente';
+     if (label) label.textContent = name;
+     document.querySelectorAll('[onclick*="openAdminPanel"]').forEach(function(b) {
+       b.style.display = isAdmin ? '' : 'none';
+     });
+-    // Area Membri links (utenti approvati)
+-    document.querySelectorAll('.nav-area-membri').forEach(function(el) {
++    // Area Soci links (utenti approvati)
++    document.querySelectorAll('.nav-area-soci').forEach(function(el) {
+       el.classList.toggle('hidden', !isApprovedMember);
+     });
+-    var areaSection = document.getElementById('area-membri');
++    var areaSection = document.getElementById('area-soci');
+     if (areaSection) {
+       if (isApprovedMember) {
+         areaSection.classList.remove('hidden');
+-        renderAreaMembri();
++        renderAreaSoci();
+       } else {
+         areaSection.classList.add('hidden');
+-        clearArea('areaMembriContent');
++        clearArea('areaSociContent');
+       }
+     }
+     // Area YUMA links (solo ruolo yuma o admin)
+@@ -139,12 +153,14 @@ function updateAuthUI() {
+     loggedOut.classList.remove('hidden'); loggedOut.classList.add('flex');
+     loggedIn.classList.add('hidden'); loggedIn.classList.remove('flex');
+     if (mobOut) mobOut.classList.remove('hidden'); if (mobIn) mobIn.classList.add('hidden');
+-    document.querySelectorAll('.nav-area-membri').forEach(function(el) {
++    var candidatiOut = document.getElementById('navCandidati');
++    if (candidatiOut) candidatiOut.style.display = '';
++    document.querySelectorAll('.nav-area-soci').forEach(function(el) {
+       el.classList.add('hidden');
+     });
+-    var areaSection = document.getElementById('area-membri');
++    var areaSection = document.getElementById('area-soci');
+     if (areaSection) areaSection.classList.add('hidden');
+-    clearArea('areaMembriContent');
++    clearArea('areaSociContent');
+     document.querySelectorAll('.nav-area-yuma').forEach(function(el) {
+       el.classList.add('hidden');
+     });
+@@ -568,15 +584,15 @@ async function loadApprovedMembers() {
+   } catch (e) { return []; }
+ }
+ 
+-function renderAreaMembri() {
++function renderAreaSoci() {
+   var _t = typeof t === 'function' ? t : function(k, v) {
+     var s = k;
+     if (v && v.name) s = 'Benvenuto a bordo, ' + v.name + '!';
+     return s;
+   };
+-  var box = document.getElementById('areaMembriContent');
++  var box = document.getElementById('areaSociContent');
+   if (!box) return;
+-  var name = (userProfile && userProfile.display_name) || (currentUser && currentUser.email) || 'Membro';
++  var name = displayName() || 'Membro';
+   var role = (userProfile && userProfile.role) || 'membro';
+   var roleLabel = role === 'admin' ? 'Admin' : (role === 'yuma' ? 'YUMA' : (role === 'socio' ? 'Socio' : role));
+   var roleColor = role === 'admin' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10' :
+@@ -616,13 +632,13 @@ function renderAreaMembri() {
+     '</div>' +
+     '<p class="text-slate-400 text-xs mt-2">' + escapeHtml(_t('area_download_desc')) + '</p>' +
+   '</div>' +
+-  '<div id="areaMembriList" class="glass-card p-5 rounded-2xl">' +
++  '<div id="areaSociList" class="glass-card p-5 rounded-2xl">' +
+     '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('area_members')) + '</h4>' +
+     '<p class="text-slate-500 text-xs">Caricamento...</p>' +
+   '</div>';
+ 
+   loadApprovedMembers().then(function(list) {
+-    var listBox = document.getElementById('areaMembriList');
++    var listBox = document.getElementById('areaSociList');
+     if (!listBox) return;
+     if (!list.length) {
+       listBox.innerHTML = '<h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">' + escapeHtml(_t('area_members')) + '</h4><p class="text-slate-500 text-xs">' + escapeHtml(_t('area_members_none')) + '</p>';
+@@ -634,7 +650,7 @@ function renderAreaMembri() {
+         var r = p.role === 'admin' ? 'Admin' : (p.role === 'yuma' ? 'YUMA' : 'Socio');
+         var col = p.role === 'admin' ? 'border-amber-500/30 text-amber-300' : (p.role === 'yuma' ? 'border-sky-500/30 text-sky-300' : 'border-emerald-500/30 text-emerald-300');
+         return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs bg-slate-900/60 ' + col + '">' +
+-          escapeHtml(p.display_name || p.email || '?') +
++          escapeHtml(prettyName(p.display_name || p.email) || '?') +
+           '<span class="opacity-60 text-[10px]">' + r + '</span></span>';
+       }).join('') +
+       '</div>';
+@@ -657,7 +673,7 @@ function renderAreaYuma() {
+     if (v && v.name) s = 'Benvenuto in equipaggio, ' + v.name + '!';
+     return s;
+   };
+-  var name = (userProfile && userProfile.display_name) || (currentUser && currentUser.email) || 'Membro YUMA';
++  var name = displayName() || 'Membro YUMA';
+ 
+   function card(titleKey, descKey) {
+     return '<div class="glass-card p-5 rounded-2xl border border-amber-500/20">' +
+@@ -699,7 +715,7 @@ function renderAreaYuma() {
+       '<div class="flex flex-wrap gap-2">' +
+       crew.map(function(p) {
+         return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs bg-slate-900/60 border-amber-500/30 text-amber-300">' +
+-          escapeHtml(p.display_name || p.email || '?') +
++          escapeHtml(prettyName(p.display_name || p.email) || '?') +
+           '<span class="opacity-60 text-[10px]">' + (p.role === 'admin' ? 'Admin' : 'YUMA') + '</span></span>';
+       }).join('') +
+       '</div>';
+diff --git a/i18n.js b/i18n.js
+index 2ee9ec9..a5b632d 100644
+--- a/i18n.js
++++ b/i18n.js
+@@ -7,7 +7,7 @@ var I18N = {
+     nav_trofei: "Trofei",
+     nav_roster: "Equipaggio",
+     nav_unisciti: "Unisciti",
+-    nav_area: "Area Membri",
++    nav_area: "Area Soci",
+     nav_login: "Accedi",
+     nav_register: "Registrati",
+     nav_logout: "Esci",
+@@ -56,8 +56,8 @@ var I18N = {
+     form_placeholder_nome: "es. Skipper_99",
+     form_placeholder_contatto: "tuo-nome#1234 o email",
+     form_placeholder_msg: "Raccontaci qualcosa di te...",
+-    area_label: "Solo per membri",
+-    area_title: "Area Membri",
++    area_label: "Riservata ai soci",
++    area_title: "Area Soci",
+     area_desc: "Il tuo spazio a bordo della community YUMA.",
+     area_welcome: "Benvenuto a bordo, {name}!",
+     area_welcome_sub: "Sei ufficialmente parte della community YUMA.",
+@@ -66,16 +66,16 @@ var I18N = {
+     area_next1: "• Unisciti al canale Discord del team",
+     area_next2: "• Partecipa alle regate e agli allenamenti",
+     area_next3: "• Contatta un admin per qualsiasi dubbio",
+-    area_members: "Membri approvati",
+-    area_members_none: "Nessun altro membro ancora.",
++    area_members: "Soci approvati",
++    area_members_none: "Nessun altro socio ancora.",
+     area_role_yuma: "Membro del team YUMA – regate, tattica e cameratismo.",
+     area_role_socio: "Socio della community – supporto e passione per la vela virtuale.",
+     area_role_admin: "Amministratore del sito.",
+     area_download: "Area Download",
+     area_download_desc: "Documenti, foto e materiali del team. Disponibile a breve.",
+-    nav_area_yuma: "Area YUMA",
+-    yuma_label: "Solo equipaggio YUMA",
+-    yuma_title: "Area YUMA",
++    nav_area_yuma: "YUMA Only",
++    yuma_label: "Riservato all'equipaggio",
++    yuma_title: "YUMA Only",
+     yuma_desc: "Spazio riservato ai membri del team YUMA.",
+     yuma_welcome: "Benvenuto in equipaggio, {name}!",
+     yuma_welcome_sub: "Contenuti riservati all'equipaggio YUMA.",
+@@ -184,9 +184,9 @@ var I18N = {
+     area_role_admin: "Site administrator.",
+     area_download: "Download Area",
+     area_download_desc: "Team documents, photos and assets. Coming soon.",
+-    nav_area_yuma: "YUMA Area",
+-    yuma_label: "YUMA crew only",
+-    yuma_title: "YUMA Area",
++    nav_area_yuma: "YUMA Only",
++    yuma_label: "Crew only",
++    yuma_title: "YUMA Only",
+     yuma_desc: "Reserved space for YUMA team members.",
+     yuma_welcome: "Welcome to the crew, {name}!",
+     yuma_welcome_sub: "Content reserved for the YUMA crew.",
+@@ -229,7 +229,7 @@ var I18N = {
+     nav_trofei: "Trofeos",
+     nav_roster: "Tripulación",
+     nav_unisciti: "Únete",
+-    nav_area: "Área Miembros",
++    nav_area: "Área de Socios",
+     nav_login: "Entrar",
+     nav_register: "Registrarse",
+     nav_logout: "Salir",
+@@ -278,8 +278,8 @@ var I18N = {
+     form_placeholder_nome: "ej. Skipper_99",
+     form_placeholder_contatto: "tu-nombre#1234 o email",
+     form_placeholder_msg: "Cuéntanos algo sobre ti...",
+-    area_label: "Solo para miembros",
+-    area_title: "Área de Miembros",
++    area_label: "Solo socios",
++    area_title: "Área de Socios",
+     area_desc: "Tu espacio a bordo de la comunidad YUMA.",
+     area_welcome: "¡Bienvenido a bordo, {name}!",
+     area_welcome_sub: "Formas parte oficialmente de la comunidad YUMA.",
+@@ -288,16 +288,16 @@ var I18N = {
+     area_next1: "• Únete al canal Discord del equipo",
+     area_next2: "• Participa en regatas y entrenamientos",
+     area_next3: "• Contacta a un admin si tienes dudas",
+-    area_members: "Miembros aprobados",
++    area_members: "Socios aprobados",
+     area_members_none: "Aún no hay más miembros.",
+     area_role_yuma: "Miembro del equipo YUMA – regatas, táctica y compañerismo.",
+     area_role_socio: "Socio de la comunidad – apoyo y pasión por la vela virtual.",
+     area_role_admin: "Administrador del sitio.",
+     area_download: "Área de Descargas",
+     area_download_desc: "Documentos, fotos y materiales del equipo. Disponible pronto.",
+-    nav_area_yuma: "Área YUMA",
+-    yuma_label: "Solo tripulación YUMA",
+-    yuma_title: "Área YUMA",
++    nav_area_yuma: "YUMA Only",
++    yuma_label: "Solo tripulación",
++    yuma_title: "YUMA Only",
+     yuma_desc: "Espacio reservado a los miembros del equipo YUMA.",
+     yuma_welcome: "¡Bienvenido a la tripulación, {name}!",
+     yuma_welcome_sub: "Contenidos reservados a la tripulación YUMA.",
+@@ -406,9 +406,9 @@ var I18N = {
+     area_role_admin: "Administrateur du site.",
+     area_download: "Espace Téléchargements",
+     area_download_desc: "Documents, photos et ressources de l'équipe. Bientôt disponible.",
+-    nav_area_yuma: "Espace YUMA",
+-    yuma_label: "Équipage YUMA uniquement",
+-    yuma_title: "Espace YUMA",
++    nav_area_yuma: "YUMA Only",
++    yuma_label: "Équipage uniquement",
++    yuma_title: "YUMA Only",
+     yuma_desc: "Espace réservé aux membres de l'équipe YUMA.",
+     yuma_welcome: "Bienvenue dans l'équipage, {name} !",
+     yuma_welcome_sub: "Contenus réservés à l'équipage YUMA.",
+@@ -492,9 +492,9 @@ function applyTranslations() {
+     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+   });
+   // re-render dynamic parts if visible
+-  if (typeof renderAreaMembri === 'function' && currentUser && userProfile) {
+-    var area = document.getElementById('area-membri');
+-    if (area && !area.classList.contains('hidden')) renderAreaMembri();
++  if (typeof renderAreaSoci === 'function' && currentUser && userProfile) {
++    var area = document.getElementById('area-soci');
++    if (area && !area.classList.contains('hidden')) renderAreaSoci();
+   }
+   if (typeof renderAreaYuma === 'function' && currentUser && userProfile) {
+     var areaYuma = document.getElementById('area-yuma');
+diff --git a/index.html b/index.html
+index 6ba5dcd..03b6a8e 100644
+--- a/index.html
++++ b/index.html
+@@ -78,8 +78,6 @@
+       <a href="#trofei" class="hover:text-sky-400 transition" data-i18n="nav_trofei">Trofei</a>
+       <a href="#roster" class="hover:text-sky-400 transition" data-i18n="nav_roster">Equipaggio</a>
+       <a href="#unisciti" class="hover:text-amber-400 transition" data-i18n="nav_unisciti">Unisciti</a>
+-      <a href="#area-membri" class="nav-area-membri hidden hover:text-emerald-400 transition text-emerald-400/90" data-i18n="nav_area">Area Membri</a>
+-      <a href="#area-yuma" class="nav-area-yuma hidden hover:text-amber-400 transition text-amber-400/90" data-i18n="nav_area_yuma">Area YUMA</a>
+     </div>
+     <div class="flex items-center gap-2.5">
+             <div id="authLoggedOut" class="flex items-center gap-2">
+@@ -91,12 +89,12 @@
+           <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+           <span id="userEmailLabel">Utente</span>
+         </span>
+-        <a href="#area-membri" class="nav-area-membri hidden text-xs px-3 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15 font-semibold transition" data-i18n="nav_area">Area Membri</a>
+-        <a href="#area-yuma" class="nav-area-yuma hidden text-xs px-3 py-1.5 rounded-lg border border-amber-500/40 text-amber-300 hover:bg-amber-500/15 font-semibold transition" data-i18n="nav_area_yuma">Area YUMA</a>
++        <a href="#area-soci" class="nav-area-soci hidden text-xs px-3 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15 font-semibold transition" data-i18n="nav_area">Area Soci</a>
++        <a href="#area-yuma" class="nav-area-yuma hidden text-xs px-3 py-1.5 rounded-lg border border-amber-500/40 text-amber-300 hover:bg-amber-500/15 font-semibold transition" data-i18n="nav_area_yuma">YUMA Only</a>
+         <button type="button" onclick="openAdminPanel()" class="bg-amber-500/90 hover:bg-amber-400 text-slate-950 font-black px-3 py-1.5 rounded-lg transition text-[11px] font-orbitron cursor-pointer shadow-lg shadow-amber-500/15" title="Pannello Admin">⚙️ Admin</button>
+         <button type="button" onclick="logout()" class="text-slate-400 hover:text-red-400 text-xs font-semibold px-2 py-1.5 transition" title="Esci">Esci</button>
+       </div>
+-      <a href="#unisciti" class="hidden sm:inline-flex bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold px-4 py-1.5 rounded-lg transition shadow-lg shadow-sky-500/20 font-orbitron text-xs">Candidati</a>
++      <a href="#unisciti" id="navCandidati" class="hidden sm:inline-flex bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold px-4 py-1.5 rounded-lg transition shadow-lg shadow-sky-500/20 font-orbitron text-xs">Candidati</a>
+       <button type="button" id="menuBtn" onclick="toggleMenu()" class="md:hidden text-slate-300 hover:text-white p-1.5" aria-label="Menu">
+         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+       </button>
+@@ -109,16 +107,14 @@
+       <a href="#trofei" onclick="toggleMenu()" class="px-3 py-2 rounded-lg hover:bg-slate-800/60 hover:text-sky-400">Trofei</a>
+       <a href="#roster" onclick="toggleMenu()" class="px-3 py-2 rounded-lg hover:bg-slate-800/60 hover:text-sky-400">Equipaggio</a>
+       <a href="#unisciti" onclick="toggleMenu()" class="px-3 py-2 rounded-lg hover:bg-slate-800/60 hover:text-amber-400">Unisciti a Noi</a>
+-      <a href="#area-membri" onclick="toggleMenu()" class="nav-area-membri hidden px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400" data-i18n="nav_area">Area Membri</a>
+-      <a href="#area-yuma" onclick="toggleMenu()" class="nav-area-yuma hidden px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_area_yuma">Area YUMA</a>
+       <div class="border-t border-slate-800 my-2"></div>
+       <div id="mobileAuthOut">
+         <button type="button" onclick="toggleMenu(); openLoginModal()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-sky-400" data-i18n="nav_login">Accedi</button>
+         <button type="button" onclick="toggleMenu(); openRegisterModal()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_register">Registrati</button>
+       </div>
+       <div id="mobileAuthIn" class="hidden">
+-        <a href="#area-membri" onclick="toggleMenu()" class="nav-area-membri hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400" data-i18n="nav_area">Area Membri</a>
+-        <a href="#area-yuma" onclick="toggleMenu()" class="nav-area-yuma hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_area_yuma">Area YUMA</a>
++        <a href="#area-soci" onclick="toggleMenu()" class="nav-area-soci hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-emerald-400" data-i18n="nav_area">Area Soci</a>
++        <a href="#area-yuma" onclick="toggleMenu()" class="nav-area-yuma hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400" data-i18n="nav_area_yuma">YUMA Only</a>
+         <button type="button" onclick="toggleMenu(); openAdminPanel()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-amber-400">⚙️ Pannello Admin</button>
+         <button type="button" onclick="toggleMenu(); logout()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800/60 text-red-400" data-i18n="nav_logout">Esci</button>
+       </div>
+@@ -299,14 +295,14 @@
+ </div>
+ 
+ 
+-<section id="area-membri" class="hidden py-20 md:py-28 px-5 max-w-4xl mx-auto">
++<section id="area-soci" class="hidden py-20 md:py-28 px-5 max-w-4xl mx-auto">
+   <div class="section-divider mb-16 md:mb-20"></div>
+   <div class="text-center mb-10">
+-    <span class="text-emerald-400 font-orbitron uppercase tracking-[0.2em] text-xs font-semibold" data-i18n="area_label">Solo per membri</span>
+-    <h2 class="text-3xl md:text-5xl font-black mt-2 font-orbitron tracking-tight" data-i18n="area_title">Area Membri</h2>
++    <span class="text-emerald-400 font-orbitron uppercase tracking-[0.2em] text-xs font-semibold" data-i18n="area_label">Riservata ai soci</span>
++    <h2 class="text-3xl md:text-5xl font-black mt-2 font-orbitron tracking-tight" data-i18n="area_title">Area Soci</h2>
+     <p class="text-slate-400 mt-2 text-sm md:text-base"><span data-i18n="area_desc">Il tuo spazio a bordo della community YUMA.</span></p>
+   </div>
+-  <div id="areaMembriContent" class="glass-card p-6 md:p-10 rounded-3xl border border-emerald-500/25">
++  <div id="areaSociContent" class="glass-card p-6 md:p-10 rounded-3xl border border-emerald-500/25">
+     <p class="text-slate-500 text-center text-sm">Caricamento...</p>
+   </div>
+ </section>
+@@ -315,7 +311,7 @@
+   <div class="section-divider mb-16 md:mb-20"></div>
+   <div class="text-center mb-10">
+     <span class="text-amber-400 font-orbitron uppercase tracking-[0.2em] text-xs font-semibold" data-i18n="yuma_label">Solo equipaggio YUMA</span>
+-    <h2 class="text-3xl md:text-5xl font-black mt-2 font-orbitron tracking-tight" data-i18n="yuma_title">Area YUMA</h2>
++    <h2 class="text-3xl md:text-5xl font-black mt-2 font-orbitron tracking-tight" data-i18n="yuma_title">YUMA Only</h2>
+     <p class="text-slate-400 mt-2 text-sm md:text-base"><span data-i18n="yuma_desc">Spazio riservato ai membri del team YUMA.</span></p>
+   </div>
+   <div id="areaYumaContent" class="glass-card p-6 md:p-10 rounded-3xl border border-amber-500/25">
+diff --git a/supabase/README.md b/supabase/README.md
+index 8df93d6..0b58968 100644
+--- a/supabase/README.md
++++ b/supabase/README.md
+@@ -37,14 +37,14 @@ URL e anon key sono in `app.js` (righe 1-2).
+ 
+ | Area | Sezione | Chi la vede | Contenuto |
+ |---|---|---|---|
+-| **Area Membri** | `#area-membri` | utenti loggati con `status = 'approved'` → ruoli `socio`, `yuma`, `admin` | ruolo personale, prossimi passi, blocco Download (placeholder), elenco membri approvati |
++| **Area Soci** | `#area-soci` | utenti loggati con `status = 'approved'` → ruoli `socio`, `yuma`, `admin` | ruolo personale, prossimi passi, blocco Download (placeholder), elenco membri approvati |
+ | **Area YUMA** | `#area-yuma` | **solo** `role = 'yuma'` (+ `admin`), sempre con `status = 'approved'` | card Download equipaggio (placeholder), strumenti del team, equipaggio YUMA attivo |
+ 
+ La distinzione è implementata in `app.js`:
+ 
+ - `loadUserProfile()` imposta `isAdmin` e `isYuma`;
+-- `updateAuthUI()` mostra/nasconde `.nav-area-membri` e `.nav-area-yuma` e le due sezioni;
+-- `renderAreaMembri()` / `renderAreaYuma()` generano il contenuto;
++- `updateAuthUI()` mostra/nasconde `.nav-area-soci` e `.nav-area-yuma` e le due sezioni;
++- `renderAreaSoci()` / `renderAreaYuma()` generano il contenuto;
+ - al logout o quando i permessi decadono le due aree vengono **svuotate**, non solo nascoste (`clearArea()`).
+ 
+ > 🔒 Questa è solo la UI. Per i contenuti della futura Area Download la protezione
+diff --git a/tests/aree-riservate.test.js b/tests/aree-riservate.test.js
+index 4ac4568..68dfce4 100644
+--- a/tests/aree-riservate.test.js
++++ b/tests/aree-riservate.test.js
+@@ -1,5 +1,5 @@
+ /**
+- * Test di comportamento delle due aree riservate (Area Membri / Area YUMA).
++ * Test di comportamento delle due aree riservate (Area Soci / Area YUMA).
+  * Uso: npm i --no-save jsdom && node tests/aree-riservate.test.js [repo]
+  */
+ const fs = require('fs');
+@@ -48,15 +48,15 @@ function check(name, cond, extra) {
+ }
+ 
+ function describe(w) {
+-  const areaMembri = w.document.getElementById('area-membri');
++  const areaSoci = w.document.getElementById('area-soci');
+   const areaYuma = w.document.getElementById('area-yuma');
+   return {
+-    membri: shown(areaMembri),
++    soci: shown(areaSoci),
+     yuma: shown(areaYuma),
+-    navMembri: anyShown(w, '.nav-area-membri'),
++    navSoci: anyShown(w, '.nav-area-soci'),
+     navYuma: anyShown(w, '.nav-area-yuma'),
+     yumaHtml: (w.document.getElementById('areaYumaContent') || {}).innerHTML || '',
+-    membriHtml: (w.document.getElementById('areaMembriContent') || {}).innerHTML || ''
++    sociHtml: (w.document.getElementById('areaSociContent') || {}).innerHTML || ''
+   };
+ }
+ 
+@@ -65,43 +65,50 @@ console.log('1) Ospite');
+ let w = boot();
+ w.__api.setUser(null, null, false);
+ let s = describe(w);
+-check('Area Membri nascosta', !s.membri);
++check('Area Soci nascosta', !s.soci);
+ check('Area YUMA nascosta', !s.yuma);
+-check('link .nav-area-membri tutti nascosti', allHidden(w, '.nav-area-membri'));
++check('link .nav-area-soci tutti nascosti', allHidden(w, '.nav-area-soci'));
+ check('link .nav-area-yuma tutti nascosti', allHidden(w, '.nav-area-yuma'));
++const candOut = w.document.getElementById('navCandidati');
++check('pulsante "Candidati" visibile da ospite', !!candOut && candOut.style.display !== 'none', candOut && candOut.style.display);
+ 
+-// 2) Socio approvato: Area Membri si', Area YUMA no
++// 2) Socio approvato: Area Soci si', Area YUMA no
+ console.log('2) Socio approvato');
+ w = boot();
+ w.__api.setUser({ email: 'socio@test.it' }, { display_name: 'Mario', role: 'socio', status: 'approved' }, false);
+ s = describe(w);
+-check('Area Membri visibile', s.membri);
++check('Area Soci visibile', s.soci);
+ check('Area YUMA nascosta', !s.yuma);
+-check('nav Area Membri visibile', s.navMembri);
++check('nav Area Soci visibile', s.navSoci);
+ check('nav Area YUMA nascosta', !s.navYuma);
+ check('contenuto Area YUMA vuoto', s.yumaHtml.trim() === '');
+-check('Area Membri saluta Mario', s.membriHtml.indexOf('Mario') >= 0);
+-check('Area Membri ha blocco Download', s.membriHtml.indexOf('Area Download') >= 0);
++check('Area Soci saluta Mario', s.sociHtml.indexOf('Mario') >= 0);
++check('Area Soci ha blocco Download', s.sociHtml.indexOf('Area Download') >= 0);
+ 
+ // 3) Membro YUMA approvato: entrambe
+ console.log('3) Membro YUMA approvato');
+ w = boot();
+ w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
+ s = describe(w);
+-check('Area Membri visibile', s.membri);
++check('Area Soci visibile', s.soci);
+ check('Area YUMA visibile', s.yuma);
+-check('nav Area Membri visibile', s.navMembri);
++check('nav Area Soci visibile', s.navSoci);
+ check('nav Area YUMA visibile', s.navYuma);
+ check('Area YUMA saluta Klaus', s.yumaHtml.indexOf('Klaus') >= 0);
+ check('Area YUMA ha card "Download equipaggio"', s.yumaHtml.indexOf('Download equipaggio') >= 0);
+ check('Area YUMA ha card "Strumenti del team"', s.yumaHtml.indexOf('Strumenti del team') >= 0);
++const nSoci = w.document.querySelectorAll('.nav-area-soci').length;
++const nYuma = w.document.querySelectorAll('.nav-area-yuma').length;
++check('un solo link per area: desktop + mobile, nessun doppione', nSoci === 2 && nYuma === 2, nSoci + '/' + nYuma);
++const candIn = w.document.getElementById('navCandidati');
++check('pulsante "Candidati" nascosto da loggati', !!candIn && candIn.style.display === 'none', candIn && candIn.style.display);
+ 
+ // 4) YUMA non ancora approvato (pending): nessuna area
+ console.log('4) Membro YUMA pending');
+ w = boot();
+ w.__api.setUser({ email: 'crew2@test.it' }, { display_name: 'Nuovo', role: 'yuma', status: 'pending' }, false);
+ s = describe(w);
+-check('Area Membri nascosta', !s.membri);
++check('Area Soci nascosta', !s.soci);
+ check('Area YUMA nascosta', !s.yuma);
+ 
+ // 5) Socio pending: nessuna area
+@@ -109,7 +116,7 @@ console.log('5) Socio pending');
+ w = boot();
+ w.__api.setUser({ email: 'p@test.it' }, { display_name: 'P', role: 'pending', status: 'pending' }, false);
+ s = describe(w);
+-check('Area Membri nascosta', !s.membri);
++check('Area Soci nascosta', !s.soci);
+ check('Area YUMA nascosta', !s.yuma);
+ 
+ // 6) Admin: vede entrambe
+@@ -117,7 +124,7 @@ console.log('6) Admin');
+ w = boot();
+ w.__api.setUser({ email: 'admin@test.it' }, { display_name: 'Admin', role: 'admin', status: 'approved' }, true);
+ s = describe(w);
+-check('Area Membri visibile', s.membri);
++check('Area Soci visibile', s.soci);
+ check('Area YUMA visibile', s.yuma);
+ 
+ // 7) Logout: tutto si nasconde
+@@ -126,7 +133,7 @@ w = boot();
+ w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
+ w.eval('logout()');
+ s = describe(w);
+-check('Area Membri nascosta dopo logout', !s.membri);
++check('Area Soci nascosta dopo logout', !s.soci);
+ check('Area YUMA nascosta dopo logout', !s.yuma);
+ check('nav .nav-area-yuma nascosti dopo logout', allHidden(w, '.nav-area-yuma'));
+ 
+@@ -135,9 +142,19 @@ console.log('8) Traduzioni area');
+ w = boot();
+ w.eval("setLanguage('en');");
+ const yumaTitle = [...w.document.querySelectorAll('[data-i18n="yuma_title"]')].map(e => e.textContent);
+-check('yuma_title in inglese', yumaTitle.join('|') === 'YUMA Area', yumaTitle.join('|'));
++check('yuma_title è "YUMA Only" (uguale in tutte le lingue)', yumaTitle.join('|') === 'YUMA Only', yumaTitle.join('|'));
+ const navYumaLabels = [...w.document.querySelectorAll('.nav-area-yuma')].map(e => e.textContent);
+-check('link Area YUMA tradotti', navYumaLabels.every(t => t === 'YUMA Area'), navYumaLabels.join('|'));
++check('link YUMA Only coerenti', navYumaLabels.every(t => t === 'YUMA Only'), navYumaLabels.join('|'));
++
++// 9) Nome utente: se il display_name è un'email non va mostrato per intero
++console.log('9) Nome utente senza dominio email');
++w = boot();
++w.__api.setUser({ email: 'klaus68@hotmail.it' }, { display_name: 'klaus68@hotmail.it', role: 'admin', status: 'approved' }, true);
++s = describe(w);
++check('saluto senza dominio email', s.sociHtml.indexOf('klaus68@hotmail.it') < 0, 'trovata email intera');
++check('saluto con nome breve', s.sociHtml.indexOf('klaus68') >= 0);
++const chip = (w.document.getElementById('userEmailLabel') || {}).textContent;
++check('chip utente = klaus68', chip === 'klaus68', chip);
+ 
+ console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
+ process.exit(failures ? 1 : 0);

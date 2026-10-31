@@ -1,5 +1,5 @@
 /**
- * Test di comportamento delle due aree riservate (Area Membri / Area YUMA).
+ * Test di comportamento delle due aree riservate (Area Soci / Area YUMA).
  * Uso: npm i --no-save jsdom && node tests/aree-riservate.test.js [repo]
  */
 const fs = require('fs');
@@ -48,15 +48,15 @@ function check(name, cond, extra) {
 }
 
 function describe(w) {
-  const areaMembri = w.document.getElementById('area-membri');
+  const areaSoci = w.document.getElementById('area-soci');
   const areaYuma = w.document.getElementById('area-yuma');
   return {
-    membri: shown(areaMembri),
+    soci: shown(areaSoci),
     yuma: shown(areaYuma),
-    navMembri: anyShown(w, '.nav-area-membri'),
+    navSoci: anyShown(w, '.nav-area-soci'),
     navYuma: anyShown(w, '.nav-area-yuma'),
     yumaHtml: (w.document.getElementById('areaYumaContent') || {}).innerHTML || '',
-    membriHtml: (w.document.getElementById('areaMembriContent') || {}).innerHTML || ''
+    sociHtml: (w.document.getElementById('areaSociContent') || {}).innerHTML || ''
   };
 }
 
@@ -65,41 +65,41 @@ console.log('1) Ospite');
 let w = boot();
 w.__api.setUser(null, null, false);
 let s = describe(w);
-check('Area Membri nascosta', !s.membri);
+check('Area Soci nascosta', !s.soci);
 check('Area YUMA nascosta', !s.yuma);
-check('link .nav-area-membri tutti nascosti', allHidden(w, '.nav-area-membri'));
+check('link .nav-area-soci tutti nascosti', allHidden(w, '.nav-area-soci'));
 check('link .nav-area-yuma tutti nascosti', allHidden(w, '.nav-area-yuma'));
 const candOut = w.document.getElementById('navCandidati');
 check('pulsante "Candidati" visibile da ospite', !!candOut && candOut.style.display !== 'none', candOut && candOut.style.display);
 
-// 2) Socio approvato: Area Membri si', Area YUMA no
+// 2) Socio approvato: Area Soci si', Area YUMA no
 console.log('2) Socio approvato');
 w = boot();
 w.__api.setUser({ email: 'socio@test.it' }, { display_name: 'Mario', role: 'socio', status: 'approved' }, false);
 s = describe(w);
-check('Area Membri visibile', s.membri);
+check('Area Soci visibile', s.soci);
 check('Area YUMA nascosta', !s.yuma);
-check('nav Area Membri visibile', s.navMembri);
+check('nav Area Soci visibile', s.navSoci);
 check('nav Area YUMA nascosta', !s.navYuma);
 check('contenuto Area YUMA vuoto', s.yumaHtml.trim() === '');
-check('Area Membri saluta Mario', s.membriHtml.indexOf('Mario') >= 0);
-check('Area Membri ha blocco Download', s.membriHtml.indexOf('Area Download') >= 0);
+check('Area Soci saluta Mario', s.sociHtml.indexOf('Mario') >= 0);
+check('Area Soci ha blocco Download', s.sociHtml.indexOf('Area Download') >= 0);
 
 // 3) Membro YUMA approvato: entrambe
 console.log('3) Membro YUMA approvato');
 w = boot();
 w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
 s = describe(w);
-check('Area Membri visibile', s.membri);
+check('Area Soci visibile', s.soci);
 check('Area YUMA visibile', s.yuma);
-check('nav Area Membri visibile', s.navMembri);
+check('nav Area Soci visibile', s.navSoci);
 check('nav Area YUMA visibile', s.navYuma);
 check('Area YUMA saluta Klaus', s.yumaHtml.indexOf('Klaus') >= 0);
 check('Area YUMA ha card "Download equipaggio"', s.yumaHtml.indexOf('Download equipaggio') >= 0);
 check('Area YUMA ha card "Strumenti del team"', s.yumaHtml.indexOf('Strumenti del team') >= 0);
-const nMembri = w.document.querySelectorAll('.nav-area-membri').length;
+const nSoci = w.document.querySelectorAll('.nav-area-soci').length;
 const nYuma = w.document.querySelectorAll('.nav-area-yuma').length;
-check('un solo link per area: desktop + mobile, nessun doppione', nMembri === 2 && nYuma === 2, nMembri + '/' + nYuma);
+check('un solo link per area: desktop + mobile, nessun doppione', nSoci === 2 && nYuma === 2, nSoci + '/' + nYuma);
 const candIn = w.document.getElementById('navCandidati');
 check('pulsante "Candidati" nascosto da loggati', !!candIn && candIn.style.display === 'none', candIn && candIn.style.display);
 
@@ -108,7 +108,7 @@ console.log('4) Membro YUMA pending');
 w = boot();
 w.__api.setUser({ email: 'crew2@test.it' }, { display_name: 'Nuovo', role: 'yuma', status: 'pending' }, false);
 s = describe(w);
-check('Area Membri nascosta', !s.membri);
+check('Area Soci nascosta', !s.soci);
 check('Area YUMA nascosta', !s.yuma);
 
 // 5) Socio pending: nessuna area
@@ -116,7 +116,7 @@ console.log('5) Socio pending');
 w = boot();
 w.__api.setUser({ email: 'p@test.it' }, { display_name: 'P', role: 'pending', status: 'pending' }, false);
 s = describe(w);
-check('Area Membri nascosta', !s.membri);
+check('Area Soci nascosta', !s.soci);
 check('Area YUMA nascosta', !s.yuma);
 
 // 6) Admin: vede entrambe
@@ -124,7 +124,7 @@ console.log('6) Admin');
 w = boot();
 w.__api.setUser({ email: 'admin@test.it' }, { display_name: 'Admin', role: 'admin', status: 'approved' }, true);
 s = describe(w);
-check('Area Membri visibile', s.membri);
+check('Area Soci visibile', s.soci);
 check('Area YUMA visibile', s.yuma);
 
 // 7) Logout: tutto si nasconde
@@ -133,7 +133,7 @@ w = boot();
 w.__api.setUser({ email: 'crew@test.it' }, { display_name: 'Klaus', role: 'yuma', status: 'approved' }, false);
 w.eval('logout()');
 s = describe(w);
-check('Area Membri nascosta dopo logout', !s.membri);
+check('Area Soci nascosta dopo logout', !s.soci);
 check('Area YUMA nascosta dopo logout', !s.yuma);
 check('nav .nav-area-yuma nascosti dopo logout', allHidden(w, '.nav-area-yuma'));
 
@@ -151,8 +151,8 @@ console.log('9) Nome utente senza dominio email');
 w = boot();
 w.__api.setUser({ email: 'klaus68@hotmail.it' }, { display_name: 'klaus68@hotmail.it', role: 'admin', status: 'approved' }, true);
 s = describe(w);
-check('saluto senza dominio email', s.membriHtml.indexOf('klaus68@hotmail.it') < 0, 'trovata email intera');
-check('saluto con nome breve', s.membriHtml.indexOf('klaus68') >= 0);
+check('saluto senza dominio email', s.sociHtml.indexOf('klaus68@hotmail.it') < 0, 'trovata email intera');
+check('saluto con nome breve', s.sociHtml.indexOf('klaus68') >= 0);
 const chip = (w.document.getElementById('userEmailLabel') || {}).textContent;
 check('chip utente = klaus68', chip === 'klaus68', chip);
 

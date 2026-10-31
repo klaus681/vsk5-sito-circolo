@@ -31,7 +31,7 @@ Esito atteso: `TUTTI I CONTROLLI PASSATI`. Poi `git push -u origin feat/aree-ris
 **0001 — feat: le due aree riservate**
 | Area | Sezione | Chi la vede | Contenuto |
 |---|---|---|---|
-| **Area Membri** | `#area-membri` | approvati: `socio`, `yuma`, `admin` | ruolo, prossimi passi, blocco Download (placeholder), elenco membri |
+| **Area Soci** | `#area-soci` | approvati: `socio`, `yuma`, `admin` | ruolo, prossimi passi, blocco Download (placeholder), elenco membri |
 | **Area YUMA** | `#area-yuma` (nuova) | **solo** `role='yuma'` (+`admin`), `status='approved'` | badge YUMA, card *Download equipaggio* e *Strumenti del team*, equipaggio YUMA attivo |
 
 Nuova variabile `isYuma` (`loadUserProfile`), blocco in `updateAuthUI`, `renderAreaYuma()`,
@@ -59,18 +59,22 @@ logout invece di lasciarle nascoste nel DOM, `ADMIN_EMAIL` centralizzato (erano 
 - `README.md` in root
 - repo da ~1,3 MB a **240 KB**
 
-**0005 — style(nav): una sola voce per area**
+**0005 — style(aree): "Area Soci" e "YUMA Only"**
+- **"Area Membri" → "Area Soci"**: link, titolo, label "Riservata ai soci", chiavi i18n in
+  IT/EN/ES/FR (`Area Soci` / `Members Area` / `Área de Socios` / `Espace Membres`) e
+  identificatori interni coerenti (`#area-soci`, `#areaSociContent`, `.nav-area-soci`,
+  `renderAreaSoci()`)
+- **"Area YUMA" → "YUMA Only"** (link, titolo e fallback HTML), label "Riservato all'equipaggio"
 - rimossi i **doppioni**: "Area Membri" compariva due volte (nei link di navigazione *e*
   nella barra utente). Ora ogni area ha **un solo ingresso**: nella barra utente su
   desktop, nel menu mobile su smartphone
-- **"Area YUMA" → "YUMA Only"** (link, titolo e fallback HTML), label "Riservato all'equipaggio"
 - `prettyName()`: se il `display_name` è un'email si mostra solo la parte prima della `@`
   → niente più `klaus68@hotmail.it` in evidenza nel saluto e nei chip
 - il pulsante **"Candidati"** si nasconde quando sei loggato
 - nuovi controlli nei test (dedupe link, nomi, pulsante) → **35 controlli**
 
 Barra risultante da loggato come YUMA/admin:
-`Home · La Storia · Trofei · Equipaggio · Unisciti | 🇮🇹🇬🇧🇪🇸🇫🇷 👤 klaus68 · Area Membri · YUMA Only · ⚙️ Admin · Esci`
+`Home · La Storia · Trofei · Equipaggio · Unisciti | 🇮🇹🇬🇧🇪🇸🇫🇷 👤 klaus68 · Area Soci · YUMA Only · ⚙️ Admin · Esci`
 
 ## Dopo l'applicazione: SQL su Supabase
 
@@ -80,14 +84,14 @@ Progetto `eefszkqpfwwxoljauobs` → SQL Editor, in ordine:
 2. `supabase/100-aree-riservate.sql` ← helper `is_approved_member()` / `is_yuma()`
 
 Sbloccano due funzioni che oggi sono rotte: **eliminare una candidatura** (mancava la
-policy `FOR DELETE`) e **l'elenco membri dell'Area Membri** (la RLS restituiva solo la
+policy `FOR DELETE`) e **l'elenco soci dell'Area Soci** (la RLS restituiva solo la
 propria riga ai non-admin). Il template della futura area download è dentro `100-...`,
 commentato: va scommentato quando costruiremo i download.
 
 ## Prova manuale
 
-1. Login `role='socio'` → vedi **Area Membri**, **non** YUMA Only
-2. Login `role='yuma'` → vedi entrambe (Area Membri + YUMA Only)
+1. Login `role='socio'` → vedi **Area Soci**, **non** YUMA Only
+2. Login `role='yuma'` → vedi entrambe (Area Soci + YUMA Only)
 3. Logout → spariscono e il contenuto viene svuotato dal DOM
 4. Cambio lingua (bandierine) → le due aree si ri-renderizzano nella lingua scelta
 5. Pannello Admin → tab Utenti → selettore ruolo per promuovere a `YUMA` / `Socio`
