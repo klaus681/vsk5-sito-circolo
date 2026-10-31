@@ -69,6 +69,8 @@ check('Area Membri nascosta', !s.membri);
 check('Area YUMA nascosta', !s.yuma);
 check('link .nav-area-membri tutti nascosti', allHidden(w, '.nav-area-membri'));
 check('link .nav-area-yuma tutti nascosti', allHidden(w, '.nav-area-yuma'));
+const candOut = w.document.getElementById('navCandidati');
+check('pulsante "Candidati" visibile da ospite', !!candOut && candOut.style.display !== 'none', candOut && candOut.style.display);
 
 // 2) Socio approvato: Area Membri si', Area YUMA no
 console.log('2) Socio approvato');
@@ -95,6 +97,11 @@ check('nav Area YUMA visibile', s.navYuma);
 check('Area YUMA saluta Klaus', s.yumaHtml.indexOf('Klaus') >= 0);
 check('Area YUMA ha card "Download equipaggio"', s.yumaHtml.indexOf('Download equipaggio') >= 0);
 check('Area YUMA ha card "Strumenti del team"', s.yumaHtml.indexOf('Strumenti del team') >= 0);
+const nMembri = w.document.querySelectorAll('.nav-area-membri').length;
+const nYuma = w.document.querySelectorAll('.nav-area-yuma').length;
+check('un solo link per area: desktop + mobile, nessun doppione', nMembri === 2 && nYuma === 2, nMembri + '/' + nYuma);
+const candIn = w.document.getElementById('navCandidati');
+check('pulsante "Candidati" nascosto da loggati', !!candIn && candIn.style.display === 'none', candIn && candIn.style.display);
 
 // 4) YUMA non ancora approvato (pending): nessuna area
 console.log('4) Membro YUMA pending');
@@ -135,9 +142,19 @@ console.log('8) Traduzioni area');
 w = boot();
 w.eval("setLanguage('en');");
 const yumaTitle = [...w.document.querySelectorAll('[data-i18n="yuma_title"]')].map(e => e.textContent);
-check('yuma_title in inglese', yumaTitle.join('|') === 'YUMA Area', yumaTitle.join('|'));
+check('yuma_title è "YUMA Only" (uguale in tutte le lingue)', yumaTitle.join('|') === 'YUMA Only', yumaTitle.join('|'));
 const navYumaLabels = [...w.document.querySelectorAll('.nav-area-yuma')].map(e => e.textContent);
-check('link Area YUMA tradotti', navYumaLabels.every(t => t === 'YUMA Area'), navYumaLabels.join('|'));
+check('link YUMA Only coerenti', navYumaLabels.every(t => t === 'YUMA Only'), navYumaLabels.join('|'));
+
+// 9) Nome utente: se il display_name è un'email non va mostrato per intero
+console.log('9) Nome utente senza dominio email');
+w = boot();
+w.__api.setUser({ email: 'klaus68@hotmail.it' }, { display_name: 'klaus68@hotmail.it', role: 'admin', status: 'approved' }, true);
+s = describe(w);
+check('saluto senza dominio email', s.membriHtml.indexOf('klaus68@hotmail.it') < 0, 'trovata email intera');
+check('saluto con nome breve', s.membriHtml.indexOf('klaus68') >= 0);
+const chip = (w.document.getElementById('userEmailLabel') || {}).textContent;
+check('chip utente = klaus68', chip === 'klaus68', chip);
 
 console.log('\n' + (failures ? 'FALLITI: ' + failures : 'TUTTI I CONTROLLI PASSATI ✅'));
 process.exit(failures ? 1 : 0);

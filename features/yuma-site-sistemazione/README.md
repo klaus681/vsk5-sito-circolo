@@ -1,6 +1,6 @@
 # yuma-site — sistemazione completa + due aree riservate
 
-Serie di 4 commit pronta da applicare a [klaus681/yuma-site](https://github.com/klaus681/yuma-site),
+Serie di **5 commit** pronta da applicare a [klaus681/yuma-site](https://github.com/klaus681/yuma-site),
 verificata su un clone pulito di `main` (`6b4b248`).
 
 > Il bot non ha permessi di push sul repo `yuma-site` (403): la consegna è una serie di
@@ -16,16 +16,17 @@ git checkout -b feat/aree-riservate-socio-yuma
 # opzione A — un solo file
 git am /percorso/serie-completa.patch
 
-# opzione B — i 4 commit singoli, in ordine
+# opzione B — i 5 commit singoli, in ordine
 git am /percorso/0001-*.patch /percorso/0002-*.patch \
-       /percorso/0003-*.patch /percorso/0004-*.patch
+       /percorso/0003-*.patch /percorso/0004-*.patch \
+       /percorso/0005-*.patch
 
 npm i --no-save jsdom && node tests/aree-riservate.test.js
 ```
 
 Esito atteso: `TUTTI I CONTROLLI PASSATI`. Poi `git push -u origin feat/aree-riservate-socio-yuma`.
 
-## I 4 commit
+## I 5 commit
 
 **0001 — feat: le due aree riservate**
 | Area | Sezione | Chi la vede | Contenuto |
@@ -34,7 +35,8 @@ Esito atteso: `TUTTI I CONTROLLI PASSATI`. Poi `git push -u origin feat/aree-ris
 | **Area YUMA** | `#area-yuma` (nuova) | **solo** `role='yuma'` (+`admin`), `status='approved'` | badge YUMA, card *Download equipaggio* e *Strumenti del team*, equipaggio YUMA attivo |
 
 Nuova variabile `isYuma` (`loadUserProfile`), blocco in `updateAuthUI`, `renderAreaYuma()`,
-4 link `.nav-area-yuma`, 17 chiavi i18n × 4 lingue, `clearArea()` che svuota le aree al
+link `.nav-area-yuma` (ridotti a un solo ingresso per area dal commit 0005),
+17 chiavi i18n × 4 lingue, `clearArea()` che svuota le aree al
 logout invece di lasciarle nascoste nel DOM, `ADMIN_EMAIL` centralizzato (erano 3 copie).
 
 **0002 — fix(security)**
@@ -57,6 +59,19 @@ logout invece di lasciarle nascoste nel DOM, `ADMIN_EMAIL` centralizzato (erano 
 - `README.md` in root
 - repo da ~1,3 MB a **240 KB**
 
+**0005 — style(nav): una sola voce per area**
+- rimossi i **doppioni**: "Area Membri" compariva due volte (nei link di navigazione *e*
+  nella barra utente). Ora ogni area ha **un solo ingresso**: nella barra utente su
+  desktop, nel menu mobile su smartphone
+- **"Area YUMA" → "YUMA Only"** (link, titolo e fallback HTML), label "Riservato all'equipaggio"
+- `prettyName()`: se il `display_name` è un'email si mostra solo la parte prima della `@`
+  → niente più `klaus68@hotmail.it` in evidenza nel saluto e nei chip
+- il pulsante **"Candidati"** si nasconde quando sei loggato
+- nuovi controlli nei test (dedupe link, nomi, pulsante) → **35 controlli**
+
+Barra risultante da loggato come YUMA/admin:
+`Home · La Storia · Trofei · Equipaggio · Unisciti | 🇮🇹🇬🇧🇪🇸🇫🇷 👤 klaus68 · Area Membri · YUMA Only · ⚙️ Admin · Esci`
+
 ## Dopo l'applicazione: SQL su Supabase
 
 Progetto `eefszkqpfwwxoljauobs` → SQL Editor, in ordine:
@@ -71,8 +86,8 @@ commentato: va scommentato quando costruiremo i download.
 
 ## Prova manuale
 
-1. Login `role='socio'` → vedi Area Membri, **non** Area YUMA
-2. Login `role='yuma'` → vedi entrambe
+1. Login `role='socio'` → vedi **Area Membri**, **non** YUMA Only
+2. Login `role='yuma'` → vedi entrambe (Area Membri + YUMA Only)
 3. Logout → spariscono e il contenuto viene svuotato dal DOM
 4. Cambio lingua (bandierine) → le due aree si ri-renderizzano nella lingua scelta
 5. Pannello Admin → tab Utenti → selettore ruolo per promuovere a `YUMA` / `Socio`
@@ -81,8 +96,8 @@ commentato: va scommentato quando costruiremo i download.
 
 | File | Cosa |
 |---|---|
-| `serie-completa.patch` | i 4 commit in un unico mbox → `git am` |
-| `0001…0004` | i singoli commit |
+| `serie-completa.patch` | i 5 commit in un unico mbox → `git am` |
+| `0001…0005` | i singoli commit |
 | `99-fix-policies.sql`, `100-aree-riservate.sql` | copie pronte da incollare nel SQL Editor |
 | `aree-riservate.test.js` | copia del test (va in `tests/`) |
 

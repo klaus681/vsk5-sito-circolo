@@ -1,7 +1,7 @@
 From 6a586bdc9ecead03b6ac2babc61c227724f53e79 Mon Sep 17 00:00:00 2001
 From: cline <cline@users.noreply.github.com>
 Date: Sat, 31 Oct 2026 21:09:28 +0000
-Subject: [PATCH 3/4] chore(supabase): 99-fix-policies canonico nel repo + file
+Subject: [PATCH 3/5] chore(supabase): 99-fix-policies canonico nel repo + file
  storici marcati
 
 - 99-fix-policies.sql entra nel repo e ridefinisce is_admin() (role='admin' + status='approved', oppure email admin da auth.users): elimina l'ambiguita' fra le 4 migrazioni, dove vinceva l'ultima eseguita

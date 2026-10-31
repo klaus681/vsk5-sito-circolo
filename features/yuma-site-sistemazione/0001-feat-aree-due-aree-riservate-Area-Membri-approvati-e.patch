@@ -1,7 +1,7 @@
 From dbc66d8772c3b6758a79809cfc03818441df6023 Mon Sep 17 00:00:00 2001
 From: cline <cline@users.noreply.github.com>
 Date: Sat, 31 Oct 2026 21:08:01 +0000
-Subject: [PATCH 1/4] feat(aree): due aree riservate - Area Membri (approvati)
+Subject: [PATCH 1/5] feat(aree): due aree riservate - Area Membri (approvati)
  e Area YUMA (solo ruolo yuma)
 
 - nuova sezione #area-yuma visibile solo a role='yuma' (+admin), con card Download equipaggio e strumenti in placeholder
